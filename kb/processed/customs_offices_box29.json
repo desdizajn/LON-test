@@ -1,0 +1,121 @@
+{
+  "listType": "Box29_CustomsOffice",
+  "boxNumber": "29",
+  "descriptionMK": "Излезен/влезен царински орган",
+  "descriptionEN": "Exit/Entry Customs Office",
+  "totalCodes": 16,
+  "codes": [
+    {
+      "code": "MK009000",
+      "descriptionMK": "Централна управа на царинска управа",
+      "descriptionEN": "Central Customs Administration",
+      "boxNumber": "29",
+      "sortOrder": 1
+    },
+    {
+      "code": "MK001000",
+      "descriptionMK": "Царинарница Скопје",
+      "descriptionEN": "Customs Office Skopje",
+      "boxNumber": "29",
+      "sortOrder": 2
+    },
+    {
+      "code": "MK001010",
+      "descriptionMK": "Царинска испостава Скопје 1",
+      "descriptionEN": "Customs Branch Skopje 1",
+      "boxNumber": "29",
+      "sortOrder": 3
+    },
+    {
+      "code": "MK001013",
+      "descriptionMK": "Царинска испостава Скопје 3",
+      "descriptionEN": "Customs Branch Skopje 3",
+      "boxNumber": "29",
+      "sortOrder": 4
+    },
+    {
+      "code": "MK001014",
+      "descriptionMK": "Царинска испостава Скопје 4",
+      "descriptionEN": "Customs Branch Skopje 4",
+      "boxNumber": "29",
+      "sortOrder": 5
+    },
+    {
+      "code": "MK001050",
+      "descriptionMK": "Царинска испостава Аеродром Скопје - Стоков промет",
+      "descriptionEN": "Customs Branch Airport Skopje - Goods",
+      "boxNumber": "29",
+      "sortOrder": 6
+    },
+    {
+      "code": "MK002000",
+      "descriptionMK": "Царинарница Куманово",
+      "descriptionEN": "Customs Office Kumanovo",
+      "boxNumber": "29",
+      "sortOrder": 7
+    },
+    {
+      "code": "MK002010",
+      "descriptionMK": "Царинска испостава Табановце - Стоков промет",
+      "descriptionEN": "Customs Branch Tabanovce - Goods",
+      "boxNumber": "29",
+      "sortOrder": 8
+    },
+    {
+      "code": "MK003000",
+      "descriptionMK": "Царинарница Штип",
+      "descriptionEN": "Customs Office Stip",
+      "boxNumber": "29",
+      "sortOrder": 9
+    },
+    {
+      "code": "MK004000",
+      "descriptionMK": "Царинарница Гевгелија",
+      "descriptionEN": "Customs Office Gevgelija",
+      "boxNumber": "29",
+      "sortOrder": 10
+    },
+    {
+      "code": "MK004020",
+      "descriptionMK": "Царинска испостава Гевгелија",
+      "descriptionEN": "Customs Branch Gevgelija",
+      "boxNumber": "29",
+      "sortOrder": 11
+    },
+    {
+      "code": "MK004060",
+      "descriptionMK": "Царинска испостава Ново Село - Стоков промет",
+      "descriptionEN": "Customs Branch Novo Selo - Goods",
+      "boxNumber": "29",
+      "sortOrder": 12
+    },
+    {
+      "code": "MK005000",
+      "descriptionMK": "Царинарница Битола",
+      "descriptionEN": "Customs Office Bitola",
+      "boxNumber": "29",
+      "sortOrder": 13
+    },
+    {
+      "code": "MK005020",
+      "descriptionMK": "Царинска испостава Меџитлија - Стоков промет",
+      "descriptionEN": "Customs Branch Medjitlija - Goods",
+      "boxNumber": "29",
+      "sortOrder": 14
+    },
+    {
+      "code": "MK006000",
+      "descriptionMK": "Царинарница Тетово",
+      "descriptionEN": "Customs Office Tetovo",
+      "boxNumber": "29",
+      "sortOrder": 15
+    },
+    {
+      "code": "MK006010",
+      "descriptionMK": "Царинска испостава Блаце - Стоков промет",
+      "descriptionEN": "Customs Branch Blace - Goods",
+      "boxNumber": "29",
+      "sortOrder": 16
+    }
+  ]
+}

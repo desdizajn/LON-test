@@ -29,6 +29,17 @@ public class CodeListItem : BaseEntity
     public string? DescriptionEN { get; set; }
     
     /// <summary>
+    /// Број на рубрика (Box број) - за контекстуално мапирање
+    /// Пример: "1", "15а", "37", "44"
+    /// </summary>
+    public string? BoxNumber { get; set; }
+    
+    /// <summary>
+    /// Tooltip текст (контекстуален опис за UI)
+    /// </summary>
+    public string? Tooltip { get; set; }
+    
+    /// <summary>
     /// Родителски код (за хиерархиски листи)
     /// </summary>
     public string? ParentCode { get; set; }

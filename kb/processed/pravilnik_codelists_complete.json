@@ -1,0 +1,764 @@
+{
+  "metadata": {
+    "source": "ПРАВИЛНИК ЗА НАЧИНОТ НА ПОПОЛНУВАЊЕ НА ЦАРИНСКАТА ДЕКЛАРАЦИЈА - Поглавје II Шифри",
+    "extracted_date": "2025-12-28",
+    "total_codelists": 15,
+    "note": "Сите шифрарници со Box број, за dropdown со tooltip"
+  },
+  "codelists": {
+    "Box01_DeclarationType": {
+      "boxNumber": "1",
+      "fieldName": "DeclarationType",
+      "descriptionMK": "Декларација - Вид",
+      "descriptionEN": "Declaration Type",
+      "codes": [
+        {
+          "code": "AA",
+          "descriptionMK": "Царинска декларација во редовна постапка",
+          "descriptionEN": "Regular customs declaration",
+          "tooltip": "Член 72 од Законот"
+        },
+        {
+          "code": "BB",
+          "descriptionMK": "Непотполна декларација",
+          "descriptionEN": "Incomplete declaration",
+          "tooltip": "Поедноставена постапка - член 88 став (1) точка (а)"
+        },
+        {
+          "code": "CC",
+          "descriptionMK": "Поедноставена декларација",
+          "descriptionEN": "Simplified declaration",
+          "tooltip": "Поедноставена постапка - член 88 став (1) точка (б)"
+        },
+        {
+          "code": "DD",
+          "descriptionMK": "Редовна декларација пред ставање на увид",
+          "descriptionEN": "Regular declaration before presentation",
+          "tooltip": "Поднесување пред декларантот да ја стави стоката на увид"
+        },
+        {
+          "code": "EE",
+          "descriptionMK": "Непотполна декларација пред ставање на увид",
+          "descriptionEN": "Incomplete declaration before presentation",
+          "tooltip": "Поднесување пред декларантот да ја стави стоката на увид"
+        },
+        {
+          "code": "FF",
+          "descriptionMK": "Поедноставена декларација пред ставање на увид",
+          "descriptionEN": "Simplified declaration before presentation",
+          "tooltip": "Поднесување пред декларантот да ја стави стоката на увид"
+        },
+        {
+          "code": "XX",
+          "descriptionMK": "Дополнителна декларација (BB/EE)",
+          "descriptionEN": "Supplementary declaration (BB/EE)",
+          "tooltip": "Дополнителна декларација во рамки на поедноставена постапка B и E"
+        },
+        {
+          "code": "YY",
+          "descriptionMK": "Дополнителна декларација (CC/FF)",
+          "descriptionEN": "Supplementary declaration (CC/FF)",
+          "tooltip": "Дополнителна декларација во рамки на поедноставена постапка C и F"
+        },
+        {
+          "code": "ZZ",
+          "descriptionMK": "Декларација со запишување во евиденцијата",
+          "descriptionEN": "Declaration by entry in records",
+          "tooltip": "Поедноставена постапка - член 88 став (1) точка (в)"
+        },
+        {
+          "code": "IM",
+          "descriptionMK": "Увоз",
+          "descriptionEN": "Import",
+          "tooltip": "Друга подрубрика - вид на декларација"
+        },
+        {
+          "code": "EX",
+          "descriptionMK": "Извоз",
+          "descriptionEN": "Export",
+          "tooltip": "Друга подрубрика - вид на декларација"
+        },
+        {
+          "code": "EU",
+          "descriptionMK": "Стока ја напуштила територијата на ЕУ",
+          "descriptionEN": "Goods left EU territory",
+          "tooltip": "Статус T1"
+        },
+        {
+          "code": "T1",
+          "descriptionMK": "Стока со статус T1 - странска стока",
+          "descriptionEN": "T1 status goods - non-EU goods",
+          "tooltip": "Трета подрубрика"
+        },
+        {
+          "code": "T2",
+          "descriptionMK": "Стока со статус T2 - стока на ЕУ",
+          "descriptionEN": "T2 status goods - EU goods",
+          "tooltip": "Трета подрубрика"
+        }
+      ]
+    },
+    "Box14_Declarant": {
+      "boxNumber": "14",
+      "fieldName": "DeclarantStatus",
+      "descriptionMK": "Декларант/Застапник - Статус",
+      "descriptionEN": "Declarant/Representative Status",
+      "codes": [
+        {
+          "code": "1",
+          "descriptionMK": "Декларант",
+          "descriptionEN": "Declarant",
+          "tooltip": "Лицето кое поднесува декларација"
+        },
+        {
+          "code": "2",
+          "descriptionMK": "Застапник (директно застапување)",
+          "descriptionEN": "Agent (direct representation)",
+          "tooltip": "Член 5 став (2) точка а) од Законот"
+        },
+        {
+          "code": "3",
+          "descriptionMK": "Застапник (индиректно застапување)",
+          "descriptionEN": "Agent (indirect representation)",
+          "tooltip": "Член 5 став (2) точка б) од Законот"
+        }
+      ]
+    },
+    "Box15a_CountryCode": {
+      "boxNumber": "15а",
+      "fieldName": "CountryCode",
+      "descriptionMK": "Шифра на земја (ISO 3166-1 alpha-2)",
+      "descriptionEN": "Country Code (ISO 3166-1 alpha-2)",
+      "note": "Комплетна листа на 249 земји - види ПРАВИЛНИК страни 37-42",
+      "sampleCodes": [
+        {"code": "MK", "descriptionMK": "Северна Македонија", "descriptionEN": "North Macedonia"},
+        {"code": "AL", "descriptionMK": "Албанија", "descriptionEN": "Albania"},
+        {"code": "BG", "descriptionMK": "Бугарија", "descriptionEN": "Bulgaria"},
+        {"code": "GR", "descriptionMK": "Грција", "descriptionEN": "Greece"},
+        {"code": "RS", "descriptionMK": "Србија", "descriptionEN": "Serbia"},
+        {"code": "XK", "descriptionMK": "Косово", "descriptionEN": "Kosovo"},
+        {"code": "ME", "descriptionMK": "Црна Гора", "descriptionEN": "Montenegro"},
+        {"code": "DE", "descriptionMK": "Германија", "descriptionEN": "Germany"},
+        {"code": "GB", "descriptionMK": "Голема Британија", "descriptionEN": "United Kingdom"},
+        {"code": "US", "descriptionMK": "Соединети Американски Држави", "descriptionEN": "United States"},
+        {"code": "CN", "descriptionMK": "Кина", "descriptionEN": "China"},
+        {"code": "TR", "descriptionMK": "Турција", "descriptionEN": "Turkey"}
+      ],
+      "usedInBoxes": ["11", "15а", "17а", "18", "21", "34"]
+    },
+    "Box19_Container": {
+      "boxNumber": "19",
+      "fieldName": "HasContainer",
+      "descriptionMK": "Контејнер",
+      "descriptionEN": "Container",
+      "codes": [
+        {
+          "code": "0",
+          "descriptionMK": "Стока која не е натоварена во контејнер",
+          "descriptionEN": "Goods not loaded in container",
+          "tooltip": "Без контејнер"
+        },
+        {
+          "code": "1",
+          "descriptionMK": "Стока која е натоварена во контејнер",
+          "descriptionEN": "Goods loaded in container",
+          "tooltip": "Со контејнер"
+        }
+      ]
+    },
+    "Box20_DeliveryTerms": {
+      "boxNumber": "20",
+      "fieldName": "IncoTerms",
+      "descriptionMK": "Услови на испорака (Incoterms)",
+      "descriptionEN": "Delivery Terms (Incoterms)",
+      "codes": [
+        {
+          "code": "EXW",
+          "descriptionMK": "Франко фабрика",
+          "descriptionEN": "Ex Works",
+          "tooltip": "Било кој транспорт - назначено место"
+        },
+        {
+          "code": "FCA",
+          "descriptionMK": "Франко превозник",
+          "descriptionEN": "Free Carrier",
+          "tooltip": "Било кој транспорт - назначено место"
+        },
+        {
+          "code": "FAS",
+          "descriptionMK": "Франко покрај бокот на бродот",
+          "descriptionEN": "Free Alongside Ship",
+          "tooltip": "Морски и речен транспорт - назначено испратно пристаниште"
+        },
+        {
+          "code": "FOB",
+          "descriptionMK": "Франко на палубата на бродот",
+          "descriptionEN": "Free On Board",
+          "tooltip": "Морски и речен транспорт - назначено испратно пристаниште"
+        },
+        {
+          "code": "CFR",
+          "descriptionMK": "Трошоци и возарина",
+          "descriptionEN": "Cost and Freight",
+          "tooltip": "Морски и речен транспорт - назначено одредишно пристаниште"
+        },
+        {
+          "code": "CIF",
+          "descriptionMK": "Трошоци, осигурување и возарина",
+          "descriptionEN": "Cost, Insurance and Freight",
+          "tooltip": "Морски и речен транспорт - назначено одредишно пристаниште"
+        },
+        {
+          "code": "CPT",
+          "descriptionMK": "Превозни трошоци платени до",
+          "descriptionEN": "Carriage Paid To",
+          "tooltip": "Било кој транспорт - назначено одредиште"
+        },
+        {
+          "code": "CIP",
+          "descriptionMK": "Превозни трошоци и осигурување платени до",
+          "descriptionEN": "Carriage and Insurance Paid To",
+          "tooltip": "Било кој транспорт - назначено одредиште"
+        },
+        {
+          "code": "DAP",
+          "descriptionMK": "Испорачано на место",
+          "descriptionEN": "Delivered At Place",
+          "tooltip": "Било кој транспорт - назначено одредиште"
+        },
+        {
+          "code": "DPU",
+          "descriptionMK": "Испорачано на место, истоварено",
+          "descriptionEN": "Delivered at Place Unloaded",
+          "tooltip": "Било кој транспорт - назначено одредиште"
+        },
+        {
+          "code": "DDP",
+          "descriptionMK": "Испорачано оцаринето",
+          "descriptionEN": "Delivered Duty Paid",
+          "tooltip": "Било кој транспорт - назначено одредиште"
+        }
+      ]
+    },
+    "Box22_Currency": {
+      "boxNumber": "22",
+      "fieldName": "Currency",
+      "descriptionMK": "Валута во фактура",
+      "descriptionEN": "Invoice Currency",
+      "codes": [
+        {"code": "EUR", "descriptionMK": "Евро", "descriptionEN": "Euro"},
+        {"code": "USD", "descriptionMK": "САД долар", "descriptionEN": "US Dollar"},
+        {"code": "GBP", "descriptionMK": "Британска фунта", "descriptionEN": "British Pound"},
+        {"code": "CHF", "descriptionMK": "Швајцарски франк", "descriptionEN": "Swiss Franc"},
+        {"code": "SEK", "descriptionMK": "Шведска круна", "descriptionEN": "Swedish Krona"},
+        {"code": "NOK", "descriptionMK": "Норвешка круна", "descriptionEN": "Norwegian Krone"},
+        {"code": "JPY", "descriptionMK": "Јапонски јен", "descriptionEN": "Japanese Yen"},
+        {"code": "DKK", "descriptionMK": "Данска круна", "descriptionEN": "Danish Krone"},
+        {"code": "CAD", "descriptionMK": "Канадски долар", "descriptionEN": "Canadian Dollar"},
+        {"code": "AUD", "descriptionMK": "Австралиски долар", "descriptionEN": "Australian Dollar"},
+        {"code": "BGN", "descriptionMK": "Бугарски лев", "descriptionEN": "Bulgarian Lev"},
+        {"code": "CZK", "descriptionMK": "Чешка круна", "descriptionEN": "Czech Koruna"},
+        {"code": "HUF", "descriptionMK": "Унгарска форинта", "descriptionEN": "Hungarian Forint"},
+        {"code": "PLN", "descriptionMK": "Полска злота", "descriptionEN": "Polish Zloty"},
+        {"code": "RON", "descriptionMK": "Нов романски реу", "descriptionEN": "Romanian Leu"},
+        {"code": "HRK", "descriptionMK": "Хрватска куна", "descriptionEN": "Croatian Kuna"},
+        {"code": "TRY", "descriptionMK": "Турска лира", "descriptionEN": "Turkish Lira"},
+        {"code": "RUB", "descriptionMK": "Руска рубља", "descriptionEN": "Russian Ruble"},
+        {"code": "BRL", "descriptionMK": "Бразилски реал", "descriptionEN": "Brazilian Real"},
+        {"code": "CNY", "descriptionMK": "Кинески јуан", "descriptionEN": "Chinese Yuan"},
+        {"code": "HKD", "descriptionMK": "Хонконшки долар", "descriptionEN": "Hong Kong Dollar"},
+        {"code": "MKD", "descriptionMK": "Македонски денар", "descriptionEN": "Macedonian Denar"}
+      ]
+    },
+    "Box24_NatureOfTransaction": {
+      "boxNumber": "24",
+      "fieldName": "NatureOfTransaction",
+      "descriptionMK": "Природа на трансакцијата",
+      "descriptionEN": "Nature of Transaction",
+      "note": "Двоцифрен код (Колона А + Колона Б)",
+      "codes": [
+        {
+          "code": "11",
+          "descriptionMK": "Конечно купување/продажба",
+          "descriptionEN": "Outright purchase/sale",
+          "tooltip": "Трансакција со промена на сопственост со плаќање"
+        },
+        {
+          "code": "12",
+          "descriptionMK": "Набавка за продажба на пробен период или консигнација",
+          "descriptionEN": "Supply for sale on approval or consignment",
+          "tooltip": "Трансакција со промена на сопственост со плаќање"
+        },
+        {
+          "code": "13",
+          "descriptionMK": "Бартер трговија (компензација)",
+          "descriptionEN": "Barter trade",
+          "tooltip": "Трансакција со промена на сопственост со плаќање"
+        },
+        {
+          "code": "14",
+          "descriptionMK": "Финансиски лизинг (изнајмување на отплата)",
+          "descriptionEN": "Financial leasing",
+          "tooltip": "Трансакција со промена на сопственост со плаќање"
+        },
+        {
+          "code": "19",
+          "descriptionMK": "Друго",
+          "descriptionEN": "Other",
+          "tooltip": "Трансакција со промена на сопственост - друго"
+        },
+        {
+          "code": "21",
+          "descriptionMK": "Враќање на стока",
+          "descriptionEN": "Return of goods",
+          "tooltip": "Враќање и замена без надоместок"
+        },
+        {
+          "code": "22",
+          "descriptionMK": "Замена на вратена стока",
+          "descriptionEN": "Replacement for returned goods",
+          "tooltip": "Враќање и замена без надоместок"
+        },
+        {
+          "code": "23",
+          "descriptionMK": "Замена (гаранција) на стока која не е вратена",
+          "descriptionEN": "Replacement (warranty) of goods not returned",
+          "tooltip": "Враќање и замена без надоместок"
+        },
+        {
+          "code": "29",
+          "descriptionMK": "Друго",
+          "descriptionEN": "Other",
+          "tooltip": "Враќање и замена - друго"
+        },
+        {
+          "code": "30",
+          "descriptionMK": "Трансакција без финансиски надоместок (хуманитарни пратки)",
+          "descriptionEN": "Transaction without financial compensation",
+          "tooltip": "Промена на сопственост без надоместок"
+        },
+        {
+          "code": "41",
+          "descriptionMK": "Стока за облагородување (ќе се врати)",
+          "descriptionEN": "Goods for processing (to be returned)",
+          "tooltip": "Постапки со цел облагородување - со враќање"
+        },
+        {
+          "code": "42",
+          "descriptionMK": "Стока за облагородување (нема да се врати)",
+          "descriptionEN": "Goods for processing (not to be returned)",
+          "tooltip": "Постапки со цел облагородување - без враќање"
+        },
+        {
+          "code": "51",
+          "descriptionMK": "Стока после облагородување (се враќа)",
+          "descriptionEN": "Goods after processing (returning)",
+          "tooltip": "Постапки после облагородување - враќање"
+        },
+        {
+          "code": "52",
+          "descriptionMK": "Стока после облагородување (не се враќа)",
+          "descriptionEN": "Goods after processing (not returning)",
+          "tooltip": "Постапки после облагородување - без враќање"
+        },
+        {
+          "code": "61",
+          "descriptionMK": "Привремен увоз/извоз заради закуп (оперативен лизинг < 2 години)",
+          "descriptionEN": "Temporary import/export for hire/lease (< 2 years)",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "62",
+          "descriptionMK": "Друг привремен увоз/извоз (< 2 години)",
+          "descriptionEN": "Other temporary import/export (< 2 years)",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "63",
+          "descriptionMK": "Странско вложување",
+          "descriptionEN": "Foreign investment",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "64",
+          "descriptionMK": "Поправка и одржување со плаќање",
+          "descriptionEN": "Repair and maintenance with payment",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "65",
+          "descriptionMK": "Работи кои следат после поправка и одржување со плаќање",
+          "descriptionEN": "Goods following repair/maintenance with payment",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "66",
+          "descriptionMK": "Бесплатна поправка и одржување",
+          "descriptionEN": "Free repair and maintenance",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "67",
+          "descriptionMK": "Работи кои следат после бесплатна поправка и одржување",
+          "descriptionEN": "Goods following free repair/maintenance",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "68",
+          "descriptionMK": "Враќање во непроменета состојба на несоодветни стоки",
+          "descriptionEN": "Return in unchanged state of unsuitable goods",
+          "tooltip": "Специфични трансакции"
+        },
+        {
+          "code": "70",
+          "descriptionMK": "Трансакција во врска со заеднички одбранбени/производни програми",
+          "descriptionEN": "Transaction related to joint defense/production programs",
+          "tooltip": "Меѓувладини програми"
+        },
+        {
+          "code": "80",
+          "descriptionMK": "Набавка на градежен материјал во рамки на генерален договор",
+          "descriptionEN": "Supply of construction materials under general contract",
+          "tooltip": "Генерални договори за изградба"
+        },
+        {
+          "code": "91",
+          "descriptionMK": "Изнајмување, позајмување и оперативен лизинг (> 24 месеци)",
+          "descriptionEN": "Hire, loan and operational leasing (> 24 months)",
+          "tooltip": "Други трансакции"
+        },
+        {
+          "code": "99",
+          "descriptionMK": "Друго",
+          "descriptionEN": "Other",
+          "tooltip": "Други трансакции"
+        }
+      ]
+    },
+    "Box25_TransportMode": {
+      "boxNumber": "25",
+      "fieldName": "TransportMode",
+      "descriptionMK": "Вид на транспорт на граница",
+      "descriptionEN": "Mode of Transport at Border",
+      "codes": [
+        {
+          "code": "10",
+          "descriptionMK": "Поморски транспорт",
+          "descriptionEN": "Maritime transport",
+          "tooltip": "Основен код 1"
+        },
+        {
+          "code": "12",
+          "descriptionMK": "Железнички вагон на поморски пловен објект",
+          "descriptionEN": "Rail wagon on maritime vessel",
+          "tooltip": "Проширен код 1"
+        },
+        {
+          "code": "16",
+          "descriptionMK": "Моторно возило на поморски пловен објект",
+          "descriptionEN": "Motor vehicle on maritime vessel",
+          "tooltip": "Проширен код 1"
+        },
+        {
+          "code": "17",
+          "descriptionMK": "Приколка или полу-приколка на поморски пловен објект",
+          "descriptionEN": "Trailer or semi-trailer on maritime vessel",
+          "tooltip": "Проширен код 1"
+        },
+        {
+          "code": "18",
+          "descriptionMK": "Пловило за внатрешен воден сообраќај на поморски пловен објект",
+          "descriptionEN": "Inland waterway vessel on maritime vessel",
+          "tooltip": "Проширен код 1"
+        },
+        {
+          "code": "20",
+          "descriptionMK": "Железнички транспорт",
+          "descriptionEN": "Rail transport",
+          "tooltip": "Основен код 2"
+        },
+        {
+          "code": "30",
+          "descriptionMK": "Друмски транспорт",
+          "descriptionEN": "Road transport",
+          "tooltip": "Основен код 3"
+        },
+        {
+          "code": "40",
+          "descriptionMK": "Воздушен транспорт",
+          "descriptionEN": "Air transport",
+          "tooltip": "Основен код 4"
+        },
+        {
+          "code": "50",
+          "descriptionMK": "Поштенски транспорт",
+          "descriptionEN": "Postal transport",
+          "tooltip": "Основен код 5"
+        },
+        {
+          "code": "70",
+          "descriptionMK": "Посебни видови на транспорт (цевовод или електрични водови)",
+          "descriptionEN": "Fixed transport installations (pipelines, power lines)",
+          "tooltip": "Основен код 7"
+        },
+        {
+          "code": "80",
+          "descriptionMK": "Внатрешен воден транспорт",
+          "descriptionEN": "Inland waterway transport",
+          "tooltip": "Основен код 8"
+        },
+        {
+          "code": "90",
+          "descriptionMK": "Сопствен погон",
+          "descriptionEN": "Self-propulsion",
+          "tooltip": "Основен код 9"
+        }
+      ]
+    },
+    "Box29_CustomsOffice": {
+      "boxNumber": "29",
+      "fieldName": "ExitEntryCustomsOffice",
+      "descriptionMK": "Излезен/влезен царински орган",
+      "descriptionEN": "Exit/Entry Customs Office",
+      "note": "Комплетна листа на царинарници и царински испостави - види ПРАВИЛНИК страни 48-49",
+      "sampleCodes": [
+        {"code": "MK009000", "descriptionMK": "Централна управа на царинска управа", "descriptionEN": "Central Customs Administration"},
+        {"code": "MK001000", "descriptionMK": "Царинарница Скопје", "descriptionEN": "Customs Office Skopje"},
+        {"code": "MK001010", "descriptionMK": "Царинска испостава Скопје 1", "descriptionEN": "Customs Branch Skopje 1"},
+        {"code": "MK001050", "descriptionMK": "Царинска испостава Аеродром Скопје - Отсек за стоков промет", "descriptionEN": "Customs Branch Airport Skopje - Goods"},
+        {"code": "MK002000", "descriptionMK": "Царинарница Куманово", "descriptionEN": "Customs Office Kumanovo"},
+        {"code": "MK002010", "descriptionMK": "Царинска испостава Табановце - Стоков промет", "descriptionEN": "Customs Branch Tabanovce - Goods"},
+        {"code": "MK003000", "descriptionMK": "Царинарница Штип", "descriptionEN": "Customs Office Stip"},
+        {"code": "MK004000", "descriptionMK": "Царинарница Гевгелија", "descriptionEN": "Customs Office Gevgelija"},
+        {"code": "MK005000", "descriptionMK": "Царинарница Битола", "descriptionEN": "Customs Office Bitola"},
+        {"code": "MK005020", "descriptionMK": "Царинска испостава Меџитлија - Стоков промет", "descriptionEN": "Customs Branch Medjitlija - Goods"},
+        {"code": "MK006000", "descriptionMK": "Царинарница Тетово", "descriptionEN": "Customs Office Tetovo"},
+        {"code": "MK006010", "descriptionMK": "Царинска испостава Блаце - Стоков промет", "descriptionEN": "Customs Branch Blace - Goods"}
+      ]
+    },
+    "Box31_PackageType": {
+      "boxNumber": "31",
+      "fieldName": "PackageType",
+      "descriptionMK": "Вид на пакување",
+      "descriptionEN": "Package Type",
+      "note": "Види ПРАВИЛНИК страна 50+ - повеќе од 100 видови",
+      "sampleCodes": [
+        {"code": "CT", "descriptionMK": "Картон", "descriptionEN": "Carton"},
+        {"code": "PK", "descriptionMK": "Пакет", "descriptionEN": "Package"},
+        {"code": "BX", "descriptionMK": "Кутија", "descriptionEN": "Box"},
+        {"code": "PL", "descriptionMK": "Палета", "descriptionEN": "Pallet"},
+        {"code": "DR", "descriptionMK": "Буре", "descriptionEN": "Drum"},
+        {"code": "CS", "descriptionMK": "Кашон", "descriptionEN": "Case"},
+        {"code": "BA", "descriptionMK": "Вреќа", "descriptionEN": "Bag"},
+        {"code": "BL", "descriptionMK": "Бала, компримирана", "descriptionEN": "Bale, compressed"},
+        {"code": "BN", "descriptionMK": "Бала, некомпримирана", "descriptionEN": "Bale, not compressed"},
+        {"code": "LE", "descriptionMK": "Багаж", "descriptionEN": "Luggage"},
+        {"code": "AP", "descriptionMK": "Ампула, заштитена", "descriptionEN": "Ampoule, protected"},
+        {"code": "IA", "descriptionMK": "Амбалажа, составна, дрвена", "descriptionEN": "Package, composite, wooden"},
+        {"code": "IC", "descriptionMK": "Амбалажа, составна, пластична", "descriptionEN": "Package, composite, plastic"}
+      ]
+    },
+    "Box37_ProcedureCode": {
+      "boxNumber": "37",
+      "fieldName": "ProcedureCode",
+      "descriptionMK": "Процедура (Царинска постапка)",
+      "descriptionEN": "Procedure Code",
+      "note": "Две двоцифрени компоненти - Тековна (4X XX) и Претходна (XX XX). За LON: 42 00, 51 00, 31 51",
+      "codes": [
+        {
+          "code": "40 00",
+          "descriptionMK": "Пуштање во слободен промет",
+          "descriptionEN": "Release for free circulation",
+          "tooltip": "Нормален увоз со плаќање на сите давачки"
+        },
+        {
+          "code": "42 00",
+          "descriptionMK": "Увоз за облагородување - Одложено плаќање",
+          "descriptionEN": "Inward processing - Suspension system",
+          "tooltip": "LON - Без плаќање на давачки при увоз, реекспорт задолжителен"
+        },
+        {
+          "code": "51 00",
+          "descriptionMK": "Увоз за облагородување - Враќање на давачки",
+          "descriptionEN": "Inward processing - Drawback system",
+          "tooltip": "LON - Плаќање на давачки, враќање при реекспорт"
+        },
+        {
+          "code": "31 51",
+          "descriptionMK": "Реекспорт на стока увезена за облагородување",
+          "descriptionEN": "Re-export of goods imported for inward processing",
+          "tooltip": "LON - Реекспорт на компензациски производи"
+        },
+        {
+          "code": "10 00",
+          "descriptionMK": "Извоз со трајно отстранување",
+          "descriptionEN": "Export with permanent removal",
+          "tooltip": "Нормален извоз"
+        },
+        {
+          "code": "21 00",
+          "descriptionMK": "Привремен извоз",
+          "descriptionEN": "Temporary export",
+          "tooltip": "Извоз со намера за враќање"
+        },
+        {
+          "code": "53 00",
+          "descriptionMK": "Царински складови",
+          "descriptionEN": "Customs warehousing",
+          "tooltip": "Складирање со одложено плаќање на давачки"
+        },
+        {
+          "code": "61 00",
+          "descriptionMK": "Привремен увоз",
+          "descriptionEN": "Temporary admission",
+          "tooltip": "Делумно или целосно ослободување од увозни давачки"
+        },
+        {
+          "code": "63 00",
+          "descriptionMK": "Реекспорт",
+          "descriptionEN": "Re-export",
+          "tooltip": "Извоз на стока претходно увезена привремено"
+        },
+        {
+          "code": "71 00",
+          "descriptionMK": "Транзит - Комунитарна стока",
+          "descriptionEN": "Transit - Community goods",
+          "tooltip": "T2 режим"
+        },
+        {
+          "code": "91 00",
+          "descriptionMK": "Транзит - Странска стока",
+          "descriptionEN": "Transit - Non-community goods",
+          "tooltip": "T1 режим"
+        }
+      ]
+    },
+    "Box44_SpecialMentions": {
+      "boxNumber": "44",
+      "fieldName": "SpecialMentions",
+      "descriptionMK": "Посебни забелешки/Претставени документи",
+      "descriptionEN": "Special Mentions/Documents Presented",
+      "note": "Шифрирани документи во формат: [Шифра]|[Идентификација]|[Издавач]|[Датум]",
+      "codes": [
+        {
+          "code": "N730",
+          "descriptionMK": "Дозвола за увоз за облагородување",
+          "descriptionEN": "Inward processing authorization",
+          "tooltip": "Задолжително за процедури 42 00, 51 00"
+        },
+        {
+          "code": "N380",
+          "descriptionMK": "Профакутра",
+          "descriptionEN": "Proforma invoice",
+          "tooltip": "Привремена фактура"
+        },
+        {
+          "code": "N703",
+          "descriptionMK": "Договор",
+          "descriptionEN": "Contract",
+          "tooltip": "Тргувачки договор"
+        },
+        {
+          "code": "N785",
+          "descriptionMK": "Извозна дозвола",
+          "descriptionEN": "Export licence",
+          "tooltip": "За ограничени стоки"
+        },
+        {
+          "code": "N935",
+          "descriptionMK": "Увозна дозвола",
+          "descriptionEN": "Import licence",
+          "tooltip": "За ограничени стоки"
+        },
+        {
+          "code": "N954",
+          "descriptionMK": "Сертификат за здравствена инспекција",
+          "descriptionEN": "Sanitary certificate",
+          "tooltip": "За храна, растенија, животни"
+        },
+        {
+          "code": "C505",
+          "descriptionMK": "Декларација за вредност",
+          "descriptionEN": "Declaration of value",
+          "tooltip": "DV1 образец"
+        },
+        {
+          "code": "C644",
+          "descriptionMK": "Сертификат за потекло",
+          "descriptionEN": "Certificate of origin",
+          "tooltip": "EUR.1, Form A, CO"
+        },
+        {
+          "code": "Y024",
+          "descriptionMK": "Декларација за потекло врз фактура",
+          "descriptionEN": "Origin declaration on invoice",
+          "tooltip": "За овластени извозници"
+        }
+      ]
+    },
+    "Box47_CalculationMethod": {
+      "boxNumber": "47",
+      "fieldName": "CalculationMethod",
+      "descriptionMK": "Метод на пресметка (Царинска вредност)",
+      "descriptionEN": "Calculation Method (Customs Value)",
+      "codes": [
+        {
+          "code": "1",
+          "descriptionMK": "Метод 1 - Трансакциска вредност",
+          "descriptionEN": "Method 1 - Transaction value",
+          "tooltip": "Цена навистина платена или за плаќање"
+        },
+        {
+          "code": "2",
+          "descriptionMK": "Метод 2 - Трансакциска вредност на идентични стоки",
+          "descriptionEN": "Method 2 - Transaction value of identical goods",
+          "tooltip": "Алтернативен метод"
+        },
+        {
+          "code": "3",
+          "descriptionMK": "Метод 3 - Трансакциска вредност на слични стоки",
+          "descriptionEN": "Method 3 - Transaction value of similar goods",
+          "tooltip": "Алтернативен метод"
+        },
+        {
+          "code": "4",
+          "descriptionMK": "Метод 4 - Дедуктивен метод",
+          "descriptionEN": "Method 4 - Deductive method",
+          "tooltip": "Врз основа на продажна цена"
+        },
+        {
+          "code": "5",
+          "descriptionMK": "Метод 5 - Компутативен метод",
+          "descriptionEN": "Method 5 - Computed method",
+          "tooltip": "Врз основа на производни трошоци"
+        },
+        {
+          "code": "6",
+          "descriptionMK": "Метод 6 - Резервен метод",
+          "descriptionEN": "Method 6 - Fall-back method",
+          "tooltip": "Флексибилна примена на други методи"
+        }
+      ]
+    },
+    "Box33_TariffCode": {
+      "boxNumber": "33",
+      "fieldName": "TariffCode",
+      "descriptionMK": "Шифра на стока (TARIC 10-цифрен)",
+      "descriptionEN": "Commodity Code (TARIC 10-digit)",
+      "note": "10-цифрен TARIC код (8-цифрен HS + 2-цифрен ЕУ суфикс). Види taric_data.json со 10,306 записи",
+      "sampleCodes": [
+        {"code": "0101210000", "descriptionMK": "Коњи, магариња, маски - чисти раси за оплодување", "descriptionEN": "Horses, asses, mules - pure-bred breeding animals"},
+        {"code": "0201100000", "descriptionMK": "Месо од говеда - свежо или ладено - трупови и полутрупови", "descriptionEN": "Meat of bovine animals - fresh or chilled - carcases and half-carcases"},
+        {"code": "8471300000", "descriptionMK": "Машини за автоматска обработка на податоци - преносни (до 10 кг)", "descriptionEN": "Automatic data processing machines - portable (up to 10 kg)"}
+      ]
+    },
+    "Box34_CountryOfOrigin": {
+      "boxNumber": "34",
+      "fieldName": "CountryOfOrigin",
+      "descriptionMK": "Шифра на земја на потекло",
+      "descriptionEN": "Country of Origin Code",
+      "note": "Користи ISO 3166-1 alpha-2 кодови (иста листа како Box 15а)",
+      "reference": "Box15a_CountryCode"
+    }
+  }
+}

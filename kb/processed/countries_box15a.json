@@ -1,0 +1,149 @@
+{
+  "listType": "Box15a_CountryCode",
+  "boxNumber": "15а",
+  "descriptionMK": "Шифра на земја (ISO 3166-1 alpha-2)",
+  "descriptionEN": "Country Code (ISO 3166-1 alpha-2)",
+  "totalCodes": 20,
+  "codes": [
+    {
+      "code": "MK",
+      "descriptionMK": "Северна Македонија",
+      "descriptionEN": "North Macedonia",
+      "boxNumber": "15а",
+      "sortOrder": 1
+    },
+    {
+      "code": "AL",
+      "descriptionMK": "Албанија",
+      "descriptionEN": "Albania",
+      "boxNumber": "15а",
+      "sortOrder": 2
+    },
+    {
+      "code": "BG",
+      "descriptionMK": "Бугарија",
+      "descriptionEN": "Bulgaria",
+      "boxNumber": "15а",
+      "sortOrder": 3
+    },
+    {
+      "code": "GR",
+      "descriptionMK": "Грција",
+      "descriptionEN": "Greece",
+      "boxNumber": "15а",
+      "sortOrder": 4
+    },
+    {
+      "code": "RS",
+      "descriptionMK": "Србија",
+      "descriptionEN": "Serbia",
+      "boxNumber": "15а",
+      "sortOrder": 5
+    },
+    {
+      "code": "XK",
+      "descriptionMK": "Косово",
+      "descriptionEN": "Kosovo",
+      "boxNumber": "15а",
+      "sortOrder": 6
+    },
+    {
+      "code": "ME",
+      "descriptionMK": "Црна Гора",
+      "descriptionEN": "Montenegro",
+      "boxNumber": "15а",
+      "sortOrder": 7
+    },
+    {
+      "code": "HR",
+      "descriptionMK": "Хрватска",
+      "descriptionEN": "Croatia",
+      "boxNumber": "15а",
+      "sortOrder": 8
+    },
+    {
+      "code": "SI",
+      "descriptionMK": "Словенија",
+      "descriptionEN": "Slovenia",
+      "boxNumber": "15а",
+      "sortOrder": 9
+    },
+    {
+      "code": "BA",
+      "descriptionMK": "Босна и Херцеговина",
+      "descriptionEN": "Bosnia and Herzegovina",
+      "boxNumber": "15а",
+      "sortOrder": 10
+    },
+    {
+      "code": "TR",
+      "descriptionMK": "Турција",
+      "descriptionEN": "Turkey",
+      "boxNumber": "15а",
+      "sortOrder": 11
+    },
+    {
+      "code": "DE",
+      "descriptionMK": "Германија",
+      "descriptionEN": "Germany",
+      "boxNumber": "15а",
+      "sortOrder": 12
+    },
+    {
+      "code": "IT",
+      "descriptionMK": "Италија",
+      "descriptionEN": "Italy",
+      "boxNumber": "15а",
+      "sortOrder": 13
+    },
+    {
+      "code": "FR",
+      "descriptionMK": "Франција",
+      "descriptionEN": "France",
+      "boxNumber": "15а",
+      "sortOrder": 14
+    },
+    {
+      "code": "GB",
+      "descriptionMK": "Голема Британија",
+      "descriptionEN": "United Kingdom",
+      "boxNumber": "15а",
+      "sortOrder": 15
+    },
+    {
+      "code": "US",
+      "descriptionMK": "Соединети Американски Држави",
+      "descriptionEN": "United States",
+      "boxNumber": "15а",
+      "sortOrder": 16
+    },
+    {
+      "code": "CN",
+      "descriptionMK": "Кина",
+      "descriptionEN": "China",
+      "boxNumber": "15а",
+      "sortOrder": 17
+    },
+    {
+      "code": "RU",
+      "descriptionMK": "Русија",
+      "descriptionEN": "Russia",
+      "boxNumber": "15а",
+      "sortOrder": 18
+    },
+    {
+      "code": "AT",
+      "descriptionMK": "Австрија",
+      "descriptionEN": "Austria",
+      "boxNumber": "15а",
+      "sortOrder": 19
+    },
+    {
+      "code": "CH",
+      "descriptionMK": "Швајцарија",
+      "descriptionEN": "Switzerland",
+      "boxNumber": "15а",
+      "sortOrder": 20
+    }
+  ]
+}
