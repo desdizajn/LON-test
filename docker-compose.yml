@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: lon-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - lon-network
+
+  api:
+    build:
+      context: .
+      dockerfile: src/LON.API/Dockerfile
+    container_name: lon-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LONDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+    ports:
+      - "5000:5000"
+    depends_on:
+      - sqlserver
+    networks:
+      - lon-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: src/LON.Worker/Dockerfile
+    container_name: lon-worker
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LONDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+      - api
+    networks:
+      - lon-network
+
+  frontend:
+    build:
+      context: ./frontend/web
+      dockerfile: Dockerfile
+    container_name: lon-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - lon-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  lon-network:
+    driver: bridge
