@@ -288,12 +288,14 @@ namespace LON.Infrastructure.Migrations
                         name: "FK_Shipments_Partners_CarrierId",
                         column: x => x.CarrierId,
                         principalTable: "Partners",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Shipments_Partners_CustomerId",
                         column: x => x.CustomerId,
                         principalTable: "Partners",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -333,12 +335,12 @@ namespace LON.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CountNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CountNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ScheduledDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     WarehouseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -386,7 +388,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.WarehouseId,
                         principalTable: "Warehouses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -394,7 +396,7 @@ namespace LON.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    WaveNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WaveNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     WarehouseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -412,7 +414,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.WarehouseId,
                         principalTable: "Warehouses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -439,13 +441,14 @@ namespace LON.Infrastructure.Migrations
                         name: "FK_Receipts_Partners_PartnerId",
                         column: x => x.PartnerId,
                         principalTable: "Partners",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Receipts_Warehouses_WarehouseId",
                         column: x => x.WarehouseId,
                         principalTable: "Warehouses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -453,10 +456,10 @@ namespace LON.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     WorkCenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SerialNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -664,13 +667,13 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_CustomsDeclarationLines_UnitsOfMeasure_UoMId",
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -715,7 +718,7 @@ namespace LON.Infrastructure.Migrations
                     ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FromUoMId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ToUoMId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ConversionFactor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ConversionFactor = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -736,13 +739,13 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.FromUoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ItemUoMConversions_UnitsOfMeasure_ToUoMId",
                         column: x => x.ToUoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -779,9 +782,9 @@ namespace LON.Infrastructure.Migrations
                     ShipmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LineNumber = table.Column<int>(type: "int", nullable: false),
                     ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BatchNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MRN = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    BatchNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    MRN = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     UoMId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CustomsDeclarationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -798,7 +801,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ShipmentLines_Shipments_ShipmentId",
                         column: x => x.ShipmentId,
@@ -810,7 +813,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -854,10 +857,10 @@ namespace LON.Infrastructure.Migrations
                     CycleCountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BatchNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MRN = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SystemQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CountedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    BatchNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    MRN = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    SystemQuantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
+                    CountedQuantity = table.Column<decimal>(type: "decimal(18,4)", nullable: true),
                     UoMId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -879,7 +882,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_CycleCountLines_Locations_LocationId",
                         column: x => x.LocationId,
@@ -891,7 +894,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -921,19 +924,19 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InventoryBalances_Locations_LocationId",
                         column: x => x.LocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InventoryBalances_UnitsOfMeasure_UoMId",
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -992,11 +995,11 @@ namespace LON.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TransferNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TransferNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     TransferDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FromLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ToLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1011,13 +1014,13 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.FromLocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Transfers_Locations_ToLocationId",
                         column: x => x.ToLocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1056,13 +1059,13 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_PickTasks_Locations_LocationId",
                         column: x => x.LocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_PickTasks_PickingWaves_WaveId",
                         column: x => x.WaveId,
@@ -1073,7 +1076,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1105,7 +1108,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ReceiptLines_Receipts_ReceiptId",
                         column: x => x.ReceiptId,
@@ -1117,7 +1120,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.UoMId,
                         principalTable: "UnitsOfMeasure",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1256,9 +1259,9 @@ namespace LON.Infrastructure.Migrations
                     TransferId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LineNumber = table.Column<int>(type: "int", nullable: false),
                     ItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BatchNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MRN = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    BatchNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    MRN = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     UoMId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -1274,7 +1277,7 @@ namespace LON.Infrastructure.Migrations
                         column: x => x.ItemId,
                         principalTable: "Items",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_TransferLines_Transfers_TransferId",
                         column: x => x.TransferId,
@@ -1590,6 +1593,17 @@ namespace LON.Infrastructure.Migrations
                 column: "UoMId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CycleCounts_CountNumber",
+                table: "CycleCounts",
+                column: "CountNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CycleCounts_ScheduledDate",
+                table: "CycleCounts",
+                column: "ScheduledDate");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CycleCounts_WarehouseId",
                 table: "CycleCounts",
                 column: "WarehouseId");
@@ -1698,9 +1712,10 @@ namespace LON.Infrastructure.Migrations
                 column: "FromUoMId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ItemUoMConversions_ItemId",
+                name: "IX_ItemUoMConversions_ItemId_FromUoMId_ToUoMId",
                 table: "ItemUoMConversions",
-                column: "ItemId");
+                columns: new[] { "ItemId", "FromUoMId", "ToUoMId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ItemUoMConversions_ToUoMId",
@@ -1711,6 +1726,12 @@ namespace LON.Infrastructure.Migrations
                 name: "IX_Locations_WarehouseId_Code",
                 table: "Locations",
                 columns: new[] { "WarehouseId", "Code" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Machines_Code",
+                table: "Machines",
+                column: "Code",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1772,9 +1793,20 @@ namespace LON.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_PickingWaves_CreatedDate",
+                table: "PickingWaves",
+                column: "CreatedDate");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PickingWaves_WarehouseId",
                 table: "PickingWaves",
                 column: "WarehouseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PickingWaves_WaveNumber",
+                table: "PickingWaves",
+                column: "WaveNumber",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PickTasks_AssignedToEmployeeId",
@@ -1790,11 +1822,6 @@ namespace LON.Infrastructure.Migrations
                 name: "IX_PickTasks_LocationId",
                 table: "PickTasks",
                 column: "LocationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PickTasks_Status",
-                table: "PickTasks",
-                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PickTasks_TaskNumber",
@@ -1972,9 +1999,10 @@ namespace LON.Infrastructure.Migrations
                 column: "ItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ShipmentLines_ShipmentId",
+                name: "IX_ShipmentLines_ShipmentId_LineNumber",
                 table: "ShipmentLines",
-                column: "ShipmentId");
+                columns: new[] { "ShipmentId", "LineNumber" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ShipmentLines_UoMId",
@@ -2033,9 +2061,10 @@ namespace LON.Infrastructure.Migrations
                 column: "ItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TransferLines_TransferId",
+                name: "IX_TransferLines_TransferId_LineNumber",
                 table: "TransferLines",
-                column: "TransferId");
+                columns: new[] { "TransferId", "LineNumber" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_TransferLines_UoMId",
@@ -2051,6 +2080,17 @@ namespace LON.Infrastructure.Migrations
                 name: "IX_Transfers_ToLocationId",
                 table: "Transfers",
                 column: "ToLocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transfers_TransferDate",
+                table: "Transfers",
+                column: "TransferDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transfers_TransferNumber",
+                table: "Transfers",
+                column: "TransferNumber",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UnitsOfMeasure_Code",

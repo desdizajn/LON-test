@@ -58,6 +58,10 @@ public class CustomsDeclarationLineConfiguration : IEntityTypeConfiguration<Cust
         builder.Property(e => e.VATAmount).HasColumnType("decimal(18,4)");
         builder.Property(e => e.OtherCharges).HasColumnType("decimal(18,4)");
         
+        // Avoid cascade delete cycles on SQL Server
+        builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
+        
         builder.HasIndex(e => new { e.CustomsDeclarationId, e.LineNumber }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }

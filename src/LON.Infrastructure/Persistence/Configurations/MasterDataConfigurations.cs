@@ -67,6 +67,9 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
         builder.Property(e => e.MaxCapacity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CurrentCapacity).HasColumnType("decimal(18,4)");
         
+        // Avoid cascade delete cycles on SQL Server
+        builder.HasOne(e => e.Warehouse).WithMany(w => w.Locations).HasForeignKey(e => e.WarehouseId).OnDelete(DeleteBehavior.Restrict);
+        
         builder.HasIndex(e => new { e.WarehouseId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -123,6 +126,39 @@ public class WorkCenterConfiguration : IEntityTypeConfiguration<WorkCenter>
         builder.Property(e => e.Capacity).HasColumnType("decimal(18,4)");
         
         builder.HasIndex(e => e.Code).IsUnique();
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+public class MachineConfiguration : IEntityTypeConfiguration<Machine>
+{
+    public void Configure(EntityTypeBuilder<Machine> builder)
+    {
+        builder.ToTable("Machines");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Code).IsRequired().HasMaxLength(50);
+        builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
+        builder.Property(e => e.SerialNumber).HasMaxLength(100);
+        
+        builder.HasIndex(e => e.Code).IsUnique();
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+public class ItemUoMConversionConfiguration : IEntityTypeConfiguration<ItemUoMConversion>
+{
+    public void Configure(EntityTypeBuilder<ItemUoMConversion> builder)
+    {
+        builder.ToTable("ItemUoMConversions");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.ConversionFactor).HasColumnType("decimal(18,6)");
+        
+        // Avoid cascade delete cycles on SQL Server
+        builder.HasOne(e => e.Item).WithMany(i => i.UoMConversions).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(e => e.FromUoM).WithMany().HasForeignKey(e => e.FromUoMId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.ToUoM).WithMany().HasForeignKey(e => e.ToUoMId).OnDelete(DeleteBehavior.Restrict);
+        
+        builder.HasIndex(e => new { e.ItemId, e.FromUoMId, e.ToUoMId }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
