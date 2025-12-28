@@ -37,6 +37,8 @@ public class BatchGenealogyConfiguration : IEntityTypeConfiguration<BatchGenealo
         builder.Property(e => e.ParentMRNs).HasMaxLength(2000);
         builder.Property(e => e.Notes).HasMaxLength(500);
         
+        builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        
         builder.HasIndex(e => e.BatchNumber);
         builder.HasIndex(e => e.ItemId);
         builder.HasQueryFilter(e => !e.IsDeleted);

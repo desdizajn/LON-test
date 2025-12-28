@@ -1160,6 +1160,9 @@ namespace LON.Infrastructure.Migrations
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ItemId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
@@ -1176,6 +1179,8 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ItemId1");
 
                     b.HasIndex("ItemId", "Version")
                         .IsUnique();
@@ -1412,7 +1417,7 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal>("IssuedQuantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uniqueidentifier");
@@ -1430,10 +1435,10 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("RequiredQuantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("ReservedQuantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("UoMId")
                         .HasColumnType("uniqueidentifier");
@@ -1442,11 +1447,12 @@ namespace LON.Infrastructure.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.HasIndex("ProductionOrderId");
-
                     b.HasIndex("UoMId");
 
-                    b.ToTable("ProductionOrderMaterials");
+                    b.HasIndex("ProductionOrderId", "LineNumber")
+                        .IsUnique();
+
+                    b.ToTable("ProductionOrderMaterials", (string)null);
                 });
 
             modelBuilder.Entity("LON.Domain.Entities.Production.ProductionOrderOperation", b =>
@@ -1456,7 +1462,7 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ActualTimeMinutes")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1467,7 +1473,8 @@ namespace LON.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
@@ -1489,7 +1496,8 @@ namespace LON.Infrastructure.Migrations
 
                     b.Property<string>("OperationCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("ProductionOrderId")
                         .HasColumnType("uniqueidentifier");
@@ -1498,7 +1506,7 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("StandardTimeMinutes")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
@@ -1510,11 +1518,12 @@ namespace LON.Infrastructure.Migrations
 
                     b.HasIndex("MachineId");
 
-                    b.HasIndex("ProductionOrderId");
-
                     b.HasIndex("WorkCenterId");
 
-                    b.ToTable("ProductionOrderOperations");
+                    b.HasIndex("ProductionOrderId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("ProductionOrderOperations", (string)null);
                 });
 
             modelBuilder.Entity("LON.Domain.Entities.Production.ProductionReceipt", b =>
@@ -1604,7 +1613,8 @@ namespace LON.Infrastructure.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1633,9 +1643,10 @@ namespace LON.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ItemId");
+                    b.HasIndex("ItemId", "Version")
+                        .IsUnique();
 
-                    b.ToTable("Routings");
+                    b.ToTable("Routings", (string)null);
                 });
 
             modelBuilder.Entity("LON.Domain.Entities.Production.RoutingOperation", b =>
@@ -1653,7 +1664,8 @@ namespace LON.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1666,7 +1678,8 @@ namespace LON.Infrastructure.Migrations
 
                     b.Property<string>("OperationCode")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("RoutingId")
                         .HasColumnType("uniqueidentifier");
@@ -1675,21 +1688,22 @@ namespace LON.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("SetupTimeMinutes")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("StandardTimeMinutes")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid>("WorkCenterId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoutingId");
-
                     b.HasIndex("WorkCenterId");
 
-                    b.ToTable("RoutingOperations");
+                    b.HasIndex("RoutingId", "SequenceNumber")
+                        .IsUnique();
+
+                    b.ToTable("RoutingOperations", (string)null);
                 });
 
             modelBuilder.Entity("LON.Domain.Entities.Traceability.BatchGenealogy", b =>
@@ -2787,10 +2801,14 @@ namespace LON.Infrastructure.Migrations
             modelBuilder.Entity("LON.Domain.Entities.Production.BOM", b =>
                 {
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
-                        .WithMany("BOMs")
+                        .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("LON.Domain.Entities.MasterData.Item", null)
+                        .WithMany("BOMs")
+                        .HasForeignKey("ItemId1");
 
                     b.Navigation("Item");
                 });
@@ -2806,13 +2824,13 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BOM");
@@ -2831,7 +2849,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.Production.ProductionOrder", "ProductionOrder")
@@ -2843,7 +2861,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("IssuedByEmployee");
@@ -2859,22 +2877,24 @@ namespace LON.Infrastructure.Migrations
                 {
                     b.HasOne("LON.Domain.Entities.Production.BOM", "BOM")
                         .WithMany()
-                        .HasForeignKey("BOMId");
+                        .HasForeignKey("BOMId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.Production.Routing", "Routing")
                         .WithMany()
-                        .HasForeignKey("RoutingId");
+                        .HasForeignKey("RoutingId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("BOM");
@@ -2891,7 +2911,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.Production.ProductionOrder", "ProductionOrder")
@@ -2903,7 +2923,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Item");
@@ -2917,7 +2937,8 @@ namespace LON.Infrastructure.Migrations
                 {
                     b.HasOne("LON.Domain.Entities.MasterData.Machine", "Machine")
                         .WithMany()
-                        .HasForeignKey("MachineId");
+                        .HasForeignKey("MachineId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LON.Domain.Entities.Production.ProductionOrder", "ProductionOrder")
                         .WithMany("Operations")
@@ -2928,7 +2949,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.WorkCenter", "WorkCenter")
                         .WithMany()
                         .HasForeignKey("WorkCenterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Machine");
@@ -2943,13 +2964,13 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.MasterData.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.Production.ProductionOrder", "ProductionOrder")
@@ -2965,7 +2986,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Item");
@@ -2984,7 +3005,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Item");
@@ -3001,7 +3022,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.WorkCenter", "WorkCenter")
                         .WithMany()
                         .HasForeignKey("WorkCenterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Routing");
@@ -3014,7 +3035,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Item");
@@ -3059,7 +3080,7 @@ namespace LON.Infrastructure.Migrations
                     b.HasOne("LON.Domain.Entities.MasterData.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
@@ -3108,22 +3129,24 @@ namespace LON.Infrastructure.Migrations
                 {
                     b.HasOne("LON.Domain.Entities.MasterData.Location", "FromLocation")
                         .WithMany()
-                        .HasForeignKey("FromLocationId");
+                        .HasForeignKey("FromLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LON.Domain.Entities.MasterData.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("LON.Domain.Entities.MasterData.Location", "ToLocation")
                         .WithMany()
-                        .HasForeignKey("ToLocationId");
+                        .HasForeignKey("ToLocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LON.Domain.Entities.MasterData.UnitOfMeasure", "UoM")
                         .WithMany()
                         .HasForeignKey("UoMId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("FromLocation");

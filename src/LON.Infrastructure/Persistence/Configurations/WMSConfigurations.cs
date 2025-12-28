@@ -37,6 +37,11 @@ public class InventoryMovementConfiguration : IEntityTypeConfiguration<Inventory
         builder.Property(e => e.ReferenceNumber).HasMaxLength(50);
         builder.Property(e => e.Notes).HasMaxLength(500);
         
+        builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.FromLocation).WithMany().HasForeignKey(e => e.FromLocationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.ToLocation).WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
+        
         builder.HasIndex(e => e.MovementNumber);
         builder.HasIndex(e => e.MovementDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
@@ -226,10 +231,10 @@ public class CycleCountLineConfiguration : IEntityTypeConfiguration<CycleCountLi
         builder.Property(e => e.SystemQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CountedQuantity).HasColumnType("decimal(18,4)");
         
-        // Cascade delete from parent entities (CycleCount, Location) is appropriate
+        // Cascade from CycleCount parent only
         builder.HasOne(e => e.CycleCount).WithMany(c => c.Lines).HasForeignKey(e => e.CycleCountId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Cascade);
-        // But references to master data should be Restrict
+        // Restrict for all master data references to avoid cycles
+        builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         

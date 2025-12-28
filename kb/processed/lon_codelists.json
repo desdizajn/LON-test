@@ -1,0 +1,298 @@
+{
+  "ProcedureCode": [
+    {
+      "code": "40 00",
+      "descriptionMK": "Пуштање во слободен промет",
+      "descriptionEN": "Release for free circulation",
+      "validForLON": false,
+      "sortOrder": 1
+    },
+    {
+      "code": "42 00",
+      "descriptionMK": "Увоз за облагородување - систем на одложено плаќање",
+      "descriptionEN": "Inward processing - suspension system",
+      "validForLON": true,
+      "requiresAuthorization": true,
+      "requiresGuarantee": true,
+      "sortOrder": 2
+    },
+    {
+      "code": "51 00",
+      "descriptionMK": "Увоз за облагородување - систем на враќање",
+      "descriptionEN": "Inward processing - drawback system",
+      "validForLON": true,
+      "requiresAuthorization": true,
+      "requiresGuarantee": false,
+      "sortOrder": 3
+    },
+    {
+      "code": "21 00",
+      "descriptionMK": "Привремен увоз",
+      "descriptionEN": "Temporary admission",
+      "validForLON": false,
+      "sortOrder": 4
+    },
+    {
+      "code": "10 00",
+      "descriptionMK": "Извоз",
+      "descriptionEN": "Export",
+      "validForLON": false,
+      "sortOrder": 5
+    },
+    {
+      "code": "31 51",
+      "descriptionMK": "Повторен извоз по облагородување (од 42 00)",
+      "descriptionEN": "Re-exportation following inward processing (from 42 00)",
+      "validForLON": true,
+      "requiresPreviousMRN": true,
+      "sortOrder": 6
+    }
+  ],
+  "DocumentType": [
+    {
+      "code": "N380",
+      "descriptionMK": "Проформа фактура",
+      "descriptionEN": "Pro forma invoice",
+      "validForLON": true,
+      "mandatoryForProcedures": [
+        "42 00",
+        "51 00"
+      ],
+      "sortOrder": 1
+    },
+    {
+      "code": "N730",
+      "descriptionMK": "Одобрение за увоз за облагородување",
+      "descriptionEN": "Authorisation for inward processing",
+      "validForLON": true,
+      "mandatoryForProcedures": [
+        "42 00",
+        "51 00"
+      ],
+      "sortOrder": 2
+    },
+    {
+      "code": "N703",
+      "descriptionMK": "Трговски договор",
+      "descriptionEN": "Commercial contract",
+      "validForLON": true,
+      "mandatoryForProcedures": [
+        "42 00",
+        "51 00"
+      ],
+      "sortOrder": 3
+    },
+    {
+      "code": "N785",
+      "descriptionMK": "Извозна дозвола",
+      "descriptionEN": "Export licence",
+      "validForLON": true,
+      "mandatoryForProcedures": [
+        "31 51"
+      ],
+      "sortOrder": 4
+    },
+    {
+      "code": "N954",
+      "descriptionMK": "Евиденција за стока",
+      "descriptionEN": "Inventory record",
+      "validForLON": true,
+      "sortOrder": 5
+    },
+    {
+      "code": "N235",
+      "descriptionMK": "Пакинг листа",
+      "descriptionEN": "Packing list",
+      "validForLON": true,
+      "sortOrder": 6
+    },
+    {
+      "code": "Y921",
+      "descriptionMK": "Превозен документ (CMR, коносман, ...)",
+      "descriptionEN": "Transport document (CMR, B/L, ...)",
+      "validForLON": true,
+      "sortOrder": 7
+    }
+  ],
+  "TransportMode": [
+    {
+      "code": "1",
+      "descriptionMK": "Поморски транспорт",
+      "descriptionEN": "Maritime transport",
+      "sortOrder": 1
+    },
+    {
+      "code": "2",
+      "descriptionMK": "Железнички транспорт",
+      "descriptionEN": "Rail transport",
+      "sortOrder": 2
+    },
+    {
+      "code": "3",
+      "descriptionMK": "Друмски транспорт",
+      "descriptionEN": "Road transport",
+      "sortOrder": 3
+    },
+    {
+      "code": "4",
+      "descriptionMK": "Воздушен транспорт",
+      "descriptionEN": "Air transport",
+      "sortOrder": 4
+    },
+    {
+      "code": "5",
+      "descriptionMK": "Пошта",
+      "descriptionEN": "Postal consignment",
+      "sortOrder": 5
+    },
+    {
+      "code": "7",
+      "descriptionMK": "Фиксирани транспортни средства",
+      "descriptionEN": "Fixed transport installations",
+      "sortOrder": 6
+    },
+    {
+      "code": "8",
+      "descriptionMK": "Внатрешни водни патишта",
+      "descriptionEN": "Inland waterway transport",
+      "sortOrder": 7
+    },
+    {
+      "code": "9",
+      "descriptionMK": "Непознато",
+      "descriptionEN": "Not known",
+      "sortOrder": 8
+    }
+  ],
+  "PackageType": [
+    {
+      "code": "BX",
+      "descriptionMK": "Кутија",
+      "descriptionEN": "Box",
+      "sortOrder": 1
+    },
+    {
+      "code": "CT",
+      "descriptionMK": "Картон",
+      "descriptionEN": "Carton",
+      "sortOrder": 2
+    },
+    {
+      "code": "PK",
+      "descriptionMK": "Пакет",
+      "descriptionEN": "Package",
+      "sortOrder": 3
+    },
+    {
+      "code": "PA",
+      "descriptionMK": "Палета",
+      "descriptionEN": "Pallet",
+      "sortOrder": 4
+    },
+    {
+      "code": "DR",
+      "descriptionMK": "Буре",
+      "descriptionEN": "Drum",
+      "sortOrder": 5
+    },
+    {
+      "code": "BG",
+      "descriptionMK": "Вреќа",
+      "descriptionEN": "Bag",
+      "sortOrder": 6
+    },
+    {
+      "code": "CN",
+      "descriptionMK": "Контејнер",
+      "descriptionEN": "Container",
+      "sortOrder": 7
+    },
+    {
+      "code": "NE",
+      "descriptionMK": "Без пакување",
+      "descriptionEN": "Unpacked",
+      "sortOrder": 8
+    }
+  ],
+  "InwardProcessingOperation": [
+    {
+      "code": "OBR",
+      "descriptionMK": "Обработка (механичка, хемиска, монтажа, демонтажа)",
+      "descriptionEN": "Processing (mechanical, chemical, assembly, disassembly)",
+      "sortOrder": 1
+    },
+    {
+      "code": "PRE",
+      "descriptionMK": "Преработка на стока",
+      "descriptionEN": "Transformation of goods",
+      "sortOrder": 2
+    },
+    {
+      "code": "POP",
+      "descriptionMK": "Поправка на стока",
+      "descriptionEN": "Repair of goods",
+      "sortOrder": 3
+    },
+    {
+      "code": "POM",
+      "descriptionMK": "Употреба на помошни средства за производство",
+      "descriptionEN": "Use of auxiliary materials for production",
+      "sortOrder": 4
+    }
+  ],
+  "EconomicCondition": [
+    {
+      "code": "10",
+      "descriptionMK": "Условот е исполнет ако компензациските производи се наменети за извоз",
+      "descriptionEN": "Condition met if compensating products are intended for export",
+      "requiresMinistryNotification": true,
+      "sortOrder": 1
+    },
+    {
+      "code": "11",
+      "descriptionMK": "Условот е исполнет ако облагородувањето придонесува за зголемување на економската активност",
+      "descriptionEN": "Condition met if processing contributes to increased economic activity",
+      "requiresMinistryNotification": true,
+      "sortOrder": 2
+    },
+    {
+      "code": "12",
+      "descriptionMK": "Условот е исполнет ако нема негативно влијание врз суштинските интереси на домашни производители",
+      "descriptionEN": "Condition met if no adverse effect on essential interests of domestic producers",
+      "requiresMinistryNotification": true,
+      "sortOrder": 3
+    }
+  ],
+  "AuthorizationStatus": [
+    {
+      "code": "ACTIVE",
+      "descriptionMK": "Активно",
+      "descriptionEN": "Active",
+      "sortOrder": 1
+    },
+    {
+      "code": "SUSPENDED",
+      "descriptionMK": "Суспендирано",
+      "descriptionEN": "Suspended",
+      "sortOrder": 2
+    },
+    {
+      "code": "REVOKED",
+      "descriptionMK": "Повлечено",
+      "descriptionEN": "Revoked",
+      "sortOrder": 3
+    },
+    {
+      "code": "EXPIRED",
+      "descriptionMK": "Истечено",
+      "descriptionEN": "Expired",
+      "sortOrder": 4
+    },
+    {
+      "code": "PENDING",
+      "descriptionMK": "Во обработка",
+      "descriptionEN": "Pending",
+      "sortOrder": 5
+    }
+  ]
+}
