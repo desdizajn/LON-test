@@ -23,6 +23,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<WorkCenter> WorkCenters => Set<WorkCenter>();
     public DbSet<Machine> Machines => Set<Machine>();
+    
+    // Knowledge Base - Master Data
+    public DbSet<TariffCode> TariffCodes => Set<TariffCode>();
+    public DbSet<CustomsRegulation> CustomsRegulations => Set<CustomsRegulation>();
+    public DbSet<DeclarationRule> DeclarationRules => Set<DeclarationRule>();
+    public DbSet<CodeListItem> CodeListItems => Set<CodeListItem>();
 
     // WMS
     public DbSet<Receipt> Receipts => Set<Receipt>();
@@ -56,6 +62,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CustomsDeclarationLine> CustomsDeclarationLines => Set<CustomsDeclarationLine>();
     public DbSet<CustomsDocument> CustomsDocuments => Set<CustomsDocument>();
     public DbSet<MRNRegistry> MRNRegistries => Set<MRNRegistry>();
+    
+    // LON (Inward Processing)
+    public DbSet<LONAuthorization> LONAuthorizations => Set<LONAuthorization>();
+    public DbSet<LONAuthorizationItem> LONAuthorizationItems => Set<LONAuthorizationItem>();
 
     // Guarantee
     public DbSet<GuaranteeAccount> GuaranteeAccounts => Set<GuaranteeAccount>();

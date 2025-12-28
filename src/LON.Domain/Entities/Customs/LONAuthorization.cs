@@ -1,4 +1,6 @@
 using LON.Domain.Common;
+using LON.Domain.Entities.MasterData;
+using LON.Domain.Enums;
 
 namespace LON.Domain.Entities.Customs;
 

@@ -3,13 +3,15 @@
     "source": "ПРАВИЛНИК ЗА НАЧИНОТ НА ПОПОЛНУВАЊЕ НА ЦАРИНСКАТА ДЕКЛАРАЦИЈА - Поглавје II Шифри",
     "generated": "2025-12-28T20:31:14.965953",
     "total_codelists": 16,
-    "total_codes": 193,
+    "total_codes": 241,
     "version": "2.1",
     "notes": [
       "Сите шифрарници со Box број за dropdown UI елементи",
       "Tooltip текст за контекстуална помош",
       "Опис на македонски и англиски јазик",
-      "ISO стандарди за земји, валути, транспорт"
+      "ISO стандарди за земји, валути, транспорт",
+      "ISO 4217 валути (38 најчести)",
+      "ISO 3166-1 земји (50 најважни + може да се дополни)"
     ]
   },
   "codelists": {
@@ -276,7 +278,7 @@
     "Box22_Currency": {
       "listType": "Box22_Currency",
       "boxNumber": "22",
-      "totalCodes": 20,
+      "totalCodes": 38,
       "codes": [
         {
           "code": "EUR",
@@ -314,65 +316,65 @@
           "sortOrder": 5
         },
         {
-          "code": "BGN",
-          "descriptionMK": "Бугарски лев",
-          "descriptionEN": "Bulgarian Lev",
+          "code": "JPY",
+          "descriptionMK": "Јапонски јен",
+          "descriptionEN": "Japanese Yen",
           "boxNumber": "22",
           "sortOrder": 6
-        },
-        {
-          "code": "HRK",
-          "descriptionMK": "Хрватска куна",
-          "descriptionEN": "Croatian Kuna",
-          "boxNumber": "22",
-          "sortOrder": 7
-        },
-        {
-          "code": "TRY",
-          "descriptionMK": "Турска лира",
-          "descriptionEN": "Turkish Lira",
-          "boxNumber": "22",
-          "sortOrder": 8
-        },
-        {
-          "code": "RUB",
-          "descriptionMK": "Руска рубља",
-          "descriptionEN": "Russian Ruble",
-          "boxNumber": "22",
-          "sortOrder": 9
         },
         {
           "code": "CNY",
           "descriptionMK": "Кинески јуан",
           "descriptionEN": "Chinese Yuan",
           "boxNumber": "22",
-          "sortOrder": 10
-        },
-        {
-          "code": "JPY",
-          "descriptionMK": "Јапонски јен",
-          "descriptionEN": "Japanese Yen",
-          "boxNumber": "22",
-          "sortOrder": 11
+          "sortOrder": 7
         },
         {
           "code": "CAD",
           "descriptionMK": "Канадски долар",
           "descriptionEN": "Canadian Dollar",
           "boxNumber": "22",
-          "sortOrder": 12
+          "sortOrder": 8
         },
         {
           "code": "AUD",
           "descriptionMK": "Австралиски долар",
           "descriptionEN": "Australian Dollar",
           "boxNumber": "22",
+          "sortOrder": 9
+        },
+        {
+          "code": "BGN",
+          "descriptionMK": "Бугарски лев",
+          "descriptionEN": "Bulgarian Lev",
+          "boxNumber": "22",
+          "sortOrder": 10
+        },
+        {
+          "code": "HRK",
+          "descriptionMK": "Хрватска куна",
+          "descriptionEN": "Croatian Kuna",
+          "boxNumber": "22",
+          "sortOrder": 11
+        },
+        {
+          "code": "CZK",
+          "descriptionMK": "Чешка круна",
+          "descriptionEN": "Czech Koruna",
+          "boxNumber": "22",
+          "sortOrder": 12
+        },
+        {
+          "code": "DKK",
+          "descriptionMK": "Данска круна",
+          "descriptionEN": "Danish Krone",
+          "boxNumber": "22",
           "sortOrder": 13
         },
         {
-          "code": "SEK",
-          "descriptionMK": "Шведска круна",
-          "descriptionEN": "Swedish Krona",
+          "code": "HUF",
+          "descriptionMK": "Унгарска форинта",
+          "descriptionEN": "Hungarian Forint",
           "boxNumber": "22",
           "sortOrder": 14
         },
@@ -384,39 +386,165 @@
           "sortOrder": 15
         },
         {
-          "code": "DKK",
-          "descriptionMK": "Данска круна",
-          "descriptionEN": "Danish Krone",
-          "boxNumber": "22",
-          "sortOrder": 16
-        },
-        {
-          "code": "CZK",
-          "descriptionMK": "Чешка круна",
-          "descriptionEN": "Czech Koruna",
-          "boxNumber": "22",
-          "sortOrder": 17
-        },
-        {
-          "code": "HUF",
-          "descriptionMK": "Унгарска форинта",
-          "descriptionEN": "Hungarian Forint",
-          "boxNumber": "22",
-          "sortOrder": 18
-        },
-        {
           "code": "PLN",
           "descriptionMK": "Полска злота",
           "descriptionEN": "Polish Zloty",
           "boxNumber": "22",
-          "sortOrder": 19
+          "sortOrder": 16
         },
         {
           "code": "RON",
           "descriptionMK": "Нов романски реу",
           "descriptionEN": "Romanian Leu",
           "boxNumber": "22",
+          "sortOrder": 17
+        },
+        {
+          "code": "RUB",
+          "descriptionMK": "Руска рубља",
+          "descriptionEN": "Russian Ruble",
+          "boxNumber": "22",
+          "sortOrder": 18
+        },
+        {
+          "code": "SEK",
+          "descriptionMK": "Шведска круна",
+          "descriptionEN": "Swedish Krona",
+          "boxNumber": "22",
+          "sortOrder": 19
+        },
+        {
+          "code": "TRY",
+          "descriptionMK": "Турска лира",
+          "descriptionEN": "Turkish Lira",
+          "boxNumber": "22",
           "sortOrder": 20
+        },
+        {
+          "code": "INR",
+          "descriptionMK": "Индиска рупија",
+          "descriptionEN": "Indian Rupee",
+          "boxNumber": "22",
+          "sortOrder": 21
+        },
+        {
+          "code": "BRL",
+          "descriptionMK": "Бразилски реал",
+          "descriptionEN": "Brazilian Real",
+          "boxNumber": "22",
+          "sortOrder": 22
+        },
+        {
+          "code": "ZAR",
+          "descriptionMK": "Јужноафрички ранд",
+          "descriptionEN": "South African Rand",
+          "boxNumber": "22",
+          "sortOrder": 23
+        },
+        {
+          "code": "KRW",
+          "descriptionMK": "Јужнокорејски вон",
+          "descriptionEN": "South Korean Won",
+          "boxNumber": "22",
+          "sortOrder": 24
+        },
+        {
+          "code": "MXN",
+          "descriptionMK": "Мексиканско песо",
+          "descriptionEN": "Mexican Peso",
+          "boxNumber": "22",
+          "sortOrder": 25
+        },
+        {
+          "code": "SGD",
+          "descriptionMK": "Сингапурски долар",
+          "descriptionEN": "Singapore Dollar",
+          "boxNumber": "22",
+          "sortOrder": 26
+        },
+        {
+          "code": "HKD",
+          "descriptionMK": "Хонконшки долар",
+          "descriptionEN": "Hong Kong Dollar",
+          "boxNumber": "22",
+          "sortOrder": 27
+        },
+        {
+          "code": "NZD",
+          "descriptionMK": "Новозеландски долар",
+          "descriptionEN": "New Zealand Dollar",
+          "boxNumber": "22",
+          "sortOrder": 28
+        },
+        {
+          "code": "THB",
+          "descriptionMK": "Тајландски бахт",
+          "descriptionEN": "Thai Baht",
+          "boxNumber": "22",
+          "sortOrder": 29
+        },
+        {
+          "code": "MYR",
+          "descriptionMK": "Малезиски рингит",
+          "descriptionEN": "Malaysian Ringgit",
+          "boxNumber": "22",
+          "sortOrder": 30
+        },
+        {
+          "code": "IDR",
+          "descriptionMK": "Индонезиска рупија",
+          "descriptionEN": "Indonesian Rupiah",
+          "boxNumber": "22",
+          "sortOrder": 31
+        },
+        {
+          "code": "PHP",
+          "descriptionMK": "Филипинско песо",
+          "descriptionEN": "Philippine Peso",
+          "boxNumber": "22",
+          "sortOrder": 32
+        },
+        {
+          "code": "ILS",
+          "descriptionMK": "Израелски шекел",
+          "descriptionEN": "Israeli Shekel",
+          "boxNumber": "22",
+          "sortOrder": 33
+        },
+        {
+          "code": "AED",
+          "descriptionMK": "Дирхам на Обединети Арапски Емирати",
+          "descriptionEN": "UAE Dirham",
+          "boxNumber": "22",
+          "sortOrder": 34
+        },
+        {
+          "code": "SAR",
+          "descriptionMK": "Саудиски ријал",
+          "descriptionEN": "Saudi Riyal",
+          "boxNumber": "22",
+          "sortOrder": 35
+        },
+        {
+          "code": "RSD",
+          "descriptionMK": "Српски динар",
+          "descriptionEN": "Serbian Dinar",
+          "boxNumber": "22",
+          "sortOrder": 36
+        },
+        {
+          "code": "ALL",
+          "descriptionMK": "Албански лек",
+          "descriptionEN": "Albanian Lek",
+          "boxNumber": "22",
+          "sortOrder": 37
+        },
+        {
+          "code": "BAM",
+          "descriptionMK": "Конвертибилна марка",
+          "descriptionEN": "Bosnia-Herzegovina Convertible Mark",
+          "boxNumber": "22",
+          "sortOrder": 38
         }
       ]
     },
@@ -1320,9 +1448,7 @@
     "Box15a_CountryCode": {
       "listType": "Box15a_CountryCode",
       "boxNumber": "15а",
-      "descriptionMK": "Шифра на земја (ISO 3166-1 alpha-2)",
-      "descriptionEN": "Country Code (ISO 3166-1 alpha-2)",
-      "totalCodes": 20,
+      "totalCodes": 50,
       "codes": [
         {
           "code": "MK",
@@ -1463,6 +1589,216 @@
           "descriptionEN": "Switzerland",
           "boxNumber": "15а",
           "sortOrder": 20
+        },
+        {
+          "code": "NL",
+          "descriptionMK": "Холандија",
+          "descriptionEN": "Netherlands",
+          "boxNumber": "15а",
+          "sortOrder": 21
+        },
+        {
+          "code": "BE",
+          "descriptionMK": "Белгија",
+          "descriptionEN": "Belgium",
+          "boxNumber": "15а",
+          "sortOrder": 22
+        },
+        {
+          "code": "ES",
+          "descriptionMK": "Шпанија",
+          "descriptionEN": "Spain",
+          "boxNumber": "15а",
+          "sortOrder": 23
+        },
+        {
+          "code": "PT",
+          "descriptionMK": "Португалија",
+          "descriptionEN": "Portugal",
+          "boxNumber": "15а",
+          "sortOrder": 24
+        },
+        {
+          "code": "PL",
+          "descriptionMK": "Полска",
+          "descriptionEN": "Poland",
+          "boxNumber": "15а",
+          "sortOrder": 25
+        },
+        {
+          "code": "CZ",
+          "descriptionMK": "Чешка Република",
+          "descriptionEN": "Czech Republic",
+          "boxNumber": "15а",
+          "sortOrder": 26
+        },
+        {
+          "code": "SK",
+          "descriptionMK": "Словачка",
+          "descriptionEN": "Slovakia",
+          "boxNumber": "15а",
+          "sortOrder": 27
+        },
+        {
+          "code": "HU",
+          "descriptionMK": "Унгарија",
+          "descriptionEN": "Hungary",
+          "boxNumber": "15а",
+          "sortOrder": 28
+        },
+        {
+          "code": "RO",
+          "descriptionMK": "Романија",
+          "descriptionEN": "Romania",
+          "boxNumber": "15а",
+          "sortOrder": 29
+        },
+        {
+          "code": "UA",
+          "descriptionMK": "Украина",
+          "descriptionEN": "Ukraine",
+          "boxNumber": "15а",
+          "sortOrder": 30
+        },
+        {
+          "code": "SE",
+          "descriptionMK": "Шведска",
+          "descriptionEN": "Sweden",
+          "boxNumber": "15а",
+          "sortOrder": 31
+        },
+        {
+          "code": "NO",
+          "descriptionMK": "Норвешка",
+          "descriptionEN": "Norway",
+          "boxNumber": "15а",
+          "sortOrder": 32
+        },
+        {
+          "code": "DK",
+          "descriptionMK": "Данска",
+          "descriptionEN": "Denmark",
+          "boxNumber": "15а",
+          "sortOrder": 33
+        },
+        {
+          "code": "FI",
+          "descriptionMK": "Финска",
+          "descriptionEN": "Finland",
+          "boxNumber": "15а",
+          "sortOrder": 34
+        },
+        {
+          "code": "IE",
+          "descriptionMK": "Ирска",
+          "descriptionEN": "Ireland",
+          "boxNumber": "15а",
+          "sortOrder": 35
+        },
+        {
+          "code": "JP",
+          "descriptionMK": "Јапонија",
+          "descriptionEN": "Japan",
+          "boxNumber": "15а",
+          "sortOrder": 36
+        },
+        {
+          "code": "KR",
+          "descriptionMK": "Кореа",
+          "descriptionEN": "South Korea",
+          "boxNumber": "15а",
+          "sortOrder": 37
+        },
+        {
+          "code": "IN",
+          "descriptionMK": "Индија",
+          "descriptionEN": "India",
+          "boxNumber": "15а",
+          "sortOrder": 38
+        },
+        {
+          "code": "AU",
+          "descriptionMK": "Австралија",
+          "descriptionEN": "Australia",
+          "boxNumber": "15а",
+          "sortOrder": 39
+        },
+        {
+          "code": "CA",
+          "descriptionMK": "Канада",
+          "descriptionEN": "Canada",
+          "boxNumber": "15а",
+          "sortOrder": 40
+        },
+        {
+          "code": "BR",
+          "descriptionMK": "Бразил",
+          "descriptionEN": "Brazil",
+          "boxNumber": "15а",
+          "sortOrder": 41
+        },
+        {
+          "code": "MX",
+          "descriptionMK": "Мексико",
+          "descriptionEN": "Mexico",
+          "boxNumber": "15а",
+          "sortOrder": 42
+        },
+        {
+          "code": "AR",
+          "descriptionMK": "Аргентина",
+          "descriptionEN": "Argentina",
+          "boxNumber": "15а",
+          "sortOrder": 43
+        },
+        {
+          "code": "ZA",
+          "descriptionMK": "Јужна Африка",
+          "descriptionEN": "South Africa",
+          "boxNumber": "15а",
+          "sortOrder": 44
+        },
+        {
+          "code": "EG",
+          "descriptionMK": "Египет",
+          "descriptionEN": "Egypt",
+          "boxNumber": "15а",
+          "sortOrder": 45
+        },
+        {
+          "code": "SA",
+          "descriptionMK": "Саудиска Арабија",
+          "descriptionEN": "Saudi Arabia",
+          "boxNumber": "15а",
+          "sortOrder": 46
+        },
+        {
+          "code": "AE",
+          "descriptionMK": "Обединети Арапски Емирати",
+          "descriptionEN": "United Arab Emirates",
+          "boxNumber": "15а",
+          "sortOrder": 47
+        },
+        {
+          "code": "IL",
+          "descriptionMK": "Израел",
+          "descriptionEN": "Israel",
+          "boxNumber": "15а",
+          "sortOrder": 48
+        },
+        {
+          "code": "TH",
+          "descriptionMK": "Таиланд",
+          "descriptionEN": "Thailand",
+          "boxNumber": "15а",
+          "sortOrder": 49
+        },
+        {
+          "code": "MY",
+          "descriptionMK": "Малезија",
+          "descriptionEN": "Malaysia",
+          "boxNumber": "15а",
+          "sortOrder": 50
         }
       ]
     },

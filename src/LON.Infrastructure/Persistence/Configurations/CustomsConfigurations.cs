@@ -48,7 +48,7 @@ public class CustomsDeclarationLineConfiguration : IEntityTypeConfiguration<Cust
     {
         builder.ToTable("CustomsDeclarationLines");
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.HSCode).HasMaxLength(20);
+        builder.Property(e => e.TariffCode).HasMaxLength(20);
         builder.Property(e => e.CountryOfOrigin).HasMaxLength(3);
         builder.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CustomsValue).HasColumnType("decimal(18,4)");

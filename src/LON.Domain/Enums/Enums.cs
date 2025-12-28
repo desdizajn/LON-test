@@ -109,3 +109,28 @@ public enum PartnerType
     CustomsBroker = 4,
     Bank = 5
 }
+
+// LON (Inward Processing) енумерации
+public enum LONAuthorizationStatus
+{
+    Draft = 1,
+    Submitted = 2,
+    Approved = 3,
+    Rejected = 4,
+    Expired = 5,
+    Suspended = 6
+}
+
+public enum LONSystemType
+{
+    ОдложеноПлаќање = 1,      // Suspension system (42 00)
+    ВраќањеДавачки = 2         // Drawback system (51 00)
+}
+
+public enum LONOperationType
+{
+    Обработка = 1,
+    Преработка = 2,
+    Склопување = 3,
+    Поправка = 4
+}

@@ -1,0 +1,273 @@
+{
+  "listType": "Box22_Currency",
+  "boxNumber": "22",
+  "totalCodes": 38,
+  "codes": [
+    {
+      "code": "EUR",
+      "descriptionMK": "Евро",
+      "descriptionEN": "Euro",
+      "boxNumber": "22",
+      "sortOrder": 1
+    },
+    {
+      "code": "USD",
+      "descriptionMK": "САД долар",
+      "descriptionEN": "US Dollar",
+      "boxNumber": "22",
+      "sortOrder": 2
+    },
+    {
+      "code": "GBP",
+      "descriptionMK": "Британска фунта",
+      "descriptionEN": "British Pound",
+      "boxNumber": "22",
+      "sortOrder": 3
+    },
+    {
+      "code": "CHF",
+      "descriptionMK": "Швајцарски франк",
+      "descriptionEN": "Swiss Franc",
+      "boxNumber": "22",
+      "sortOrder": 4
+    },
+    {
+      "code": "MKD",
+      "descriptionMK": "Македонски денар",
+      "descriptionEN": "Macedonian Denar",
+      "boxNumber": "22",
+      "sortOrder": 5
+    },
+    {
+      "code": "JPY",
+      "descriptionMK": "Јапонски јен",
+      "descriptionEN": "Japanese Yen",
+      "boxNumber": "22",
+      "sortOrder": 6
+    },
+    {
+      "code": "CNY",
+      "descriptionMK": "Кинески јуан",
+      "descriptionEN": "Chinese Yuan",
+      "boxNumber": "22",
+      "sortOrder": 7
+    },
+    {
+      "code": "CAD",
+      "descriptionMK": "Канадски долар",
+      "descriptionEN": "Canadian Dollar",
+      "boxNumber": "22",
+      "sortOrder": 8
+    },
+    {
+      "code": "AUD",
+      "descriptionMK": "Австралиски долар",
+      "descriptionEN": "Australian Dollar",
+      "boxNumber": "22",
+      "sortOrder": 9
+    },
+    {
+      "code": "BGN",
+      "descriptionMK": "Бугарски лев",
+      "descriptionEN": "Bulgarian Lev",
+      "boxNumber": "22",
+      "sortOrder": 10
+    },
+    {
+      "code": "HRK",
+      "descriptionMK": "Хрватска куна",
+      "descriptionEN": "Croatian Kuna",
+      "boxNumber": "22",
+      "sortOrder": 11
+    },
+    {
+      "code": "CZK",
+      "descriptionMK": "Чешка круна",
+      "descriptionEN": "Czech Koruna",
+      "boxNumber": "22",
+      "sortOrder": 12
+    },
+    {
+      "code": "DKK",
+      "descriptionMK": "Данска круна",
+      "descriptionEN": "Danish Krone",
+      "boxNumber": "22",
+      "sortOrder": 13
+    },
+    {
+      "code": "HUF",
+      "descriptionMK": "Унгарска форинта",
+      "descriptionEN": "Hungarian Forint",
+      "boxNumber": "22",
+      "sortOrder": 14
+    },
+    {
+      "code": "NOK",
+      "descriptionMK": "Норвешка круна",
+      "descriptionEN": "Norwegian Krone",
+      "boxNumber": "22",
+      "sortOrder": 15
+    },
+    {
+      "code": "PLN",
+      "descriptionMK": "Полска злота",
+      "descriptionEN": "Polish Zloty",
+      "boxNumber": "22",
+      "sortOrder": 16
+    },
+    {
+      "code": "RON",
+      "descriptionMK": "Нов романски реу",
+      "descriptionEN": "Romanian Leu",
+      "boxNumber": "22",
+      "sortOrder": 17
+    },
+    {
+      "code": "RUB",
+      "descriptionMK": "Руска рубља",
+      "descriptionEN": "Russian Ruble",
+      "boxNumber": "22",
+      "sortOrder": 18
+    },
+    {
+      "code": "SEK",
+      "descriptionMK": "Шведска круна",
+      "descriptionEN": "Swedish Krona",
+      "boxNumber": "22",
+      "sortOrder": 19
+    },
+    {
+      "code": "TRY",
+      "descriptionMK": "Турска лира",
+      "descriptionEN": "Turkish Lira",
+      "boxNumber": "22",
+      "sortOrder": 20
+    },
+    {
+      "code": "INR",
+      "descriptionMK": "Индиска рупија",
+      "descriptionEN": "Indian Rupee",
+      "boxNumber": "22",
+      "sortOrder": 21
+    },
+    {
+      "code": "BRL",
+      "descriptionMK": "Бразилски реал",
+      "descriptionEN": "Brazilian Real",
+      "boxNumber": "22",
+      "sortOrder": 22
+    },
+    {
+      "code": "ZAR",
+      "descriptionMK": "Јужноафрички ранд",
+      "descriptionEN": "South African Rand",
+      "boxNumber": "22",
+      "sortOrder": 23
+    },
+    {
+      "code": "KRW",
+      "descriptionMK": "Јужнокорејски вон",
+      "descriptionEN": "South Korean Won",
+      "boxNumber": "22",
+      "sortOrder": 24
+    },
+    {
+      "code": "MXN",
+      "descriptionMK": "Мексиканско песо",
+      "descriptionEN": "Mexican Peso",
+      "boxNumber": "22",
+      "sortOrder": 25
+    },
+    {
+      "code": "SGD",
+      "descriptionMK": "Сингапурски долар",
+      "descriptionEN": "Singapore Dollar",
+      "boxNumber": "22",
+      "sortOrder": 26
+    },
+    {
+      "code": "HKD",
+      "descriptionMK": "Хонконшки долар",
+      "descriptionEN": "Hong Kong Dollar",
+      "boxNumber": "22",
+      "sortOrder": 27
+    },
+    {
+      "code": "NZD",
+      "descriptionMK": "Новозеландски долар",
+      "descriptionEN": "New Zealand Dollar",
+      "boxNumber": "22",
+      "sortOrder": 28
+    },
+    {
+      "code": "THB",
+      "descriptionMK": "Тајландски бахт",
+      "descriptionEN": "Thai Baht",
+      "boxNumber": "22",
+      "sortOrder": 29
+    },
+    {
+      "code": "MYR",
+      "descriptionMK": "Малезиски рингит",
+      "descriptionEN": "Malaysian Ringgit",
+      "boxNumber": "22",
+      "sortOrder": 30
+    },
+    {
+      "code": "IDR",
+      "descriptionMK": "Индонезиска рупија",
+      "descriptionEN": "Indonesian Rupiah",
+      "boxNumber": "22",
+      "sortOrder": 31
+    },
+    {
+      "code": "PHP",
+      "descriptionMK": "Филипинско песо",
+      "descriptionEN": "Philippine Peso",
+      "boxNumber": "22",
+      "sortOrder": 32
+    },
+    {
+      "code": "ILS",
+      "descriptionMK": "Израелски шекел",
+      "descriptionEN": "Israeli Shekel",
+      "boxNumber": "22",
+      "sortOrder": 33
+    },
+    {
+      "code": "AED",
+      "descriptionMK": "Дирхам на Обединети Арапски Емирати",
+      "descriptionEN": "UAE Dirham",
+      "boxNumber": "22",
+      "sortOrder": 34
+    },
+    {
+      "code": "SAR",
+      "descriptionMK": "Саудиски ријал",
+      "descriptionEN": "Saudi Riyal",
+      "boxNumber": "22",
+      "sortOrder": 35
+    },
+    {
+      "code": "RSD",
+      "descriptionMK": "Српски динар",
+      "descriptionEN": "Serbian Dinar",
+      "boxNumber": "22",
+      "sortOrder": 36
+    },
+    {
+      "code": "ALL",
+      "descriptionMK": "Албански лек",
+      "descriptionEN": "Albanian Lek",
+      "boxNumber": "22",
+      "sortOrder": 37
+    },
+    {
+      "code": "BAM",
+      "descriptionMK": "Конвертибилна марка",
+      "descriptionEN": "Bosnia-Herzegovina Convertible Mark",
+      "boxNumber": "22",
+      "sortOrder": 38
+    }
+  ]
+}

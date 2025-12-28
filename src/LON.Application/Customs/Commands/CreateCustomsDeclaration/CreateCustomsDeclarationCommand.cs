@@ -22,7 +22,7 @@ public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
 public record DeclarationLineDto
 {
     public Guid ItemId { get; init; }
-    public string? HSCode { get; init; }
+    public string? TariffCode { get; init; }
     public decimal Quantity { get; init; }
     public Guid UoMId { get; init; }
     public decimal CustomsValue { get; init; }
@@ -74,7 +74,7 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 CustomsDeclarationId = declaration.Id,
                 LineNumber = lineNumber++,
                 ItemId = lineDto.ItemId,
-                HSCode = lineDto.HSCode,
+                TariffCode = lineDto.TariffCode,
                 Quantity = lineDto.Quantity,
                 UoMId = lineDto.UoMId,
                 CustomsValue = lineDto.CustomsValue,

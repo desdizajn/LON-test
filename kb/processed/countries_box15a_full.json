@@ -1,0 +1,865 @@
+{
+  "listType": "Box15a_CountryCode",
+  "boxNumber": "15а",
+  "totalCodes": 143,
+  "codes": [
+    {
+      "code": "AX",
+      "descriptionMK": "Аландски острови",
+      "boxNumber": "15а",
+      "sortOrder": 1
+    },
+    {
+      "code": "AL",
+      "descriptionMK": "Албанија",
+      "boxNumber": "15а",
+      "sortOrder": 2
+    },
+    {
+      "code": "AD",
+      "descriptionMK": "Андора",
+      "boxNumber": "15а",
+      "sortOrder": 3
+    },
+    {
+      "code": "AO",
+      "descriptionMK": "Ангола",
+      "boxNumber": "15а",
+      "sortOrder": 4
+    },
+    {
+      "code": "AI",
+      "descriptionMK": "Ангвила",
+      "boxNumber": "15а",
+      "sortOrder": 5
+    },
+    {
+      "code": "AQ",
+      "descriptionMK": "Антарктик",
+      "boxNumber": "15а",
+      "sortOrder": 6
+    },
+    {
+      "code": "AR",
+      "descriptionMK": "Аргентина",
+      "boxNumber": "15а",
+      "sortOrder": 7
+    },
+    {
+      "code": "AF",
+      "descriptionMK": "Авганистан",
+      "boxNumber": "15а",
+      "sortOrder": 8
+    },
+    {
+      "code": "AU",
+      "descriptionMK": "Австралија",
+      "boxNumber": "15а",
+      "sortOrder": 9
+    },
+    {
+      "code": "AT",
+      "descriptionMK": "Австрија",
+      "boxNumber": "15а",
+      "sortOrder": 10
+    },
+    {
+      "code": "AZ",
+      "descriptionMK": "Азербејџан",
+      "boxNumber": "15а",
+      "sortOrder": 11
+    },
+    {
+      "code": "BS",
+      "descriptionMK": "Бахами",
+      "boxNumber": "15а",
+      "sortOrder": 12
+    },
+    {
+      "code": "BH",
+      "descriptionMK": "Бахреин",
+      "boxNumber": "15а",
+      "sortOrder": 13
+    },
+    {
+      "code": "BD",
+      "descriptionMK": "Бангладеш",
+      "boxNumber": "15а",
+      "sortOrder": 14
+    },
+    {
+      "code": "BB",
+      "descriptionMK": "Барбадос",
+      "boxNumber": "15а",
+      "sortOrder": 15
+    },
+    {
+      "code": "BE",
+      "descriptionMK": "Белгија",
+      "boxNumber": "15а",
+      "sortOrder": 16
+    },
+    {
+      "code": "BZ",
+      "descriptionMK": "Белизе",
+      "boxNumber": "15а",
+      "sortOrder": 17
+    },
+    {
+      "code": "BY",
+      "descriptionMK": "Белорусија",
+      "boxNumber": "15а",
+      "sortOrder": 18
+    },
+    {
+      "code": "BM",
+      "descriptionMK": "Бермуди",
+      "boxNumber": "15а",
+      "sortOrder": 19
+    },
+    {
+      "code": "CX",
+      "descriptionMK": "Божиќен остров",
+      "boxNumber": "15а",
+      "sortOrder": 20
+    },
+    {
+      "code": "BW",
+      "descriptionMK": "Боцвана",
+      "boxNumber": "15а",
+      "sortOrder": 21
+    },
+    {
+      "code": "BO",
+      "descriptionMK": "Боливија",
+      "boxNumber": "15а",
+      "sortOrder": 22
+    },
+    {
+      "code": "BN",
+      "descriptionMK": "Брунеи",
+      "boxNumber": "15а",
+      "sortOrder": 23
+    },
+    {
+      "code": "BG",
+      "descriptionMK": "Бугарија",
+      "boxNumber": "15а",
+      "sortOrder": 24
+    },
+    {
+      "code": "BI",
+      "descriptionMK": "Бурунди",
+      "boxNumber": "15а",
+      "sortOrder": 25
+    },
+    {
+      "code": "DK",
+      "descriptionMK": "Данска",
+      "boxNumber": "15а",
+      "sortOrder": 26
+    },
+    {
+      "code": "DM",
+      "descriptionMK": "Доминика",
+      "boxNumber": "15а",
+      "sortOrder": 27
+    },
+    {
+      "code": "EG",
+      "descriptionMK": "Египет",
+      "boxNumber": "15а",
+      "sortOrder": 28
+    },
+    {
+      "code": "EC",
+      "descriptionMK": "Еквадор",
+      "boxNumber": "15а",
+      "sortOrder": 29
+    },
+    {
+      "code": "ER",
+      "descriptionMK": "Еритреа",
+      "boxNumber": "15а",
+      "sortOrder": 30
+    },
+    {
+      "code": "AM",
+      "descriptionMK": "Ерменија",
+      "boxNumber": "15а",
+      "sortOrder": 31
+    },
+    {
+      "code": "EE",
+      "descriptionMK": "Естонија",
+      "boxNumber": "15а",
+      "sortOrder": 32
+    },
+    {
+      "code": "ET",
+      "descriptionMK": "Етиопија",
+      "boxNumber": "15а",
+      "sortOrder": 33
+    },
+    {
+      "code": "FO",
+      "descriptionMK": "Фарски острови",
+      "boxNumber": "15а",
+      "sortOrder": 34
+    },
+    {
+      "code": "PH",
+      "descriptionMK": "Филипини",
+      "boxNumber": "15а",
+      "sortOrder": 35
+    },
+    {
+      "code": "FI",
+      "descriptionMK": "Финска",
+      "boxNumber": "15а",
+      "sortOrder": 36
+    },
+    {
+      "code": "FR",
+      "descriptionMK": "Франција",
+      "boxNumber": "15а",
+      "sortOrder": 37
+    },
+    {
+      "code": "DE",
+      "descriptionMK": "Германија",
+      "boxNumber": "15а",
+      "sortOrder": 38
+    },
+    {
+      "code": "GI",
+      "descriptionMK": "Гибралтар",
+      "boxNumber": "15а",
+      "sortOrder": 39
+    },
+    {
+      "code": "GR",
+      "descriptionMK": "Грција",
+      "boxNumber": "15а",
+      "sortOrder": 40
+    },
+    {
+      "code": "GD",
+      "descriptionMK": "Гренада",
+      "boxNumber": "15а",
+      "sortOrder": 41
+    },
+    {
+      "code": "GL",
+      "descriptionMK": "Гренланд",
+      "boxNumber": "15а",
+      "sortOrder": 42
+    },
+    {
+      "code": "GE",
+      "descriptionMK": "Грузија",
+      "boxNumber": "15а",
+      "sortOrder": 43
+    },
+    {
+      "code": "GP",
+      "descriptionMK": "Гваделуп",
+      "boxNumber": "15а",
+      "sortOrder": 44
+    },
+    {
+      "code": "GY",
+      "descriptionMK": "Гвајана",
+      "boxNumber": "15а",
+      "sortOrder": 45
+    },
+    {
+      "code": "GT",
+      "descriptionMK": "Гватемала",
+      "boxNumber": "15а",
+      "sortOrder": 46
+    },
+    {
+      "code": "GN",
+      "descriptionMK": "Гвинеа",
+      "boxNumber": "15а",
+      "sortOrder": 47
+    },
+    {
+      "code": "NL",
+      "descriptionMK": "Холандија",
+      "boxNumber": "15а",
+      "sortOrder": 48
+    },
+    {
+      "code": "HN",
+      "descriptionMK": "Хондурас",
+      "boxNumber": "15а",
+      "sortOrder": 49
+    },
+    {
+      "code": "HR",
+      "descriptionMK": "Хрватска",
+      "boxNumber": "15а",
+      "sortOrder": 50
+    },
+    {
+      "code": "IN",
+      "descriptionMK": "Индија",
+      "boxNumber": "15а",
+      "sortOrder": 51
+    },
+    {
+      "code": "ID",
+      "descriptionMK": "Индонезија",
+      "boxNumber": "15а",
+      "sortOrder": 52
+    },
+    {
+      "code": "IS",
+      "descriptionMK": "Исланд",
+      "boxNumber": "15а",
+      "sortOrder": 53
+    },
+    {
+      "code": "IT",
+      "descriptionMK": "Италија",
+      "boxNumber": "15а",
+      "sortOrder": 54
+    },
+    {
+      "code": "IL",
+      "descriptionMK": "Израел",
+      "boxNumber": "15а",
+      "sortOrder": 55
+    },
+    {
+      "code": "JM",
+      "descriptionMK": "Јамајка",
+      "boxNumber": "15а",
+      "sortOrder": 56
+    },
+    {
+      "code": "JP",
+      "descriptionMK": "Јапонија",
+      "boxNumber": "15а",
+      "sortOrder": 57
+    },
+    {
+      "code": "JO",
+      "descriptionMK": "Јордан",
+      "boxNumber": "15а",
+      "sortOrder": 58
+    },
+    {
+      "code": "KY",
+      "descriptionMK": "Кајмански острови",
+      "boxNumber": "15а",
+      "sortOrder": 59
+    },
+    {
+      "code": "CM",
+      "descriptionMK": "Камерун",
+      "boxNumber": "15а",
+      "sortOrder": 60
+    },
+    {
+      "code": "KH",
+      "descriptionMK": "Кампучија",
+      "boxNumber": "15а",
+      "sortOrder": 61
+    },
+    {
+      "code": "CA",
+      "descriptionMK": "Канада",
+      "boxNumber": "15а",
+      "sortOrder": 62
+    },
+    {
+      "code": "KZ",
+      "descriptionMK": "Казахстан",
+      "boxNumber": "15а",
+      "sortOrder": 63
+    },
+    {
+      "code": "KE",
+      "descriptionMK": "Кенија",
+      "boxNumber": "15а",
+      "sortOrder": 64
+    },
+    {
+      "code": "KG",
+      "descriptionMK": "Киргизија",
+      "boxNumber": "15а",
+      "sortOrder": 65
+    },
+    {
+      "code": "KI",
+      "descriptionMK": "Кирибати",
+      "boxNumber": "15а",
+      "sortOrder": 66
+    },
+    {
+      "code": "CO",
+      "descriptionMK": "Колумбија",
+      "boxNumber": "15а",
+      "sortOrder": 67
+    },
+    {
+      "code": "XK",
+      "descriptionMK": "Косово",
+      "boxNumber": "15а",
+      "sortOrder": 68
+    },
+    {
+      "code": "CR",
+      "descriptionMK": "Костарика",
+      "boxNumber": "15а",
+      "sortOrder": 69
+    },
+    {
+      "code": "CK",
+      "descriptionMK": "Кукови острови",
+      "boxNumber": "15а",
+      "sortOrder": 70
+    },
+    {
+      "code": "KW",
+      "descriptionMK": "Кувајт",
+      "boxNumber": "15а",
+      "sortOrder": 71
+    },
+    {
+      "code": "LV",
+      "descriptionMK": "Латвија",
+      "boxNumber": "15а",
+      "sortOrder": 72
+    },
+    {
+      "code": "LS",
+      "descriptionMK": "Лесото",
+      "boxNumber": "15а",
+      "sortOrder": 73
+    },
+    {
+      "code": "LR",
+      "descriptionMK": "Либерија",
+      "boxNumber": "15а",
+      "sortOrder": 74
+    },
+    {
+      "code": "LI",
+      "descriptionMK": "Лихтенштајн",
+      "boxNumber": "15а",
+      "sortOrder": 75
+    },
+    {
+      "code": "LT",
+      "descriptionMK": "Литванија",
+      "boxNumber": "15а",
+      "sortOrder": 76
+    },
+    {
+      "code": "LU",
+      "descriptionMK": "Луксенбург",
+      "boxNumber": "15а",
+      "sortOrder": 77
+    },
+    {
+      "code": "MG",
+      "descriptionMK": "Мадагаскар",
+      "boxNumber": "15а",
+      "sortOrder": 78
+    },
+    {
+      "code": "YT",
+      "descriptionMK": "Мајота",
+      "boxNumber": "15а",
+      "sortOrder": 79
+    },
+    {
+      "code": "MW",
+      "descriptionMK": "Малави",
+      "boxNumber": "15а",
+      "sortOrder": 80
+    },
+    {
+      "code": "MV",
+      "descriptionMK": "Малдиви",
+      "boxNumber": "15а",
+      "sortOrder": 81
+    },
+    {
+      "code": "MY",
+      "descriptionMK": "Малезија",
+      "boxNumber": "15а",
+      "sortOrder": 82
+    },
+    {
+      "code": "MA",
+      "descriptionMK": "Мароко",
+      "boxNumber": "15а",
+      "sortOrder": 83
+    },
+    {
+      "code": "MQ",
+      "descriptionMK": "Мартиник",
+      "boxNumber": "15а",
+      "sortOrder": 84
+    },
+    {
+      "code": "MU",
+      "descriptionMK": "Маврициус",
+      "boxNumber": "15а",
+      "sortOrder": 85
+    },
+    {
+      "code": "MR",
+      "descriptionMK": "Мавританија",
+      "boxNumber": "15а",
+      "sortOrder": 86
+    },
+    {
+      "code": "MX",
+      "descriptionMK": "Мексико",
+      "boxNumber": "15а",
+      "sortOrder": 87
+    },
+    {
+      "code": "XL",
+      "descriptionMK": "Мелила",
+      "boxNumber": "15а",
+      "sortOrder": 88
+    },
+    {
+      "code": "MM",
+      "descriptionMK": "Мијанмар",
+      "boxNumber": "15а",
+      "sortOrder": 89
+    },
+    {
+      "code": "FM",
+      "descriptionMK": "Микронезија",
+      "boxNumber": "15а",
+      "sortOrder": 90
+    },
+    {
+      "code": "MD",
+      "descriptionMK": "Молдавија",
+      "boxNumber": "15а",
+      "sortOrder": 91
+    },
+    {
+      "code": "MC",
+      "descriptionMK": "Монако",
+      "boxNumber": "15а",
+      "sortOrder": 92
+    },
+    {
+      "code": "MN",
+      "descriptionMK": "Монголија",
+      "boxNumber": "15а",
+      "sortOrder": 93
+    },
+    {
+      "code": "MS",
+      "descriptionMK": "Монсерат",
+      "boxNumber": "15а",
+      "sortOrder": 94
+    },
+    {
+      "code": "MZ",
+      "descriptionMK": "Мозамбик",
+      "boxNumber": "15а",
+      "sortOrder": 95
+    },
+    {
+      "code": "NA",
+      "descriptionMK": "Намибија",
+      "boxNumber": "15а",
+      "sortOrder": 96
+    },
+    {
+      "code": "NG",
+      "descriptionMK": "Нигерија",
+      "boxNumber": "15а",
+      "sortOrder": 97
+    },
+    {
+      "code": "NI",
+      "descriptionMK": "Никарагва",
+      "boxNumber": "15а",
+      "sortOrder": 98
+    },
+    {
+      "code": "NO",
+      "descriptionMK": "Норвешка",
+      "boxNumber": "15а",
+      "sortOrder": 99
+    },
+    {
+      "code": "PK",
+      "descriptionMK": "Пакистан",
+      "boxNumber": "15а",
+      "sortOrder": 100
+    },
+    {
+      "code": "PS",
+      "descriptionMK": "Палестинско подрачје",
+      "boxNumber": "15а",
+      "sortOrder": 101
+    },
+    {
+      "code": "PA",
+      "descriptionMK": "Панама",
+      "boxNumber": "15а",
+      "sortOrder": 102
+    },
+    {
+      "code": "PY",
+      "descriptionMK": "Парагвај",
+      "boxNumber": "15а",
+      "sortOrder": 103
+    },
+    {
+      "code": "PN",
+      "descriptionMK": "Питкерн",
+      "boxNumber": "15а",
+      "sortOrder": 104
+    },
+    {
+      "code": "PL",
+      "descriptionMK": "Полска",
+      "boxNumber": "15а",
+      "sortOrder": 105
+    },
+    {
+      "code": "PR",
+      "descriptionMK": "Порторико",
+      "boxNumber": "15а",
+      "sortOrder": 106
+    },
+    {
+      "code": "PT",
+      "descriptionMK": "Португалија",
+      "boxNumber": "15а",
+      "sortOrder": 107
+    },
+    {
+      "code": "RE",
+      "descriptionMK": "Реунион",
+      "boxNumber": "15а",
+      "sortOrder": 108
+    },
+    {
+      "code": "RO",
+      "descriptionMK": "Романија",
+      "boxNumber": "15а",
+      "sortOrder": 109
+    },
+    {
+      "code": "RW",
+      "descriptionMK": "Руанда",
+      "boxNumber": "15а",
+      "sortOrder": 110
+    },
+    {
+      "code": "RU",
+      "descriptionMK": "Русија",
+      "boxNumber": "15а",
+      "sortOrder": 111
+    },
+    {
+      "code": "SN",
+      "descriptionMK": "Сенегал",
+      "boxNumber": "15а",
+      "sortOrder": 112
+    },
+    {
+      "code": "SG",
+      "descriptionMK": "Сингапур",
+      "boxNumber": "15а",
+      "sortOrder": 113
+    },
+    {
+      "code": "SY",
+      "descriptionMK": "Сирија",
+      "boxNumber": "15а",
+      "sortOrder": 114
+    },
+    {
+      "code": "SK",
+      "descriptionMK": "Словачка",
+      "boxNumber": "15а",
+      "sortOrder": 115
+    },
+    {
+      "code": "SI",
+      "descriptionMK": "Словенија",
+      "boxNumber": "15а",
+      "sortOrder": 116
+    },
+    {
+      "code": "SO",
+      "descriptionMK": "Сомалија",
+      "boxNumber": "15а",
+      "sortOrder": 117
+    },
+    {
+      "code": "RS",
+      "descriptionMK": "Србија",
+      "boxNumber": "15а",
+      "sortOrder": 118
+    },
+    {
+      "code": "UM",
+      "descriptionMK": "Странски надворешни острови на здружени држави",
+      "boxNumber": "15а",
+      "sortOrder": 119
+    },
+    {
+      "code": "SR",
+      "descriptionMK": "Суринам",
+      "boxNumber": "15а",
+      "sortOrder": 120
+    },
+    {
+      "code": "SZ",
+      "descriptionMK": "Свазиланд",
+      "boxNumber": "15а",
+      "sortOrder": 121
+    },
+    {
+      "code": "TH",
+      "descriptionMK": "Таиланд",
+      "boxNumber": "15а",
+      "sortOrder": 122
+    },
+    {
+      "code": "TW",
+      "descriptionMK": "Тајван",
+      "boxNumber": "15а",
+      "sortOrder": 123
+    },
+    {
+      "code": "TZ",
+      "descriptionMK": "Танзанија",
+      "boxNumber": "15а",
+      "sortOrder": 124
+    },
+    {
+      "code": "TL",
+      "descriptionMK": "Тимор источен",
+      "boxNumber": "15а",
+      "sortOrder": 125
+    },
+    {
+      "code": "TK",
+      "descriptionMK": "Токелау",
+      "boxNumber": "15а",
+      "sortOrder": 126
+    },
+    {
+      "code": "TR",
+      "descriptionMK": "Турција",
+      "boxNumber": "15а",
+      "sortOrder": 127
+    },
+    {
+      "code": "TM",
+      "descriptionMK": "Туркменистан",
+      "boxNumber": "15а",
+      "sortOrder": 128
+    },
+    {
+      "code": "TV",
+      "descriptionMK": "Тувалу",
+      "boxNumber": "15а",
+      "sortOrder": 129
+    },
+    {
+      "code": "UG",
+      "descriptionMK": "Уганда",
+      "boxNumber": "15а",
+      "sortOrder": 130
+    },
+    {
+      "code": "UA",
+      "descriptionMK": "Украина",
+      "boxNumber": "15а",
+      "sortOrder": 131
+    },
+    {
+      "code": "HU",
+      "descriptionMK": "Унгарија",
+      "boxNumber": "15а",
+      "sortOrder": 132
+    },
+    {
+      "code": "UY",
+      "descriptionMK": "Уругвај",
+      "boxNumber": "15а",
+      "sortOrder": 133
+    },
+    {
+      "code": "UZ",
+      "descriptionMK": "Узбекистан",
+      "boxNumber": "15а",
+      "sortOrder": 134
+    },
+    {
+      "code": "VU",
+      "descriptionMK": "Вануату",
+      "boxNumber": "15а",
+      "sortOrder": 135
+    },
+    {
+      "code": "VE",
+      "descriptionMK": "Венецуела",
+      "boxNumber": "15а",
+      "sortOrder": 136
+    },
+    {
+      "code": "VN",
+      "descriptionMK": "Виетнам",
+      "boxNumber": "15а",
+      "sortOrder": 137
+    },
+    {
+      "code": "DJ",
+      "descriptionMK": "Џибути",
+      "boxNumber": "15а",
+      "sortOrder": 138
+    },
+    {
+      "code": "ZM",
+      "descriptionMK": "Замбија",
+      "boxNumber": "15а",
+      "sortOrder": 139
+    },
+    {
+      "code": "ZW",
+      "descriptionMK": "Зимбабве",
+      "boxNumber": "15а",
+      "sortOrder": 140
+    },
+    {
+      "code": "ES",
+      "descriptionMK": "Шпанија",
+      "boxNumber": "15а",
+      "sortOrder": 141
+    },
+    {
+      "code": "CH",
+      "descriptionMK": "Швајцарија",
+      "boxNumber": "15а",
+      "sortOrder": 142
+    },
+    {
+      "code": "SE",
+      "descriptionMK": "Шведска",
+      "boxNumber": "15а",
+      "sortOrder": 143
+    }
+  ]
+}
