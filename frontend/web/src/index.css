@@ -65,6 +65,36 @@ code {
   background-color: #3498db;
 }
 
+/* Master Data Submenu */
+.nav li.menu-section {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-top: 10px;
+  border-top: 1px solid #34495e;
+  padding-top: 20px;
+}
+
+.nav .submenu {
+  list-style: none;
+  background-color: #34495e;
+  padding: 0;
+  margin: 0;
+}
+
+.nav .submenu li {
+  padding: 10px 20px 10px 40px;
+  font-size: 14px;
+}
+
+.nav .submenu li:hover {
+  background-color: #2c3e50;
+}
+
+.nav .submenu li.active {
+  background-color: #2980b9;
+}
+
 .main-content {
   flex: 1;
   padding: 30px;
