@@ -1,4 +1,5 @@
 using LON.Application.Common.Interfaces;
+using LON.Application.KnowledgeBase.Services;
 using LON.Domain.Entities.MasterData;
 using LON.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
