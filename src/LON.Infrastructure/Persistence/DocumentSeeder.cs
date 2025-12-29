@@ -57,37 +57,36 @@ public static class DocumentSeeder
                 Language = "MK",
                 SourceUrl = "https://customs.gov.mk/regulations/pravilnik",
                 Version = "2024",
-                PublishedDate = new DateTime(2024, 1, 1),
+                DocumentDate = new DateTime(2024, 1, 1),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "DocumentSeeder"
             };
 
             // Chunk документот
-            var chunks = await chunkingService.ChunkDocumentAsync(
+            var chunks = chunkingService.ChunkDocument(
                 document.Content,
                 maxChunkSize: 500,
-                overlapSize: 50,
-                new[] { "Член", "Став", "Точка" });
+                overlap: 50);
 
-            document.Chunks = chunks.Select(c => new DocumentChunk
+            document.Chunks = new List<KnowledgeDocumentChunk>();
+            
+            for (int i = 0; i < chunks.Count; i++)
             {
-                Id = Guid.NewGuid(),
-                DocumentId = document.Id,
-                ChunkIndex = c.Index,
-                Content = c.Content,
-                TokenCount = c.TokenCount,
-                StartPosition = c.StartPosition,
-                EndPosition = c.EndPosition,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "DocumentSeeder"
-            }).ToList();
-
-            // Генерирај embeddings за секој chunk
-            foreach (var chunk in document.Chunks)
-            {
-                var embedding = await embeddingService.GenerateEmbeddingAsync(chunk.Content);
-                chunk.Embedding = embedding;
+                var embedding = await embeddingService.GenerateEmbeddingAsync(chunks[i]);
+                var embeddingJson = System.Text.Json.JsonSerializer.Serialize(embedding);
+                
+                document.Chunks.Add(new KnowledgeDocumentChunk
+                {
+                    Id = Guid.NewGuid(),
+                    DocumentId = document.Id,
+                    ChunkIndex = i,
+                    Content = chunks[i],
+                    TokenCount = chunkingService.EstimateTokenCount(chunks[i]),
+                    Embedding = embeddingJson,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "DocumentSeeder"
+                });
             }
 
             await context.KnowledgeDocuments.AddAsync(document);
@@ -124,7 +123,7 @@ public static class DocumentSeeder
                 Language = "MK",
                 SourceUrl = "https://customs.gov.mk/instructions/sad",
                 Version = "2024",
-                PublishedDate = new DateTime(2024, 1, 1),
+                DocumentDate = new DateTime(2024, 1, 1),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "DocumentSeeder"
@@ -132,19 +131,18 @@ public static class DocumentSeeder
 
             // За кратки упатства, нема потреба од chunking - еден chunk е доволен
             var embedding = await embeddingService.GenerateEmbeddingAsync(document.Content);
+            var embeddingJson = System.Text.Json.JsonSerializer.Serialize(embedding);
             
-            document.Chunks = new List<DocumentChunk>
+            document.Chunks = new List<KnowledgeDocumentChunk>
             {
-                new DocumentChunk
+                new KnowledgeDocumentChunk
                 {
                     Id = Guid.NewGuid(),
                     DocumentId = document.Id,
                     ChunkIndex = 0,
                     Content = document.Content,
                     TokenCount = document.Content.Split(' ').Length,
-                    StartPosition = 0,
-                    EndPosition = document.Content.Length,
-                    Embedding = embedding,
+                    Embedding = embeddingJson,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "DocumentSeeder"
                 }

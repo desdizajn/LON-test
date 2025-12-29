@@ -208,6 +208,9 @@ Comprehensive documentation is available in the [`docs/`](docs/) and [`kb/`](kb/
 ### Knowledge Base Documentation
 - [**KNOWLEDGE_BASE_CONCEPT.md**](kb/KNOWLEDGE_BASE_CONCEPT.md) - Multi-layer KB architecture, RAG, AI Assistant
 - [**PHASE1_COMPLETED.md**](kb/PHASE1_COMPLETED.md) - Data loading status (10K+ TARIC codes, 615 regulations)
+- [**PHASE3_RAG_COMPLETED.md**](kb/PHASE3_RAG_COMPLETED.md) - ✅ Vector Store + RAG Implementation (ЗАВРШЕНО)
+- [**PHASE3_QUICK_START.md**](kb/PHASE3_QUICK_START.md) - Брз старт за тестирање на RAG
+- [**RAG_API_EXAMPLES.md**](kb/RAG_API_EXAMPLES.md) - API примери за semantic search и RAG
 - [**Processed Data**](kb/processed/) - JSON files ready for import (taric_data.json, regulations_data.json, etc.)
 
 ---

@@ -75,6 +75,75 @@ public class KnowledgeBaseController : ControllerBase
 
         return Ok(results);
     }
+
+    /// <summary>
+    /// Health check - провери дали Vector Store е иницијализиран
+    /// </summary>
+    [HttpGet("health")]
+    public async Task<ActionResult<object>> GetHealthStatus()
+    {
+        try
+        {
+            // Тест search за да провериме дали има документи
+            var testResults = await _vectorStore.SearchAsync("царина", 1, 0.0);
+            
+            return Ok(new
+            {
+                Status = "Healthy",
+                Message = "Vector Store е активен и содржи документи",
+                HasDocuments = testResults.Count > 0,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Health check failed");
+            return StatusCode(500, new
+            {
+                Status = "Unhealthy",
+                Message = ex.Message,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+    }
+
+    /// <summary>
+    /// Добиј статистики за Knowledge Base
+    /// </summary>
+    [HttpGet("stats")]
+    public async Task<ActionResult<object>> GetStatistics()
+    {
+        try
+        {
+            var context = HttpContext.RequestServices.GetRequiredService<LON.Application.Common.Interfaces.IApplicationDbContext>();
+            
+            var totalDocuments = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .CountAsync(context.KnowledgeDocuments);
+                
+            var totalChunks = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .CountAsync(context.KnowledgeDocumentChunks);
+                
+            var documentsWithEmbeddings = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                .CountAsync(
+                    System.Linq.Queryable.Where(
+                        context.KnowledgeDocumentChunks, 
+                        c => c.Embedding != null && c.Embedding.Length > 0));
+
+            return Ok(new
+            {
+                TotalDocuments = totalDocuments,
+                TotalChunks = totalChunks,
+                DocumentsWithEmbeddings = documentsWithEmbeddings,
+                EmbeddingCoverage = totalChunks > 0 ? (double)documentsWithEmbeddings / totalChunks * 100 : 0,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get statistics");
+            return StatusCode(500, new { Message = ex.Message });
+        }
+    }
 }
 
 // Request DTOs

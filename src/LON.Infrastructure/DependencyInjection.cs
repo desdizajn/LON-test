@@ -2,6 +2,7 @@ using LON.Application.Common.Interfaces;
 using LON.Application.Customs.Validation;
 using LON.Application.Customs.Validation.Rules;
 using LON.Application.KnowledgeBase.Services;
+using LON.Infrastructure.Initialization;
 using LON.Infrastructure.Persistence;
 using LON.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;

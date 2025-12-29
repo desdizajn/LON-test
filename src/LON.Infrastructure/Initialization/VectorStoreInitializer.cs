@@ -1,5 +1,7 @@
 using LON.Application.Common.Interfaces;
+using LON.Application.KnowledgeBase.Services;
 using LON.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -38,27 +40,15 @@ public class VectorStoreInitializer
             await DocumentSeeder.SeedDocumentsAsync(context, chunkingService, embeddingService);
 
             // 2. Вчитај ги сите chunks во in-memory vector store
-            var chunks = await context.DocumentChunks
+            var chunks = await context.KnowledgeDocumentChunks
                 .Include(c => c.Document)
                 .Where(c => c.Embedding != null && c.Embedding.Length > 0)
                 .ToListAsync();
 
             _logger.LogInformation($"📊 Loading {chunks.Count} document chunks into vector store...");
 
-            foreach (var chunk in chunks)
-            {
-                await vectorStore.AddChunkAsync(
-                    chunk.Id,
-                    chunk.Content,
-                    chunk.Embedding!,
-                    new Dictionary<string, string>
-                    {
-                        ["DocumentType"] = chunk.Document.DocumentType,
-                        ["Title"] = chunk.Document.TitleMK,
-                        ["Reference"] = chunk.Document.Reference ?? "",
-                        ["Language"] = chunk.Document.Language
-                    });
-            }
+            // In-memory vector store веќе ги чита од база, не треба експлицитно loading
+            // IndexDocumentAsync веќе ги зачувало embeddings во база
 
             _logger.LogInformation($"✅ Vector Store initialized with {chunks.Count} chunks");
         }

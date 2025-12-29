@@ -1,4 +1,5 @@
 using LON.Infrastructure;
+using LON.Infrastructure.Initialization;
 using LON.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
