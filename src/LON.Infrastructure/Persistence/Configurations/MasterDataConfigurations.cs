@@ -104,11 +104,19 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.EmployeeNumber).IsRequired().HasMaxLength(50);
         builder.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
         builder.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-        builder.Property(e => e.Email).IsRequired().HasMaxLength(100);
+        builder.Property(e => e.Email).IsRequired().HasMaxLength(200);
+        builder.Property(e => e.Phone).HasMaxLength(50);
         builder.Property(e => e.Department).HasMaxLength(100);
         builder.Property(e => e.Position).HasMaxLength(100);
         
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
+        builder.HasIndex(e => e.Email).IsUnique();
+        
+        builder.HasOne(e => e.Shift)
+            .WithMany(s => s.Employees)
+            .HasForeignKey(e => e.ShiftId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

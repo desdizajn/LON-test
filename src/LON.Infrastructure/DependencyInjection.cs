@@ -43,6 +43,9 @@ public static class DependencyInjection
         // HttpClient за OpenAI
         services.AddHttpClient("OpenAI");
 
+        // Auth Service
+        services.AddScoped<IAuthService, AuthService>();
+
         return services;
     }
 }

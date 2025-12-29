@@ -84,9 +84,73 @@ public class Employee : BaseEntity
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
     public string? Department { get; set; }
     public string? Position { get; set; }
+    public DateTime? HireDate { get; set; }
+    public Guid? ShiftId { get; set; }
+    public virtual Shift? Shift { get; set; }
+    public Guid? UserId { get; set; }
+    public virtual User? User { get; set; }
     public bool IsActive { get; set; }
+}
+
+public class User : BaseEntity
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public Guid? EmployeeId { get; set; }
+    public virtual Employee? Employee { get; set; }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public bool IsActive { get; set; }
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+}
+
+public class Role : BaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; }
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+public class UserRole
+{
+    public Guid UserId { get; set; }
+    public virtual User User { get; set; } = null!;
+    public Guid RoleId { get; set; }
+    public virtual Role Role { get; set; } = null!;
+}
+
+public class Permission : BaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Category { get; set; } = string.Empty; // MasterData, Production, Customs, WMS, etc.
+    public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+public class RolePermission
+{
+    public Guid RoleId { get; set; }
+    public virtual Role Role { get; set; } = null!;
+    public Guid PermissionId { get; set; }
+    public virtual Permission Permission { get; set; } = null!;
+}
+
+public class Shift : BaseEntity
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public TimeSpan StartTime { get; set; }
+    public TimeSpan EndTime { get; set; }
+    public string? Description { get; set; }
+    public bool IsActive { get; set; }
+    public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }
 
 public class WorkCenter : BaseEntity

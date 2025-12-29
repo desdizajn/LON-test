@@ -103,6 +103,11 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         await ApplicationDbContextSeed.SeedAsync(context);
         
+        // Seed User Management data
+        var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        await UserManagementSeed.SeedAsync(context, authService, logger);
+        
         // Initialize Vector Store
         var vectorStoreInitializer = services.GetRequiredService<VectorStoreInitializer>();
         await vectorStoreInitializer.InitializeAsync();
