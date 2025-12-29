@@ -10,6 +10,10 @@ public static class ApplicationDbContextSeed
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
+        // 1. Seed Knowledge Base податоци (TARIC, Regulations, CodeLists, DeclarationRules)
+        await KnowledgeBaseSeeder.SeedKnowledgeBaseAsync(context);
+
+        // 2. Seed Master Data
         if (!await context.UnitsOfMeasure.AnyAsync())
         {
             await SeedUnitsOfMeasure(context);

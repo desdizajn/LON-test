@@ -23,13 +23,13 @@ public class CustomsRegulationConfiguration : IEntityTypeConfiguration<CustomsRe
         
         builder.Property(x => x.DescriptionMK)
             .IsRequired()
-            .HasMaxLength(1000);
+            .HasColumnType("nvarchar(max)");  // Македонски опис може да биде многу долг (2200+ chars)
         
         builder.Property(x => x.DescriptionEN)
-            .HasMaxLength(1000);
+            .HasColumnType("nvarchar(max)");  // Англиски опис може да биде многу долг
         
         builder.Property(x => x.LegalBasis)
-            .HasMaxLength(500);
+            .HasColumnType("nvarchar(max)");  // Правна основа може да биде многу долга (3400+ chars)
         
         builder.HasOne(x => x.TariffCode)
             .WithMany()

@@ -29,6 +29,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CustomsRegulation> CustomsRegulations => Set<CustomsRegulation>();
     public DbSet<DeclarationRule> DeclarationRules => Set<DeclarationRule>();
     public DbSet<CodeListItem> CodeListItems => Set<CodeListItem>();
+    public DbSet<KnowledgeDocument> KnowledgeDocuments => Set<KnowledgeDocument>();
+    public DbSet<KnowledgeDocumentChunk> KnowledgeDocumentChunks => Set<KnowledgeDocumentChunk>();
 
     // WMS
     public DbSet<Receipt> Receipts => Set<Receipt>();

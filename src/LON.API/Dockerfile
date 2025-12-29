@@ -19,4 +19,6 @@ RUN dotnet publish "LON.API.csproj" -c Release -o /app/publish /p:UseAppHost=fal
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# Копирај Knowledge Base податоци за seed
+COPY kb/ /app/kb/
 ENTRYPOINT ["dotnet", "LON.API.dll"]

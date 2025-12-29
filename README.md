@@ -20,6 +20,14 @@
 - Partners (Suppliers, Customers, Carriers, Banks)
 - Work Centers & Machines
 
+### 🧠 Knowledge Base & Smart Validation
+- **TARIC Database** - 10,306 тарифни ознаки со царински стапки
+- **Customs Regulations** - 615 регулативи за специфични режими
+- **Validation Rules** - 17+ автоматски проверки за Box полиња
+- **Code Lists** - 41+ кодни листи (procedure codes, document types, transport modes...)
+- **Smart Rule Engine** - Real-time валидација на декларации
+- **Context-aware Help** - Интелигентна помош со референци кон правилник
+
 ### 📦 WMS (Warehouse Management System)
 - **Inbound:** Receipts with quality status
 - **Inventory:** Real-time balance tracking per batch + MRN + location
@@ -186,8 +194,9 @@ flutter run
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the [`docs/`](docs/) folder:
+Comprehensive documentation is available in the [`docs/`](docs/) and [`kb/`](kb/) folders:
 
+### Core Documentation
 - [**README.md**](docs/README.md) - System overview, features, deployment
 - [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) - Clean Architecture layers, patterns, dependencies
 - [**ERD.md**](docs/ERD.md) - Complete entity relationship diagram
@@ -195,6 +204,11 @@ Comprehensive documentation is available in the [`docs/`](docs/) folder:
 - [**CUSTOMS_FLOW.md**](docs/CUSTOMS_FLOW.md) - Customs procedures & guarantee management
 - [**API.md**](docs/API.md) - Complete API endpoints reference
 - [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) - Deployment guide (Docker, Azure, K8s)
+
+### Knowledge Base Documentation
+- [**KNOWLEDGE_BASE_CONCEPT.md**](kb/KNOWLEDGE_BASE_CONCEPT.md) - Multi-layer KB architecture, RAG, AI Assistant
+- [**PHASE1_COMPLETED.md**](kb/PHASE1_COMPLETED.md) - Data loading status (10K+ TARIC codes, 615 regulations)
+- [**Processed Data**](kb/processed/) - JSON files ready for import (taric_data.json, regulations_data.json, etc.)
 
 ---
 
@@ -213,11 +227,12 @@ Comprehensive documentation is available in the [`docs/`](docs/) folder:
 
 ## 🗄️ Database Schema
 
-**Core tables (40+):**
+**Core tables (50+):**
 - Master Data: Items, UoM, Warehouses, Locations, Partners, Employees, WorkCenters, Machines
+- **Knowledge Base:** TariffCodes (10K+), CustomsRegulations (615), DeclarationRules (17+), CodeListItems (41+)
 - WMS: Receipts, InventoryBalances, InventoryMovements, Transfers, CycleCounts, PickTasks, Shipments
 - Production: BOMs, Routings, ProductionOrders, MaterialIssues, ProductionReceipts
-- Customs: CustomsProcedures, CustomsDeclarations, MRNRegistry
+- Customs: CustomsProcedures, CustomsDeclarations, MRNRegistry, LONAuthorizations
 - Guarantees: GuaranteeAccounts, GuaranteeLedgerEntries, DutyCalculations
 - Traceability: TraceLinks, BatchGenealogy
 - Events: OutboxMessages
@@ -300,6 +315,10 @@ LON-test/
 │   ├── web/                 # React + TypeScript
 │   └── mobile/              # Flutter
 ├── docs/                    # Documentation
+├── kb/                      # Knowledge Base (TARIC, Regulations, Rules)
+│   ├── processed/           # JSON data files (10K+ records)
+│   ├── scripts/             # Data extraction scripts
+│   └── Raw_Files/           # Original PDFs & Excel files
 ├── docker-compose.yml       # Multi-container orchestration
 ├── .gitignore
 └── README.md
@@ -332,8 +351,10 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for Azure App Service, Static Web Apps, 
 This is a complete enterprise system. Contributions are welcome!
 
 Areas for enhancement:
+- [x] **Knowledge Base** - TARIC database, regulations, validation rules ✅
 - [ ] Real-time notifications (SignalR)
 - [ ] Advanced BI with Power BI integration
+- [ ] AI-powered declaration assistant (RAG + GPT-4)
 - [ ] Machine Learning predictions
 - [ ] Blockchain for traceability
 - [ ] Advanced scheduling & optimization

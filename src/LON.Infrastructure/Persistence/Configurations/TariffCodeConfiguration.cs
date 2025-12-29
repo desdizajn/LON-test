@@ -20,16 +20,16 @@ public class TariffCodeConfiguration : IEntityTypeConfiguration<TariffCode>
             .IsUnique();
         
         builder.Property(x => x.TARBR)
-            .HasMaxLength(2);
+            .HasMaxLength(4);  // 4 цифри (прва група)
         
         builder.Property(x => x.TAROZ1)
-            .HasMaxLength(4);
+            .HasMaxLength(2);  // 2 цифри (втора група)
         
         builder.Property(x => x.TAROZ2)
-            .HasMaxLength(6);
+            .HasMaxLength(2);  // 2 цифри (трета група)
         
         builder.Property(x => x.TAROZ3)
-            .HasMaxLength(8);
+            .HasMaxLength(2);  // 2 цифри (четврта група)
         
         builder.Property(x => x.Description)
             .IsRequired()

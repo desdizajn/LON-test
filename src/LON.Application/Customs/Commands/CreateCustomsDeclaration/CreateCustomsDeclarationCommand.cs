@@ -1,6 +1,7 @@
 using LON.Application.Common.Commands;
 using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
+using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Events;
 
@@ -34,10 +35,14 @@ public record DeclarationLineDto
 public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCustomsDeclarationCommand, Result<Guid>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IDeclarationRuleEngine _ruleEngine;
 
-    public CreateCustomsDeclarationCommandHandler(IApplicationDbContext context)
+    public CreateCustomsDeclarationCommandHandler(
+        IApplicationDbContext context,
+        IDeclarationRuleEngine ruleEngine)
     {
         _context = context;
+        _ruleEngine = ruleEngine;
     }
 
     public async Task<Result<Guid>> Handle(CreateCustomsDeclarationCommand request, CancellationToken cancellationToken)
@@ -96,6 +101,16 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
         declaration.TotalDuty = totalDuty;
         declaration.TotalVAT = totalVAT;
         declaration.TotalOtherCharges = totalOther;
+        
+        // 🔥 ВАЛИДАЦИЈА со Rule Engine
+        var validationResult = await _ruleEngine.ValidateAsync(declaration, cancellationToken);
+        
+        if (!validationResult.IsValid)
+        {
+            return Result<Guid>.Failure(
+                string.Join("\n", validationResult.GetErrorMessages())
+            );
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 
