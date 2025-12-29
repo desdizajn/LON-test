@@ -101,6 +101,10 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         await context.Database.MigrateAsync();
         await ApplicationDbContextSeed.SeedAsync(context);
+        
+        // Initialize Vector Store
+        var vectorStoreInitializer = services.GetRequiredService<VectorStoreInitializer>();
+        await vectorStoreInitializer.InitializeAsync();
     }
     catch (Exception ex)
     {

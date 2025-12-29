@@ -28,6 +28,11 @@ public class KnowledgeDocument : BaseEntity
     public string? Reference { get; set; }
     
     /// <summary>
+    /// Дали документот е активен
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+    
+    /// <summary>
     /// Содржина на документот (полн текст)
     /// </summary>
     public string Content { get; set; } = string.Empty;

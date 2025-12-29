@@ -60,7 +60,7 @@ public class DocumentChunkingService : IDocumentChunkingService
         var chunks = new List<DocumentChunk>();
         
         // Креирај regex pattern за сите делители (нпр. "Член 5", "Глава 3")
-        var pattern = $@"(?:{'|'.Join(sectionDelimiters.Select(Regex.Escape))})\s+\d+";
+        var pattern = $@"(?:{string.Join("|", sectionDelimiters.Select(Regex.Escape))})\s+\d+";
         var matches = Regex.Matches(content, pattern, RegexOptions.Multiline);
         
         if (matches.Count == 0)

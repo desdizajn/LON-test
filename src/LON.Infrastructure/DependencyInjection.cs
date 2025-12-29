@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
         services.AddScoped<IVectorStoreService, InMemoryVectorStoreService>();
         services.AddScoped<IRAGService, OpenAIRAGService>();
+        services.AddScoped<VectorStoreInitializer>();
         
         // HttpClient за OpenAI
         services.AddHttpClient("OpenAI");
