@@ -8,14 +8,22 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
   user: {
     id: string;
     username: string;
     email: string;
-    fullName: string;
-    roles: string[];
-    permissions: string[];
+    isActive: boolean;
+    lastLoginAt?: string;
+    employee?: any;
+    roles: Array<{
+      id: string;
+      name: string;
+      description?: string;
+    }>;
+    createdAt: string;
   };
 }
 
@@ -28,7 +36,7 @@ export interface User {
   roles: string[];
   permissions: string[];
   lastLogin?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface CreateUserRequest {
@@ -86,9 +94,22 @@ class AuthService {
         credentials
       );
       
-      this.token = response.data.token;
+      this.token = response.data.accessToken;
       localStorage.setItem('auth_token', this.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // Transform user data for local storage
+      const userData = {
+        id: response.data.user.id,
+        username: response.data.user.username,
+        email: response.data.user.email,
+        fullName: response.data.user.username, // Backend doesn't return fullName
+        isActive: response.data.user.isActive,
+        roles: response.data.user.roles.map(r => r.name),
+        permissions: [], // Will be populated from roles
+        lastLogin: response.data.user.lastLoginAt
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData));
       this.setAuthHeader(this.token);
       
       return response.data;
