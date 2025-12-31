@@ -108,9 +108,9 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         await UserManagementSeed.SeedAsync(context, authService, logger);
         
-        // Initialize Vector Store
-        var vectorStoreInitializer = services.GetRequiredService<VectorStoreInitializer>();
-        await vectorStoreInitializer.InitializeAsync();
+        // Initialize Vector Store - DISABLED temporarily for faster startup
+        // var vectorStoreInitializer = services.GetRequiredService<VectorStoreInitializer>();
+        // await vectorStoreInitializer.InitializeAsync();
     }
     catch (Exception ex)
     {
