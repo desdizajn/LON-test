@@ -17,11 +17,30 @@ export interface LoginResponse {
     email: string;
     isActive: boolean;
     lastLoginAt?: string;
-    employee?: any;
+    employee?: {
+      id: string;
+      employeeNumber: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone?: string;
+      department?: string;
+      position?: string;
+      hireDate?: string;
+      shift?: any;
+      isActive: boolean;
+    };
     roles: Array<{
       id: string;
       name: string;
       description?: string;
+      isActive: boolean;
+      permissions: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        category: string;
+      }>;
     }>;
     createdAt: string;
   };
@@ -98,15 +117,20 @@ class AuthService {
       localStorage.setItem('auth_token', this.token);
       
       // Transform user data for local storage
+      const fullName = response.data.user.employee 
+        ? `${response.data.user.employee.firstName} ${response.data.user.employee.lastName}`
+        : response.data.user.username;
+      
       const userData = {
         id: response.data.user.id,
         username: response.data.user.username,
         email: response.data.user.email,
-        fullName: response.data.user.username, // Backend doesn't return fullName
+        fullName: fullName,
         isActive: response.data.user.isActive,
         roles: response.data.user.roles.map(r => r.name),
-        permissions: [], // Will be populated from roles
-        lastLogin: response.data.user.lastLoginAt
+        permissions: response.data.user.roles.flatMap(r => r.permissions?.map(p => p.name) || []),
+        lastLogin: response.data.user.lastLoginAt,
+        createdAt: response.data.user.createdAt
       };
       
       localStorage.setItem('user', JSON.stringify(userData));

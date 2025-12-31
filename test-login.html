@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LON Login Test</title>
+</head>
+<body>
+    <h1>LON Login Test</h1>
+    <div>
+        <label>Username: <input type="text" id="username" value="admin"></label><br><br>
+        <label>Password: <input type="password" id="password" value="Admin123!"></label><br><br>
+        <button onclick="testLogin()">Login</button>
+    </div>
+    <h2>Response:</h2>
+    <pre id="response"></pre>
+
+    <script>
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const responseEl = document.getElementById('response');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    responseEl.textContent = '✅ SUCCESS!\n\n' + JSON.stringify(data, null, 2);
+                    responseEl.style.color = 'green';
+                } else {
+                    responseEl.textContent = '❌ ERROR!\n\n' + JSON.stringify(data, null, 2);
+                    responseEl.style.color = 'red';
+                }
+            } catch (error) {
+                responseEl.textContent = '❌ EXCEPTION!\n\n' + error.toString();
+                responseEl.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
