@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { analyticsApi } from '../services/api';
+import { authService } from '../services/authService';
+import './Dashboard.css';
 
 interface DashboardData {
   inventory: {
@@ -27,13 +30,19 @@ interface DashboardData {
 }
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const user = authService.getCurrentUser();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     loadDashboard();
-  }, []);
+  }, [user, navigate]);
 
   const loadDashboard = async () => {
     try {
@@ -48,16 +57,85 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
+
+  const adminModules = [
+    {
+      title: 'Корисници',
+      description: 'Управување со корисници на системот',
+      icon: '👥',
+      path: '/admin/users',
+      color: '#667eea'
+    },
+    {
+      title: 'Вработени',
+      description: 'Управување со вработени',
+      icon: '👔',
+      path: '/admin/employees',
+      color: '#48bb78'
+    },
+    {
+      title: 'Смени',
+      description: 'Управување со работни смени',
+      icon: '⏰',
+      path: '/admin/shifts',
+      color: '#ed8936'
+    },
+    {
+      title: 'Улоги',
+      description: 'Управување со улоги и дозволи',
+      icon: '🔐',
+      path: '/admin/roles',
+      color: '#9f7aea'
+    }
+  ];
+
   if (loading) return <div className="loading">Loading dashboard...</div>;
   if (error) return <div className="error">Error: {error}</div>;
-  if (!data) return <div>No data available</div>;
+  if (!data || !user) return <div>No data available</div>;
 
   return (
-    <div>
-      <div className="header">
-        <h2>Dashboard</h2>
-        <button className="btn btn-primary" onClick={loadDashboard}>Refresh</button>
+    <div className="dashboard-new">
+      <div className="dashboard-header">
+        <div className="welcome-section">
+          <h1>Добредојдовте, {user.fullName}!</h1>
+          <p className="user-info">
+            {user.username} | {user.roles.join(', ')}
+          </p>
+        </div>
+        <button className="btn-logout" onClick={handleLogout}>
+          Одјави се
+        </button>
       </div>
+
+      <section className="dashboard-section">
+        <h2>Администрација</h2>
+        <div className="modules-grid">
+          {adminModules.map((module) => (
+            <div
+              key={module.path}
+              className="module-card"
+              onClick={() => navigate(module.path)}
+              style={{ borderLeftColor: module.color }}
+            >
+              <div className="module-icon" style={{ backgroundColor: `${module.color}20` }}>
+                {module.icon}
+              </div>
+              <h3>{module.title}</h3>
+              <p>{module.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="original-dashboard">
+        <div className="header">
+          <h2>Статистики</h2>
+          <button className="btn btn-primary" onClick={loadDashboard}>Освежи</button>
+        </div>
 
       <div className="card-grid">
         <div className="card info">
@@ -146,6 +224,7 @@ const Dashboard: React.FC = () => {
             <strong>{data.guarantees.expiringGuarantees}</strong>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
