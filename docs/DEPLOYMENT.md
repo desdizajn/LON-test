@@ -7,10 +7,10 @@
 - **Ports:** 1433 (SQL Server), 5000 (API), 3000 (Web Frontend)
 
 ### For Local Development (without Docker):
-- **.NET 8 SDK**
+- **Visual Studio 2022** (17.8+) or **.NET 8 SDK**
 - **Node.js 18+** & **npm**
-- **SQL Server 2022** (или Docker container)
-- **Flutter SDK 3.0+** (за mobile)
+- **SQL Server 2019+** (Express, Developer, или Standard Edition)
+- **Flutter SDK 3.0+** (за mobile - optional)
 
 ---
 
@@ -48,8 +48,12 @@ docker-compose up --build
 
 ```
 Username: admin@lon.local
-Password: Admin@123
+Password: Admin123!
 ```
+
+**Note:** The admin username is actually `admin` (not email format). Use:
+- Username: `admin`
+- Password: `Admin123!`
 
 ### 5. Stop Services
 
@@ -65,6 +69,143 @@ docker-compose down -v
 ---
 
 ## Local Development Setup
+
+---
+
+## Development Setup (Visual Studio + Local SQL Server) **[RECOMMENDED]**
+
+### Backend Setup with Visual Studio
+
+#### 1. Open Solution
+- Open `LON.sln` in Visual Studio 2022
+- Set `LON.API` as startup project (right-click → Set as Startup Project)
+
+#### 2. Configure Database
+
+The `appsettings.Development.json` is already configured with Windows Authentication:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=LONDB;Integrated Security=True;TrustServerCertificate=True;"
+  },
+  "EnableVectorStore": false
+}
+```
+
+**Alternative connection string formats:**
+
+Named SQL Server instance:
+```json
+"Server=localhost\\SQLEXPRESS;Database=LONDB;Integrated Security=True;TrustServerCertificate=True;"
+```
+
+SQL Authentication:
+```json
+"Server=localhost;Database=LONDB;User Id=sa;Password=YourPassword;TrustServerCertificate=True;"
+```
+
+Remote server:
+```json
+"Server=192.168.1.100;Database=LONDB;User Id=sa;Password=YourPassword;TrustServerCertificate=True;"
+```
+
+#### 3. Apply Database Migrations
+
+**Option A - Package Manager Console (Visual Studio):**
+- Open: Tools → NuGet Package Manager → Package Manager Console
+- Run:
+  ```powershell
+  Update-Database
+  ```
+
+**Option B - Terminal:**
+```bash
+cd src/LON.API
+dotnet ef database update
+```
+
+This will:
+- Create `LONDB` database
+- Apply all migrations (tables, indexes, relationships)
+- Seed master data automatically (via `ApplicationDbContextSeed`)
+- Create admin user: `admin` / `Admin123!` (via `UserManagementSeed`)
+
+#### 4. Run API from Visual Studio
+- Press **F5** to start debugging
+- API runs at: `http://localhost:5000`
+- Swagger UI: `http://localhost:5000/swagger`
+- Verify startup logs show successful database seed
+
+#### 5. Verify Seed Data
+
+Connect to SQL Server (SSMS or Azure Data Studio):
+```sql
+USE LONDB;
+SELECT Username, Email FROM Users WHERE Username = 'admin';
+SELECT Name FROM Roles;
+SELECT Name, Resource FROM Permissions;
+```
+
+### Frontend Setup
+
+#### 1. Install Dependencies
+```bash
+cd frontend/web
+npm install --legacy-peer-deps
+```
+
+**Note:** `--legacy-peer-deps` is required due to TypeScript version conflict with react-scripts 5.0.1
+
+#### 2. Verify API Proxy
+
+Check `frontend/web/package.json` has:
+```json
+"proxy": "http://localhost:5000"
+```
+
+#### 3. Run Development Server
+```bash
+npm start
+```
+
+Frontend opens at: `http://localhost:3000`
+
+#### 4. Test Login
+- Navigate to: `http://localhost:3000/login`
+- Username: `admin`
+- Password: `Admin123!`
+- Should redirect to dashboard with admin modules
+
+### Troubleshooting Development Setup
+
+**Cannot connect to database:**
+- Verify SQL Server is running (SQL Server Configuration Manager)
+- Enable TCP/IP protocol
+- Check firewall allows port 1433
+- Test connection string in SSMS first
+
+**Migration fails:**
+- Delete existing LONDB database if exists
+- Run `Update-Database` again
+- Check output window for detailed error
+
+**API starts slow (10-15 minutes):**
+- Already fixed: VectorStoreInitializer commented out in `Program.cs` (lines 111-113)
+- Verify `"EnableVectorStore": false` in appsettings.Development.json
+
+**Frontend npm install fails:**
+- Must use `--legacy-peer-deps` flag
+- Delete `node_modules` and `package-lock.json` if needed
+- Run: `npm install --legacy-peer-deps`
+
+**Login fails with "Failed to fetch":**
+- Check API is running on port 5000
+- Verify browser console for CORS errors
+- Check proxy setting in package.json
+
+---
+
+## Local Development Setup (Command Line Alternative)
 
 ### Backend (.NET API)
 
