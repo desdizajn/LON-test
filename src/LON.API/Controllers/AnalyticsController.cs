@@ -45,7 +45,7 @@ public class AnalyticsController : BaseController
                 PendingDeclarations = await _context.CustomsDeclarations
                     .CountAsync(d => !d.IsCleared),
                 ActiveMRNs = await _context.MRNRegistries
-                    .CountAsync(m => m.IsActive && !m.IsFullyUsed),
+                    .CountAsync(m => m.IsActive && m.RemainingQuantity > 0),
                 ExpiringMRNs = await _context.MRNRegistries
                     .CountAsync(m => m.IsActive &&
                                      m.ExpiryDate.HasValue &&
