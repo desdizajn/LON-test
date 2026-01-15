@@ -22,10 +22,10 @@ public class AnalyticsController : BaseController
             {
                 TotalItems = await _context.Items.CountAsync(),
                 TotalLocations = await _context.Locations.CountAsync(),
-                TotalBalance = await _context.InventoryBalances.SumAsync(i => i.Quantity),
+                TotalBalance = await _context.InventoryBalances.SumAsync(i => (decimal?)i.Quantity) ?? 0m,
                 BlockedQty = await _context.InventoryBalances
                     .Where(i => i.QualityStatus == LON.Domain.Enums.QualityStatus.Blocked)
-                    .SumAsync(i => i.Quantity)
+                    .SumAsync(i => (decimal?)i.Quantity) ?? 0m
             },
             Production = new
             {
@@ -38,7 +38,7 @@ public class AnalyticsController : BaseController
                                      p.ActualEndDate.Value.Date == DateTime.UtcNow.Date),
                 WIP = await _context.ProductionOrders
                     .Where(p => p.Status == LON.Domain.Enums.ProductionOrderStatus.InProgress)
-                    .SumAsync(p => p.OrderQuantity - p.ProducedQuantity)
+                    .SumAsync(p => (decimal?)(p.OrderQuantity - p.ProducedQuantity)) ?? 0m
             },
             Customs = new
             {
@@ -58,7 +58,7 @@ public class AnalyticsController : BaseController
                     .CountAsync(l => l.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit && !l.IsReleased),
                 TotalExposure = await _context.GuaranteeLedgerEntries
                     .Where(l => l.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit && !l.IsReleased)
-                    .SumAsync(l => l.Amount),
+                    .SumAsync(l => (decimal?)l.Amount) ?? 0m,
                 ExpiringGuarantees = await _context.GuaranteeLedgerEntries
                     .CountAsync(l => l.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit &&
                                      !l.IsReleased &&
