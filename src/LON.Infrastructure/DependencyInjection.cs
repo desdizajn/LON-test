@@ -46,6 +46,9 @@ public static class DependencyInjection
         // Auth Service
         services.AddScoped<IAuthService, AuthService>();
 
+        // Vector Store Background Service (ќе работи во background, нема да блокира API startup)
+        services.AddHostedService<VectorStoreBackgroundService>();
+
         return services;
     }
 }

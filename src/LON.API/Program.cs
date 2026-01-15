@@ -108,9 +108,9 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         await UserManagementSeed.SeedAsync(context, authService, logger);
         
-        // Initialize Vector Store - DISABLED temporarily for faster startup
-        // var vectorStoreInitializer = services.GetRequiredService<VectorStoreInitializer>();
-        // await vectorStoreInitializer.InitializeAsync();
+        // ✅ Vector Store сега се иницијализира во background преку VectorStoreBackgroundService
+        // Ова го овозможува брзо стартување на API без да чека на долгата иницијализација
+        logger.LogInformation("Vector Store ќе се иницијализира во background (ако е enable-ирано).");
     }
     catch (Exception ex)
     {
