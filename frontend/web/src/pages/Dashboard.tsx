@@ -31,7 +31,7 @@ interface DashboardData {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+  const [user] = useState(() => authService.getCurrentUser());
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
