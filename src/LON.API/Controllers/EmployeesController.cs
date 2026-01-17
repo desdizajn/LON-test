@@ -126,8 +126,8 @@ public class EmployeesController : BaseController
             employee.LastName,
             employee.Email,
             employee.Phone,
-            employee.Position,
-            employee.Department,
+            employee.Position ?? string.Empty,
+            employee.Department ?? string.Empty,
             employee.HireDate?.ToString("o") ?? string.Empty,
             employee.IsActive,
             employee.User == null
