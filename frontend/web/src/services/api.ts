@@ -17,6 +17,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_expires_at');
+      localStorage.removeItem('user');
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const analyticsApi = {
   getDashboard: () => api.get('/Analytics/dashboard'),
   getProductionKPI: (fromDate?: string, toDate?: string) => 

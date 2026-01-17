@@ -90,12 +90,28 @@ export interface Permission {
 
 class AuthService {
   private token: string | null = null;
+  private tokenExpiresAt: string | null = null;
 
   constructor() {
     this.token = localStorage.getItem('auth_token');
+    this.tokenExpiresAt = localStorage.getItem('auth_expires_at');
+    if (this.token && this.isTokenExpired()) {
+      this.logout();
+    }
     if (this.token) {
       this.setAuthHeader(this.token);
     }
+  }
+
+  private isTokenExpired(): boolean {
+    if (!this.tokenExpiresAt) {
+      return false;
+    }
+    const expiresAt = Date.parse(this.tokenExpiresAt);
+    if (Number.isNaN(expiresAt)) {
+      return false;
+    }
+    return Date.now() >= expiresAt;
   }
 
   private setAuthHeader(token: string) {
@@ -115,6 +131,8 @@ class AuthService {
       
       this.token = response.data.accessToken;
       localStorage.setItem('auth_token', this.token);
+      this.tokenExpiresAt = response.data.expiresAt;
+      localStorage.setItem('auth_expires_at', this.tokenExpiresAt);
       
       // Transform user data for local storage
       const fullName = response.data.user.employee 
@@ -145,7 +163,9 @@ class AuthService {
 
   logout() {
     this.token = null;
+    this.tokenExpiresAt = null;
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_expires_at');
     localStorage.removeItem('user');
     this.removeAuthHeader();
   }
@@ -156,7 +176,14 @@ class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    if (!this.token) {
+      return false;
+    }
+    if (this.isTokenExpired()) {
+      this.logout();
+      return false;
+    }
+    return true;
   }
 
   getToken(): string | null {

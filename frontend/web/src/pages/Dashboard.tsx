@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { analyticsApi } from '../services/api';
 import { authService } from '../services/authService';
@@ -31,26 +31,39 @@ interface DashboardData {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+  const [user] = useState(() => authService.getCurrentUser());
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
+    if (hasLoadedRef.current) {
+      return;
+    }
+    hasLoadedRef.current = true;
     loadDashboard();
   }, [user, navigate]);
 
   const loadDashboard = async () => {
+    if (!user) {
+      return;
+    }
     try {
       setLoading(true);
       const response = await analyticsApi.getDashboard();
       setData(response.data);
       setError(null);
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        authService.logout();
+        navigate('/login');
+        return;
+      }
       setError(err.message || 'Failed to load dashboard');
     } finally {
       setLoading(false);
