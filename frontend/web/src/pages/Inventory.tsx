@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { wmsApi } from '../services/api';
+import ReceiptForm from '../components/WMS/ReceiptForm';
+import TransferForm from '../components/WMS/TransferForm';
+import ShipmentForm from '../components/WMS/ShipmentForm';
+import CycleCountForm from '../components/WMS/CycleCountForm';
+import AdjustmentForm from '../components/WMS/AdjustmentForm';
+import QualityStatusChangeForm from '../components/WMS/QualityStatusChangeForm';
 
 const Inventory: React.FC = () => {
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeForm, setActiveForm] = useState<string | null>(null);
 
   useEffect(() => {
     loadInventory();
@@ -21,13 +28,61 @@ const Inventory: React.FC = () => {
     }
   };
 
+  const handleFormSuccess = () => {
+    setActiveForm(null);
+    loadInventory();
+  };
+
+  const handleFormCancel = () => {
+    setActiveForm(null);
+  };
+
+  // Render active form
+  if (activeForm === 'receipt') {
+    return <ReceiptForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+  if (activeForm === 'transfer') {
+    return <TransferForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+  if (activeForm === 'shipment') {
+    return <ShipmentForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+  if (activeForm === 'cyclecount') {
+    return <CycleCountForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+  if (activeForm === 'adjustment') {
+    return <AdjustmentForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+  if (activeForm === 'qualitychange') {
+    return <QualityStatusChangeForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  }
+
   if (loading) return <div className="loading">Loading inventory...</div>;
 
   return (
     <div>
       <div className="header">
-        <h2>WMS & Inventory</h2>
-        <button className="btn btn-success">+ New Receipt</button>
+        <h2>📦 WMS & Inventory</h2>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn btn-success" onClick={() => setActiveForm('receipt')}>
+            ➕ Receipt
+          </button>
+          <button className="btn btn-primary" onClick={() => setActiveForm('transfer')}>
+            🔄 Transfer
+          </button>
+          <button className="btn btn-info" onClick={() => setActiveForm('shipment')}>
+            📤 Shipment
+          </button>
+          <button className="btn btn-warning" onClick={() => setActiveForm('cyclecount')}>
+            📊 Cycle Count
+          </button>
+          <button className="btn btn-secondary" onClick={() => setActiveForm('adjustment')}>
+            ⚙️ Adjustment
+          </button>
+          <button className="btn btn-danger" onClick={() => setActiveForm('qualitychange')}>
+            🔒 Quality Status
+          </button>
+        </div>
       </div>
 
       <div className="table-container">

@@ -15,10 +15,13 @@ export enum PartnerType {
 }
 
 export enum LocationType {
-  Zone = 1,
-  Aisle = 2,
-  Rack = 3,
-  Bin = 4,
+  Receiving = 1,
+  Storage = 2,
+  Picking = 3,
+  Production = 4,
+  Shipping = 5,
+  Quarantine = 6,
+  Blocked = 7,
 }
 
 export enum QualityStatus {

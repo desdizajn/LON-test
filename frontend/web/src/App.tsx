@@ -29,6 +29,32 @@ import BOMsList from './pages/MasterData/BOMs/BOMsList';
 import BOMDetail from './pages/MasterData/BOMs/BOMDetail';
 import RoutingsList from './pages/MasterData/Routings/RoutingsList';
 import RoutingDetail from './pages/MasterData/Routings/RoutingDetail';
+import WarehouseList from './pages/MasterData/WarehouseList';
+import WarehouseForm from './pages/MasterData/WarehouseForm';
+import LocationList from './pages/MasterData/LocationList';
+import LocationForm from './pages/MasterData/LocationForm';
+
+// Knowledge Base
+import KnowledgeBaseChat from './pages/KnowledgeBase/KnowledgeBaseChat';
+
+// WMS Pages
+import PickTaskList from './pages/WMS/PickTaskList';
+
+// Reports
+import InventoryByLocation from './pages/Reports/InventoryByLocation';
+import InventoryByMRN from './pages/Reports/InventoryByMRN';
+import BlockedInventory from './pages/Reports/BlockedInventory';
+import InventoryByBatch from './pages/Reports/InventoryByBatch';
+import MovementReports from './pages/Reports/MovementReports';
+import WMSDashboard from './pages/Reports/WMSDashboard';
+import CycleCountAccuracy from './pages/Reports/CycleCountAccuracy';
+import WarehouseUtilization from './pages/Reports/WarehouseUtilization';
+
+// Advanced Features
+import BatchTraceability from './pages/Advanced/BatchTraceability';
+import MRNUsageTracking from './pages/Advanced/MRNUsageTracking';
+import LocationInquiry from './pages/Advanced/LocationInquiry';
+import ItemInquiry from './pages/Advanced/ItemInquiry';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -85,7 +111,7 @@ const App: React.FC = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
+          {/* Protected Routes with Layout */}
           <Route
             element={
               <ProtectedRoute>
@@ -101,6 +127,25 @@ const App: React.FC = () => {
             <Route path="/guarantees" element={<Guarantees />} />
             <Route path="/traceability" element={<Traceability />} />
 
+            {/* WMS Routes */}
+            <Route path="/wms/pick-tasks" element={<PickTaskList />} />
+
+            {/* Reports Routes */}
+            <Route path="/reports/wms-dashboard" element={<WMSDashboard />} />
+            <Route path="/reports/inventory-by-location" element={<InventoryByLocation />} />
+            <Route path="/reports/inventory-by-mrn" element={<InventoryByMRN />} />
+            <Route path="/reports/blocked-inventory" element={<BlockedInventory />} />
+            <Route path="/reports/inventory-by-batch" element={<InventoryByBatch />} />
+            <Route path="/reports/movement-reports" element={<MovementReports />} />
+            <Route path="/reports/cycle-count-accuracy" element={<CycleCountAccuracy />} />
+            <Route path="/reports/warehouse-utilization" element={<WarehouseUtilization />} />
+
+            {/* Advanced Features Routes */}
+            <Route path="/advanced/batch-traceability" element={<BatchTraceability />} />
+            <Route path="/advanced/mrn-usage-tracking" element={<MRNUsageTracking />} />
+            <Route path="/advanced/location-inquiry" element={<LocationInquiry />} />
+            <Route path="/advanced/item-inquiry" element={<ItemInquiry />} />
+
             {/* User Management Routes */}
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/employees" element={<EmployeeManagement />} />
@@ -112,12 +157,19 @@ const App: React.FC = () => {
             <Route path="/master-data/items/:id" element={<ItemDetail />} />
             <Route path="/master-data/partners" element={<PartnersList />} />
             <Route path="/master-data/partners/:id" element={<PartnerDetail />} />
-            <Route path="/master-data/warehouses" element={<WarehousesList />} />
+            <Route path="/master-data/warehouses-old" element={<WarehousesList />} />
+            <Route path="/master-data/warehouses" element={<WarehouseList />} />
+            <Route path="/master-data/warehouses/:id" element={<WarehouseForm />} />
+            <Route path="/master-data/locations" element={<LocationList />} />
+            <Route path="/master-data/locations/:id" element={<LocationForm />} />
             <Route path="/master-data/uom" element={<UoMList />} />
             <Route path="/master-data/boms" element={<BOMsList />} />
             <Route path="/master-data/boms/:id" element={<BOMDetail />} />
             <Route path="/master-data/routings" element={<RoutingsList />} />
             <Route path="/master-data/routings/:id" element={<RoutingDetail />} />
+
+            {/* Knowledge Base Routes */}
+            <Route path="/knowledge-base" element={<KnowledgeBaseChat />} />
           </Route>
         </Routes>
       </div>
