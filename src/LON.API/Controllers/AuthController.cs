@@ -1,5 +1,4 @@
-using LON.API.Controllers;
-using LON.Application.Common.DTOs;
+using AppDtos = LON.Application.Common.DTOs;
 using LON.Infrastructure.Persistence;
 using LON.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +27,7 @@ public class AuthController : BaseController
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<AppDtos.LoginResponse>> Login([FromBody] AppDtos.LoginRequest request)
     {
         try
         {
@@ -65,17 +64,17 @@ public class AuthController : BaseController
 
             var expiresAt = DateTime.UtcNow.AddHours(1); // Should match JWT expiry
 
-            var response = new LoginResponse(
+            var response = new AppDtos.LoginResponse(
                 accessToken,
                 refreshToken,
                 expiresAt,
-                new UserDto(
+                new AppDtos.UserDto(
                     user.Id,
                     user.Username,
                     user.Email,
                     user.IsActive,
                     user.LastLoginAt,
-                    user.Employee != null ? new EmployeeDto(
+                    user.Employee != null ? new AppDtos.EmployeeDto(
                         user.Employee.Id,
                         user.Employee.EmployeeNumber,
                         user.Employee.FirstName,
@@ -85,7 +84,7 @@ public class AuthController : BaseController
                         user.Employee.Department,
                         user.Employee.Position,
                         user.Employee.HireDate,
-                        user.Employee.Shift != null ? new ShiftDto(
+                        user.Employee.Shift != null ? new AppDtos.ShiftDto(
                             user.Employee.Shift.Id,
                             user.Employee.Shift.Code,
                             user.Employee.Shift.Name,
@@ -96,12 +95,12 @@ public class AuthController : BaseController
                         ) : null,
                         user.Employee.IsActive
                     ) : null,
-                    user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new RoleDto(
+                    user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new AppDtos.RoleDto(
                         ur.Role.Id,
                         ur.Role.Name,
                         ur.Role.Description,
                         ur.Role.IsActive,
-                        ur.Role.RolePermissions.Select(rp => new PermissionDto(
+                        ur.Role.RolePermissions.Select(rp => new AppDtos.PermissionDto(
                             rp.Permission.Id,
                             rp.Permission.Name,
                             rp.Permission.Description,
@@ -123,7 +122,7 @@ public class AuthController : BaseController
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshTokenRequest request)
+    public async Task<ActionResult<AppDtos.LoginResponse>> Refresh([FromBody] AppDtos.RefreshTokenRequest request)
     {
         try
         {
@@ -167,17 +166,17 @@ public class AuthController : BaseController
 
             var expiresAt = DateTime.UtcNow.AddHours(1);
 
-            var response = new LoginResponse(
+            var response = new AppDtos.LoginResponse(
                 accessToken,
                 newRefreshToken,
                 expiresAt,
-                new UserDto(
+                new AppDtos.UserDto(
                     user.Id,
                     user.Username,
                     user.Email,
                     user.IsActive,
                     user.LastLoginAt,
-                    user.Employee != null ? new EmployeeDto(
+                    user.Employee != null ? new AppDtos.EmployeeDto(
                         user.Employee.Id,
                         user.Employee.EmployeeNumber,
                         user.Employee.FirstName,
@@ -187,7 +186,7 @@ public class AuthController : BaseController
                         user.Employee.Department,
                         user.Employee.Position,
                         user.Employee.HireDate,
-                        user.Employee.Shift != null ? new ShiftDto(
+                        user.Employee.Shift != null ? new AppDtos.ShiftDto(
                             user.Employee.Shift.Id,
                             user.Employee.Shift.Code,
                             user.Employee.Shift.Name,
@@ -198,12 +197,12 @@ public class AuthController : BaseController
                         ) : null,
                         user.Employee.IsActive
                     ) : null,
-                    user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new RoleDto(
+                    user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new AppDtos.RoleDto(
                         ur.Role.Id,
                         ur.Role.Name,
                         ur.Role.Description,
                         ur.Role.IsActive,
-                        ur.Role.RolePermissions.Select(rp => new PermissionDto(
+                        ur.Role.RolePermissions.Select(rp => new AppDtos.PermissionDto(
                             rp.Permission.Id,
                             rp.Permission.Name,
                             rp.Permission.Description,
@@ -250,7 +249,7 @@ public class AuthController : BaseController
 
     [HttpGet("me")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> GetCurrentUser()
+    public async Task<ActionResult<AppDtos.UserDto>> GetCurrentUser()
     {
         try
         {
@@ -269,13 +268,13 @@ public class AuthController : BaseController
                 return NotFound(new { message = "User not found" });
             }
 
-            var response = new UserDto(
+            var response = new AppDtos.UserDto(
                 user.Id,
                 user.Username,
                 user.Email,
                 user.IsActive,
                 user.LastLoginAt,
-                user.Employee != null ? new EmployeeDto(
+                user.Employee != null ? new AppDtos.EmployeeDto(
                     user.Employee.Id,
                     user.Employee.EmployeeNumber,
                     user.Employee.FirstName,
@@ -285,7 +284,7 @@ public class AuthController : BaseController
                     user.Employee.Department,
                     user.Employee.Position,
                     user.Employee.HireDate,
-                    user.Employee.Shift != null ? new ShiftDto(
+                    user.Employee.Shift != null ? new AppDtos.ShiftDto(
                         user.Employee.Shift.Id,
                         user.Employee.Shift.Code,
                         user.Employee.Shift.Name,
@@ -296,12 +295,12 @@ public class AuthController : BaseController
                     ) : null,
                     user.Employee.IsActive
                 ) : null,
-                user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new RoleDto(
+                user.UserRoles.Where(ur => ur.Role.IsActive).Select(ur => new AppDtos.RoleDto(
                     ur.Role.Id,
                     ur.Role.Name,
                     ur.Role.Description,
                     ur.Role.IsActive,
-                    ur.Role.RolePermissions.Select(rp => new PermissionDto(
+                    ur.Role.RolePermissions.Select(rp => new AppDtos.PermissionDto(
                         rp.Permission.Id,
                         rp.Permission.Name,
                         rp.Permission.Description,
