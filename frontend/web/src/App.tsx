@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Dashboard from './pages/Dashboard';
@@ -36,6 +36,45 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+const resolveActiveModule = (path: string) => {
+  if (path.startsWith('/inventory')) return 'inventory';
+  if (path.startsWith('/production')) return 'production';
+  if (path.startsWith('/customs')) return 'customs';
+  if (path.startsWith('/guarantees')) return 'guarantees';
+  if (path.startsWith('/traceability')) return 'traceability';
+  if (path.startsWith('/admin/users')) return 'admin-users';
+  if (path.startsWith('/admin/employees')) return 'admin-employees';
+  if (path.startsWith('/admin/shifts')) return 'admin-shifts';
+  if (path.startsWith('/admin/roles')) return 'admin-roles';
+  if (path.startsWith('/master-data/items')) return 'items';
+  if (path.startsWith('/master-data/partners')) return 'partners';
+  if (path.startsWith('/master-data/warehouses')) return 'warehouses';
+  if (path.startsWith('/master-data/uom')) return 'uom';
+  if (path.startsWith('/master-data/boms')) return 'boms';
+  if (path.startsWith('/master-data/routings')) return 'routings';
+  return 'dashboard';
+};
+
+const ProtectedLayout: React.FC<{
+  activeModule: string;
+  setActiveModule: (module: string) => void;
+}> = ({ activeModule, setActiveModule }) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    setActiveModule(resolveActiveModule(location.pathname));
+  }, [location.pathname, setActiveModule]);
+
+  return (
+    <>
+      <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+      <div className="main-content">
+        <Outlet />
+      </div>
+    </>
+  );
+};
+
 const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
 
@@ -47,31 +86,39 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
 
           {/* Protected Routes */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-          <Route path="/production" element={<ProtectedRoute><Production /></ProtectedRoute>} />
-          <Route path="/customs" element={<ProtectedRoute><Customs /></ProtectedRoute>} />
-          <Route path="/guarantees" element={<ProtectedRoute><Guarantees /></ProtectedRoute>} />
-          <Route path="/traceability" element={<ProtectedRoute><Traceability /></ProtectedRoute>} />
-          
-          {/* User Management Routes */}
-          <Route path="/admin/users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-          <Route path="/admin/employees" element={<ProtectedRoute><EmployeeManagement /></ProtectedRoute>} />
-          <Route path="/admin/shifts" element={<ProtectedRoute><ShiftManagement /></ProtectedRoute>} />
-          <Route path="/admin/roles" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
-          
-          {/* Master Data Routes */}
-          <Route path="/master-data/items" element={<ProtectedRoute><ItemsList /></ProtectedRoute>} />
-          <Route path="/master-data/items/:id" element={<ProtectedRoute><ItemDetail /></ProtectedRoute>} />
-          <Route path="/master-data/partners" element={<ProtectedRoute><PartnersList /></ProtectedRoute>} />
-          <Route path="/master-data/partners/:id" element={<ProtectedRoute><PartnerDetail /></ProtectedRoute>} />
-          <Route path="/master-data/warehouses" element={<ProtectedRoute><WarehousesList /></ProtectedRoute>} />
-          <Route path="/master-data/uom" element={<ProtectedRoute><UoMList /></ProtectedRoute>} />
-          <Route path="/master-data/boms" element={<ProtectedRoute><BOMsList /></ProtectedRoute>} />
-          <Route path="/master-data/boms/:id" element={<ProtectedRoute><BOMDetail /></ProtectedRoute>} />
-          <Route path="/master-data/routings" element={<ProtectedRoute><RoutingsList /></ProtectedRoute>} />
-          <Route path="/master-data/routings/:id" element={<ProtectedRoute><RoutingDetail /></ProtectedRoute>} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <ProtectedLayout activeModule={activeModule} setActiveModule={setActiveModule} />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/production" element={<Production />} />
+            <Route path="/customs" element={<Customs />} />
+            <Route path="/guarantees" element={<Guarantees />} />
+            <Route path="/traceability" element={<Traceability />} />
+
+            {/* User Management Routes */}
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/employees" element={<EmployeeManagement />} />
+            <Route path="/admin/shifts" element={<ShiftManagement />} />
+            <Route path="/admin/roles" element={<RoleManagement />} />
+
+            {/* Master Data Routes */}
+            <Route path="/master-data/items" element={<ItemsList />} />
+            <Route path="/master-data/items/:id" element={<ItemDetail />} />
+            <Route path="/master-data/partners" element={<PartnersList />} />
+            <Route path="/master-data/partners/:id" element={<PartnerDetail />} />
+            <Route path="/master-data/warehouses" element={<WarehousesList />} />
+            <Route path="/master-data/uom" element={<UoMList />} />
+            <Route path="/master-data/boms" element={<BOMsList />} />
+            <Route path="/master-data/boms/:id" element={<BOMDetail />} />
+            <Route path="/master-data/routings" element={<RoutingsList />} />
+            <Route path="/master-data/routings/:id" element={<RoutingDetail />} />
+          </Route>
         </Routes>
       </div>
       <ToastContainer position="top-right" autoClose={3000} />
