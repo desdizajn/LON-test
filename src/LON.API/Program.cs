@@ -93,29 +93,49 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Initialize database
+// Initialize database with retry logic
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    
+    logger.LogInformation("Starting database initialization...");
+    
+    // Initialize database with retry logic
+    var initialized = await LON.Infrastructure.Persistence.DatabaseInitializer.InitializeAsync(
+        context, 
+        logger, 
+        maxRetries: 10, 
+        delaySeconds: 5);
+    
+    if (initialized)
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
-        await ApplicationDbContextSeed.SeedAsync(context);
-        
-        // Seed User Management data
-        var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        await UserManagementSeed.SeedAsync(context, authService, logger);
-        
-        // ✅ Vector Store сега се иницијализира во background преку VectorStoreBackgroundService
-        // Ова го овозможува брзо стартување на API без да чека на долгата иницијализација
-        logger.LogInformation("Vector Store ќе се иницијализира во background (ако е enable-ирано).");
+        try
+        {
+            // Seed master data
+            logger.LogInformation("Seeding master data...");
+            await ApplicationDbContextSeed.SeedAsync(context);
+            
+            // Seed User Management data
+            logger.LogInformation("Seeding user management data...");
+            var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
+            await UserManagementSeed.SeedAsync(context, authService, logger);
+            
+            // ✅ Vector Store сега се иницијализира во background преку VectorStoreBackgroundService
+            // Ова го овозможува брзо стартување на API без да чека на долгата иницијализација
+            logger.LogInformation("Vector Store ќе се иницијализира во background (ако е enable-ирано).");
+            
+            logger.LogInformation("✅ Database initialization completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "❌ Error during data seeding. Application will continue but data may be incomplete.");
+        }
     }
-    catch (Exception ex)
+    else
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        logger.LogError("❌ Failed to initialize database. Application will start but database operations may fail.");
     }
 }
 
@@ -133,5 +153,42 @@ app.MapControllers();
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
+// Database health check endpoint
+app.MapGet("/health/db", async (ApplicationDbContext context) =>
+{
+    try
+    {
+        var canConnect = await context.Database.CanConnectAsync();
+        if (canConnect)
+        {
+            return Results.Ok(new
+            {
+                status = "healthy",
+                database = "connected",
+                timestamp = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            return Results.Json(new
+            {
+                status = "unhealthy",
+                database = "disconnected",
+                timestamp = DateTime.UtcNow
+            }, statusCode: 503);
+        }
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            status = "unhealthy",
+            database = "error",
+            error = ex.Message,
+            timestamp = DateTime.UtcNow
+        }, statusCode: 503);
+    }
+});
 
 app.Run();
