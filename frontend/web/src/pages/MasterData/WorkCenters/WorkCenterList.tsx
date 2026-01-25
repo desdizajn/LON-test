@@ -85,7 +85,7 @@ const WorkCenterList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Дали сте сигурни дека сакате да го избришете работниот центар?')) return;
+    if (!window.confirm('Дали сте сигурни дека сакате да го избришете работниот центар?')) return;
     try {
       await masterDataApi.deleteWorkCenter(id);
       loadWorkCenters();

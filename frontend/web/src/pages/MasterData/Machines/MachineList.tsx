@@ -92,7 +92,7 @@ const MachineList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Дали сте сигурни дека сакате да ја избришете машината?')) return;
+    if (!window.confirm('Дали сте сигурни дека сакате да ја избришете машината?')) return;
     try {
       await masterDataApi.deleteMachine(id);
       loadData();
