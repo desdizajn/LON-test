@@ -85,6 +85,98 @@ public class WMSController : BaseController
         return Ok(shipments);
     }
 
+    [HttpPost("shipments")]
+    public async Task<IActionResult> CreateShipment([FromBody] CreateShipmentRequest request)
+    {
+        var shipment = new LON.Domain.Entities.WMS.Shipment
+        {
+            Id = Guid.NewGuid(),
+            ShipmentNumber = GenerateShipmentNumber(),
+            ShipmentDate = DateTime.UtcNow,
+            CustomerId = request.CustomerId,
+            CarrierId = request.CarrierId,
+            Status = LON.Domain.Enums.ShipmentStatus.Draft,
+            TrackingNumber = request.TrackingNumber,
+            SalesOrderNumber = request.SalesOrderNumber,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Shipments.Add(shipment);
+        await _context.SaveChangesAsync();
+
+        return Ok(shipment);
+    }
+
+    [HttpPost("transfers")]
+    public async Task<IActionResult> CreateTransfer([FromBody] CreateTransferRequest request)
+    {
+        var transfer = new LON.Domain.Entities.WMS.Transfer
+        {
+            Id = Guid.NewGuid(),
+            TransferNumber = GenerateTransferNumber(),
+            TransferDate = DateTime.UtcNow,
+            FromLocationId = request.FromLocationId,
+            ToLocationId = request.ToLocationId,
+            Notes = request.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Transfers.Add(transfer);
+        await _context.SaveChangesAsync();
+
+        return Ok(transfer);
+    }
+
+    [HttpGet("transfers")]
+    public async Task<IActionResult> GetTransfers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var transfers = await _context.Transfers
+            .Include(t => t.FromLocation)
+            .Include(t => t.ToLocation)
+            .Include(t => t.Lines)
+            .OrderByDescending(t => t.TransferDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(transfers);
+    }
+
+    [HttpGet("cycle-counts")]
+    public async Task<IActionResult> GetCycleCounts([FromQuery] LON.Domain.Enums.CycleCountStatus? status = null)
+    {
+        var query = _context.CycleCounts
+            .Include(c => c.Warehouse)
+            .Include(c => c.Lines)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(c => c.Status == status.Value);
+
+        var counts = await query.OrderByDescending(c => c.ScheduledDate).ToListAsync();
+        return Ok(counts);
+    }
+
+    [HttpPost("cycle-counts")]
+    public async Task<IActionResult> CreateCycleCount([FromBody] CreateCycleCountRequest request)
+    {
+        var cycleCount = new LON.Domain.Entities.WMS.CycleCount
+        {
+            Id = Guid.NewGuid(),
+            CountNumber = GenerateCycleCountNumber(),
+            ScheduledDate = request.ScheduledDate,
+            WarehouseId = request.WarehouseId,
+            Status = LON.Domain.Enums.CycleCountStatus.Planned,
+            Notes = request.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.CycleCounts.Add(cycleCount);
+        await _context.SaveChangesAsync();
+
+        return Ok(cycleCount);
+    }
+
     [HttpGet("pick-tasks")]
     public async Task<IActionResult> GetPickTasks([FromQuery] PickTaskStatus? status = null)
     {
@@ -100,4 +192,48 @@ public class WMSController : BaseController
         var tasks = await query.OrderBy(p => p.CreatedAt).ToListAsync();
         return Ok(tasks);
     }
+
+    private string GenerateShipmentNumber()
+    {
+        var date = DateTime.UtcNow;
+        var count = _context.Shipments.Count(r => r.CreatedAt.Date == date.Date) + 1;
+        return $"SHP-{date:yyyyMMdd}-{count:D4}";
+    }
+
+    private string GenerateTransferNumber()
+    {
+        var date = DateTime.UtcNow;
+        var count = _context.Transfers.Count(r => r.CreatedAt.Date == date.Date) + 1;
+        return $"TRF-{date:yyyyMMdd}-{count:D4}";
+    }
+
+    private string GenerateCycleCountNumber()
+    {
+        var date = DateTime.UtcNow;
+        var count = _context.CycleCounts.Count(r => r.CreatedAt.Date == date.Date) + 1;
+        return $"CC-{date:yyyyMMdd}-{count:D4}";
+    }
+}
+
+// Request DTOs
+public class CreateShipmentRequest
+{
+    public Guid? CustomerId { get; set; }
+    public Guid? CarrierId { get; set; }
+    public string? TrackingNumber { get; set; }
+    public string? SalesOrderNumber { get; set; }
+}
+
+public class CreateTransferRequest
+{
+    public Guid FromLocationId { get; set; }
+    public Guid ToLocationId { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CreateCycleCountRequest
+{
+    public DateTime ScheduledDate { get; set; }
+    public Guid WarehouseId { get; set; }
+    public string? Notes { get; set; }
 }

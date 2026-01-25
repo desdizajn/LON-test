@@ -74,6 +74,8 @@ export const wmsApi = {
     api.post(`/WMS/pick-tasks/${id}/complete`, { quantityPicked }),
   
   // Transfers
+  getTransfers: (page: number = 1, pageSize: number = 20) => 
+    api.get('/WMS/transfers', { params: { page, pageSize } }),
   createTransfer: (data: any) => 
     api.post('/WMS/transfers', data),
   
@@ -82,10 +84,10 @@ export const wmsApi = {
     api.post('/WMS/inventory/quality-status', data),
   
   // Cycle Count
+  getCycleCounts: (status?: string) => 
+    api.get('/WMS/cycle-counts', { params: { status } }),
   createCycleCount: (data: any) => 
     api.post('/WMS/cycle-counts', data),
-  getCycleCounts: () => 
-    api.get('/WMS/cycle-counts'),
   getCycleCount: (id: string) => 
     api.get(`/WMS/cycle-counts/${id}`),
   
@@ -164,10 +166,17 @@ export const guaranteeApi = {
   // Accounts
   getAccounts: () => api.get('/Guarantee/accounts'),
   getAccount: (id: string) => api.get(`/Guarantee/accounts/${id}`),
+  createAccount: (data: any) => api.post('/Guarantee/accounts', data),
+  updateAccount: (id: string, data: any) => api.put(`/Guarantee/accounts/${id}`, data),
+  deleteAccount: (id: string) => api.delete(`/Guarantee/accounts/${id}`),
   
   // Ledger
   getLedger: (accountId?: string, isReleased?: boolean) => 
     api.get('/Guarantee/ledger', { params: { accountId, isReleased } }),
+  createLedgerEntry: (data: any) => 
+    api.post('/Guarantee/ledger', data),
+  releaseEntry: (id: string) => 
+    api.put(`/Guarantee/ledger/${id}/release`),
   createDebit: (data: any) => 
     api.post('/Guarantee/debit', data),
   createCredit: (data: any) => 
@@ -189,17 +198,89 @@ export const traceabilityApi = {
 };
 
 export const masterDataApi = {
+  // Items
   getItems: (search?: string) => 
     api.get('/MasterData/items', { params: { search } }),
+  getItem: (id: string) => 
+    api.get(`/MasterData/items/${id}`),
+  createItem: (data: any) => 
+    api.post('/MasterData/items', data),
+  updateItem: (id: string, data: any) => 
+    api.put(`/MasterData/items/${id}`, data),
+  deleteItem: (id: string) => 
+    api.delete(`/MasterData/items/${id}`),
+  
+  // Warehouses
   getWarehouses: () => api.get('/MasterData/warehouses'),
+  getWarehouse: (id: string) => 
+    api.get(`/MasterData/warehouses/${id}`),
+  createWarehouse: (data: any) => 
+    api.post('/MasterData/warehouses', data),
+  updateWarehouse: (id: string, data: any) => 
+    api.put(`/MasterData/warehouses/${id}`, data),
+  deleteWarehouse: (id: string) => 
+    api.delete(`/MasterData/warehouses/${id}`),
+  
+  // Locations
   getLocations: (warehouseId?: string) => 
     api.get('/MasterData/locations', { params: { warehouseId } }),
+  getLocation: (id: string) => 
+    api.get(`/MasterData/locations/${id}`),
+  createLocation: (data: any) => 
+    api.post('/MasterData/locations', data),
+  updateLocation: (id: string, data: any) => 
+    api.put(`/MasterData/locations/${id}`, data),
+  deleteLocation: (id: string) => 
+    api.delete(`/MasterData/locations/${id}`),
+  
+  // Partners
   getPartners: (type?: string) => 
     api.get('/MasterData/partners', { params: { type } }),
+  getPartner: (id: string) => 
+    api.get(`/MasterData/partners/${id}`),
+  createPartner: (data: any) => 
+    api.post('/MasterData/partners', data),
+  updatePartner: (id: string, data: any) => 
+    api.put(`/MasterData/partners/${id}`, data),
+  deletePartner: (id: string) => 
+    api.delete(`/MasterData/partners/${id}`),
+  
+  // Employees
   getEmployees: () => api.get('/MasterData/employees'),
-  getWorkCenters: () => api.get('/MasterData/work-centers'),
+  
+  // Work Centers
+  getWorkCenters: () => api.get('/MasterData/workcenters'),
+  getWorkCenter: (id: string) => 
+    api.get(`/MasterData/workcenters/${id}`),
+  createWorkCenter: (data: any) => 
+    api.post('/MasterData/workcenters', data),
+  updateWorkCenter: (id: string, data: any) => 
+    api.put(`/MasterData/workcenters/${id}`, data),
+  deleteWorkCenter: (id: string) => 
+    api.delete(`/MasterData/workcenters/${id}`),
+  
+  // Machines
+  getMachines: (workCenterId?: string) => 
+    api.get('/MasterData/machines', { params: { workCenterId } }),
+  getMachine: (id: string) => 
+    api.get(`/MasterData/machines/${id}`),
+  createMachine: (data: any) => 
+    api.post('/MasterData/machines', data),
+  updateMachine: (id: string, data: any) => 
+    api.put(`/MasterData/machines/${id}`, data),
+  deleteMachine: (id: string) => 
+    api.delete(`/MasterData/machines/${id}`),
+  
+  // UoM
   getUoM: () => api.get('/MasterData/uom'),
+  createUoM: (data: any) => 
+    api.post('/MasterData/uom', data),
+  updateUoM: (id: string, data: any) => 
+    api.put(`/MasterData/uom/${id}`, data),
+  deleteUoM: (id: string) => 
+    api.delete(`/MasterData/uom/${id}`),
 };
+
 
 export const knowledgeBaseApi = {
   // RAG - Ask Questions

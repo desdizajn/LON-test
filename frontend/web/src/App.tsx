@@ -33,6 +33,8 @@ import WarehouseList from './pages/MasterData/WarehouseList';
 import WarehouseForm from './pages/MasterData/WarehouseForm';
 import LocationList from './pages/MasterData/LocationList';
 import LocationForm from './pages/MasterData/LocationForm';
+import WorkCenterList from './pages/MasterData/WorkCenters/WorkCenterList';
+import MachineList from './pages/MasterData/Machines/MachineList';
 
 // Knowledge Base
 import KnowledgeBaseChat from './pages/KnowledgeBase/KnowledgeBaseChat';
@@ -162,6 +164,8 @@ const App: React.FC = () => {
             <Route path="/master-data/warehouses/:id" element={<WarehouseForm />} />
             <Route path="/master-data/locations" element={<LocationList />} />
             <Route path="/master-data/locations/:id" element={<LocationForm />} />
+            <Route path="/master-data/workcenters" element={<WorkCenterList />} />
+            <Route path="/master-data/machines" element={<MachineList />} />
             <Route path="/master-data/uom" element={<UoMList />} />
             <Route path="/master-data/boms" element={<BOMsList />} />
             <Route path="/master-data/boms/:id" element={<BOMDetail />} />
