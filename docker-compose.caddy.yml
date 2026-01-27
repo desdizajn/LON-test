@@ -1,0 +1,102 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./backups:/var/backups/mssql
+    networks:
+      - inventory_network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$(cat /run/secrets/db_password)" -C -Q "SELECT 1"
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass $$(cat /run/secrets/redis_password) --maxmemory 256mb --maxmemory-policy allkeys-lru
+    secrets:
+      - redis_password
+    volumes:
+      - redis_data:/data
+    networks:
+      - inventory_network
+    healthcheck:
+      test: redis-cli --pass "$$(cat /run/secrets/redis_password)" ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    image: ghcr.io/desdizajn/aplikacija-za-popisi/backend:latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "mssql+pyodbc://sa:$$(cat /run/secrets/db_password)@mssql:1433/inventory_db?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes"
+      SECRET_KEY_FILE: /run/secrets/secret_key
+      REDIS_URL: "redis://:$$(cat /run/secrets/redis_password)@redis:6379/0"
+      USE_REDIS: "true"
+      ENVIRONMENT: "production"
+      CORS_ORIGINS: '["https://inventory.elbosoft.click"]'
+      LOG_LEVEL: "INFO"
+    secrets:
+      - db_password
+      - redis_password
+      - secret_key
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      mssql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - inventory_network
+      - web
+    healthcheck:
+      test: curl -f http://localhost:8000/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    image: ghcr.io/desdizajn/aplikacija-za-popisi/frontend:latest
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: "https://inventory.elbosoft.click/api"
+    depends_on:
+      - backend
+    networks:
+      - inventory_network
+      - web
+    healthcheck:
+      test: curl -f http://localhost/ || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  inventory_network:
+  web:
+    external: true
+
+volumes:
+  mssql_data:
+  redis_data:
+  uploads_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  secret_key:
+    file: ./secrets/secret_key.txt
