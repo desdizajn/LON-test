@@ -1,0 +1,31 @@
+{
+  email admin@elbosoft.click
+}
+
+# ---- inventory app ----
+inventory.elbosoft.click {
+
+  @api path /api* /docs* /openapi* /health
+  handle @api {
+    reverse_proxy inventory-backend:8000
+  }
+
+  handle {
+    reverse_proxy inventory-frontend:80
+  }
+}
+
+# ---- LON app ----
+elon.elbosoft.click {
+  
+  # API routes
+  @api path /api* /swagger* /health
+  handle @api {
+    reverse_proxy lon-api:5000
+  }
+
+  # Frontend routes
+  handle {
+    reverse_proxy lon-frontend:80
+  }
+}
