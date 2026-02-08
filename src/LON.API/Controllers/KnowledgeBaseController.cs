@@ -332,9 +332,72 @@ public class KnowledgeBaseController : ControllerBase
 
         return Ok(items);
     }
+
+    /// <summary>
+    /// Create code list item
+    /// </summary>
+    [HttpPost("code-lists/items")]
+    public async Task<ActionResult> CreateCodeListItem([FromBody] CodeListItemRequest request)
+    {
+        var item = new LON.Domain.Entities.MasterData.CodeListItem
+        {
+            Id = Guid.NewGuid(),
+            ListType = request.ListType,
+            Code = request.Code,
+            DescriptionMK = request.DescriptionMK,
+            DescriptionEN = request.DescriptionEN,
+            IsActive = true,
+            SortOrder = request.SortOrder,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "User"
+        };
+
+        _context.CodeListItems.Add(item);
+        await _context.SaveChangesAsync();
+        return Ok(new { item.Id, item.ListType, item.Code, item.DescriptionMK, item.DescriptionEN, item.SortOrder });
+    }
+
+    /// <summary>
+    /// Update code list item
+    /// </summary>
+    [HttpPut("code-lists/items/{id}")]
+    public async Task<ActionResult> UpdateCodeListItem(Guid id, [FromBody] CodeListItemRequest request)
+    {
+        var item = await _context.CodeListItems.FirstOrDefaultAsync(c => c.Id == id);
+        if (item == null) return NotFound();
+
+        item.ListType = request.ListType;
+        item.Code = request.Code;
+        item.DescriptionMK = request.DescriptionMK;
+        item.DescriptionEN = request.DescriptionEN;
+        item.SortOrder = request.SortOrder;
+        item.ModifiedAt = DateTime.UtcNow;
+        item.ModifiedBy = "User";
+
+        await _context.SaveChangesAsync();
+        return Ok(new { item.Id, item.ListType, item.Code, item.DescriptionMK, item.DescriptionEN, item.SortOrder });
+    }
+
+    /// <summary>
+    /// Delete code list item
+    /// </summary>
+    [HttpDelete("code-lists/items/{id}")]
+    public async Task<ActionResult> DeleteCodeListItem(Guid id)
+    {
+        var item = await _context.CodeListItems.FirstOrDefaultAsync(c => c.Id == id);
+        if (item == null) return NotFound();
+
+        item.IsActive = false;
+        item.ModifiedAt = DateTime.UtcNow;
+        item.ModifiedBy = "User";
+
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
 }
 
 // Request DTOs
 public record QuestionRequest(string Question, int MaxContextChunks = 3);
 public record ConceptRequest(string Concept);
 public record SearchRequest(string Query, int TopK = 5, double MinSimilarity = 0.7, string? DocumentType = null);
+public record CodeListItemRequest(string ListType, string Code, string DescriptionMK, string? DescriptionEN = null, int SortOrder = 0);

@@ -38,6 +38,7 @@ import MachineList from './pages/MasterData/Machines/MachineList';
 
 // Knowledge Base
 import KnowledgeBaseChat from './pages/KnowledgeBase/KnowledgeBaseChat';
+import CodeListManagement from './pages/CodeListManagement';
 
 // WMS Pages
 import PickTaskList from './pages/WMS/PickTaskList';
@@ -171,6 +172,7 @@ const App: React.FC = () => {
             <Route path="/master-data/boms/:id" element={<BOMDetail />} />
             <Route path="/master-data/routings" element={<RoutingsList />} />
             <Route path="/master-data/routings/:id" element={<RoutingDetail />} />
+            <Route path="/master-data/code-lists" element={<CodeListManagement />} />
 
             {/* Knowledge Base Routes */}
             <Route path="/knowledge-base" element={<KnowledgeBaseChat />} />

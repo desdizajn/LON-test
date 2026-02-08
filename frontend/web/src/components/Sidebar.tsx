@@ -54,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
     { id: 'uom', label: 'Units of Measure', path: '/master-data/uom' },
     { id: 'boms', label: 'Bills of Materials', path: '/master-data/boms' },
     { id: 'routings', label: 'Routings', path: '/master-data/routings' },
+    { id: 'code-lists', label: 'Code Lists', path: '/master-data/code-lists' },
   ];
 
   const adminItems = [
