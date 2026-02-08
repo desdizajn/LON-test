@@ -113,20 +113,38 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            // Seed master data
-            logger.LogInformation("Seeding master data...");
-            await ApplicationDbContextSeed.SeedAsync(context);
-            
-            // Seed User Management data
+            // Seed User Management data FIRST (critical for login)
             logger.LogInformation("Seeding user management data...");
             var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
             await UserManagementSeed.SeedAsync(context, authService, logger);
-            
+
+            // Seed master data (without Knowledge Base - that runs in background)
+            logger.LogInformation("Seeding master data...");
+            await ApplicationDbContextSeed.SeedAsync(context, skipKnowledgeBase: true);
+
             // ✅ Vector Store сега се иницијализира во background преку VectorStoreBackgroundService
-            // Ова го овозможува брзо стартување на API без да чека на долгата иницијализација
             logger.LogInformation("Vector Store ќе се иницијализира во background (ако е enable-ирано).");
-            
+
             logger.LogInformation("✅ Database initialization completed successfully.");
+
+            // Knowledge Base seeding runs in background - does not block API startup
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var kbScope = app.Services.CreateScope();
+                    var kbContext = kbScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var kbLogger = kbScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                    kbLogger.LogInformation("Starting Knowledge Base seeding in background...");
+                    await KnowledgeBaseSeeder.SeedKnowledgeBaseAsync(kbContext);
+                    kbLogger.LogInformation("✅ Knowledge Base seeding completed in background.");
+                }
+                catch (Exception kbEx)
+                {
+                    var kbLogger = app.Services.GetRequiredService<ILogger<Program>>();
+                    kbLogger.LogWarning(kbEx, "Knowledge Base seeding failed in background. This is non-critical.");
+                }
+            });
         }
         catch (Exception ex)
         {
