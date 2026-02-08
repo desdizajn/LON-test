@@ -44,6 +44,7 @@ public static class KnowledgeBaseSeeder
         if (!await context.CodeListItems.AnyAsync())
         {
             await SeedCodeListItemsAsync(context);
+            await SeedAdditionalCodeListsAsync(context);
         }
         else
         {
@@ -230,54 +231,106 @@ public static class KnowledgeBaseSeeder
 
     #endregion
 
-    #region CodeListItems (41 код)
+    #region CodeListItems
 
     private static async Task SeedCodeListItemsAsync(ApplicationDbContext context)
     {
-        Console.WriteLine("📦 Seeding CodeListItems from lon_codelists.json...");
-
-        var jsonPath = Path.Combine(KbPath, "lon_codelists.json");
-
-        if (!File.Exists(jsonPath))
-        {
-            Console.WriteLine($"⚠️ WARNING: File not found: {jsonPath}");
-            return;
-        }
-
-        var jsonContent = await File.ReadAllTextAsync(jsonPath);
-        var codeListData = JsonSerializer.Deserialize<Dictionary<string, List<CodeListJsonModel>>>(jsonContent, JsonOptions);
-
-        if (codeListData == null || !codeListData.Any())
-        {
-            Console.WriteLine("⚠️ WARNING: No code list data found in JSON file.");
-            return;
-        }
-
         var codeListItems = new List<CodeListItem>();
 
-        foreach (var listType in codeListData.Keys)
+        // Try the richer lon_codelists_final.json first (16 code lists with Box numbers)
+        var finalPath = Path.Combine(KbPath, "lon_codelists_final.json");
+        if (File.Exists(finalPath))
         {
-            foreach (var item in codeListData[listType])
+            Console.WriteLine("📦 Seeding CodeListItems from lon_codelists_final.json...");
+            var jsonContent = await File.ReadAllTextAsync(finalPath);
+            var wrapper = JsonSerializer.Deserialize<CodeListFinalWrapper>(jsonContent, JsonOptions);
+
+            if (wrapper?.Codelists != null)
             {
-                codeListItems.Add(new CodeListItem
+                foreach (var kvp in wrapper.Codelists)
                 {
-                    Id = Guid.NewGuid(),
-                    ListType = listType,
-                    Code = item.Code ?? string.Empty,
-                    DescriptionMK = item.DescriptionMK ?? item.NameMK ?? string.Empty,
-                    DescriptionEN = item.DescriptionEN ?? item.NameEN,
-                    IsActive = item.IsActive ?? item.ValidForLON ?? true,
-                    SortOrder = item.SortOrder ?? item.DisplayOrder ?? 0,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "KnowledgeBaseSeeder"
-                });
+                    var listType = kvp.Key;
+                    var listData = kvp.Value;
+                    if (listData?.Codes == null) continue;
+
+                    foreach (var item in listData.Codes)
+                    {
+                        codeListItems.Add(new CodeListItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ListType = listType,
+                            Code = item.Code ?? string.Empty,
+                            DescriptionMK = item.DescriptionMK ?? string.Empty,
+                            DescriptionEN = item.DescriptionEN,
+                            IsActive = true,
+                            SortOrder = item.SortOrder ?? 0,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = "KnowledgeBaseSeeder"
+                        });
+                    }
+                }
             }
         }
 
-        await context.CodeListItems.AddRangeAsync(codeListItems);
-        await context.SaveChangesAsync();
+        // Fallback to simple lon_codelists.json
+        if (codeListItems.Count == 0)
+        {
+            Console.WriteLine("📦 Seeding CodeListItems from lon_codelists.json...");
+            var jsonPath = Path.Combine(KbPath, "lon_codelists.json");
+            if (!File.Exists(jsonPath))
+            {
+                Console.WriteLine($"⚠️ WARNING: No code list files found in {KbPath}");
+                return;
+            }
 
-        Console.WriteLine($"✅ Successfully seeded {codeListItems.Count} CodeListItems");
+            var jsonContent = await File.ReadAllTextAsync(jsonPath);
+            var codeListData = JsonSerializer.Deserialize<Dictionary<string, List<CodeListJsonModel>>>(jsonContent, JsonOptions);
+
+            if (codeListData == null || !codeListData.Any())
+            {
+                Console.WriteLine("⚠️ WARNING: No code list data found in JSON file.");
+                return;
+            }
+
+            foreach (var listType in codeListData.Keys)
+            {
+                foreach (var item in codeListData[listType])
+                {
+                    codeListItems.Add(new CodeListItem
+                    {
+                        Id = Guid.NewGuid(),
+                        ListType = listType,
+                        Code = item.Code ?? string.Empty,
+                        DescriptionMK = item.DescriptionMK ?? item.NameMK ?? string.Empty,
+                        DescriptionEN = item.DescriptionEN ?? item.NameEN,
+                        IsActive = item.IsActive ?? item.ValidForLON ?? true,
+                        SortOrder = item.SortOrder ?? item.DisplayOrder ?? 0,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "KnowledgeBaseSeeder"
+                    });
+                }
+            }
+        }
+
+        if (codeListItems.Count > 0)
+        {
+            await context.CodeListItems.AddRangeAsync(codeListItems);
+            await context.SaveChangesAsync();
+            Console.WriteLine($"✅ Successfully seeded {codeListItems.Count} CodeListItems");
+        }
+    }
+
+    private class CodeListFinalWrapper
+    {
+        public Dictionary<string, CodeListFinalData>? Codelists { get; set; }
+    }
+
+    private class CodeListFinalData
+    {
+        public string? ListType { get; set; }
+        public string? BoxNumber { get; set; }
+        public int? TotalCodes { get; set; }
+        public List<CodeListJsonModel>? Codes { get; set; }
     }
 
     private class CodeListJsonModel
@@ -355,6 +408,56 @@ public static class KnowledgeBaseSeeder
         public string? ErrorMessageEN { get; set; }
         public string? Severity { get; set; }
         public int? Priority { get; set; }
+    }
+
+    #endregion
+
+    #region Additional CodeLists (Countries, Currencies, Customs Offices)
+
+    private static async Task SeedAdditionalCodeListsAsync(ApplicationDbContext context)
+    {
+        var additionalFiles = new[]
+        {
+            ("countries_box15a_iso.json", "Box15a_CountryCode"),
+            ("currencies_box22_iso.json", "Box22_Currency"),
+            ("customs_offices_box29.json", "Box29_CustomsOffice"),
+        };
+
+        foreach (var (fileName, listType) in additionalFiles)
+        {
+            var filePath = Path.Combine(KbPath, fileName);
+            if (!File.Exists(filePath)) continue;
+
+            // Check if already seeded from lon_codelists_final.json
+            if (await context.CodeListItems.AnyAsync(c => c.ListType == listType))
+            {
+                Console.WriteLine($"✅ {listType} already seeded from codelists_final. Skipping {fileName}.");
+                continue;
+            }
+
+            Console.WriteLine($"📦 Seeding {listType} from {fileName}...");
+            var json = await File.ReadAllTextAsync(filePath);
+            var data = JsonSerializer.Deserialize<CodeListFinalData>(json, JsonOptions);
+
+            if (data?.Codes == null || data.Codes.Count == 0) continue;
+
+            var items = data.Codes.Select(c => new CodeListItem
+            {
+                Id = Guid.NewGuid(),
+                ListType = listType,
+                Code = c.Code ?? string.Empty,
+                DescriptionMK = c.DescriptionMK ?? string.Empty,
+                DescriptionEN = c.DescriptionEN,
+                IsActive = true,
+                SortOrder = c.SortOrder ?? 0,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "KnowledgeBaseSeeder"
+            }).ToList();
+
+            await context.CodeListItems.AddRangeAsync(items);
+            await context.SaveChangesAsync();
+            Console.WriteLine($"✅ Seeded {items.Count} items for {listType}");
+        }
     }
 
     #endregion

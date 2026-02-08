@@ -35,6 +35,9 @@ RUN apt-get update && apt-get install -y curl gnupg && \
 # Copy published files
 COPY --from=build /app/publish .
 
+# Copy Knowledge Base data files
+COPY --from=build /src/kb/processed /app/kb/processed
+
 # Expose port
 EXPOSE 5000
 

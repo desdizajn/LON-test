@@ -284,18 +284,31 @@ export const masterDataApi = {
 
 export const knowledgeBaseApi = {
   // RAG - Ask Questions
-  ask: (question: string, context?: string) => 
+  ask: (question: string, context?: string) =>
     api.post('/KnowledgeBase/ask', { question, context }),
-  
+
   // Explain Field
-  explain: (field: string, context?: string) => 
-    api.post('/KnowledgeBase/explain', { field, context }),
-  
+  explain: (field: string, context?: string) =>
+    api.post('/KnowledgeBase/explain', { concept: field, context }),
+
   // Semantic Search
-  search: (query: string, topK: number = 5) => 
+  search: (query: string, topK: number = 5) =>
     api.post('/KnowledgeBase/search', { query, topK }),
-  
+
   // Health & Stats
   getHealth: () => api.get('/KnowledgeBase/health'),
   getStats: () => api.get('/KnowledgeBase/stats'),
+
+  // Browse KB Data
+  getTariffCodes: (search?: string, page: number = 1, pageSize: number = 20) =>
+    api.get('/KnowledgeBase/tariff-codes', { params: { search, page, pageSize } }),
+
+  getRegulations: (search?: string, page: number = 1, pageSize: number = 20) =>
+    api.get('/KnowledgeBase/regulations', { params: { search, page, pageSize } }),
+
+  getCodeLists: (listType?: string, search?: string) =>
+    api.get('/KnowledgeBase/code-lists', { params: { listType, search } }),
+
+  getValidationRules: (fieldName?: string) =>
+    api.get('/KnowledgeBase/validation-rules', { params: { fieldName } }),
 };
