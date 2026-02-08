@@ -86,7 +86,7 @@ public class KnowledgeBaseController : ControllerBase
         {
             // Тест search за да провериме дали има документи
             var testResults = await _vectorStore.SearchAsync("царина", 1, 0.0);
-            
+
             return Ok(new
             {
                 Status = "Healthy",
@@ -97,11 +97,13 @@ public class KnowledgeBaseController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Health check failed");
-            return StatusCode(500, new
+            _logger.LogWarning(ex, "Knowledge Base health check: Vector Store not available");
+            return Ok(new
             {
-                Status = "Unhealthy",
-                Message = ex.Message,
+                Status = "Degraded",
+                Message = "Knowledge Base работи без Vector Store. Основните функции (TARIC, регулативи) се достапни преку базата.",
+                HasDocuments = false,
+                VectorStoreEnabled = false,
                 Timestamp = DateTime.UtcNow
             });
         }
