@@ -8,10 +8,13 @@ namespace LON.Infrastructure.Persistence;
 
 public static class ApplicationDbContextSeed
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context, bool skipKnowledgeBase = false)
     {
         // 1. Seed Knowledge Base податоци (TARIC, Regulations, CodeLists, DeclarationRules)
-        await KnowledgeBaseSeeder.SeedKnowledgeBaseAsync(context);
+        if (!skipKnowledgeBase)
+        {
+            await KnowledgeBaseSeeder.SeedKnowledgeBaseAsync(context);
+        }
 
         // 2. Seed Master Data
         if (!await context.UnitsOfMeasure.AnyAsync())
