@@ -33,20 +33,34 @@ public static class DependencyInjection
         services.AddScoped<IDeclarationRule, TariffCodeExistsRule>();
         services.AddScoped<IDeclarationRule, ProcedureCodeValidRule>();
         
-        // Knowledge Base Services (Phase 3: RAG)
+        // Knowledge Base Services
         services.AddScoped<IDocumentChunkingService, DocumentChunkingService>();
-        services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
-        services.AddScoped<IVectorStoreService, InMemoryVectorStoreService>();
-        services.AddScoped<IRAGService, OpenAIRAGService>();
-        services.AddScoped<VectorStoreInitializer>();
-        
-        // HttpClient за OpenAI
         services.AddHttpClient("OpenAI");
+
+        var openAiKey = configuration["OpenAI:ApiKey"];
+        var enableVectorStore = configuration.GetValue<bool>("EnableVectorStore", false);
+
+        if (!string.IsNullOrWhiteSpace(openAiKey) && enableVectorStore)
+        {
+            // Full RAG with OpenAI embeddings + vector search + GPT answers
+            services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
+            services.AddScoped<IVectorStoreService, InMemoryVectorStoreService>();
+            services.AddScoped<IRAGService, OpenAIRAGService>();
+        }
+        else
+        {
+            // Database-only RAG - search TARIC, regulations, codelists directly via SQL
+            services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
+            services.AddScoped<IVectorStoreService, InMemoryVectorStoreService>();
+            services.AddScoped<IRAGService, DatabaseRAGService>();
+        }
+
+        services.AddScoped<VectorStoreInitializer>();
 
         // Auth Service
         services.AddScoped<IAuthService, AuthService>();
 
-        // Vector Store Background Service (ќе работи во background, нема да блокира API startup)
+        // Vector Store Background Service
         services.AddHostedService<VectorStoreBackgroundService>();
 
         return services;
