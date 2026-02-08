@@ -20,8 +20,8 @@ import {
   SelectChangeEvent,
 } from '@mui/material';
 import { Add, Edit, Delete, Save, Cancel } from '@mui/icons-material';
-import { api, knowledgeBaseApi } from '../../services/api';
-import { showSuccess, showError } from '../../utils/toast';
+import { api, knowledgeBaseApi } from '../services/api';
+import { showSuccess, showError } from '../utils/toast';
 
 interface CodeListItem {
   id: string;
