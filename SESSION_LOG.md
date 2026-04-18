@@ -336,6 +336,47 @@ Summary по таскови:
 
 ---
 
+## 2026-04-18 — 🎯 Phase 6 Priority-A ЗАВРШЕНА
+
+**Decision:** Корисник избра `0 → 6-Priority-A → 2.5 → 1 → 2 → 6-Priority-B паралелно → 3 → 4 → 5 → 7`.
+
+Сите 5 foundational tasks landed in овој сесија:
+
+**P6.1 Repo hygiene** — Restore `.gitignore` (.NET + Node + VS), untrack 26 bin/obj фајлови од `LON.Application` (заостанати од `f92c754` пред да има .gitignore).
+
+**P6.3/4 Contract hygiene pipeline** — `scripts/gen-api-types.sh`:
+- `dotnet swagger tofile` → `api-contract/swagger.json`
+- `openapi-typescript` → `frontend/web/src/api/schema.d.ts`
+- `frontend/web/src/api/index.ts` — friendly re-exports
+- Swashbuckle.CLI 6.6.2 + openapi-typescript 6.7.6 (версии согласени со проектот)
+- `ReceiptForm` refactored да користи `CreateReceiptCommand` + `ReceiptLineDto`
+
+**P6.5-6.8 Test harness** — `tests/LON.IntegrationTests/`:
+- `LonApiFactory` — `WebApplicationFactory<Program>` со Testcontainers-MsSql (реален SQL Server во Docker per test class)
+- `AuthTests` — login success, wrong password 401, protected endpoint без token 401
+- `ReceiptFlowTests.CreateReceipt_ThenGetInventory_*` — **E2E што би ги фатил сите 3 P0.4/P0.6 bug-ови**
+
+**P6.9 CI gate** — `.github/workflows/ci.yml`:
+- Backend job: dotnet build + integration tests (Ubuntu runner има Docker)
+- Frontend job: regenerate API types → **fail на contract drift** + npm build
+
+**P6.17 CLAUDE.md Contract Hygiene Protocol** — експлицитно правила:
+1. Допираш DTO/command → grep frontend за callers
+2. Допираш API-exposed DTO → regenerate TS и commit
+3. Нов/изменет handler → integration test (POST → GET → DB assert)
+4. UI change → Claude Preview tools за smoke пред deploy
+5. Нов DbSet → проверка во `ApplicationDbContext` И `IApplicationDbContext`
+
+**Verification напомени:**
+- Docker не е достапен локално — integration тестовите ќе се извршат на CI. Watch next GitHub Actions run.
+- Сè commit-нато на `main`: `87f7788 → 71c3fa2 → bce271b → 0b62196`.
+
+**Phase 6 Priority-B** (split MasterDataController, Vector Store OOM, LocationDto Type, MediatR миграција per module, Logging, DataProtection) остануваат паралелен backlog — ги допираме природно во Phase 2+.
+
+**Следно:** Phase 2.5 i18n — `react-i18next` + LanguageProvider + 4-јазични dictionaries (mk/sr/sq/en).
+
+---
+
 ## 2026-04-18 — P0.6 UI Create Receipt fix (3 contract bugs)
 
 **Trigger:** Корисник пробал Create Receipt од `/inventory` → HTTP 400 „Failed to create receipt".
