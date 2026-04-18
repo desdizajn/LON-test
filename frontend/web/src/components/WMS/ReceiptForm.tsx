@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { wmsApi, masterDataApi } from '../../services/api';
 import { ReceiptFormData, ReceiptLine, QualityStatus } from '../../types/wms';
+import type { CreateReceiptCommand, ReceiptLineDto } from '../../api';
 import { toast } from 'react-toastify';
 import FormInputSimple from '../forms/FormInputSimple';
 import FormSelectSimple from '../forms/FormSelectSimple';
@@ -133,20 +134,21 @@ const ReceiptForm: React.FC<ReceiptFormProps> = ({ onSuccess, onCancel }) => {
       //  - supplierId -> partnerId (backend uses partner abstraction)
       //  - empty strings for optional dates/ids -> undefined (DateTime? can't parse "")
       //  - line.locationId forwarded per-line (backend respects line override)
-      const toOptional = (v: unknown) => (v === '' || v == null ? undefined : v);
-      const payload = {
+      const toOptional = <T,>(v: T | '' | null | undefined): T | undefined =>
+        (v === '' || v == null ? undefined : v) as T | undefined;
+      const payload: CreateReceiptCommand = {
         receiptDate: formData.receiptDate,
         warehouseId: formData.warehouseId,
         partnerId: toOptional(formData.supplierId),
         referenceNumber: toOptional(formData.referenceNumber),
-        lines: formData.lines.map(line => ({
+        lines: formData.lines.map<ReceiptLineDto>(line => ({
           itemId: line.itemId,
           quantity: line.quantity,
           uoMId: line.uoMId,
           batchNumber: toOptional(line.batchNumber),
           mrn: toOptional(line.mrn),
           locationId: toOptional(line.locationId),
-          qualityStatus: line.qualityStatus,
+          qualityStatus: line.qualityStatus as unknown as ReceiptLineDto['qualityStatus'],
           expiryDate: toOptional(line.expiryDate),
         })),
       };
