@@ -264,3 +264,43 @@
 - P0.4 criterion „видливо во UI" е pending дури корисникот да провери.
 
 ---
+
+## 2026-04-18 — P0.5 ICurrentUserService replaces CreatedBy hack
+
+**Status:** [x] done
+**Files changed:**
+- `src/LON.Application/Common/Interfaces/ICurrentUserService.cs` (new) — Username, UserId, AuditName
+- `src/LON.API/Services/CurrentUserService.cs` (new) — reads JWT claims via IHttpContextAccessor
+- `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` — втор конструктор со ICurrentUserService; SaveChangesAsync користи AuditName; fallback на "System" кога нема user (Worker, seeders, migrations)
+- `src/LON.API/Program.cs` — `AddHttpContextAccessor()` + scoped `ICurrentUserService`
+
+**How verified на VPS:**
+- POST нов receipt како admin → receipt created, id `44fe3648-d4bc-45c4-a3ad-f2b5481874a3`
+- GET показа: нов receipt `createdBy: "admin"`, стар (од P0.4) `createdBy: "System"` ✅
+- ReceiptLines исто `createdBy: "admin"` (cascade низ SaveChanges).
+
+**Design notes:**
+- ApplicationDbContext има 2 конструктори: (DbContextOptions) и (DbContextOptions + ICurrentUserService). EF Core ja избира најдолгата што може да се resolve-ира преку DI. Во API контекст ICurrentUserService е registered → 2-arg користен. Во Worker (без registration) → 1-arg, `_currentUser=null`, AuditName fallback на "System".
+- Seeders, migrations и background жобови без HttpContext резултираат со "System" — намерна одлука. Ако треба, може да се додаде named audit per worker.
+
+---
+
+## 2026-04-18 — 🎯 ФАЗА 0 ЗАВРШЕНА
+
+Summary по таскови:
+- **P0.1** SSH setup
+- **P0.2** VPS дијагноза + health snapshot
+- **P0.3.1** Recreate lon-api (exited 3 weeks)
+- **P0.3.2** SQL порт 127.0.0.1 (security)
+- **P0.3.3** DataProtection persistent volume
+- **P0.3.4** 8 decimal precision fixes + migration
+- **P0.3.5** BOM.ItemId1 shadow FK fix + migration
+- **P0.3.6** version: '3.8' removed
+- **P0.3.7** Memory/CPU limits
+- **P0.3.8** API memory 1.5→3GB (+ Vector Store OOM → Phase 6)
+- **P0.4** E2E API smoke test (+ 3 bug fixes: IApplicationDbContext incomplete, CreateReceiptCommandHandler no-op, JSON cycle)
+- **P0.5** ICurrentUserService audit trail
+
+**Фаза 1 (multi-tenant) започнува:** P1.1 Tenant entity + CRUD + seed TEKSPORT.
+
+---

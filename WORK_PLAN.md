@@ -31,8 +31,10 @@
   - Verify: before/after evidence per sub-task во SESSION_LOG
 - [x] **P0.4** — E2E smoke test на VPS: login → create receipt → GET returns it ✅ (API-ниво). UI потврда: pending од корисник.
   - Откриени и поправени 3 bug-ови: IApplicationDbContext incomplete (expanded to 38 DbSets), CreateReceiptCommandHandler missing Add() (fixed), JSON cycle в GET (IgnoreCycles)
-- [ ] **P0.5** — Замена на `CreatedBy = "System"` hack со `ICurrentUserService`
-  - Verify: нов receipt има реален username во `CreatedBy` колоната (SQL query показува)
+- [x] **P0.5** — Замена на `CreatedBy = "System"` hack со `ICurrentUserService` ✅
+  - Verify: нов receipt има `createdBy: "admin"`; стар (пред fix) остана `"System"` — audit trail работи
+
+**🎯 ФАЗА 0 ГОТОВА.** Следен focus: Phase 1 (multi-tenant foundation).
 
 **Фаза 0 DONE = ✅ сите checkboxes x + final SESSION_LOG запис „Phase 0 complete"**
 
@@ -184,6 +186,6 @@
 
 ## Current Active Task
 
-> **>>>** P0.5 — Замена на `CreatedBy = "System"` hack со `ICurrentUserService`
+> **>>>** P1.1 — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
