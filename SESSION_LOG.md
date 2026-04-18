@@ -336,6 +336,44 @@ Summary по таскови:
 
 ---
 
+## 2026-04-18 — P1.2-B1 ITenantScoped на 10 core entities
+
+**Status:** [x] done — partial scope (B1 of B1/B2/B3)
+
+**Mechanism:**
+- `ITenantScoped { Guid TenantId }` interface во `LON.Domain/Common/`
+- 10 entities implement it: Item, Warehouse, Location, Partner, Employee, User, Receipt, ReceiptLine, InventoryBalance, InventoryMovement
+- `ApplicationDbContext.OnModelCreating` auto-wires Tenant FK + TenantId index за сите `ITenantScoped` entities преку reflection-dispatched generic helper (`ConfigureTenantScoped<T>`)
+- `ApplicationDbContext.SaveChangesAsync` auto-fills TenantId кога entity е Added со Guid.Empty:
+  1. Lookup од тековен user's TenantId (преку `ICurrentUserService.UserId` → `Users` table)
+  2. Fallback на first active Tenant (за seeders, migrations, background jobs)
+  - Inlined наместо да инјектира `ICurrentTenantService` за да се избегне DI cycle (DbContext ↔ service).
+
+**Migration `AddTenantIdToCoreEntities`:**
+1. AddColumn `TenantId` (Guid.Empty default) на 10 tables
+2. CreateIndex `IX_<Table>_TenantId` на 10 tables
+3. Sql backfill — **SET TenantId = TEKSPORT.Id WHERE TenantId = Guid.Empty** на сите 10
+4. AddForeignKey `FK_<Table>_Tenants_TenantId` на 10 tables (FK constraint passes бидејќи backfill завршил)
+
+**Additional infrastructure:**
+- `ICurrentTenantService` + `CurrentTenantService` (API) — достапен за handlers кога сакаат explicit tenant pre-save. JWT claim > user lookup > first active.
+- Program.cs: `ApplicationDbContextSeed.SeedTenantsAsync(context)` повикан **ПРЕД** `UserManagementSeed.SeedAsync(...)`. TEKSPORT мора да постои пред admin user за auto-fill да работи на fresh DB.
+- `CreateReceiptCommandHandler` unchanged од caller's POV — auto-fill го покрива (каubavite CQRS changes од B1 scope).
+
+**Verified end-to-end на VPS:**
+- `SELECT tenantId FROM existing receipts` → сите 5 со `b8d4fe76-8d94-470b-a251-f8111d3f1db3` (TEKSPORT) ✅
+- `SELECT tenantId FROM existing inventory balances` → 2 со TEKSPORT ✅
+- POST нов receipt БЕЗ `tenantId` во payload → handler не го сета, SaveChangesAsync auto-fill → resulting record со TEKSPORT ✅
+- `createdBy: "admin"` audit-трагата од P0.5 останува функционална ✅
+
+**Interesting observation:** RM-002 inventory сега има 50.0000 (беше 30). Корисникот направил уште receipt во browser-от за 20 — upsert pattern (match by Item+Location+Batch+MRN+UoM+Quality) work-а правилно.
+
+**Next:**
+- B2 — применување на ITenantScoped на останатите ~25 scoped entities + миграција
+- B3 (бонус) — seed WH-TEK-VN (Виница) warehouse за TEKSPORT
+
+---
+
 ## 2026-04-18 — P1.1 Tenant entity + TEKSPORT seed
 
 **Status:** [x] done

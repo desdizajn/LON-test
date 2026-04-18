@@ -49,9 +49,10 @@
 
 - [x] **P1.1** — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant ✅
   - Verify: GET `/api/tenants` → TEKSPORT seeded со HQ address, lang=mk, legacyUvoznik=TEKSPORT
-- [ ] **P1.2** — `ITenantScoped` interface + `TenantScopedEntity` base class, применет на domain entities. EF migration + backfill на постојни редови → TEKSPORT.
-  - Verify: migration applied; `SELECT DISTINCT TenantId FROM Items/Warehouses/Receipts/...` враќа TEKSPORT.Id за сите
-  - Бонус: создади `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje (user info: TEKSPORT има 2 сајта)
+- [/] **P1.2** — `ITenantScoped` interface + auto-fill TenantId во SaveChangesAsync. Split in two:
+  - [x] **P1.2-B1** ✅ — 10 core entities (Item, Warehouse, Location, Partner, Employee, User, Receipt+Line, InventoryBalance, InventoryMovement). Migration со inline SQL backfill за постојни редови → TEKSPORT. Auto-fill inlined во SaveChangesAsync (ICurrentTenantService постои за handlers, но DbContext го избегнува за DI cycle).
+  - [ ] **P1.2-B2** — extend ITenantScoped на останатите ~25 scoped entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment, etc.). Миграција + backfill.
+  - [ ] **P1.2-B3 (бонус)** — создади `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje (user info: TEKSPORT има 2 сајта)
 - [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
   - Verify: login враќа token со tenant claim; decode потврдува
 - [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
