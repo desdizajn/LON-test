@@ -6,12 +6,13 @@
 
 ## 🎯 SESSION KICKOFF — што да направиш ПРВО во нова сесија
 
-**НЕ ПРАШУВАЈ ЗА ВПС / КРЕДЕНЦИЈАЛИ / ТЕСТОВИ — СИТЕ СЕ ВО МЕМОРИЈА.** Прочитај ги овие 4 работи (5 минути) пред било што друго:
+**НЕ ПРАШУВАЈ ЗА ВПС / КРЕДЕНЦИЈАЛИ / ТЕСТОВИ — СИТЕ СЕ ВО МЕМОРИЈА.** Прочитај ги овие 5 работи (5 минути) пред било што друго:
 
-1. **`memory/MEMORY.md`** — индекс на 14 persistent факти (autoloaded, само провери да не си заборавил нешто).
+1. **`memory/MEMORY.md`** — индекс на persistent факти (autoloaded, само провери да не си заборавил нешто).
 2. **`CLAUDE.md` секции 3–7** — Verification Protocol, Environments, Defaults. Особено **Contract Hygiene Protocol** (точки 1–5 под §3).
-3. **Ова WORK_PLAN.md — делот „Current Active Task"** (на дно) + состојбата на активните фази.
-4. **Последни 3 записи во `SESSION_LOG.md`** — последни docoведени работи + discoveries.
+3. **🔔 Deferred Backlog на врв од овој WORK_PLAN** — експлицитно одложени таскови. Кога примарниот таск природно ги допира, подигни ги!
+4. **WORK_PLAN „Current Active Task"** (на дно) + состојбата на активните фази.
+5. **Последни 3 записи во `SESSION_LOG.md`** — последни documented работи + discoveries.
 
 ### Quick facts (можеш да ги користиш одма без проверка):
 
@@ -40,6 +41,33 @@
 - `[x]` Готов + верификуван (со SESSION_LOG доказ)
 - `[!]` Блокиран (причина во SESSION_LOG)
 - `[~]` Скипнат (причина во SESSION_LOG)
+
+---
+
+## 🔔 Deferred Backlog — НЕ ЗАБОРАВАЈ
+
+> Експлицитно одложени таскови што се лесно заборавливи („паралелно", „follow-up"). Скенирај ја оваа секција на почеток на секоја сесија. Правило: кога природно ја допираш областа во примарен таск, подигни го одложениот наместо да го оставиш.
+
+**Phase 0 cleanup leftover:**
+- [ ] **P0.3.4** — Fix decimal precision warnings (HasPrecision за 8 properties)
+
+**Phase 2.5 i18n retrofit (паралелно со Phase 2+):**
+- [ ] **P2.5.4** — Retrofit на постоечки страници (Dashboard, WMS, Production, Customs, Guarantees, Reports, Advanced, Master Data, Admin) — кога се допираат
+- [ ] **P2.5.5** — `Intl.NumberFormat` + `Intl.DateTimeFormat` helpers
+- [ ] **P2.5.6** — Backend error codes → `t('errors.<code>')`
+- [ ] **P2.5.7** — PDF/Excel/XML i18n (gated on Phase 4)
+
+**Phase 6 Priority-B (паралелно со Phase 2+):**
+- [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
+- [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)
+- [ ] **P6.12** — Consistent API response shape `{ data, errorMessage?, errors[]? }`
+- [ ] **P6.13** — `LocationDto.Type` drops value during serialization (bug)
+- [ ] **P6.14** — Vector Store OOM root cause (startup crash и покрај 3GB memory)
+- [ ] **P6.15** — Structured logging (Serilog JSON) + real health checks (`/health/ready`, `/health/live`)
+- [ ] **P6.16** — DataProtection XML encryptor warning (cert-based или DPAPI-like)
+- [ ] **P6.18** — UTF-8 source encoding bug (Cyrillic literals → CP1251 mojibake в DB; affects Tenants.Address од P1.1)
+
+**Verification напомена:** секоја completed сесија проверува дали нешто од оваа секција е природно подигнато. Ако е — означи `[x]` со SESSION_LOG доказ.
 
 ---
 
@@ -245,9 +273,9 @@
 
 **Верификација напомена:** Тестовите ќе се извршат на CI (Ubuntu runner со Docker). Локално — Docker Desktop мора да е активен. Види следен CI run на GitHub Actions.
 
-### 6D — Architecture consolidation (пред multi-tenant)
+### 6D — Architecture consolidation (parallel with Phase 2+)
 
-**Зошто пред Phase 1:** Multi-tenant додава TenantId query filter на секое место. Ако е консистентно (MediatR + IApplicationDbContext), automation работи. Ако е хаос (controllers со DbContext + handlers со interface), мора per-query мануелно.
+**Ревизија 2026-04-18:** Првично беше означено „пред Phase 1" под претпоставка дека без консистентна архитектура секој query мора мануелно да се tenant-scope-ира. **Но ова не е точно** — EF global query filter во P1.4 applies-ира на ниво на `DbContext`, независно дали caller-от е direct-controller или MediatR handler. 6D е **consistency/maintainability**, не correctness. Преминат во параллелен backlog со Phase 2+ (потврдено од корисник).
 
 - [ ] **P6.10** — Расцепи `MasterDataController` (1325 линии) на ~8 domain-focused контролери (Items, Partners, Warehouses, Locations, UoMs, BOMs, Routings, WorkCenters+Machines).
 - [ ] **P6.11** — Селективна MediatR миграција: за секое read/write во контролер, командa/query преку Mediator. Почни со Items + Partners (најмногу користени).
