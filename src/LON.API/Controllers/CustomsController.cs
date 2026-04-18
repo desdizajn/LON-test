@@ -1,5 +1,6 @@
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
 using LON.Application.Customs.Commands.CreateExportDeclaration;
+using LON.Application.Customs.Commands.CreateWasteDeclaration;
 using LON.Application.Customs.Commands.UpdateCustomsDeclaration;
 using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
@@ -56,6 +57,19 @@ public class CustomsController : BaseController
     /// </summary>
     [HttpPost("declarations/export")]
     public async Task<IActionResult> CreateExportDeclaration([FromBody] CreateExportDeclarationCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// P2.6c — Books physical residual LON-state inventory off as Waste.
+    /// No guarantee impact in v1 (bond tracks declared quantity, not inflate).
+    /// </summary>
+    [HttpPost("declarations/waste")]
+    public async Task<IActionResult> CreateWasteDeclaration([FromBody] CreateWasteDeclarationCommand command)
     {
         var result = await Mediator.Send(command);
         if (result.IsSuccess)

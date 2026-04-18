@@ -261,6 +261,23 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/waste": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateWasteDeclarationCommand"];
+          "text/json": components["schemas"]["CreateWasteDeclarationCommand"];
+          "application/*+json": components["schemas"]["CreateWasteDeclarationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/validate": {
     post: {
       requestBody?: {
@@ -2452,6 +2469,19 @@ export interface components {
       roleIds?: string[] | null;
       /** Format: uuid */
       tenantId?: string | null;
+    };
+    CreateWasteDeclarationCommand: {
+      /** Format: date-time */
+      wasteDate?: string;
+      mrn?: string | null;
+      /** Format: double */
+      quantity?: number;
+      reason?: string | null;
+      /** Format: uuid */
+      itemId?: string | null;
+      batchNumber?: string | null;
+      /** Format: uuid */
+      locationId?: string | null;
     };
     CreditGuaranteeCommand: {
       /** Format: uuid */
