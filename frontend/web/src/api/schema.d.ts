@@ -1716,6 +1716,95 @@ export interface paths {
       };
     };
   };
+  "/api/Tenants": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Tenant"][];
+            "application/json": components["schemas"]["Tenant"][];
+            "text/json": components["schemas"]["Tenant"][];
+          };
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["TenantRequest"];
+          "text/json": components["schemas"]["TenantRequest"];
+          "application/*+json": components["schemas"]["TenantRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Tenant"];
+            "application/json": components["schemas"]["Tenant"];
+            "text/json": components["schemas"]["Tenant"];
+          };
+        };
+      };
+    };
+  };
+  "/api/Tenants/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Tenant"];
+            "application/json": components["schemas"]["Tenant"];
+            "text/json": components["schemas"]["Tenant"];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["TenantRequest"];
+          "text/json": components["schemas"]["TenantRequest"];
+          "application/*+json": components["schemas"]["TenantRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Tenant"];
+            "application/json": components["schemas"]["Tenant"];
+            "text/json": components["schemas"]["Tenant"];
+          };
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Traceability/trace-forward": {
     get: {
       parameters: {
@@ -2273,6 +2362,12 @@ export interface components {
       /** Format: date-time */
       expectedReleaseDate?: string | null;
     };
+    IDomainEvent: {
+      /** Format: date-time */
+      occurredOn?: string;
+      /** Format: uuid */
+      eventId?: string;
+    };
     ItemRequest: {
       code?: string | null;
       name?: string | null;
@@ -2479,6 +2574,44 @@ export interface components {
       contentSnippet?: string | null;
       /** Format: double */
       relevanceScore?: number;
+    };
+    Tenant: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: date-time */
+      createdAt?: string;
+      createdBy?: string | null;
+      /** Format: date-time */
+      modifiedAt?: string | null;
+      modifiedBy?: string | null;
+      isDeleted?: boolean;
+      domainEvents?: (readonly components["schemas"]["IDomainEvent"][]) | null;
+      code?: string | null;
+      name?: string | null;
+      legacyUvoznik?: string | null;
+      taxNumber?: string | null;
+      address?: string | null;
+      country?: string | null;
+      contactName?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      customsAuthorizationNumber?: string | null;
+      defaultLanguage?: string | null;
+      isActive?: boolean;
+    };
+    TenantRequest: {
+      code?: string | null;
+      name?: string | null;
+      legacyUvoznik?: string | null;
+      taxNumber?: string | null;
+      address?: string | null;
+      country?: string | null;
+      contactName?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      customsAuthorizationNumber?: string | null;
+      defaultLanguage?: string | null;
+      isActive?: boolean | null;
     };
     UoMRequest: {
       code?: string | null;

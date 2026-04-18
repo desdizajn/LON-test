@@ -17,6 +17,11 @@ public static class ApplicationDbContextSeed
         }
 
         // 2. Seed Master Data
+        if (!await context.Tenants.AnyAsync())
+        {
+            await SeedTenants(context);
+        }
+
         if (!await context.UnitsOfMeasure.AnyAsync())
         {
             await SeedUnitsOfMeasure(context);
@@ -71,6 +76,31 @@ public static class ApplicationDbContextSeed
         };
 
         await context.UnitsOfMeasure.AddRangeAsync(uoms);
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedTenants(ApplicationDbContext context)
+    {
+        // TEKSPORT is a multi-site tenant (Skopje + Vinica). The Warehouses
+        // representing each physical site will be linked to this tenant via
+        // TenantId once Phase 1.2 adds the column.
+        var tenants = new[]
+        {
+            new Tenant
+            {
+                Id = Guid.NewGuid(),
+                Code = "TEKSPORT",
+                Name = "TEKSPORT",
+                LegacyUvoznik = "TEKSPORT",
+                Country = "MK",
+                Address = "Скопје, Република Северна Македонија",
+                DefaultLanguage = "mk",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Seed"
+            }
+        };
+        await context.Tenants.AddRangeAsync(tenants);
         await context.SaveChangesAsync();
     }
 

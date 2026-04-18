@@ -13,6 +13,9 @@ namespace LON.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
+    // Tenants (multi-tenant root)
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+
     // Master Data
     public DbSet<Item> Items => Set<Item>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();

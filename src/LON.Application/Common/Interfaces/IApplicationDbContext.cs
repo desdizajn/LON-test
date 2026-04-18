@@ -10,6 +10,9 @@ namespace LON.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
+    // Tenants (multi-tenant root)
+    DbSet<Tenant> Tenants { get; }
+
     // Master Data
     DbSet<Item> Items { get; }
     DbSet<UnitOfMeasure> UnitsOfMeasure { get; }
