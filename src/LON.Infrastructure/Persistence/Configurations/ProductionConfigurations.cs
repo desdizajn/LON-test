@@ -38,9 +38,10 @@ public class BOMConfiguration : IEntityTypeConfiguration<BOM>
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Code).IsRequired().HasMaxLength(50);
         builder.Property(e => e.BaseQuantity).HasColumnType("decimal(18,4)");
-        
-        builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
-        
+
+        // Pair explicitly with Item.BOMs inverse to avoid shadow FK 'ItemId1'
+        builder.HasOne(e => e.Item).WithMany(i => i.BOMs).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => new { e.ItemId, e.Version }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
