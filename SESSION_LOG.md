@@ -2,6 +2,66 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P2.6a EX declaration discharges LON bond with pro-rata guarantee credit
+
+**Status:** [x] done
+**Commits:** `ce176bb` (handler + tests), `ef4f25a` (migration data-seed for 3151), `8b91b65` (DbSet.Local consolidation fix)
+
+**What landed:**
+- `src/LON.Domain/Entities/Customs/Customs.cs` — `MRNRegistry.DischargedQuantity` + `UndischargedQuantity`, `IsFullyDischarged` helpers.
+- `src/LON.Infrastructure/Migrations/20260418215735_P26a_AddDischargedQuantityToMRNRegistry.cs` — column add + idempotent INSERT of new "3151" procedure for pre-seeded deployments.
+- `src/LON.Infrastructure/Persistence/ApplicationDbContextSeed.cs` — seed code "3151" (Re-export of LON goods, Type=Export) in the fresh-install path.
+- `src/LON.Application/Customs/Commands/CreateExportDeclaration/CreateExportDeclarationCommand.cs` (~360 lines) — `CreateExportDeclarationCommand`, `ExportLineDto`, handler.
+- `src/LON.API/Controllers/CustomsController.cs` — `POST /api/customs/declarations/export`.
+- `tests/LON.IntegrationTests/ExportDeclarationTests.cs` (new, 4 scenarios).
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated.
+
+**Handler rules:**
+1. Lines>0, procedure must be Type=Export, procedure exists+active.
+2. Pre-resolve all source MRNs (bulk lookup). Per-MRN demand (aggregated across lines) must not exceed `UsedQuantity - DischargedQuantity`; fail-fast 400 `exceeds outstanding undischarged qty`.
+3. EX MRN uniqueness check is **global** (not tenant-scoped) mirroring IM.
+4. Per line:
+   - FG inventory decrement by `quantity` on (Item, Batch, UoM, OK quality, optional Location).
+   - `TransitionToExportedAsync` walks LON-state inventory InProduction-first, then Imported, shrinking each by `min(available, remaining)` and upserting a sibling `Exported` row. Short pool → 400.
+   - `UpsertExportedBalanceAsync` probes `DbSet.Local` before the DB query — a single EX line splitting discharge across both LON states would otherwise append duplicate Exported rows within the same SaveChanges cycle.
+   - CustomsDeclarationLine carries `PreviousMRN` + `UsedQuantityFromPrevious` for audit.
+   - `InventoryMovement` `Type=Shipment` (no dedicated Export enum), FG location → null.
+   - `TraceLink` IM-CustomsDeclaration → EX-CustomsDeclaration via registry lookup; Quantity=dischargeQty.
+   - `CreditGuaranteeAsync`: finds original IM Debit → writes pro-rata Credit (`debit.Amount × dischargeQty / MRN.TotalQty`, rounded 2dp). Full-discharge path takes the **full outstanding** so the ledger settles to exactly 0 for that MRN; Credit entry marked `IsReleased=true + ActualReleaseDate`.
+5. Bumps `MRNRegistry.DischargedQuantity`; on full discharge sets `IsActive=false`.
+6. Creates an EX-own `MRNRegistry` row (`IsActive=false`) for symmetry with IM.
+7. Emits `CustomsDeclarationCreatedEvent` + `GuaranteeCreditedEvent`.
+
+**Box 37 PreviousProcedureCode:** handler auto-derives "51" when procedure code starts with "31" (standard LON re-export flow), else "00".
+
+**Verified on VPS** (all against pre-existing `26MK8DF9122FA1` IM MRN — Total=40, debit=47.80 EUR):
+1. EX partial qty=8 → HTTP 200. DB: Registry.Discharged=8/40; Imported 37.1053→34.1053 + InProduction 5.0→0 + Exported 0→5 (InProd-first) + Exported 3 (Imported overflow) = **8 total Exported** (two rows pre-consolidation fix). FG-VPS-P25-01 3→0. Credit 9.56 EUR (47.80 × 8/40). ✅
+2. EX partial qty=2 (after consolidation fix deployed) → HTTP 200. Registry.Discharged=10/40. One prior Exported row grew 5→7, confirming `DbSet.Local` probe consolidates within a single SaveChanges. Credit 2.39 EUR (47.80 × 2/40). ✅
+3. EX over-discharge qty=50 (remaining=32) → 400 `exceeds outstanding undischarged qty 32.0000 (Used=40.0000, already discharged=10.0000)`. ✅
+4. EX unknown MRN → 400 `not registered for this tenant`. ✅
+
+**Integration tests (ExportDeclarationTests.cs):**
+- `EX_PartialDischarge_UpdatesStateAndCreditsPortion` — end-to-end: FG −5, Imported shrinks (inflate-for-waste math 52.6316−10=42.6316), Exported row appears, Registry.Discharged=10/50, 1 Credit row with `IsReleased=false`.
+- `EX_FullDischarge_SettlesLedgerAndDeactivatesMrn` — net ledger for MRN = 0 after full-discharge path, Registry.IsActive=false, Credit.IsReleased=true + ActualReleaseDate set.
+- `EX_OverDischarge_Returns400` — 400 on `exceeds outstanding undischarged`.
+- `EX_UnknownMRN_Returns400` — 400 on unregistered MRN.
+
+**Discoveries & deferred:**
+- **TEKSPORT inflate vs bond math:** `dischargeQty` credits against customs (declared units) 1:1 while the physical walk reduces LON-state inventory by the same number (treated as physical units). For TEKSPORT with waste%>0, this means a fully bonded MRN can be fully discharged while the 5% waste-residual physical units stay in Imported. Legacy ELON models this residual via separate waste declarations — that's **P2.6c**.
+- **SeedCustomsProcedures skip guard:** seeder's `!AnyAsync()` guard wouldn't pick up new procedure rows on existing deployments. Moved the 3151 insert into the migration itself (`IF NOT EXISTS` guarded) so future migrations + fresh installs stay in sync. Memoized pattern for future procedure additions.
+- **Credit description includes declared qty / total** for ledger readability: `EX discharge EX-VPS-P26A-01 — MRN ... qty 8/40.0000`.
+
+**Phase 2 progress:**
+- [x] P2.1, [x] P2.2, [x] P2.2.5, [x] P2.3, [x] P2.4, [x] P2.5
+- [x] **P2.6a Export** ← this commit
+- [ ] P2.6b Return → re-debit bond (reverse of P2.6a; bond credit gets undone)
+- [ ] P2.6c Waste declaration → discharge residual LON inventory (waste%/rupe/damage)
+- [ ] P2.7 Remaining declaration validation rules
+
+**Next (P2.6b Return / P2.6c Waste):** Return flow is a mirror of EX (re-credit → re-debit; Exported → Imported or InProduction restore). Waste flow discharges the physical residual that inflate-for-waste leaves behind at full declared discharge — moves Imported remainder to `LonProcessState=Waste` + optional proportional bond settlement. Both flows reuse the `TransitionTo…Async` + credit/debit helpers from P2.2/P2.6a.
+
+---
+
 ## 2026-04-18 — P2.5 ProductionReceipt books FG + TraceLinks + status lifecycle
 
 **Status:** [x] done

@@ -305,15 +305,19 @@
 
 ## Current Active Task
 
-> **>>>** **P2.5 DONE.** Next entry point = **P2.6a Export (EX) declaration + guarantee credit**. When an EX declaration (Box 37 procedure `3151` / `3100`) is registered, the LON bond previously debited by the matching IM 4200 MRN is discharged. Core responsibilities: (a) `CreateExportDeclarationCommand` accepting one or more FG batches + link to the IM declaration (or auto-resolved via TraceLinks); (b) compute the freed guarantee amount (proportional to exported qty vs imported qty) and write a `GuaranteeLedgerEntry` Credit; (c) transition the Imported/InProduction `InventoryBalance` rows for the underlying MRNs to `LonProcessState=Exported`; (d) mark the source `MRNRegistry` as fully discharged only when all its parcels are Exported; (e) emit `GuaranteeCreditedEvent`. Expect reuse of the MRN-context pattern from P2.3 and the TraceLink forward-join from P2.5.
+> **>>>** **P2.6a DONE.** Next entry point = **P2.6b Return declaration → bond re-debit** OR **P2.6c Waste declaration → discharge physical residual**. P2.6b is the mirror of EX: a returned export un-credits the bond (write re-Debit for the previously released amount) and restores Exported inventory back to Imported/InProduction. P2.6c models the legacy `Otpad` slot — when an IM is fully discharged but TEKSPORT inflate left physical residual in Imported state, a waste declaration books that residual off by transitioning `LonProcessState=Waste` and optionally settling the rest of the bond (if waste% was under-estimated).
+>
+> **Recommended order:** P2.6c first (more common operational flow; most TEKSPORT closures have waste residuals), then P2.6b (return is rarer and introduces reversal complexity). Then P2.7 (remaining validation rules).
 
-**Scope for P2.6a:**
-- DTO + handler under `src/LON.Application/Customs/Commands/CreateExportDeclaration/` (or `Guarantee/.../Credit`) — decide location by analogy with P2.2.
-- REST: likely `POST /api/customs/declarations` already handles IM; either overload or add a sibling endpoint for EX.
-- Integration tests: happy path (single FG batch back to single MRN) + partial discharge + already-exported guard + no-orphan-credits.
-- TraceLink reverse resolution: `FG batch → MaterialIssue → Imported balance → MRN → MRNRegistry.CustomsDeclaration.Guarantee`.
+**Scope for P2.6c:**
+- `CreateWasteDeclarationCommand` — ItemId, BatchNumber, MRN, QuantityToWaste, Reason. Transitions Imported/InProduction balances → `LonProcessState=Waste` (sibling row pattern). Optional: proportional bond settlement if `waste excess` triggers Правилник 377 provisions.
+- Integration tests: happy path (waste 2.6316 residual after full 50-unit discharge); over-waste guard; non-LON item reject.
 
-**Алтернативи пред P2.6 (не-блокери, може да чекаат):**
+**Scope for P2.6b:**
+- `CreateReturnDeclarationCommand` — accepts reference to prior EX declaration + FG batch + quantity returned. Reverses the EX discharge: Exported → Imported (or InProduction), bond re-debit equal to the partial credit released.
+- Integration tests: happy path; over-return (more than discharged); bond re-debit exact match.
+
+**Алтернативи пред P2.6b/c (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -346,6 +350,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P2.3** ✅ Receipt consumes MRN. Handler pre-validates (registered + active + unexpired + no aggregate overdraw), inflates booked qty for TEKSPORT via LONAuthorizationItem.AllowedWastePercentage, atomically increments MRNRegistry.UsedQuantity, flips IsActive=false when fully used, sets LonProcessState=Imported only for 4200/5100. VPS verified: qty=40 MRN → Used=40, balance=42.1053 (5% waste), overdraw/unknown/full-consumption negatives all return 400 (commits `f557899`, `38ce54f`).
 - [x] **P2.4** ✅ MaterialIssue. `CreateMaterialIssueCommand` with ResolveBalance (exact-match with Imported-priority → FEFO auto-pick with LON-first ordering), LON-mandatory batch+MRN post-resolve, state split (issued portion → sibling InventoryBalance at state=InProduction), `Type=ProductionIssue` movement, `PO.Status` Draft/Released → InProgress. VPS verified: B-CLEAN 42.1053 split to 37.1053 Imported + 5.0 InProduction; over-draw/unknown-batch/FEFO-auto-pick all behaved (commit `3aab9bb`).
 - [x] **P2.5** ✅ ProductionReceipt + TraceLink. `CreateProductionReceiptCommand` books FG `InventoryBalance` at caller's location (LonProcessState=null), writes `Type=ProductionReceipt=5` movement, rolls PO.Produced/Scrap, flips Draft/Released→InProgress and InProgress→Completed on threshold (emits `ProductionOrderCompletedEvent`). TraceLinks: auto-mode links every MaterialIssue on the PO; explicit `materialConsumption` mode decrements InProduction WIP by caller-supplied qty. VPS verified: PR qty=3 → 2 TraceLinks written + FG=3 booked; over-production → 400; qty=6+scrap=1 filling the PO → Status=Completed+ActualEndDate; post-completion PR → 400 (commit `f90cdc3`).
+- [x] **P2.6a** ✅ EX declaration + pro-rata guarantee credit. `CreateExportDeclarationCommand` at `POST /api/customs/declarations/export`. Added `MRNRegistry.DischargedQuantity`; seeded procedure code `3151` (Re-export of LON goods). Handler: FG decrement + InProduction-then-Imported → Exported transition (DbSet.Local consolidation for same-line splits) + TraceLink IM→EX + pro-rata Credit (`debit × dischargeQty/MRN.TotalQty`; full-discharge path settles to exactly 0). VPS verified: partial qty=8→Credit 9.56 EUR, second partial qty=2→Credit 2.39 EUR with Exported consolidation, over-discharge 50>32 remaining → 400, unknown MRN → 400 (commits `ce176bb`, `ef4f25a`, `8b91b65`).
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules
 
