@@ -2,6 +2,76 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.2.5 IMPORTANT gaps (I1–I8) fixed
+
+**Status:** [x] done
+**Commits:** `6270306` (main) + `eb408c4` (audit interceptor TenantId fix)
+
+**Scope decision:** User asked for all IMPORTANT gaps from the P0–P2.2 compliance audit, before P2.3. Single migration `P2_2_5_ComplianceImportantChanges` bundles all schema changes.
+
+**Fixes (with compliance / legacy reference):**
+
+| ID | Fix | Reference |
+|---|---|---|
+| I1 | `Tenant.InflateImportForWaste: bool` column + TEKSPORT=true idempotent backfill. Receipt-side application deferred to P2.3. | CLAUDE.md §5 — TEKSPORT quirk `KolMat × 100/(100-otpad%)`. |
+| I2 | `CreateCustomsDeclarationCommand` gains `LandingCosts` + `Discount` header fields. Handler pro-rates `netLanding = LandingCosts - Discount` across lines by invoice-value weighting; adjusted customs value drives duty/VAT. | Legacy `DodadiTrosociPoFakturaU5` (ELON_Research/04 §1). |
+| I3 | New `DutyRateLookupWarningRule` (Priority=14). Compares user DutyRate/VATRate to `TariffCode.CustomsRate/VATRate`; emits Warning on drift > 0.01%. Non-blocking. | Legacy `VratiCarST` / `VratiCarDanStLon`; our scope currently book-rate only, Aneksi/preferential is Phase 4. |
+| I4 | `CreateCustomsDeclarationCommand.PreviousProcedureCode` (defaults "00"); handler populates `CustomsDeclaration.PreviousProcedureCode`. | SAD Box 37 is a pair (current + previous); XML emitter (Phase 4.2) splits at submission. |
+| I5 | Per-line DTO fields: `GrossWeight`, `NetWeight`, `LocationOfGoods`, `AdditionalUnit`, `CalculationMethod`. `RequiredFieldsRule` now **requires** Box 38 NetWeight (hard). New `SadFieldAdvisoriesRule` emits Warnings for Box 30, 35, 47. | Правилник Член 12 / 15 / 17. |
+| I6 | Documented strict guarantee currency policy (declaration currency == bond currency exactly). No code change — we were already stricter. Memory: `project_guarantee_currency_policy.md`. | Justification for audit readers / future devs. |
+| I7 | New `LonProcessState` enum (1/6/7/8/9 matches legacy `LagerMaterijali.Proces`). `InventoryBalance.LonProcessState: LonProcessState?` column. Receipt handler sets to `Imported` when the line carries an MRN; never downgrades a later state. | Legacy ELON_Research/04 §5; needed for PEE060 XML compatibility. |
+| I8 | **Audit log.** New `IAuditable` marker interface; `CustomsDeclaration`, `LONAuthorization`, `GuaranteeLedgerEntry`, `Receipt`, `User` implement it. `ApplicationDbContext.SaveChangesAsync` snapshots Added/Modified/Deleted state into `AuditLogEntry` rows in the same transaction. Diffs are serialised as `[{field, old, new}]` JSON. `AuditController` exposes `GET /api/audit` (Administrator-only; filter by entityType/entityId/action/time-window, capped at 500 rows). | Compliance hygiene; legacy ELON had no audit trail. |
+
+**Key fix during rollout:** the audit interceptor originally stamped `AuditLogEntry.TenantId` from `ICurrentUserService.TenantId`, which is null during the login flow (before JWT issuance). User.LastLoginAt update is IAuditable → FK-547 crash. Fixed by preferring `entity.TenantId` when the audited entity is ITenantScoped, falling back to CurrentTenantId, and skipping the audit row entirely if neither is resolvable (never write an orphan).
+
+**Migration:** `20260418201554_P2_2_5_ComplianceImportantChanges` — Tenants.InflateImportForWaste, InventoryBalances.LonProcessState, AuditLogEntries table. LONAuthorization.GuaranteePercentageOverride (B5) was already shipped in a prior migration; this one does NOT re-add it.
+
+**VPS verification (commit `eb408c4` deployed):**
+
+```
+DB state:
+  Tenants: TEKSPORT inflate=1 | DUP-CODE-TEST inflate=0       ✅ I1
+  InventoryBalances.LonProcessState column present            ✅ I7
+  AuditLogEntries table present                               ✅ I8
+
+I5 — POST w/o NetWeight → 400
+  "Box 38 (Линија 1): Нето маса е задолжителна..."            ✅
+
+I2 + I4 + I5 happy path (1000 EUR base, +100 landing, -20 discount):
+  line:   customsValue=1080.0000 | duty=54.0000 | vat=204.1200
+          netWeight=100.0000                                   ✅
+  header: previousProcedureCode="00"                           ✅ I4
+
+I8 GET /api/audit → [
+  CustomsDeclaration Create (all 25 fields captured in diff),
+  GuaranteeLedgerEntry Create (Amount=129.06 which equals 50% × (54+204.12)),
+  User Update                                                  ✅
+]
+
+I3 — warnings visible via POST /api/customs/declarations/validate when
+rate drifts from TariffCode.CustomsRate. Non-blocking by design.
+```
+
+Note: debit amount increased from 119.5 (pre-I2) to 129.06 (with landing costs) — clean evidence that I2 pro-rata → I8 audit chain is end-to-end consistent.
+
+**Compliance footprint after P2.2.5 (I1–I8):**
+- Every change to customs-regulated entities (declaration, LON auth, guarantee ledger, receipt, user) is now in the audit log with user attribution.
+- Duty/VAT base now includes landing costs for TEKSPORT-style CIF invoices — eliminates under-duty risk on shipping-heavy imports.
+- Box 38 NetWeight is required (matching Правилник); Box 30/35/47 surface as warnings so user sees them before customs does.
+- Tariff-rate lookup check surfaces user typos before submission.
+- Box 37 previous-procedure is recorded (needed for PEE010 XML).
+- LON state machine skeleton in place (enum + column + Imported on Receipt); transitions to InProduction/Exported/Waste land in later phases.
+
+**Follow-ups:**
+- Actual receipt inflate-for-waste logic (reads `LONAuthorizationItem.AllowedWastePercentage`, inflates receipt line Quantity when `Tenant.InflateImportForWaste=true`) — P2.3.
+- `LONAuthorizationItem.CompensatingTariffCode` EF config mismatch (CLR `string?` but `IsRequired()`) — already worked around in seed; proper fix = `IsRequired(false)` + migration.
+- Preferential duty rates (Aneksi ST\<year\>, EU/TR overrides) — Phase 4.
+- Audit log query-performance index (`(EntityType, EntityId)`, `(OccurredAt)`) if the table grows large; deferred.
+- Vector Store OOM still crashes startup (P6.14 unchanged).
+
+---
+
+
 ## 2026-04-18 — P2.2.5 compliance blockers (B1–B7) fixed before P2.3
 
 **Status:** [x] done
