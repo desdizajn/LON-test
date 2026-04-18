@@ -280,6 +280,7 @@
 
 ### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
 
+- [ ] **P6.19** — **`CreateProductionOrderCommandHandler` never persists.** Handler constructs a local `order` variable, calls `_context.SaveChangesAsync()`, but never adds it to `_context.ProductionOrders`. Endpoint returns `{isSuccess:true, data:<newGuid>}` while the DB stays empty. Uncovered during P2.4 VPS smoke (worked around with direct SQL insert). Fix = add `_context.ProductionOrders.Add(order)` before SaveChanges; add integration test `CreateProductionOrder_Persists_VisibleInList` to prevent regression.
 - [ ] **P6.13** — **LocationDto serialization drops Type** — API враќа `type: null` и покрај MapLocation. Или DTO constructor или JSON naming policy. Handler-от го користи code prefix fallback; UI-от не може да филтрира по тип.
 - [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
 - [ ] **P6.15** — Structured logging (Serilog со JSON output) + реал health checks со DB probe (`/health/ready`, `/health/live`).
@@ -304,15 +305,15 @@
 
 ## Current Active Task
 
-> **>>>** **P2.3 DONE.** Next entry point = **P2.4** MaterialIssue. `ProductionOrder` triggers an Issue from a specific batch+MRN against a material requirement. Must: (a) enforce batch+MRN mandatory when issuing LON material (ItemType=RawMaterial + LonProcessState.Imported); (b) FIFO/FEFO auto-pick batch if user doesn't specify; (c) no-negative inventory — fail if demand > available on chosen batch; (d) transition InventoryBalance.LonProcessState Imported → InProduction; (e) decrement balance atomically.
+> **>>>** **P2.4 DONE.** Next entry point = **P2.5** ProductionReceipt + TraceLink. A `ProductionReceipt` consumes WIP (`InventoryBalance` rows with `LonProcessState=InProduction` created by P2.4) and produces Finished Goods at a designated production-out location. Core responsibilities: (a) `CreateProductionReceiptCommand` (MediatR) taking `ProductionOrderId`, `ItemId` (FG), `Quantity`, `BatchNumber`, `LocationId`, optional ScrapQuantity; (b) roll `ProductionOrder.ProducedQuantity` forward, flip Status → Completed when `ProducedQuantity + ScrapQuantity ≥ OrderQuantity`; (c) create FG `InventoryMovement` (`Type=ProductionReceipt`=5) + `InventoryBalance` at FG location (qty stays declared, no inflate); (d) write `TraceLink` rows connecting the new FG batch to each source `MaterialIssue` that fed this run (needed for PEE060 Proces=7 export later); (e) emit `FGReceivedEvent`. Integration tests: happy path + ProducedQuantity rollup + terminal state flip + TraceLink linkage.
 
-**Scope for P2.4:**
-- `CreateMaterialIssueCommand` (MediatR). Per line: ItemId + Quantity + UoMId + optional (BatchNumber, MRN, LocationId). If LON line and batch unspecified, handler picks the oldest available (FEFO by ExpiryDate; FIFO fallback).
-- Validation: (1) balance exists & has quantity; (2) if LON, batch+MRN must resolve to a specific balance row; (3) demand ≤ available.
-- Side effects: InventoryMovement (Type=Issue), InventoryBalance.SubtractQuantity, balance.LonProcessState ← InProduction for LON parcels. Emit `MaterialIssuedEvent` (already in domain).
-- Integration tests: happy path; over-issue (400); no-batch with specific MRN (400); FIFO auto-pick; LonProcessState transition.
+**Scope for P2.5:**
+- DTO + handler under `src/LON.Application/Production/Commands/CreateProductionReceipt/`.
+- REST: `POST /api/production/orders/{id}/receipts`.
+- `TraceLink` entity already exists in `LON.Domain/Entities/Traceability` — verify shape first.
+- Regenerate TS types; add integration test covering happy path + status flip.
 
-**Алтернативи пред P2.4 (не-блокери, може да чекаат):**
+**Алтернативи пред P2.5 (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -343,7 +344,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
       - B1 MRN global uniq; B2 immutable post-Draft; B3 per-auth bond ceiling; B4 auth completion days; B5 auth % override; B6 IM/EX; B7 tariff-within-auth rule.
       - I1 TEKSPORT inflate-for-waste flag; I2 landing-costs pro-rata; I3 duty-rate lookup warning; I4 PreviousProcedureCode; I5 SAD Box 38 required + 30/35/47 advisories; I6 strict currency policy documented; I7 LonProcessState enum + Imported on Receipt; I8 audit log with JSON diffs + GET /api/audit.
 - [x] **P2.3** ✅ Receipt consumes MRN. Handler pre-validates (registered + active + unexpired + no aggregate overdraw), inflates booked qty for TEKSPORT via LONAuthorizationItem.AllowedWastePercentage, atomically increments MRNRegistry.UsedQuantity, flips IsActive=false when fully used, sets LonProcessState=Imported only for 4200/5100. VPS verified: qty=40 MRN → Used=40, balance=42.1053 (5% waste), overdraw/unknown/full-consumption negatives all return 400 (commits `f557899`, `38ce54f`).
-- [ ] P2.4 MaterialIssue (batch+MRN mandatory, no-negative)
+- [x] **P2.4** ✅ MaterialIssue. `CreateMaterialIssueCommand` with ResolveBalance (exact-match with Imported-priority → FEFO auto-pick with LON-first ordering), LON-mandatory batch+MRN post-resolve, state split (issued portion → sibling InventoryBalance at state=InProduction), `Type=ProductionIssue` movement, `PO.Status` Draft/Released → InProgress. VPS verified: B-CLEAN 42.1053 split to 37.1053 Imported + 5.0 InProduction; over-draw/unknown-batch/FEFO-auto-pick all behaved (commit `3aab9bb`).
 - [ ] P2.5 ProductionReceipt + TraceLink
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules

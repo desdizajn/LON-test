@@ -2,6 +2,62 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.4 MaterialIssue consumes inventory with FEFO + LON state split
+
+**Status:** [x] done
+**Commit:** `3aab9bb` (main) — `phase-2.4: MaterialIssue consumes inventory with FEFO + LON state split`
+
+**What landed:**
+- `src/LON.Application/Production/Commands/CreateMaterialIssue/CreateMaterialIssueCommand.cs` (new, ~230 lines). `CreateMaterialIssueCommand` + `MaterialIssueLineDto` + `CreateMaterialIssueCommandHandler`.
+- `src/LON.API/Controllers/ProductionController.cs` — POST `/api/production/orders/{id}/issues` wired via MediatR.
+- `tests/LON.IntegrationTests/MaterialIssueTests.cs` (new, 5 scenarios).
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated — contract gate will pass.
+
+**Handler rules:**
+1. `ProductionOrder` must exist and not be in terminal state (Cancelled/Completed/Closed).
+2. Per line, `ResolveBalance`: if caller specified any of batch/MRN/location, exact match on (ItemId, UoMId, QualityStatus=OK, specified fields); prefers `LonProcessState=Imported` when multiple match. Else FEFO auto-pick — LON-first, then `ExpiryDate ?? MaxValue`, then `CreatedAt`.
+3. `balance.Quantity ≥ line.Quantity` pre-checked → 400 `insufficient inventory` on over-draw (belt-and-suspenders before `SubtractQuantity`).
+4. **LON-mandatory:** if resolved balance has `LonProcessState=Imported`, persisted `IssueLine` must have both BatchNumber and MRN. Auto-pick fills these from the balance row; engineered null-batch LON rows are rejected.
+5. **State split:** when the resolved balance is `Imported`, the issued portion becomes a sibling `InventoryBalance` row (same Item/Location/Batch/MRN/UoM/Quality) with `LonProcessState=InProduction`. Imported bucket shrinks, InProduction grows. Mirrors legacy `LagerMaterijali` split-by-Proces.
+6. `InventoryMovement` with `Type=ProductionIssue` (6), `FromLocationId=source.LocationId`, `ToLocationId=null`.
+7. Rolls `ProductionOrderMaterial.IssuedQuantity` forward for matching item (missing row tolerated — ad-hoc issues legal).
+8. Flips `ProductionOrder.Status` Draft/Released → InProgress on first issue, sets `ActualStartDate`.
+9. Emits `MaterialIssuedEvent` per line (via `order.AddDomainEvent`).
+
+**Integration tests (MaterialIssueTests.cs):**
+- `Issue_FromImportedBalance_SplitsLonState` — receipt 50 → issue 20 → Imported 32.6316, InProduction 20.0, PO flips to InProgress.
+- `Issue_OverDraw_Returns400` — 400 `insufficient inventory`.
+- `Issue_UnknownBatchMrn_Returns400` — 400 `no inventory matches`.
+- `Issue_WithoutBatchOrMrn_FEFOAutoPicksOldest` — two receipts with explicit `expiryDate` → auto-pick lands on earlier-expiring batch.
+- `Issue_LonMaterial_ExplicitNullBatch_Rejected` — engineered Imported balance with null batch/MRN → 400 `LON material requires`.
+
+**Verified on VPS** (`PO-VPS-P24-202604182059`, Item FG-001):
+1. Happy-path: POST qty=5 against B-CLEAN (42.1053 Imported) → 200. DB after: two rows — 37.1053 @ state=1 + 5.0 @ state=6. MaterialIssue `ISS-20260418-640c419c` qty=5 batch/MRN preserved. Movement `MOV-20260418-afeab668` Type=6 FromLocation=RCV-01. `PO.Status=3 InProgress`, `ActualStartDate` set. ✅
+2. Over-draw: POST qty=999 → 400 `Demand 999, available 37.1053 on batch 'B-CLEAN' MRN '26MK8DF9122FA1'`. ✅
+3. Unknown batch/MRN: POST `NOPE/26MKDOESNOTEXIST01` → 400 `no inventory matches the requested Item/Batch/MRN/Location/UoM combination`. ✅
+4. FEFO auto-pick: POST qty=2 **without** batch/mrn/location → 200. DB: `B-VPS-P23` 33.3333 → 31.3333 Imported + 2.0 new InProduction sibling. Chosen over B-CLEAN because CreatedAt-earlier (no expiry dates set). ✅
+
+**Pre-existing bug uncovered (not fixed in this commit):**
+- `CreateProductionOrderCommandHandler` never calls `_context.ProductionOrders.Add(order)` — returns `IsSuccess=true` but persists nothing. Confirmed by POST → 200 with Data=Guid, but `/api/production/orders` returns `[]`. Worked around for VPS smoke by inserting the PO directly via `sqlcmd`. Added to WORK_PLAN Deferred Backlog as P6.19.
+
+**Discoveries:**
+- **Balance `UoMId` ≠ Item `BaseUoMId` in current VPS data.** Receipt payload copies line-level `uoMId`, which is free to differ from item base. Handler filters by balance `UoMId`, so callers must pass the balance's UoMId, not the item's. Documented implicit contract — future UI must read balance row's UoMId (not item's) when offering issue options.
+- Legacy inflate qty is visible as Imported bucket. Since the issue records declared qty (not inflated), Imported can drift below the sum of outstanding bond — intentional per current policy (bond tracking sticks with declared numbers).
+
+**Phase 2 progress:**
+- [x] P2.1 IM 4200 declaration + MRN registration
+- [x] P2.2 Guarantee auto-debit
+- [x] P2.2.5 B1-B7 + I1-I8 compliance gates
+- [x] P2.3 Receipt consumes MRN
+- [x] **P2.4 MaterialIssue** ← this commit
+- [ ] P2.5 ProductionReceipt + TraceLink
+- [ ] P2.6a/b/c Export / Return / Waste → guarantee credit
+- [ ] P2.7 Remaining declaration validation rules
+
+**Next (P2.5 ProductionReceipt):** consume WIP (InProduction) balance → create FG InventoryBalance at a production-out location, record ProductionReceipt + TraceLink between issued materials and produced FG batch. Opens the door to Phase 2.6 export/return flows.
+
+---
+
 ## 2026-04-18 — P2.3 Receipt consumes MRN (+ atomic UsedQuantity + inflate-for-waste)
 
 **Status:** [x] done
