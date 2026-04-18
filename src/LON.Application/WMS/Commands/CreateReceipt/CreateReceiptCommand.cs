@@ -4,6 +4,7 @@ using LON.Application.Common.Models;
 using LON.Domain.Entities.WMS;
 using LON.Domain.Enums;
 using LON.Domain.Events;
+using Microsoft.EntityFrameworkCore;
 
 namespace LON.Application.WMS.Commands.CreateReceipt;
 
@@ -12,6 +13,7 @@ public record CreateReceiptCommand : ICommand<Result<Guid>>
     public DateTime ReceiptDate { get; init; }
     public Guid? PartnerId { get; init; }
     public Guid WarehouseId { get; init; }
+    public Guid? LocationId { get; init; }
     public string? PurchaseOrderNumber { get; init; }
     public string? ReferenceNumber { get; init; }
     public List<ReceiptLineDto> Lines { get; init; } = new();
@@ -40,6 +42,15 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
 
     public async Task<Result<Guid>> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
     {
+        if (request.Lines.Count == 0)
+            return Result<Guid>.Failure("Receipt must contain at least one line.");
+
+        var landingLocationId = await ResolveLandingLocationAsync(request, cancellationToken);
+        if (landingLocationId is null)
+            return Result<Guid>.Failure(
+                $"No landing location available in warehouse {request.WarehouseId}. " +
+                "Provide LocationId on the request or configure a Receiving location.");
+
         var receipt = new Receipt
         {
             Id = Guid.NewGuid(),
@@ -48,9 +59,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
             PartnerId = request.PartnerId,
             WarehouseId = request.WarehouseId,
             PurchaseOrderNumber = request.PurchaseOrderNumber,
-            ReferenceNumber = request.ReferenceNumber,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "System"
+            ReferenceNumber = request.ReferenceNumber
         };
 
         int lineNumber = 1;
@@ -68,11 +77,55 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 MRN = lineDto.MRN,
                 QualityStatus = lineDto.QualityStatus,
                 ExpiryDate = lineDto.ExpiryDate,
-                CustomsDeclarationId = lineDto.CustomsDeclarationId,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
+                CustomsDeclarationId = lineDto.CustomsDeclarationId
             };
             receipt.Lines.Add(line);
+
+            _context.InventoryMovements.Add(new InventoryMovement
+            {
+                Id = Guid.NewGuid(),
+                MovementNumber = $"MOV-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+                MovementDate = request.ReceiptDate,
+                Type = MovementType.Receipt,
+                ItemId = lineDto.ItemId,
+                BatchNumber = lineDto.BatchNumber,
+                MRN = lineDto.MRN,
+                FromLocationId = null,
+                ToLocationId = landingLocationId.Value,
+                Quantity = lineDto.Quantity,
+                UoMId = lineDto.UoMId,
+                ReferenceNumber = receipt.ReceiptNumber,
+                ReferenceId = receipt.Id
+            });
+
+            var balance = await _context.InventoryBalances.FirstOrDefaultAsync(b =>
+                    b.ItemId == lineDto.ItemId &&
+                    b.LocationId == landingLocationId.Value &&
+                    b.BatchNumber == lineDto.BatchNumber &&
+                    b.MRN == lineDto.MRN &&
+                    b.UoMId == lineDto.UoMId &&
+                    b.QualityStatus == lineDto.QualityStatus,
+                cancellationToken);
+
+            if (balance is null)
+            {
+                _context.InventoryBalances.Add(new InventoryBalance
+                {
+                    Id = Guid.NewGuid(),
+                    ItemId = lineDto.ItemId,
+                    LocationId = landingLocationId.Value,
+                    BatchNumber = lineDto.BatchNumber,
+                    MRN = lineDto.MRN,
+                    Quantity = lineDto.Quantity,
+                    UoMId = lineDto.UoMId,
+                    QualityStatus = lineDto.QualityStatus,
+                    ExpiryDate = lineDto.ExpiryDate
+                });
+            }
+            else
+            {
+                balance.AddQuantity(lineDto.Quantity);
+            }
         }
 
         receipt.AddDomainEvent(new ReceiptCreatedEvent
@@ -86,5 +139,31 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(receipt.Id);
+    }
+
+    /// <summary>
+    /// Resolve the landing location for this receipt.
+    /// Priority: explicit LocationId > Receiving-type in warehouse > code-prefix "RCV" > first active location.
+    /// </summary>
+    private async Task<Guid?> ResolveLandingLocationAsync(CreateReceiptCommand request, CancellationToken ct)
+    {
+        if (request.LocationId.HasValue)
+        {
+            var explicitLoc = await _context.Locations.FirstOrDefaultAsync(
+                l => l.Id == request.LocationId.Value && l.WarehouseId == request.WarehouseId, ct);
+            return explicitLoc?.Id;
+        }
+
+        var byType = await _context.Locations.FirstOrDefaultAsync(
+            l => l.WarehouseId == request.WarehouseId && l.Type == LocationType.Receiving && l.IsActive, ct);
+        if (byType != null) return byType.Id;
+
+        var byCode = await _context.Locations.FirstOrDefaultAsync(
+            l => l.WarehouseId == request.WarehouseId && l.Code.StartsWith("RCV") && l.IsActive, ct);
+        if (byCode != null) return byCode.Id;
+
+        var firstActive = await _context.Locations.FirstOrDefaultAsync(
+            l => l.WarehouseId == request.WarehouseId && l.IsActive, ct);
+        return firstActive?.Id;
     }
 }

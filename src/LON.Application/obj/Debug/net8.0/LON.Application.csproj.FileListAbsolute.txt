@@ -1,0 +1,32 @@
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.deps.json
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.dll
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.pdb
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Domain.dll
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Domain.pdb
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.csproj.AssemblyReference.cache
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.GeneratedMSBuildEditorConfig.editorconfig
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.AssemblyInfoInputs.cache
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.AssemblyInfo.cs
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.csproj.CoreCompileInputs.cache
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.sourcelink.json
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Appl.80FEBBDE.Up2Date
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.dll
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\refint\LON.Application.dll
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.pdb
+F:\OneDrive\Documents\Elbosoft Consulting\LON-test\src\LON.Application\obj\Debug\net8.0\ref\LON.Application.dll
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.deps.json
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.dll
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Application.pdb
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Domain.dll
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\bin\Debug\net8.0\LON.Domain.pdb
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.csproj.AssemblyReference.cache
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.AssemblyInfoInputs.cache
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.AssemblyInfo.cs
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.csproj.CoreCompileInputs.cache
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.sourcelink.json
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Appl.80FEBBDE.Up2Date
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.dll
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\refint\LON.Application.dll
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\LON.Application.pdb
+C:\Users\БобанКозаров\Documents\LON-test\src\LON.Application\obj\Debug\net8.0\ref\LON.Application.dll
