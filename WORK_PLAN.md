@@ -115,7 +115,7 @@
   - [x] **P1.2-B3** ✅ — `WH-TEK-VN` (TEKSPORT Vinica) + 7 default locations seeded. `SeedWarehouses` refactored to per-code idempotent upsert. TenantId auto-filled (commit `f845c5d`, verified on VPS via API + SQL).
 - [x] **P1.3** ✅ — JWT `tenant_id` claim + `ICurrentUserService.TenantId` + DbContext auto-fill prefers claim (zero DB hits for authenticated writes). Integration test added. Verified on VPS (commit `e723f7e`).
   - Verify: login враќа token со tenant claim; decode потврдува
-- [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
+- [x] **P1.4** ✅ — EF global query filter `!IsDeleted && (CurrentTenantId == null || TenantId == CurrentTenantId)` на сите ITenantScoped entities преку reflection pass во `OnModelCreating`. Verified VPS: admin (TEKSPORT) не може да види item на 2-ри tenant (insert/check/cleanup test — commit `5cc6f72`).
   - Verify: integration test — user од tenant A не гледа записи од tenant B
 - [ ] **P1.5** — Unique constraint reform: (TenantId + Code) наместо само Code
   - Verify: ист Item.Code може во tenant A и tenant B без колизија
@@ -307,30 +307,30 @@
 
 ## Current Active Task
 
-> **>>>** P1.4: apply EF global query filter `HasQueryFilter(e => e.TenantId == currentTenant)` to every ITenantScoped entity via `OnModelCreating` reflection (same mechanism that wires up the FK + index for `ITenantScoped`). Then seed a second tenant and prove data isolation end-to-end.
+> **>>>** P1.5: Unique constraint reform. Currently `Item.Code`, `Partner.Code`, `Warehouse.Code` etc. have **globally unique** indices — кога 2-ри tenant сака да користи `RM-001` (и TEKSPORT веќе го има), ќе падне со duplicate key. Реформа: `IsUnique()` на `(TenantId, Code)` наместо само `(Code)`. Од config-ите во `MasterDataConfigurations.cs` + WMS/Production/Customs каде има `Code`-слични полиња.
 
-**Алтернативи:**
-- **P6.18** (мало, 30 мин): поправи UTF-8 source encoding па да можеме одново да користиме Cyrillic во seeds/code.
+**Scope:**
+- Identify all `.HasIndex(...).IsUnique()` on single columns like `Code`, `Name`, `Number`, `MRN`, итн. за ITenantScoped entities
+- Промени во composite `(TenantId, Column)` уникатен индекс
+- Migration на VPS (drop old unique index → create new composite — no data backfill потребно, TEKSPORT codes се веќе unique)
+- Tenant entity-то не е ITenantScoped: неговиот `Code` остане globally unique (i.e. `TEKSPORT` не може да се повтори). OK.
 
-**Препорака:** P1.4 сега — без него, tenant_id во JWT (P1.3) е само audit-trail; една стара query со `_context.Items.ToList()` би вратила податоци од сите tenant-и. P1.4 ја затвора таа дупка.
+**Алтернативи паралелно:**
+- **P6.18** UTF-8 source encoding (~30 мин)
+- **P0.3.4** decimal precision warnings (~15 мин)
 
-### Контекст за P1.4:
-
-- **Mechanism:** EF8 дозволува `HasQueryFilter` со captured delegate. Pattern: inject `ICurrentTenantService` into DbContext (watch out — cycle risk; safer approach is a wrapper lazy service or a field that's read lazily). Alternative: inject `IHttpContextAccessor` directly into DbContext and read the claim. Same pattern као auto-fill во SaveChangesAsync.
-- **Filters are AND-ed** с постоечките (`!e.IsDeleted`), така DbContext-ot мора да знае и за soft-delete + tenant заедно. EF автоматски комбинира кога постои global filter и ќе биде додаден уште еден преку `HasQueryFilter` со expression што опфаќа обете услови.
-- **Seeder/migration concern:** seeding со `IgnoreQueryFilters()` кога треба да напише cross-tenant data. Повеќето место-то нашиот seeder е "single tenant at a time" па ОК.
-- **Verification:** seed втор Tenant (e.g. code=`DEMO`), create a user + а partner + an item under DEMO. Login како admin (TEKSPORT) → `/api/masterdata/items` не смее да ги врати DEMO items-ите. Login како DEMO user → не смее да ги види TEKSPORT's. Integration test що го прави тоа.
+**Препорака:** P1.5 сега. Foundation за 2nd tenant е скоро готов; P1.5 го спречува предвидлив блокер (дупли codes).
 
 ### Recent context (2026-04-18):
 
-- **P1.3 completed** — JWT има `tenant_id` claim, auto-fill во DbContext го користи (commit `e723f7e`). `tenant_id: b8d4fe76-...` потврден преку base64-decode.
-- **P1.2-B2 completed** — 41/~45 business entities tenant-scoped (commit `bbf8ac9`).
-- **B3 completed** — `WH-TEK-VN` + 7 locations (commit `f845c5d`).
+- **P1.4 completed** — global query filter, isolation потврдено на VPS (commit `5cc6f72`).
+- **P1.3 completed** — JWT `tenant_id` claim (commit `e723f7e`).
+- **P1.2-B2 + B3 + B1** — 41/~45 entities tenant-scoped; WH-TEK-VN seeded.
 
-### Non-goals за P1.4 (одвоено):
+### Non-goals за P1.5 (одвоено):
 
-- Multi-tenant UI ("switch tenant" dropdown) — доаѓа кога ќе има ≥2 тенанти активно.
-- `IgnoreQueryFilters` UI за admin cross-tenant read — Phase 7 или посебен P6 ticket.
+- Rename existing data to disambiguate — TEKSPORT's codes stay.
+- New tenant provisioning UI — P1.6.
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 

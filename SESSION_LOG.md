@@ -14,6 +14,39 @@
 
 ---
 
+## 2026-04-18 — P1.4 EF global query filter for every ITenantScoped entity
+
+**Status:** [x] done
+**Commits:** `5cc6f72 phase-1.4: EF global query filter for every ITenantScoped entity`
+**Files changed:**
+- `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` — `CurrentTenantId` captured from `ICurrentUserService.TenantId` at construction; `ConfigureTenantScoped<T>` promoted to instance method and now sets `HasQueryFilter(e => !e.IsDeleted && (CurrentTenantId == null || e.TenantId == CurrentTenantId))`
+- `tests/LON.IntegrationTests/TenantIsolationTests.cs` — new `AuthenticatedQuery_DoesNotLeakOtherTenantsItems` seeds a 2nd tenant + foreign Item and asserts admin can't see it
+
+**What was done:**
+1. **`CurrentTenantId` on DbContext:** read once from `_currentUser.TenantId` (which reads `tenant_id` claim from JWT via IHttpContextAccessor). Null for seeders/migrations/login-before-auth — that null triggers a filter bypass so those paths still see every row.
+2. **Reflection pass in `OnModelCreating` upgraded:** same loop that wires up FK + index now also sets the combined query filter. Combines soft-delete (`!IsDeleted`) AND tenant scoping in a single `HasQueryFilter` — needed because EF only allows one filter per entity, and per-entity configurations already declared the soft-delete filter.
+3. **Instance method for `ConfigureTenantScoped<T>`:** was static; now closes over `this.CurrentTenantId`. EF re-reads the field per query per DbContext instance, so every request gets the correct scope from its own JWT claim.
+4. **Integration test** (TenantIsolationTests): seeds `ISO-DEMO` tenant + `FOREIGN-ISOLATION-TEST` item via `IgnoreQueryFilters()` path, then logs in as TEKSPORT admin and asserts `/api/masterdata/items` never contains the foreign code. Runs on CI (Testcontainers-MsSql).
+
+**How verified на VPS (elon.elbosoft.click):**
+- Migration-less deploy (no schema change) — API restarted clean, no errors in logs.
+- **Regression check** — all existing reads return same counts as P1.3: Receipts 6, Inventory 3, Items 5, Partners 4, Warehouses 2, Tenants 1 ✅
+- **Isolation proof on VPS:**
+  1. SQL inserted 2nd tenant (`VPS-ISO-DEMO`) + foreign Item (`FOREIGN-VPS-CHECK`). DB total: 6 items, 2 tenants.
+  2. API `GET /api/masterdata/items` (admin/TEKSPORT bearer) returned 5 items: `FG-001, SF-001, RM-001, RM-002, PKG-001`. `FOREIGN-VPS-CHECK` **not leaked**. ✅
+  3. Cleaned up — DB back to 5 items, 1 tenant. Final state verified.
+- Login flow still works (auth query against Users table at login time runs with CurrentTenantId=null because user hasn't authenticated yet → filter bypassed → admin found).
+
+**Follow-ups / notes:**
+- **Tenant** entity itself has NO query filter (as designed; it's the scope root, not ITenantScoped). TenantsController is admin-only and returns the full list — which is correct.
+- **Global reference tables** (UoM, Role, Permission, CustomsProcedure, KB tables) unaffected — no filter applied, all tenants see the same global data.
+- **Admin cross-tenant read** (super-admin UI to view all tenants' data): not implemented, deferred until it's a real requirement (currently tracked in P1.6 pending concrete UX ask). Meanwhile handlers can use `IgnoreQueryFilters()` where genuinely needed.
+- **EF warnings** about required cross-filter relationships (CustomsDeclaration↔CustomsDocument etc.) still fire — those are advisory and not errors; can be addressed if they cause query surprises.
+
+**Next:** P1.5 — `(TenantId, Code)` composite unique constraints instead of globally-unique `Code`. Currently `Warehouse.Code`, `Item.Code`, `Partner.Code` etc. are globally unique — that breaks the moment a second tenant wants to use a code another tenant already uses (e.g. both tenants having `RM-001`). Migration + index rework.
+
+---
+
 ## 2026-04-18 — P1.3 tenant_id JWT claim + claim-based auto-fill
 
 **Status:** [x] done
