@@ -97,7 +97,18 @@
     "productionStatus": "Состојба на производство",
     "activeOrders": "Активни налози",
     "completedToday": "Завршено денес",
-    "wip": "Во процес (WIP)"
+    "wip": "Во процес (WIP)",
+    "customsAndMrn": "Царина и MRN",
+    "guaranteesSection": "Гаранции",
+    "activeMrns": "Активни MRN",
+    "expiringMrns": "MRN што истекуваат",
+    "totalAccounts": "Вкупно сметки",
+    "totalExposure": "Вкупна изложеност",
+    "expiringSoon": "Истекуваат наскоро",
+    "loadingData": "Вчитување на контролната табла...",
+    "errorPrefix": "Грешка",
+    "noDataAvailable": "Нема достапни податоци",
+    "loadFailed": "Неуспех при вчитување на контролната табла"
   },
   "wms": {
     "title": "WMS и Инвентар",

@@ -97,7 +97,18 @@
     "productionStatus": "Statusi i prodhimit",
     "activeOrders": "Porositë aktive",
     "completedToday": "Të përfunduara sot",
-    "wip": "Në proces (WIP)"
+    "wip": "Në proces (WIP)",
+    "customsAndMrn": "Dogana dhe MRN",
+    "guaranteesSection": "Garancitë",
+    "activeMrns": "MRN aktive",
+    "expiringMrns": "MRN që skadojnë",
+    "totalAccounts": "Gjithsej llogari",
+    "totalExposure": "Ekspozimi total",
+    "expiringSoon": "Skadojnë së shpejti",
+    "loadingData": "Duke ngarkuar panelin...",
+    "errorPrefix": "Gabim",
+    "noDataAvailable": "Nuk ka të dhëna të disponueshme",
+    "loadFailed": "Dështoi ngarkimi i panelit"
   },
   "wms": {
     "title": "WMS dhe Inventar",

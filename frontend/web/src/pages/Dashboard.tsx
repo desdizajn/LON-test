@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { analyticsApi } from '../services/api';
 import { authService } from '../services/authService';
 import './Dashboard.css';
@@ -31,6 +32,7 @@ interface DashboardData {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [user] = useState(() => authService.getCurrentUser());
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ const Dashboard: React.FC = () => {
         navigate('/login');
         return;
       }
-      setError(err.message || 'Failed to load dashboard');
+      setError(err.message || t('dashboard.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -77,55 +79,55 @@ const Dashboard: React.FC = () => {
 
   const adminModules = [
     {
-      title: 'Корисници',
-      description: 'Управување со корисници на системот',
+      title: t('nav.users'),
+      description: t('dashboard.usersManagement'),
       icon: '👥',
       path: '/admin/users',
       color: '#667eea'
     },
     {
-      title: 'Вработени',
-      description: 'Управување со вработени',
+      title: t('nav.employees'),
+      description: t('dashboard.employeesManagement'),
       icon: '👔',
       path: '/admin/employees',
       color: '#48bb78'
     },
     {
-      title: 'Смени',
-      description: 'Управување со работни смени',
+      title: t('nav.shifts'),
+      description: t('dashboard.shiftsManagement'),
       icon: '⏰',
       path: '/admin/shifts',
       color: '#ed8936'
     },
     {
-      title: 'Улоги',
-      description: 'Управување со улоги и дозволи',
+      title: t('nav.roles'),
+      description: t('dashboard.rolesManagement'),
       icon: '🔐',
       path: '/admin/roles',
       color: '#9f7aea'
     }
   ];
 
-  if (loading) return <div className="loading">Loading dashboard...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!data || !user) return <div>No data available</div>;
+  if (loading) return <div className="loading">{t('dashboard.loadingData')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
+  if (!data || !user) return <div>{t('dashboard.noDataAvailable')}</div>;
 
   return (
     <div className="dashboard-new">
       <div className="dashboard-header">
         <div className="welcome-section">
-          <h1>Добредојдовте, {user.fullName}!</h1>
+          <h1>{t('app.welcome', { name: user.fullName })}</h1>
           <p className="user-info">
             {user.username} | {user.roles.join(', ')}
           </p>
         </div>
         <button className="btn-logout" onClick={handleLogout}>
-          Одјави се
+          {t('nav.logout')}
         </button>
       </div>
 
       <section className="dashboard-section">
-        <h2>Администрација</h2>
+        <h2>{t('dashboard.administration')}</h2>
         <div className="modules-grid">
           {adminModules.map((module) => (
             <div
@@ -146,94 +148,94 @@ const Dashboard: React.FC = () => {
 
       <div className="original-dashboard">
         <div className="header">
-          <h2>Статистики</h2>
-          <button className="btn btn-primary" onClick={loadDashboard}>Освежи</button>
+          <h2>{t('dashboard.statistics')}</h2>
+          <button className="btn btn-primary" onClick={loadDashboard}>{t('common.refresh')}</button>
         </div>
 
       <div className="card-grid">
         <div className="card info">
-          <h3>Total Items</h3>
+          <h3>{t('dashboard.totalItems')}</h3>
           <div className="value">{data.inventory.totalItems}</div>
         </div>
         <div className="card success">
-          <h3>Active Production Orders</h3>
+          <h3>{t('dashboard.activeProductionOrders')}</h3>
           <div className="value">{data.production.activeOrders}</div>
         </div>
         <div className="card warning">
-          <h3>Pending Declarations</h3>
+          <h3>{t('dashboard.pendingDeclarations')}</h3>
           <div className="value">{data.customs.pendingDeclarations}</div>
         </div>
         <div className="card danger">
-          <h3>Active Guarantees</h3>
+          <h3>{t('dashboard.activeGuarantees')}</h3>
           <div className="value">{data.guarantees.activeGuarantees}</div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '30px' }}>
         <div className="card">
-          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>Inventory Status</h3>
+          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('dashboard.inventoryStatus')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Total Balance:</span>
+            <span>{t('dashboard.totalBalance')}:</span>
             <strong>{data.inventory.totalBalance.toFixed(2)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Blocked Quantity:</span>
+            <span>{t('dashboard.blockedQuantity')}:</span>
             <strong style={{ color: '#e74c3c' }}>{data.inventory.blockedQty.toFixed(2)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Locations:</span>
+            <span>{t('dashboard.locations')}:</span>
             <strong>{data.inventory.totalLocations}</strong>
           </div>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>Production Status</h3>
+          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('dashboard.productionStatus')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Active Orders:</span>
+            <span>{t('dashboard.activeOrders')}:</span>
             <strong>{data.production.activeOrders}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Completed Today:</span>
+            <span>{t('dashboard.completedToday')}:</span>
             <strong style={{ color: '#27ae60' }}>{data.production.completedToday}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>WIP:</span>
+            <span>{t('dashboard.wip')}:</span>
             <strong>{data.production.wip.toFixed(2)}</strong>
           </div>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>Customs & MRN</h3>
+          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('dashboard.customsAndMrn')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Pending Declarations:</span>
+            <span>{t('dashboard.pendingDeclarations')}:</span>
             <strong style={{ color: '#f39c12' }}>{data.customs.pendingDeclarations}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Active MRNs:</span>
+            <span>{t('dashboard.activeMrns')}:</span>
             <strong>{data.customs.activeMRNs}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Expiring MRNs:</span>
+            <span>{t('dashboard.expiringMrns')}:</span>
             <strong style={{ color: '#e74c3c' }}>{data.customs.expiringMRNs}</strong>
           </div>
         </div>
 
         <div className="card">
-          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>Guarantees</h3>
+          <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('dashboard.guaranteesSection')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Total Accounts:</span>
+            <span>{t('dashboard.totalAccounts')}:</span>
             <strong>{data.guarantees.totalAccounts}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Active Guarantees:</span>
+            <span>{t('dashboard.activeGuarantees')}:</span>
             <strong style={{ color: '#f39c12' }}>{data.guarantees.activeGuarantees}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>Total Exposure:</span>
+            <span>{t('dashboard.totalExposure')}:</span>
             <strong style={{ color: '#e74c3c' }}>{data.guarantees.totalExposure.toFixed(2)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Expiring Soon:</span>
+            <span>{t('dashboard.expiringSoon')}:</span>
             <strong>{data.guarantees.expiringGuarantees}</strong>
           </div>
         </div>

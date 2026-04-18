@@ -97,7 +97,18 @@
     "productionStatus": "Production Status",
     "activeOrders": "Active Orders",
     "completedToday": "Completed Today",
-    "wip": "Work in Progress"
+    "wip": "Work in Progress",
+    "customsAndMrn": "Customs & MRN",
+    "guaranteesSection": "Guarantees",
+    "activeMrns": "Active MRNs",
+    "expiringMrns": "Expiring MRNs",
+    "totalAccounts": "Total Accounts",
+    "totalExposure": "Total Exposure",
+    "expiringSoon": "Expiring Soon",
+    "loadingData": "Loading dashboard...",
+    "errorPrefix": "Error",
+    "noDataAvailable": "No data available",
+    "loadFailed": "Failed to load dashboard"
   },
   "wms": {
     "title": "WMS & Inventory",
