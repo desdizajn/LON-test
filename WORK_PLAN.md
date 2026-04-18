@@ -306,14 +306,19 @@
 
 ## Current Active Task
 
-> **>>>** **P2.1 DONE.** Next entry point = **P2.2** GuaranteeLedger auto-debit on `CustomsDeclarationCreatedEvent`. Event is already emitted by P2.1 handler; need a MediatR notification handler that locates the right `GuaranteeAccount` for the tenant+currency, inserts a `GuaranteeLedgerEntry` (type=Debit), updates the account balance, and emits `GuaranteeDebitedEvent`. Verify criterion: POST IM 4200 → GuaranteeAccount.Balance increases by the declaration's TotalDuty+TotalVAT (or a configurable % per procedure.GuaranteePercentage).
+> **>>>** **P2.2 DONE.** Next entry point = **P2.3** Receipt consumes MRN → batch+MRN inventory. The WMS receipt handler (P0.6) already stores MRN on InventoryBalance/Movement, but doesn't cross-check it against MRNRegistry nor decrement `UsedQuantity`. P2.3: (a) validate MRN exists in registry for caller's tenant + is active + is not expired + has remaining quantity; (b) increment `MRNRegistry.UsedQuantity` atomically with receipt line; (c) fail if receiving more than the remaining quantity.
 
-**Scope for P2.2:**
-- Handler: `CustomsDeclarationCreatedNotificationHandler : INotificationHandler<...>`.
-- Resolve account: by tenant + currency (first active); if none, log + no-op (don't block the declaration).
-- Debit amount: `procedure.GuaranteePercentage > 0 ? (TotalCustomsValue × %)/100 : TotalDuty + TotalVAT`. Decide which matches Правилник — ELON legacy uses `Davacki` (Duty only) per `qryFakturiU5ZG20` but LON suspension system holds the **full liable duty+VAT**.
-- Update `GuaranteeAccount.UsedAmount` + insert ledger row with `EntryType=Debit, MRN, CustomsDeclarationId`.
-- Integration test: POST 4200 → query `/api/guarantee/accounts` → UsedAmount grew.
+**Scope for P2.3:**
+- `CreateReceiptCommand` per-line: if `MRN` present, look up `MRNRegistries` (tenant-scoped, Active, ExpiryDate >= today); fail if absent/expired.
+- Check `line.Quantity + registry.UsedQuantity <= registry.TotalQuantity` per line's MRN; fail with explicit "over-quantity" message.
+- After save, update `registry.UsedQuantity += line.Quantity` and flip `IsActive = false` if fully used (`IsFullyUsed` is computed — set a persisted flag or rely on computed).
+- Integration test: receipt with valid MRN → UsedQuantity grew; receipt over remaining → 400; receipt with unknown MRN → 400.
+
+**Алтернативи пред P2.3:**
+- **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
+- **P6.18** UTF-8 source encoding in KB JSON (~30 min).
+- **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
+- **P0.3.4** decimal precision warnings (~15 min).
 
 **Алтернативи пред P2.2:**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
@@ -337,8 +342,8 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 ### Phase 2 progress:
 
 - [x] P2.1 IM 4200 declaration + MRN registration + LON auth enforce + status lifecycle
-- [ ] P2.2 Guarantee auto-debit on declaration event (NEXT)
-- [ ] P2.3 Receipt consumes MRN → batch+MRN inventory
+- [x] P2.2 Guarantee auto-debit on declaration creation (sync, hard-enforce limit)
+- [ ] P2.3 Receipt consumes MRN → batch+MRN inventory (NEXT)
 - [ ] P2.4 MaterialIssue (batch+MRN mandatory, no-negative)
 - [ ] P2.5 ProductionReceipt + TraceLink
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit

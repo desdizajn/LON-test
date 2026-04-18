@@ -2,6 +2,59 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.2 Guarantee auto-debit on declaration
+
+**Status:** [x] done
+**Commit:** `63bf612 phase-2.2: guarantee auto-debit on IM 4200 creation`
+
+**Design decisions (documented inline):**
+- **Synchronous debit, not outbox-based.** No outbox processor exists yet (would orphan debits); guarantee tracking is business-critical, must be atomic with declaration save. Event (`CustomsDeclarationCreatedEvent` + `GuaranteeDebitedEvent`) is still emitted via the existing OutboxMessages pipeline for future consumers (notifications, XML generation, analytics), but the debit itself is in-handler.
+- **Formula:** `(TotalDuty + TotalVAT) × procedure.GuaranteePercentage / 100`. For seeded IM 4200 at 50%: 1000 EUR × 5% duty + 18% VAT = 239 liable → 119.5 debit. Matches UK/EU suspension-system semantics; legacy ELON charged full `Davacki` but no VAT.
+- **Hard enforcement (not advisory).** Declaration is rejected (400) if:
+  - No active GuaranteeAccount in declaration's currency under caller's tenant.
+  - Debit would exceed `TotalLimit - Σ ledger balance`.
+  Legacy ELON's `Одобренија.ГаранцијаИзнос` is a free scalar (no FK, no enforcement). Our posture is deliberately stricter — easier to loosen later via a feature flag than to tighten post-breach.
+
+**Files changed:**
+- `src/LON.Application/Customs/Commands/CreateCustomsDeclaration/CreateCustomsDeclarationCommand.cs` — new `TryDebitGuaranteeAsync` that: resolves account by currency+active+tenant, computes debit, checks available limit, adds `GuaranteeLedgerEntry` (Debit) with `ReferenceType/ReferenceId/MRN/CustomsDeclarationId/ExpectedReleaseDate`, emits `GuaranteeDebitedEvent`. Handler now injects `ILogger`. Invoked inline before final `SaveChangesAsync` so the whole thing is one transaction.
+- `tests/LON.IntegrationTests/CustomsDeclarationTests.cs` — 3 new tests:
+  - Happy-path debit — before/after ledger sum matches the expected formula.
+  - No-EUR-account (temporarily deactivate seeded account) → 400 + declaration not persisted.
+  - Over-limit (temporarily set `TotalLimit = 1`) → 400 with required/available in message.
+
+**How verified on VPS (commit `63bf612`):**
+```
+Before:
+  GUA-2024-001 EUR: limit=500000, balance=0, available=500000
+
+POST /api/customs/declarations (IM 4200, 1000 EUR, 5% duty, 18% VAT) → 200
+  declarationId=e8a54ceb-6ef4-41c2-a29a-1e84efc51bdf
+
+After:
+  GUA-2024-001 EUR: limit=500000, balance=119.5, available=499880.5   ✅
+
+Ledger tail:
+  EntryType=1 (Debit) | 119.5 EUR | MRN=26MK0178877CA1 |
+  "Auto-debit 4200 — DEC-P22-SMOKE (50.0000% × (Duty+VAT))"           ✅
+```
+
+Negative paths covered only by integration tests (CI) — not live-tested on VPS so we don't have to twiddle seeded account state.
+
+**Compliance footprint:**
+- Declaration + bond debit are atomic: you cannot end up with a declaration in DB whose bond wasn't reserved.
+- Bond cannot be overdrawn: the 239×50% debit must fit under `TotalLimit − currentBalance`. Breaches caller-side, before declaration is persisted.
+- Per-currency bonding: EUR declaration → EUR bond; USD → USD. Prevents FX-adjusted mismatches.
+- `GuaranteeLedgerEntry.ExpectedReleaseDate` = DeclarationDate + procedure.DueDays (180 for 4200) — aligned with MRN expiry.
+
+**Follow-ups (backlog):**
+- Credit flow (P2.6a/b/c) will INSERT opposite Credit rows on export/return/waste, bringing balance back toward zero.
+- Outbox processor (no task yet) — would enable async side effects like sending `GuaranteeDebitedEvent` to a Slack webhook or emitting PEE060 drafts.
+- `frontend/web/src/pages/Guarantees.tsx` (not yet reviewed this session) — should show the running balance + traffic-light gauge (P4.4 deferred). Current GET /api/guarantee/accounts already exposes balance; dashboard integration is low-effort when we revisit.
+- `CustomsProcedure.GuaranteePercentage` configurable per tenant — currently global. For TEKSPORT-specific quirks (if any), will need a per-tenant override table.
+
+---
+
+
 ## 2026-04-18 — P2.1 IM 42 00 Customs Declaration E2E (backend + UI)
 
 **Status:** [x] done
