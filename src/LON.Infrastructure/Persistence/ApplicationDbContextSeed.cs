@@ -659,43 +659,48 @@ public static class ApplicationDbContextSeed
     private static async Task SeedTeksportApprovedItemsAsync(
         ApplicationDbContext context, Guid tenantId, Guid authId)
     {
-        var rawMaterial = await context.Items
+        // Pick two DISTINCT items so the (authId, importItemId) key in the
+        // waste-% lookup stays unambiguous — previously both rows shared the
+        // same ImportItemId and the dictionary's last-write-wins hid the 5%
+        // entry behind the 10% one.
+        var items = await context.Items
             .Where(i => i.TenantId == tenantId)
             .OrderBy(i => i.Code)
-            .FirstOrDefaultAsync();
-        if (rawMaterial is null) return;
+            .Take(2)
+            .ToListAsync();
+        if (items.Count == 0) return;
 
-        context.LONAuthorizationItems.AddRange(
-            new LONAuthorizationItem
+        context.LONAuthorizationItems.Add(new LONAuthorizationItem
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            LONAuthorizationId = authId,
+            ImportItemId = items[0].Id,
+            ImportTariffCode = "2905399500",
+            CompensatingTariffCode = string.Empty,
+            YieldRate = 0.95m,
+            AllowedWastePercentage = 5m,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "Seed"
+        });
+
+        if (items.Count > 1)
+        {
+            context.LONAuthorizationItems.Add(new LONAuthorizationItem
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
                 LONAuthorizationId = authId,
-                ImportItemId = rawMaterial.Id,
-                ImportTariffCode = "2905399500",
-                // DB column is IsRequired() despite CLR type string? — pass
-                // empty string rather than null to avoid the NOT NULL failure.
-                CompensatingTariffCode = string.Empty,
-                YieldRate = 0.95m,
-                AllowedWastePercentage = 5m,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "Seed"
-            },
-            new LONAuthorizationItem
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenantId,
-                LONAuthorizationId = authId,
-                ImportItemId = rawMaterial.Id,
+                ImportItemId = items[1].Id,
                 ImportTariffCode = "1211200050",
-                // DB column is IsRequired() despite CLR type string? — pass
-                // empty string rather than null to avoid the NOT NULL failure.
                 CompensatingTariffCode = string.Empty,
                 YieldRate = 0.90m,
                 AllowedWastePercentage = 10m,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "Seed"
             });
+        }
+
         await context.SaveChangesAsync();
     }
 }
