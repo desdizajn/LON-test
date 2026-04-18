@@ -419,6 +419,28 @@
         }
       }
     },
+    "/api/Customs/lon-authorizations": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/mrn-registry": {
       "get": {
         "tags": [
@@ -3876,6 +3898,11 @@
             "format": "uuid",
             "nullable": true
           },
+          "lonAuthorizationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "totalCustomsValue": {
             "type": "number",
             "format": "double"
@@ -3888,6 +3915,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeclarationStatus"
           },
           "lines": {
             "type": "array",
@@ -4248,6 +4278,17 @@
           }
         },
         "additionalProperties": false
+      },
+      "DeclarationStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          99
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "EmployeeDto": {
         "type": "object",

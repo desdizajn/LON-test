@@ -146,9 +146,13 @@ export const customsApi = {
     api.put(`/Customs/declarations/${id}`, data),
   
   // Procedures
-  getProcedures: () => 
+  getProcedures: () =>
     api.get('/Customs/procedures'),
-  
+
+  // LON Authorizations (Одобренија за IM 4200 / 5100)
+  getLONAuthorizations: (activeOnly: boolean = true) =>
+    api.get('/Customs/lon-authorizations', { params: { activeOnly } }),
+
   // MRN Registry
   getMRNRegistry: (mrn?: string, isActive?: boolean) => 
     api.get('/Customs/mrn-registry', { params: { mrn, isActive } }),

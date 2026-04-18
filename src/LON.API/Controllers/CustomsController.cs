@@ -33,14 +33,21 @@ public class CustomsController : BaseController
     [HttpPost("declarations/validate")]
     public async Task<IActionResult> ValidateDeclaration([FromBody] CreateCustomsDeclarationCommand command)
     {
+        var procedureCode = await _context.CustomsProcedures
+            .Where(p => p.Id == command.CustomsProcedureId)
+            .Select(p => p.Code)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
         var declaration = new CustomsDeclaration
         {
             Id = Guid.NewGuid(),
             DeclarationNumber = command.DeclarationNumber,
-            MRN = command.MRN,
+            MRN = command.MRN ?? string.Empty,
             DeclarationDate = command.DeclarationDate,
             CustomsProcedureId = command.CustomsProcedureId,
+            ProcedureCode = procedureCode,
             PartnerId = command.PartnerId,
+            LONAuthorizationId = command.LONAuthorizationId,
             TotalCustomsValue = command.TotalCustomsValue,
             Currency = command.Currency,
             DueDate = command.DueDate,
@@ -171,6 +178,44 @@ public class CustomsController : BaseController
             .ToListAsync();
 
         return Ok(procedures);
+    }
+
+    /// <summary>
+    /// List LON authorizations (Odobrenija) available to the current tenant.
+    /// Used by the declaration form to populate the LONAuthorizationId picker
+    /// for procedure codes 4200 / 5100.
+    /// </summary>
+    [HttpGet("lon-authorizations")]
+    public async Task<IActionResult> GetLONAuthorizations([FromQuery] bool activeOnly = true)
+    {
+        var query = _context.LONAuthorizations
+            .Include(a => a.Partner)
+            .AsQueryable();
+
+        if (activeOnly)
+            query = query.Where(a => a.Status == "Active" &&
+                                     (!a.ExpiryDate.HasValue || a.ExpiryDate >= DateTime.UtcNow.Date));
+
+        var list = await query
+            .OrderByDescending(a => a.IssueDate)
+            .Select(a => new
+            {
+                a.Id,
+                a.AuthorizationNumber,
+                a.AuthorizationType,
+                a.SystemType,
+                a.OperationType,
+                a.IssueDate,
+                a.ExpiryDate,
+                a.GuaranteeAmount,
+                a.GuaranteeReference,
+                a.CompetentCustomsOffice,
+                a.Status,
+                PartnerName = a.Partner.Name
+            })
+            .ToListAsync();
+
+        return Ok(list);
     }
 
     [HttpGet("mrn-registry")]

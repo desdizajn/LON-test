@@ -134,3 +134,20 @@ public enum LONOperationType
     Склопување = 3,
     Поправка = 4
 }
+
+/// <summary>
+/// Lifecycle states for <see cref="Entities.Customs.CustomsDeclaration"/>.
+/// Draft: user started but hasn't registered an MRN yet.
+/// Registered: MRN assigned (auto-generated or pasted from customs portal).
+/// Submitted: declaration XML delivered to customs (PEE010) — future Phase 4.2.
+/// Cleared: customs accepted; goods released. Mirrors legacy IsCleared=true.
+/// Cancelled: terminal state for withdrawn declarations.
+/// </summary>
+public enum DeclarationStatus
+{
+    Draft = 0,
+    Registered = 1,
+    Submitted = 2,
+    Cleared = 3,
+    Cancelled = 99
+}

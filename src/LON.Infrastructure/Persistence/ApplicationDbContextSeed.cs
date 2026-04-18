@@ -60,6 +60,11 @@ public static class ApplicationDbContextSeed
         {
             await SeedGuaranteeAccounts(context);
         }
+
+        // P2.1: seed a TEKSPORT LON authorization so IM 4200 declarations have
+        // a valid `LONAuthorizationId` out of the box. Idempotent via
+        // AuthorizationNumber lookup.
+        await SeedTeksportLONAuthorizationIdempotent(context);
     }
 
     private static async Task SeedUnitsOfMeasure(ApplicationDbContext context)
@@ -474,10 +479,13 @@ public static class ApplicationDbContextSeed
             new CustomsProcedure
             {
                 Id = Guid.NewGuid(),
-                Code = "INW-PROC",
-                Name = "Inward Processing",
+                // Box 37 procedure code. `42` = release for free circulation with
+                // simultaneous entry for inward processing (suspension system),
+                // `00` = no previous customs procedure.
+                Code = "4200",
+                Name = "Увоз за облагородување (42 00)",
                 Type = CustomsProcedureType.InwardProcessing,
-                Description = "Import for processing and re-export",
+                Description = "Inward processing — suspension system (MK Правилник, член 349)",
                 RequiresGuarantee = true,
                 GuaranteePercentage = 50,
                 DueDays = 180,
@@ -559,6 +567,57 @@ public static class ApplicationDbContextSeed
         };
 
         await context.GuaranteeAccounts.AddRangeAsync(accounts);
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Seeds a baseline LON authorization for TEKSPORT so IM 4200 flows have
+    /// a valid `LONAuthorizationId` from day one. Idempotent: looks up by
+    /// AuthorizationNumber before inserting.
+    /// </summary>
+    private static async Task SeedTeksportLONAuthorizationIdempotent(ApplicationDbContext context)
+    {
+        const string authNumber = "26/TEKSPORT/0001";
+
+        var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Code == "TEKSPORT");
+        if (tenant is null) return;
+
+        var exists = await context.LONAuthorizations
+            .IgnoreQueryFilters()
+            .AnyAsync(a => a.AuthorizationNumber == authNumber);
+        if (exists) return;
+
+        // Pick any supplier partner; if none, skip (partners seeded first above).
+        var partner = await context.Partners
+            .Where(p => p.TenantId == tenant.Id && p.Type == PartnerType.Supplier)
+            .OrderBy(p => p.Code)
+            .FirstOrDefaultAsync();
+        if (partner is null) return;
+
+        var auth = new LONAuthorization
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenant.Id,
+            AuthorizationNumber = authNumber,
+            PartnerId = partner.Id,
+            IssueDate = DateTime.UtcNow.AddDays(-30),
+            ExpiryDate = DateTime.UtcNow.AddYears(1),
+            AuthorizationType = "Повеќекратно",
+            SystemType = "ОдложеноПлаќање",
+            OperationType = "Обработка",
+            EconomicConditionCode = "10",
+            GuaranteeAmount = 100000m,
+            GuaranteeReference = "GUA-2024-001",
+            CompetentCustomsOffice = "MK007",
+            SupervisoryOffice = "MK007",
+            CompletionPeriodDays = 180,
+            Status = "Active",
+            Notes = "Seeded baseline authorization for TEKSPORT IM 4200 flows.",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "Seed"
+        };
+
+        context.LONAuthorizations.Add(auth);
         await context.SaveChangesAsync();
     }
 }

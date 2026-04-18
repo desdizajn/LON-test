@@ -32,6 +32,9 @@ public static class DependencyInjection
         services.AddScoped<IDeclarationRule, TariffCodeFormatRule>();
         services.AddScoped<IDeclarationRule, TariffCodeExistsRule>();
         services.AddScoped<IDeclarationRule, ProcedureCodeValidRule>();
+        services.AddScoped<IDeclarationRule, CurrencyIsoRule>();
+        services.AddScoped<IDeclarationRule, CountryIsoRule>();
+        services.AddScoped<IDeclarationRule, LONAuthorizationRequiredRule>();
         
         // Knowledge Base Services
         services.AddScoped<IDocumentChunkingService, DocumentChunkingService>();

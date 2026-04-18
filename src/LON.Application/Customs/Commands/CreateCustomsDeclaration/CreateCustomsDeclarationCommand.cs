@@ -3,20 +3,41 @@ using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
 using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Enums;
 using LON.Domain.Events;
+using Microsoft.EntityFrameworkCore;
 
 namespace LON.Application.Customs.Commands.CreateCustomsDeclaration;
 
 public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
 {
     public string DeclarationNumber { get; init; } = string.Empty;
-    public string MRN { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Movement Reference Number. Optional: if empty, the handler generates a
+    /// dev-mode placeholder (format `<YY>MK<8-hex>A1`). In production this
+    /// field should carry the MRN returned by the customs portal.
+    /// </summary>
+    public string? MRN { get; init; }
+
     public DateTime DeclarationDate { get; init; }
     public Guid CustomsProcedureId { get; init; }
     public Guid? PartnerId { get; init; }
+
+    /// <summary>
+    /// LON authorization (Одобрение) under which this declaration is filed.
+    /// Required for procedure codes 4200, 5100 and other LON-suspension types.
+    /// </summary>
+    public Guid? LONAuthorizationId { get; init; }
+
     public decimal TotalCustomsValue { get; init; }
-    public string Currency { get; init; } = "USD";
+    public string Currency { get; init; } = "EUR";
     public DateTime? DueDate { get; init; }
+
+    /// <summary>Optional pre-set for testing; defaults to Draft or Registered
+    /// depending on whether an MRN ends up being present after handling.</summary>
+    public DeclarationStatus? Status { get; init; }
+
     public List<DeclarationLineDto> Lines { get; init; } = new();
 }
 
@@ -34,6 +55,13 @@ public record DeclarationLineDto
 
 public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCustomsDeclarationCommand, Result<Guid>>
 {
+    /// <summary>Procedure codes that mandate a LON authorization.</summary>
+    private static readonly HashSet<string> LonProcedureCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "4200", // release for free circulation + entry for inward processing (suspension)
+        "5100", // inward processing (suspension) — separate declaration
+    };
+
     private readonly IApplicationDbContext _context;
     private readonly IDeclarationRuleEngine _ruleEngine;
 
@@ -47,33 +75,82 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
 
     public async Task<Result<Guid>> Handle(CreateCustomsDeclarationCommand request, CancellationToken cancellationToken)
     {
+        if (request.Lines.Count == 0)
+            return Result<Guid>.Failure("Declaration must contain at least one line.");
+
+        var procedure = await _context.CustomsProcedures
+            .FirstOrDefaultAsync(p => p.Id == request.CustomsProcedureId, cancellationToken);
+        if (procedure is null)
+            return Result<Guid>.Failure($"Customs procedure '{request.CustomsProcedureId}' does not exist.");
+        if (!procedure.IsActive)
+            return Result<Guid>.Failure($"Customs procedure '{procedure.Code}' is not active.");
+
+        // Enforce LON authorization requirement by Box 37 procedure code.
+        LONAuthorization? auth = null;
+        if (LonProcedureCodes.Contains(procedure.Code))
+        {
+            if (request.LONAuthorizationId is null || request.LONAuthorizationId == Guid.Empty)
+                return Result<Guid>.Failure(
+                    $"LONAuthorizationId is required for procedure '{procedure.Code}'. " +
+                    "File a LON authorization before submitting an IM 4200 declaration.");
+
+            auth = await _context.LONAuthorizations
+                .FirstOrDefaultAsync(a => a.Id == request.LONAuthorizationId.Value, cancellationToken);
+            if (auth is null)
+                return Result<Guid>.Failure($"LONAuthorization '{request.LONAuthorizationId.Value}' does not exist or is not accessible under the current tenant.");
+            if (!string.Equals(auth.Status, "Active", StringComparison.OrdinalIgnoreCase))
+                return Result<Guid>.Failure($"LONAuthorization '{auth.AuthorizationNumber}' is not active (status={auth.Status}).");
+            if (auth.ExpiryDate.HasValue && auth.ExpiryDate.Value.Date < request.DeclarationDate.Date)
+                return Result<Guid>.Failure($"LONAuthorization '{auth.AuthorizationNumber}' expired on {auth.ExpiryDate:yyyy-MM-dd}; declaration date is {request.DeclarationDate:yyyy-MM-dd}.");
+            if (auth.IssueDate.Date > request.DeclarationDate.Date)
+                return Result<Guid>.Failure($"LONAuthorization '{auth.AuthorizationNumber}' is not yet issued (IssueDate={auth.IssueDate:yyyy-MM-dd}).");
+        }
+
+        // MRN: auto-generate a dev-mode placeholder if empty. 18 chars per
+        // MK customs convention: <YY>MK<8-hex><check>. Production path will
+        // pass the real MRN returned by the customs portal.
+        var mrn = string.IsNullOrWhiteSpace(request.MRN)
+            ? GeneratePlaceholderMRN(request.DeclarationDate)
+            : request.MRN.Trim().ToUpperInvariant();
+
+        // Enforce MRN uniqueness per tenant (prevents replays).
+        var mrnCollision = await _context.CustomsDeclarations
+            .AnyAsync(d => d.MRN == mrn, cancellationToken);
+        if (mrnCollision)
+            return Result<Guid>.Failure($"MRN '{mrn}' is already registered.");
+
         var declaration = new CustomsDeclaration
         {
             Id = Guid.NewGuid(),
             DeclarationNumber = request.DeclarationNumber,
-            MRN = request.MRN,
+            MRN = mrn,
             DeclarationDate = request.DeclarationDate,
             CustomsProcedureId = request.CustomsProcedureId,
             PartnerId = request.PartnerId,
+            LONAuthorizationId = auth?.Id,
             TotalCustomsValue = request.TotalCustomsValue,
             Currency = request.Currency,
             DueDate = request.DueDate,
-            IsCleared = false,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "System"
+            DeclarationType = "IM",
+            ProcedureCode = procedure.Code,
+            Status = request.Status ?? DeclarationStatus.Registered, // auto-MRN → Registered
+            IsCleared = false
         };
 
+        // Line-level duty/VAT: per-line Carina = CustomsValue * DutyRate / 100;
+        // Danok (VAT) base = CustomsValue + Carina. Matches legacy
+        // PresmetajDavackiPoNaim (see ELON_Research/04).
         decimal totalDuty = 0;
         decimal totalVAT = 0;
-        decimal totalOther = 0;
         int lineNumber = 1;
+        decimal totalQuantity = 0;
 
         foreach (var lineDto in request.Lines)
         {
-            var dutyAmount = lineDto.CustomsValue * lineDto.DutyRate / 100;
-            var vatAmount = (lineDto.CustomsValue + dutyAmount) * lineDto.VATRate / 100;
+            var dutyAmount = Math.Round(lineDto.CustomsValue * lineDto.DutyRate / 100m, 2, MidpointRounding.AwayFromZero);
+            var vatAmount = Math.Round((lineDto.CustomsValue + dutyAmount) * lineDto.VATRate / 100m, 2, MidpointRounding.AwayFromZero);
 
-            var line = new CustomsDeclarationLine
+            declaration.Lines.Add(new CustomsDeclarationLine
             {
                 Id = Guid.NewGuid(),
                 CustomsDeclarationId = declaration.Id,
@@ -88,32 +165,70 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 DutyAmount = dutyAmount,
                 VATRate = lineDto.VATRate,
                 VATAmount = vatAmount,
-                OtherCharges = 0,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
-            };
+                OtherCharges = 0
+            });
 
             totalDuty += dutyAmount;
             totalVAT += vatAmount;
-            declaration.Lines.Add(line);
+            totalQuantity += lineDto.Quantity;
         }
 
         declaration.TotalDuty = totalDuty;
         declaration.TotalVAT = totalVAT;
-        declaration.TotalOtherCharges = totalOther;
-        
-        // 🔥 ВАЛИДАЦИЈА со Rule Engine
+        declaration.TotalOtherCharges = 0;
+
         var validationResult = await _ruleEngine.ValidateAsync(declaration, cancellationToken);
-        
         if (!validationResult.IsValid)
+            return Result<Guid>.Failure(string.Join("\n", validationResult.GetErrorMessages()));
+
+        declaration.AddDomainEvent(new CustomsDeclarationCreatedEvent
         {
-            return Result<Guid>.Failure(
-                string.Join("\n", validationResult.GetErrorMessages())
-            );
+            CustomsDeclarationId = declaration.Id,
+            DeclarationNumber = declaration.DeclarationNumber,
+            MRN = declaration.MRN,
+            ProcedureCode = declaration.ProcedureCode,
+            LONAuthorizationId = declaration.LONAuthorizationId,
+            DeclarationDate = declaration.DeclarationDate,
+            TotalCustomsValue = declaration.TotalCustomsValue,
+            TotalDuty = declaration.TotalDuty,
+            TotalVAT = declaration.TotalVAT,
+            Currency = declaration.Currency
+        });
+
+        await _context.CustomsDeclarations.AddAsync(declaration, cancellationToken);
+
+        // Register MRN so later phases (P2.3 receipt consumption, P2.6 export
+        // credit) can track usage against the declared quantity.
+        if (procedure.RequiresMRNTracking)
+        {
+            _context.MRNRegistries.Add(new MRNRegistry
+            {
+                Id = Guid.NewGuid(),
+                MRN = mrn,
+                CustomsDeclarationId = declaration.Id,
+                RegistrationDate = request.DeclarationDate,
+                TotalQuantity = totalQuantity,
+                UsedQuantity = 0m,
+                ExpiryDate = procedure.DueDays.HasValue
+                    ? request.DeclarationDate.AddDays(procedure.DueDays.Value)
+                    : null,
+                IsActive = true
+            });
         }
 
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(declaration.Id);
+    }
+
+    /// <summary>
+    /// Dev-mode MRN: YYMK + 8 hex + "A1" (18 chars). Not customs-official —
+    /// real MRN is returned by the customs portal and pasted in by the user.
+    /// </summary>
+    private static string GeneratePlaceholderMRN(DateTime declarationDate)
+    {
+        var yy = declarationDate.Year % 100;
+        var hex = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+        return $"{yy:D2}MK{hex}A1";
     }
 }

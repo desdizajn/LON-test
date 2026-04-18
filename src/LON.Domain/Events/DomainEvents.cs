@@ -75,3 +75,21 @@ public class ReceiptCreatedEvent : DomainEvent
     public string ReceiptNumber { get; set; } = string.Empty;
     public DateTime ReceiptDate { get; set; }
 }
+
+/// <summary>
+/// Raised when a new CustomsDeclaration is successfully created.
+/// Phase 2.2 (GuaranteeLedger auto-debit) will subscribe to this.
+/// </summary>
+public class CustomsDeclarationCreatedEvent : DomainEvent
+{
+    public Guid CustomsDeclarationId { get; set; }
+    public string DeclarationNumber { get; set; } = string.Empty;
+    public string MRN { get; set; } = string.Empty;
+    public string ProcedureCode { get; set; } = string.Empty; // Box 37 (e.g. "4200")
+    public Guid? LONAuthorizationId { get; set; }
+    public DateTime DeclarationDate { get; set; }
+    public decimal TotalCustomsValue { get; set; }
+    public decimal TotalDuty { get; set; }
+    public decimal TotalVAT { get; set; }
+    public string Currency { get; set; } = string.Empty;
+}

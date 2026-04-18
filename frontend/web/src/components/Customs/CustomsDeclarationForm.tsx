@@ -61,6 +61,33 @@ const calcLine = (line: DeclarationLine): DeclarationLine => {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+// ---------- Status badge ----------
+const STATUS_LABELS: Record<number, { label: string; color: string }> = {
+  0: { label: 'Draft', color: '#7f8c8d' },
+  1: { label: 'Registered', color: '#3498db' },
+  2: { label: 'Submitted', color: '#f39c12' },
+  3: { label: 'Cleared', color: '#27ae60' },
+  99: { label: 'Cancelled', color: '#c0392b' },
+};
+
+const StatusBadge: React.FC<{ status: number }> = ({ status }) => {
+  const meta = STATUS_LABELS[status] ?? { label: `#${status}`, color: '#555' };
+  return (
+    <span
+      style={{
+        background: meta.color,
+        color: 'white',
+        padding: '3px 10px',
+        borderRadius: '12px',
+        fontSize: '12px',
+        fontWeight: 600,
+      }}
+    >
+      {meta.label}
+    </span>
+  );
+};
+
 // ---------- Component ----------
 
 const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
@@ -73,6 +100,7 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
     declarationNumber: '',
     mrn: '',
     customsProcedureId: '',
+    lonAuthorizationId: '',
     declarationDate: new Date().toISOString().split('T')[0],
     partnerId: '',
     currency: 'EUR',
@@ -87,6 +115,7 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
   const [procedures, setProcedures] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [uoms, setUoms] = useState<any[]>([]);
+  const [lonAuths, setLonAuths] = useState<any[]>([]);
 
   // --- UI state ---
   const [loading, setLoading] = useState(false);
@@ -103,16 +132,18 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [partnersRes, proceduresRes, itemsRes, uomsRes] = await Promise.all([
+        const [partnersRes, proceduresRes, itemsRes, uomsRes, lonAuthsRes] = await Promise.all([
           masterDataApi.getPartners(),
           customsApi.getProcedures(),
           masterDataApi.getItems(),
           masterDataApi.getUoM(),
+          customsApi.getLONAuthorizations(true),
         ]);
         setPartners(partnersRes.data);
         setProcedures(proceduresRes.data);
         setItems(itemsRes.data);
         setUoms(uomsRes.data);
+        setLonAuths(lonAuthsRes.data);
       } catch (err) {
         console.error('Грешка при вчитување на податоци', err);
       }
@@ -127,6 +158,7 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
         declarationNumber: declaration.declarationNumber || '',
         mrn: declaration.mrn || '',
         customsProcedureId: declaration.customsProcedureId || '',
+        lonAuthorizationId: declaration.lonAuthorizationId || '',
         declarationDate: declaration.declarationDate?.split('T')[0] || new Date().toISOString().split('T')[0],
         partnerId: declaration.partnerId || '',
         currency: declaration.currency || 'EUR',
@@ -275,6 +307,14 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
       errs.customsProcedureId = 'Царинската процедура е задолжителна';
       summary.push('Царинската процедура е задолжителна');
     }
+
+    const selectedProc = procedures.find((p) => p.id === formData.customsProcedureId);
+    const procCode = (selectedProc?.code || '').toString();
+    if ((procCode === '4200' || procCode === '5100') && !formData.lonAuthorizationId) {
+      errs.lonAuthorizationId = `LON Одобрение е задолжително за процедура ${procCode}`;
+      summary.push(`LON Одобрение е задолжително за процедура ${procCode}`);
+    }
+
     if (lines.length === 0 || lines.every((l) => !l.itemId && !l.tariffCode)) {
       errs.lines = 'Потребна е најмалку една ставка';
       summary.push('Потребна е најмалку една ставка');
@@ -313,6 +353,7 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
       mrn: formData.mrn || '',
       declarationDate: new Date(formData.declarationDate).toISOString(),
       customsProcedureId: formData.customsProcedureId,
+      lonAuthorizationId: formData.lonAuthorizationId || null,
       partnerId: formData.partnerId || null,
       totalCustomsValue,
       currency: formData.currency,
@@ -353,7 +394,12 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
     <div>
       {/* --- Header --- */}
       <div className="header">
-        <h2>{declaration ? 'Измени декларација' : 'Нова царинска декларација'}</h2>
+        <h2 style={{ display: 'inline-flex', alignItems: 'center', gap: '12px' }}>
+          {declaration ? 'Измени декларација' : 'Нова царинска декларација'}
+          {declaration && typeof declaration.status !== 'undefined' && (
+            <StatusBadge status={declaration.status} />
+          )}
+        </h2>
         <button type="button" onClick={onCancel} className="btn btn-primary">
           Назад
         </button>
@@ -429,8 +475,14 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
                 type="text"
                 value={formData.mrn}
                 onChange={(e) => handleHeaderChange('mrn', e.target.value)}
-                placeholder="Ќе биде доделено"
+                placeholder="Остави празно за авто-генерирање"
               />
+              {!formData.mrn && (
+                <small style={{ color: '#7f8c8d', fontSize: '12px' }}>
+                  Ако е празно, системот ќе генерира placeholder MRN (замени го со вистинскиот
+                  од царински одговор во продукција).
+                </small>
+              )}
             </div>
 
             {/* Царинска процедура */}
@@ -479,6 +531,41 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
                 ))}
               </select>
             </div>
+
+            {/* LON Одобрение — задолжително за 4200 / 5100 */}
+            {(() => {
+              const selectedProc = procedures.find((p) => p.id === formData.customsProcedureId);
+              const procCode = (selectedProc?.code || '').toString();
+              const isLonProc = procCode === '4200' || procCode === '5100';
+              if (!isLonProc) return null;
+              return (
+                <div className="form-group">
+                  <label>LON Одобрение *</label>
+                  <select
+                    value={formData.lonAuthorizationId}
+                    onChange={(e) => handleHeaderChange('lonAuthorizationId', e.target.value)}
+                    className={errors.lonAuthorizationId ? 'error' : ''}
+                  >
+                    <option value="">Избери Одобрение...</option>
+                    {lonAuths.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.authorizationNumber}
+                        {a.partnerName ? ` — ${a.partnerName}` : ''}
+                        {a.expiryDate
+                          ? ` (до ${a.expiryDate.split('T')[0]})`
+                          : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.lonAuthorizationId && (
+                    <span className="error-message">{errors.lonAuthorizationId}</span>
+                  )}
+                  <small style={{ color: '#7f8c8d', fontSize: '12px' }}>
+                    Задолжително за процедура {procCode}. УСЦЗ, член 349.
+                  </small>
+                </div>
+              );
+            })()}
 
             {/* Валута */}
             <div className="form-group">

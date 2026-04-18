@@ -246,6 +246,21 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/lon-authorizations": {
+    get: {
+      parameters: {
+        query?: {
+          activeOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/mrn-registry": {
     get: {
       parameters: {
@@ -2189,11 +2204,14 @@ export interface components {
       customsProcedureId?: string;
       /** Format: uuid */
       partnerId?: string | null;
+      /** Format: uuid */
+      lonAuthorizationId?: string | null;
       /** Format: double */
       totalCustomsValue?: number;
       currency?: string | null;
       /** Format: date-time */
       dueDate?: string | null;
+      status?: components["schemas"]["DeclarationStatus"];
       lines?: components["schemas"]["DeclarationLineDto"][] | null;
     };
     CreateCycleCountRequest: {
@@ -2320,6 +2338,11 @@ export interface components {
       /** Format: double */
       vatRate?: number;
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    DeclarationStatus: 0 | 1 | 2 | 3 | 99;
     EmployeeDto: {
       /** Format: uuid */
       id?: string;

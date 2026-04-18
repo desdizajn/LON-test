@@ -125,6 +125,14 @@ public class CustomsDeclaration : BaseEntity, ITenantScoped
     // ===== Статус =====
     public DateTime? DueDate { get; set; }
     public DateTime? ClearedDate { get; set; }
+
+    /// <summary>
+    /// Lifecycle status (Draft → Registered → Submitted → Cleared).
+    /// <see cref="IsCleared"/> is kept for backward compatibility but is
+    /// synced to <c>Status == DeclarationStatus.Cleared</c> on write.
+    /// </summary>
+    public DeclarationStatus Status { get; set; } = DeclarationStatus.Draft;
+
     public bool IsCleared { get; set; }
     
     // ===== Box 44 - Посебни напомени / Документи =====
