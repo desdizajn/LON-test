@@ -24,10 +24,10 @@
   - [x] **P0.3.2** — Затвори SQL Server public exposure: `127.0.0.1:1433:1433` ✅
   - [x] **P0.3.3** — Persistent volume `lon_dataprotection_keys` за DataProtection keys ✅
   - [ ] **P0.3.4** — Поправи decimal precision warnings (HasPrecision за 8 properties)
-  - [ ] **P0.3.5** — Поправи `BOM.ItemId1` shadow property (правилен FK config)
+  - [x] **P0.3.5** — Поправи `BOM.ItemId1` shadow property ✅ (`.WithMany(i => i.BOMs)`)
   - [x] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup) ✅
   - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
-  - [ ] **P0.3.8** — Bump API memory 1.5G → 3G (Vector Store OOM при init со 1.5G)
+  - [x] **P0.3.8** — Bump API memory 1.5G → 3G ✅ (adequate за нормален API workload; Vector Store OOM отделен проблем → види P6.X)
   - Verify: before/after evidence per sub-task во SESSION_LOG
 - [ ] **P0.4** — E2E smoke test на VPS: login → create item → create warehouse → create receipt → видливо во UI
   - Verify: screencast или чекор-по-чекор screenshots
@@ -170,6 +170,7 @@
 - [ ] Integration test harness (xUnit + Testcontainers)
 - [ ] Structured logging + health checks со real DB probe
 - [ ] Ремувал на dead files: `.vs/`, bin/, obj/ во .gitignore
+- [ ] **Vector Store OOM root cause** — `VectorStoreInitializer.InitializeAsync` или `DocumentSeeder` фрлаат `OutOfMemoryException` на startup и покрај 3GB container limit. Документите во `DocumentSeeder` се тривијални (4 hardcoded sections), OOM-от е во `OpenAIEmbeddingService` или `IndexDocumentAsync`. Истражи и поправи; да не се вчитуваат сите embeddings во memory.
 
 ---
 
@@ -183,6 +184,6 @@
 
 ## Current Active Task
 
-> **>>>** P0.3.4 — Поправи decimal precision warnings (HasPrecision за 8 properties во Customs config)
+> **>>>** P0.4 — E2E smoke test на VPS: login → create item → create warehouse → create receipt
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

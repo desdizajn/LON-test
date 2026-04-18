@@ -185,3 +185,52 @@
 - Останаа warnings: global query filter (Phase 1 multi-tenant work ќе ги reshape-ира) + BOM.ItemId1 (P0.3.5).
 
 ---
+
+## 2026-04-18 — P0.3.8 Bump API memory + Vector Store OOM triage
+
+**Status:** [x] done (container mem adequate; Vector Store OOM separated to Phase 6)
+**Files changed:** `docker-compose.yml` (1.5G → 3G на API)
+
+**What was done:**
+- Бампнат API container memory limit од 1.5GB на 3GB.
+- Deploy + recreate на VPS. `docker inspect lon-api` → `Memory: 3221225472` (3GB).
+
+**How verified:**
+- Container лимит физички е 3GB ✅
+- Login HTTP 200 ✅
+- API стабилно работи со нормален workload ✅
+
+**Discoveries:**
+- Vector Store СЕПАК OOM-ира со 3GB лимит. Значи root cause не е container лимит — код проблем во `DocumentSeeder` или `OpenAIEmbeddingService` или `VectorStoreInitializer`. 14MB raw files + 4 hardcoded sections во DocumentSeeder не треба да трошат 3GB.
+- App gracefully degrade-ира: „The system will continue to function without RAG capabilities" — core API e функционалан без RAG.
+- **Vector Store OOM root cause** додадено како **Phase 6** task за истрага/поправка. Не е blocker за Phase 0.
+
+---
+
+## 2026-04-18 — P0.3.5 BOM.ItemId1 shadow FK fix
+
+**Status:** [x] done
+**Files changed:**
+- `src/LON.Infrastructure/Persistence/Configurations/ProductionConfigurations.cs` (1 line)
+- `src/LON.Infrastructure/Migrations/20260418135013_FixBOMItemShadowFK.cs` (new)
+- `src/LON.Infrastructure/Migrations/20260418135013_FixBOMItemShadowFK.Designer.cs` (new)
+- `src/LON.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs`
+
+**What was done:**
+- Root cause: `BOMConfiguration.HasOne(e => e.Item).WithMany()` без inverse parameter. EF convention-от гледаше и `Item.BOMs` collection + `BOM.Item` + FK — ги третираше како 2 одделни relations: правилната (ItemId) + shadow (ItemId1).
+- Fix: `.WithMany(i => i.BOMs)` експлицитно поврзува BOM↔Item со ЕДНА релација.
+- Миграција `FixBOMItemShadowFK`: `DropForeignKey FK_BOMs_Items_ItemId1` + `DropIndex IX_BOMs_ItemId1` + `DropColumn ItemId1`. Безбедно — колоната никогаш не била пополнувана.
+
+**How verified:**
+- Локален `dotnet build`: 0 warnings.
+- `dotnet ef migrations add` — единственото останато validation warning е за LONAuthorizationItem (Phase 1 work), **ItemId1 warning исчезнат**.
+- На VPS: rebuild + recreate + migration applied.
+- `docker logs lon-api 2>&1 | grep -c 'ItemId1'` → **0** (беше 2+).
+- Login HTTP 200.
+
+**Финална состојба на warnings (после P0.3.4 + P0.3.5):**
+Остануваат само 4 EF global query filter warnings за required navigations со `IsDeleted` filter на едната страна (Partner↔LONAuthorization, Item↔LONAuthorizationItem, CustomsProcedure↔CustomsProcedureDocument, CustomsDeclaration↔CustomsDocument). Овие ќе се решат во Phase 1 (multi-tenant) каде query filters ќе се ре-dизајнираат за tenant isolation. Не се blockers.
+
+**P0.3 ГОТОВ.**
+
+---
