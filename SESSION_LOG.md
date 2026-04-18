@@ -2,6 +2,93 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.1 IM 42 00 Customs Declaration E2E (backend + UI)
+
+**Status:** [x] done
+**Commits:** `e8c72d6 phase-2.1: IM 42 00 declaration flow — LON auth enforce, auto-MRN, status lifecycle` + `c37b011 phase-2.1: fix — propagate Box 02/15/17 sender/country fields to handler`
+
+**Why this one mattered:** First business-critical compliance flow. Mistakes here are rewrites later — so ahead-of-code alignment on MRN policy, lifecycle, and LON authorization semantics was explicit (see CLAUDE.md §10: никогаш не „ова работи" без верификација).
+
+**Design decisions (user-approved):**
+1. **Box 37 model:** renamed curated `CustomsProcedure.Code` from internal `INW-PROC` mnemonic to SAD `4200` (member of MK Правилник Box 37 codelist). Declaration.ProcedureCode is now mirror-assigned from the FK procedure.
+2. **MRN policy:** (b) auto-fallback. Placeholder format `YYMK<8-hex>A1` (e.g. `26MK62636F15A1`, 14 chars) if payload MRN is empty. User-provided MRN is uppercased. Full state machine for real-customs submission deferred to Phase 4.2 (PEE010 XML).
+3. **Lifecycle:** added `DeclarationStatus` enum (Draft/Registered/Submitted/Cleared/Cancelled). On create with MRN → Registered. `IsCleared` bool is kept for backward compat but is the mirror of `Status==Cleared` (backfill migration.)
+4. **Scope:** backend + UI + tests + VPS verification, one PR. Followed user "сè заедно".
+
+**Backend changes:**
+- `LON.Domain/Enums/Enums.cs` — new `DeclarationStatus`.
+- `LON.Domain/Events/DomainEvents.cs` — new `CustomsDeclarationCreatedEvent` (P2.2 guarantee debit listener).
+- `LON.Domain/Entities/Customs/Customs.cs` — `CustomsDeclaration.Status` property.
+- `LON.Application/Customs/Commands/CreateCustomsDeclaration/CreateCustomsDeclarationCommand.cs` — full rewrite. DTO gains `LONAuthorizationId`, Box 02/15/17 fields (`SenderName`, `SenderAddress`, `SenderCountry`, `CountryOfDispatch`, `CountryOfDestination`, `SpecialRemarks`), optional `Status`. Handler:
+  - Validates procedure exists & is active.
+  - For codes `4200`/`5100` → **enforces** LONAuthorizationId (tenant-scoped lookup + active status + IssueDate/ExpiryDate window). Clear error on failure.
+  - Generates placeholder MRN if missing; per-tenant uniqueness check prevents replay.
+  - Creates `MRNRegistry` row for `procedure.RequiresMRNTracking = true` procedures, with `TotalQuantity = Σ line.Quantity`, `UsedQuantity = 0`, `ExpiryDate = DeclarationDate + procedure.DueDays`.
+  - Line Duty = `CustomsValue × DutyRate / 100`; VAT base = `CustomsValue + Duty` (per ELON_Research/04 `PresmetajDavackiPoNaim`).
+  - Emits `CustomsDeclarationCreatedEvent` pre-save.
+  - Status → Registered when MRN present (default).
+- New rules:
+  - `CurrencyIsoRule` (Box 22, 38 ISO 4217 codes accepted by MK customs).
+  - `CountryIsoRule` (Box 15/17/34/02, 50 ISO 3166-1 alpha-2).
+  - `LONAuthorizationRequiredRule` (safety-net for /validate endpoint; delegates same DB check).
+- Patched `ProcedureCodeValidRule` to fall back to `CustomsProcedures` table (fixed pre-existing bug — KB `CodeListItems.ListType='ProcedureCode'` is empty).
+- `CustomsController` — new `GET /api/customs/lon-authorizations`; validate() endpoint carries new fields.
+- `ApplicationDbContextSeed` — renamed `INW-PROC` → `4200` in seed; new idempotent `SeedTeksportLONAuthorizationIdempotent` seeds `26/TEKSPORT/0001` (Active, 1-year validity, GuaranteeAmount=100k EUR).
+- Migration `20260418190910_AddDeclarationStatusAndProcedureCode4200`: `AddColumn Status INT DEFAULT 0`, backfill `Status = IsCleared ? 3 : (MRN IS NOT NULL ? 1 : 0)`, and `UPDATE CustomsProcedures SET Code='4200' WHERE Code='INW-PROC'`.
+
+**Frontend changes:**
+- `frontend/web/src/services/api.ts` — `customsApi.getLONAuthorizations(activeOnly)`.
+- `CustomsDeclarationForm.tsx`:
+  - State gains `lonAuthorizationId`, `senderName/Address/Country`, `countryOfDispatch/Destination`.
+  - Loads LON authorizations in parallel with other ref data.
+  - LON auth `<select>` shown conditionally when selected procedure.code is `4200`/`5100` (with "Задолжително" hint + УСЦЗ член 349 reference).
+  - MRN placeholder updated to `Остави празно за авто-генерирање` with small-print explanation.
+  - Box 02/15/17 inputs added; `senderName` required client-side; ISO country inputs uppercase on change.
+  - `StatusBadge` component in header for edit mode (colored by Draft/Registered/Submitted/Cleared/Cancelled).
+
+**Tests (4 in `tests/LON.IntegrationTests/CustomsDeclarationTests.cs`, run on CI):**
+1. IM 4200 with valid LON auth + MRN empty → 200; DB row has MRN matching `^\d{2}MK[0-9A-F]{8}A1$`, Status=Registered, TotalDuty=50, TotalVAT=189; MRNRegistry row with Total=100, Used=0.
+2. IM 4200 without LON auth → 400 with `LONAuthorizationId is required`.
+3. IM 4200 with currency `XYZ` → 400 (rejects invalid ISO).
+4. IM 4200 with explicit MRN → stored uppercased.
+
+**How verified on VPS (commit `c37b011` deployed):**
+
+- SQL before deploy:
+  ```
+  Code   | Name
+  4200   | Увоз за облагородување (42 00)     ← renamed from INW-PROC ✅
+  26/TEKSPORT/0001 | Active                   ← seeded LON auth ✅
+  ```
+- `POST /api/customs/declarations` (full payload, MRN empty) → 200, `data=1b7c7185-a76e-4a97-808e-cf7ff67c3fd1`
+- SQL on saved declaration:
+  ```
+  DEC-P21-SMOKE | 26MK62636F15A1 | Status=1 | 4200 | Duty=50.0000 | VAT=189.0000
+  ```
+- SQL on MRN registry:
+  ```
+  26MK62636F15A1 | Total=100.0000 | Used=0.0000 | Expires=2026-10-15 (180 days after DeclarationDate) ✅
+  ```
+- Negative: without LON auth → 400 `"LONAuthorizationId is required for procedure '4200'. File a LON authorization before submitting an IM 4200 declaration."`
+- Negative: currency `XYZ` → 400 includes `"Box 22: Валутата 'XYZ' не е од дозволените ISO 4217 кодови"`.
+
+**Compliance footprint:**
+- Box 37 procedure code = `4200` (SAD-compliant).
+- Box 02 Sender required (Правилник, член 8 — enforced by both handler/rule engine AND frontend).
+- ISO 4217 / ISO 3166 currency & country validation.
+- LON authorization enforced under УСЦЗ член 349 (active + tenant-scoped + period).
+- MRN registry opens per-declaration tracking window (180 days for 4200; configurable via `CustomsProcedure.DueDays`).
+
+**Follow-ups (parallel backlog, not blocking):**
+- P2.2 guarantee auto-debit — consume `CustomsDeclarationCreatedEvent`. Already emitted.
+- PEE010 XML output (Phase 4.2) will consume registered declarations to build the customs submission envelope; state will transition Registered → Submitted.
+- Full CustomsDeclaration update endpoint (PUT) doesn't yet use MediatR or refresh Status/MRNRegistry. Declarations currently edited via raw EF in the controller — out of P2.1 scope.
+- Cyrillic mojibake in `kb/processed/*.json` (P6.18) unblocks i18n of rule messages but doesn't affect P2.1.
+- Legacy Trosoci/Rabat (landing costs pro-rata) not modeled (ELON_Research/04 §1 "Trosoci/Rabat"). Plan: P2.x.
+
+---
+
+
 ## 2026-04-18 — P1.6 User ↔ Tenant provisioning (MediatR)
 
 **Status:** [x] done

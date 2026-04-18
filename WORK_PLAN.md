@@ -130,8 +130,7 @@
 
 **Цел:** Комплетен циклус за еден TEKSPORT пример: увоз → магацин → производство → извоз, со гаранција коректно раздолжена.
 
-- [ ] **P2.1** — `CustomsDeclaration` IM 42 00: внес на ставки → MRN генерирање → регистрација
-  - Verify: creirana деклараcija во UI, MRN видлив во MRNRegistry
+- [x] **P2.1** ✅ — `CreateCustomsDeclarationCommand` (MediatR) со enforce LONAuthorizationId за Box 37=4200/5100, auto-MRN fallback (YYMK<8hex>A1), MRNRegistry creation со Total/Used/Expiry, `DeclarationStatus` lifecycle (Draft/Registered/Submitted/Cleared/Cancelled), `CustomsDeclarationCreatedEvent` (P2.2 ќе слуша). 3 нови validation rules (Currency ISO 4217, Country ISO 3166, LONAuthRequired). Frontend: conditional LON auth picker + Box 02/15/17 полиња + status badge. Seed: `INW-PROC`→`4200`, TEKSPORT LON Odobrenie `26/TEKSPORT/0001`. VPS потврдено: declaration creirana со MRN=`26MK62636F15A1`, Status=Registered(1), Duty=50, VAT=189, registry row со Expires=2026-10-15 (commit `c37b011`).
 - [ ] **P2.2** — `GuaranteeLedger` auto-debit на declaration event
   - Verify: GuaranteeAccount.Balance се зголемува за износот на декларацијата
 - [ ] **P2.3** — `Receipt` + consumes MRN → `InventoryBalance` со batch+MRN
@@ -307,30 +306,43 @@
 
 ## Current Active Task
 
-> **>>>** **Phase 1 DONE.** Next entry point per agreed phase order = **Phase 2** P2.1 (CustomsDeclaration IM 42 00 create/MRN/register) — first end-to-end TEKSPORT flow. Phase 6 Priority-B and Phase 2.5 retrofit are parallel backlog; pick from them when Phase 2 naturally touches the area.
+> **>>>** **P2.1 DONE.** Next entry point = **P2.2** GuaranteeLedger auto-debit on `CustomsDeclarationCreatedEvent`. Event is already emitted by P2.1 handler; need a MediatR notification handler that locates the right `GuaranteeAccount` for the tenant+currency, inserts a `GuaranteeLedgerEntry` (type=Debit), updates the account balance, and emits `GuaranteeDebitedEvent`. Verify criterion: POST IM 4200 → GuaranteeAccount.Balance increases by the declaration's TotalDuty+TotalVAT (or a configurable % per procedure.GuaranteePercentage).
 
-**Scope for P2.1:**
-- New `CreateCustomsDeclarationCommand` (if current is incomplete — already exists, check fit).
-- UI form: line items, procedure code IM4200, MRN auto-generation hooks.
-- Integration test: POST declaration → GET shows MRN-ready entry in MRNRegistry.
-- Verify: creirana деклараcija во UI, MRN видлив во MRNRegistry.
+**Scope for P2.2:**
+- Handler: `CustomsDeclarationCreatedNotificationHandler : INotificationHandler<...>`.
+- Resolve account: by tenant + currency (first active); if none, log + no-op (don't block the declaration).
+- Debit amount: `procedure.GuaranteePercentage > 0 ? (TotalCustomsValue × %)/100 : TotalDuty + TotalVAT`. Decide which matches Правилник — ELON legacy uses `Davacki` (Duty only) per `qryFakturiU5ZG20` but LON suspension system holds the **full liable duty+VAT**.
+- Update `GuaranteeAccount.UsedAmount` + insert ledger row with `EntryType=Debit, MRN, CustomsDeclarationId`.
+- Integration test: POST 4200 → query `/api/guarantee/accounts` → UsedAmount grew.
 
-**Алтернативи (пред Phase 2):**
-- **P1.7** (new) — Multi-tenant login UX: decide `username@tenant-code` vs subdomain vs tenant picker. Needed before we can relax `User.Username` global uniqueness.
-- **P6.18** UTF-8 source encoding (~30 мин).
-- **P0.3.4** decimal precision warnings (~15 мин).
+**Алтернативи пред P2.2:**
+- **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
+- **P6.18** UTF-8 source encoding in KB JSON (~30 min, unblocks i18n of errorMessageMK).
+- **P6.14** Vector Store OOM root-cause (still crashing on every startup — non-blocking but noisy).
+- **P0.3.4** decimal precision warnings (~15 min).
 
 ### Recent context (2026-04-18):
 
-- **P1.6 completed** — MediatR CreateUserCommand + cross-tenant provisioning. Bidirectional isolation verified on VPS (commit `59878b6`). UserProvisioningTests × 4 (on CI).
+- **P2.1 completed** — IM 4200 backend + UI + E2E verified on VPS. MRN auto-gen, LON auth enforce, DeclarationStatus lifecycle, MRNRegistry opens 180-day window. Commit `c37b011`.
+- **P1.6** — MediatR CreateUserCommand + cross-tenant provisioning (commit `59878b6`).
 - **P1.5** — composite `(TenantId, Code)` unique indices (commit `2a2924d`).
-- **P1.4** — global query filter, isolation proven (commit `5cc6f72`).
-- **P1.3** — JWT `tenant_id` claim (commit `e723f7e`).
-- **P1.2** — 41/~45 entities tenant-scoped; WH-TEK-VN seeded.
+- **P1.4** — global query filter isolation (commit `5cc6f72`).
+- **P1.3** — JWT tenant_id claim (commit `e723f7e`).
+- **P1.2-B1/B2/B3** — 41/~45 entities tenant-scoped.
 
-### Phase 1 outcome:
+### Phase 1 outcome (recap):
 
-Two tenants (TEKSPORT + DUP-CODE-TEST) run isolated end-to-end. Admin can provision users under any tenant; each user's JWT scopes them to their tenant; EF global query filter hides every other tenant's rows from all reads.
+Two tenants run isolated. Admin can provision users under any tenant; each user's JWT scopes them to their tenant; EF global query filter hides every other tenant's rows from all reads.
+
+### Phase 2 progress:
+
+- [x] P2.1 IM 4200 declaration + MRN registration + LON auth enforce + status lifecycle
+- [ ] P2.2 Guarantee auto-debit on declaration event (NEXT)
+- [ ] P2.3 Receipt consumes MRN → batch+MRN inventory
+- [ ] P2.4 MaterialIssue (batch+MRN mandatory, no-negative)
+- [ ] P2.5 ProductionReceipt + TraceLink
+- [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
+- [ ] P2.7 Remaining declaration validation rules
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
