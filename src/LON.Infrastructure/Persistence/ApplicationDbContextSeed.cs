@@ -658,7 +658,9 @@ public static class ApplicationDbContextSeed
                 LONAuthorizationId = authId,
                 ImportItemId = rawMaterial.Id,
                 ImportTariffCode = "2905399500",
-                CompensatingTariffCode = null,
+                // DB column is IsRequired() despite CLR type string? — pass
+                // empty string rather than null to avoid the NOT NULL failure.
+                CompensatingTariffCode = string.Empty,
                 YieldRate = 0.95m,
                 AllowedWastePercentage = 5m,
                 CreatedAt = DateTime.UtcNow,
@@ -671,7 +673,9 @@ public static class ApplicationDbContextSeed
                 LONAuthorizationId = authId,
                 ImportItemId = rawMaterial.Id,
                 ImportTariffCode = "1211200050",
-                CompensatingTariffCode = null,
+                // DB column is IsRequired() despite CLR type string? — pass
+                // empty string rather than null to avoid the NOT NULL failure.
+                CompensatingTariffCode = string.Empty,
                 YieldRate = 0.90m,
                 AllowedWastePercentage = 10m,
                 CreatedAt = DateTime.UtcNow,
