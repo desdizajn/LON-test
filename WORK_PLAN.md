@@ -305,13 +305,15 @@
 
 ## Current Active Task
 
-> **>>>** **P2.2 DONE.** Next entry point = **P2.3** Receipt consumes MRN → batch+MRN inventory. The WMS receipt handler (P0.6) already stores MRN on InventoryBalance/Movement, but doesn't cross-check it against MRNRegistry nor decrement `UsedQuantity`. P2.3: (a) validate MRN exists in registry for caller's tenant + is active + is not expired + has remaining quantity; (b) increment `MRNRegistry.UsedQuantity` atomically with receipt line; (c) fail if receiving more than the remaining quantity.
+> **>>>** **P2.3 DONE.** Next entry point = **P2.4** MaterialIssue. `ProductionOrder` triggers an Issue from a specific batch+MRN against a material requirement. Must: (a) enforce batch+MRN mandatory when issuing LON material (ItemType=RawMaterial + LonProcessState.Imported); (b) FIFO/FEFO auto-pick batch if user doesn't specify; (c) no-negative inventory — fail if demand > available on chosen batch; (d) transition InventoryBalance.LonProcessState Imported → InProduction; (e) decrement balance atomically.
 
-**Scope for P2.3:**
-- `CreateReceiptCommand` per-line: if `MRN` present, look up `MRNRegistries` (tenant-scoped, Active, ExpiryDate >= today); fail if absent/expired.
-- Check `line.Quantity + registry.UsedQuantity <= registry.TotalQuantity` per line's MRN; fail with explicit "over-quantity" message.
-- After save, update `registry.UsedQuantity += line.Quantity` and flip `IsActive = false` if fully used (`IsFullyUsed` is computed — set a persisted flag or rely on computed).
-- Integration test: receipt with valid MRN → UsedQuantity grew; receipt over remaining → 400; receipt with unknown MRN → 400.
+**Scope for P2.4:**
+- `CreateMaterialIssueCommand` (MediatR). Per line: ItemId + Quantity + UoMId + optional (BatchNumber, MRN, LocationId). If LON line and batch unspecified, handler picks the oldest available (FEFO by ExpiryDate; FIFO fallback).
+- Validation: (1) balance exists & has quantity; (2) if LON, batch+MRN must resolve to a specific balance row; (3) demand ≤ available.
+- Side effects: InventoryMovement (Type=Issue), InventoryBalance.SubtractQuantity, balance.LonProcessState ← InProduction for LON parcels. Emit `MaterialIssuedEvent` (already in domain).
+- Integration tests: happy path; over-issue (400); no-batch with specific MRN (400); FIFO auto-pick; LonProcessState transition.
+
+**Алтернативи пред P2.4:** none particularly pressing right now. Cyrillic mojibake (P6.18) and Vector Store OOM (P6.14) remain in the deferred backlog.
 
 **Алтернативи пред P2.3:**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
@@ -348,7 +350,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P2.2.5** Compliance gaps B1–B7 + I1–I8:
       - B1 MRN global uniq; B2 immutable post-Draft; B3 per-auth bond ceiling; B4 auth completion days; B5 auth % override; B6 IM/EX; B7 tariff-within-auth rule.
       - I1 TEKSPORT inflate-for-waste flag; I2 landing-costs pro-rata; I3 duty-rate lookup warning; I4 PreviousProcedureCode; I5 SAD Box 38 required + 30/35/47 advisories; I6 strict currency policy documented; I7 LonProcessState enum + Imported on Receipt; I8 audit log with JSON diffs + GET /api/audit.
-- [ ] P2.3 Receipt consumes MRN → batch+MRN inventory (NEXT). Picks up: apply TEKSPORT inflate-for-waste on receipt line; validate MRN exists + active + ExpiryDate; atomically increment MRNRegistry.UsedQuantity.
+- [x] **P2.3** ✅ Receipt consumes MRN. Handler pre-validates (registered + active + unexpired + no aggregate overdraw), inflates booked qty for TEKSPORT via LONAuthorizationItem.AllowedWastePercentage, atomically increments MRNRegistry.UsedQuantity, flips IsActive=false when fully used, sets LonProcessState=Imported only for 4200/5100. VPS verified: qty=40 MRN → Used=40, balance=42.1053 (5% waste), overdraw/unknown/full-consumption negatives all return 400 (commits `f557899`, `38ce54f`).
 - [ ] P2.4 MaterialIssue (batch+MRN mandatory, no-negative)
 - [ ] P2.5 ProductionReceipt + TraceLink
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit

@@ -2,6 +2,56 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.3 Receipt consumes MRN (+ atomic UsedQuantity + inflate-for-waste)
+
+**Status:** [x] done
+**Commits:** `f557899` (main) + `38ce54f` (ApprovedItems distinct-item seed fix)
+
+**What landed:**
+- `CreateReceiptCommandHandler` gains a `MrnContext` helper that pre-loads every MRN the receipt touches and drives four decisions per-line: validity, expiry, overdraw, waste-%.
+- MRNRegistry is pre-validated in ONE batch (no N+1), then mutated in the SAME `SaveChangesAsync` as the receipt + inventory — so no half-applied state is ever visible.
+- **TEKSPORT inflate-for-waste** finally wired end-to-end: tenant flag + LONAuthorizationItem.AllowedWastePercentage → `bookedQty = declaredQty × 100 / (100 − w%)`. `ReceiptLine.Quantity` stays at DECLARED (customs record), InventoryBalance + InventoryMovement get INFLATED (legacy lager buffer for expected production waste).
+- MRNRegistry.UsedQuantity increments by DECLARED qty (bond accounting), and `IsActive` flips to false when fully consumed so subsequent receipts fail fast on the pre-validate.
+- `LonProcessState = Imported` only for 4200/5100 procedures now (B-I7 refinement). FINAL-procedure MRNs no longer claim LON suspension state.
+
+**Seed fix:** earlier `SeedTeksportApprovedItemsAsync` paired both tariffs to the same ImportItemId; the `(authId, itemId)` waste-% dictionary silently took last-writer-wins (10% hid 5%). Changed to use two distinct items (FG-001 → 2905399500 → 5%, PKG-001 → 1211200050 → 10%). Existing VPS rows cleaned via direct DELETE + API restart to re-run the seed.
+
+**Integration tests (6 new in `ReceiptConsumesMrnTests.cs`):**
+1. Valid MRN → success + UsedQuantity incremented + balance inflated.
+2. Unknown MRN → 400 `"is not registered"`.
+3. Aggregate overdraw across two receipts touching the same MRN → 400 `"overdraw"`.
+4. Expired MRN → 400 `"expired"`.
+5. Receipt without MRN → legacy path (no inflation, null LonProcessState).
+6. Full consumption → IsActive=false.
+
+**VPS verification (commit `38ce54f`):**
+
+```
+Fresh IM 4200 declaration: qty=40  →  MRN=26MK8DF9122FA1
+Receipt  qty=40           →  200 OK
+  registry:   Used=40.0000  Total=40.0000       ✅
+  balance:    Qty=42.1053  LonProcessState=1   ✅ (40 × 100/95 = 42.1053)
+
+Earlier smoke on the same VPS session:
+  overdraw 25 when 20 remain → 400 "overdraw: requested 25, remaining 20.0000 of 50.0000" ✅
+  unknown MRN                → 400 "is not registered for this tenant" ✅
+  full consumption           → Used=50, IsActive=0 (auto-deactivated)    ✅
+```
+
+**Compliance footprint after P2.3:**
+- The LON suspension chain's entry step (Receipt → InventoryBalance with MRN + LonProcessState=Imported) is now compliant with both UЦЗ member 349 (bond matches declared qty) and legacy TEKSPORT accounting (lager row holds inflated buffer for expected waste).
+- Overdraw is impossible by construction — the sum of receipt-line demand for an MRN is aggregated and compared pre-commit.
+- Expired MRN is rejected with a clear, actionable message before any inventory side-effect.
+
+**Follow-ups:**
+- `LONAuthorizationItem.CompensatingTariffCode` EF config still `IsRequired()` for a `string?` CLR. Works around with `string.Empty`.
+- `LONAuthorizationItem` keyed by `(auth, item)` — future refactor should add tariff-code to the key so one item can have multiple tariffs per authorization.
+- Same tariff code appearing for multiple items in an authorization is fine today, since our lookup keys on (authId, itemId). Good.
+- Per-line preferential duty lookup (Aneksi `ST<year>`) still deferred to Phase 4.
+
+---
+
+
 ## 2026-04-18 — P2.2.5 IMPORTANT gaps (I1–I8) fixed
 
 **Status:** [x] done
