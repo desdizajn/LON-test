@@ -336,6 +336,30 @@ Summary по таскови:
 
 ---
 
+## 2026-04-18 — 🎯 Phase 2.5 setup done
+
+**Цел:** i18n инфраструктура ready пред Phase 1 Tenant UI.
+
+**Files:**
+- `frontend/web/src/i18n/i18n.ts` — i18next + react-i18next + LanguageDetector, 4 jazici, localStorage key `lon.lang`, fallback=mk
+- `frontend/web/src/i18n/locales/{mk,sr,sq,en}.json` — 7 namespaces (common, nav, login, dashboard, wms, qualityStatus, errors), ~140 клучеви секоja
+- `frontend/web/src/components/LanguageSwitcher.tsx` — dropdown со flag emojis (🇲🇰🇷🇸🇦🇱🇬🇧) + native names
+- `frontend/web/src/index.tsx` — import на i18n пред App
+- `frontend/web/src/components/Sidebar.tsx` — top-level items + section headers t('nav.*'); compact switcher на дното
+- `frontend/web/src/pages/Login.tsx` — целосно t() за форма + switcher во footer
+
+**Verified на VPS:**
+- `docker compose build frontend` + recreate → HTTP 200 на `https://elon.elbosoft.click/login`
+- Switcher е видлив на Login footer + Sidebar дно (треба визуелна потврда од корисник)
+
+**P2.5.4 retrofit** на останатите страници (Dashboard, Inventory, Production, Customs, Guarantees, Reports, Advanced, Admin, Master Data под-страници) е паралелен backlog — секоja страница се преведува кога ја допираме во Phase 2+.
+
+**Workflow напомена:** За сите НОВИ страници (Phase 1 Tenant CRUD, Phase 2 flows, итн.) — user-facing string во код е **ЗАБРАНЕТО**. Користи `t('key.path')` од ден 1.
+
+**Следно:** Phase 1 P1.1 — `Tenant` entity + CRUD + seed TEKSPORT. Multi-tenant foundation.
+
+---
+
 ## 2026-04-18 — 🎯 Phase 6 Priority-A ЗАВРШЕНА
 
 **Decision:** Корисник избра `0 → 6-Priority-A → 2.5 → 1 → 2 → 6-Priority-B паралелно → 3 → 4 → 5 → 7`.

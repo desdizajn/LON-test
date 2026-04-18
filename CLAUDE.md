@@ -83,6 +83,7 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 - **Секоја нова domain entity добива `TenantId`** + query filter.
 - **Секоја команда/query** оди преку MediatR (не директно DbContext во контролер).
 - **Секоја SQL миграција** се креира преку `dotnet ef migrations add` (не manual SQL scripts).
+- **Секој user-facing string во React** оди преку `t('key.path')`. Hardcoded Macedonian/English во JSX = забрането. Ако клучот го нема во `locales/*.json`, додади го во сите 4 јазика.
 - **По секој таск**: SESSION_LOG запис + WORK_PLAN status update + релевантна меморија во `memory/`.
 - **Commit message:** `phase-X.Y: <краток опис>` — за да може да се проследи по фаза.
 

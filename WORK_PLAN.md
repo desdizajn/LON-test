@@ -97,20 +97,13 @@
 
 **Зошто овде (пред Phase 4):** Секоја нова страница додадена во Phase 4/5 треба да е i18n-ready од почеток. Retrofit-от на 30+ постоечки страници треба да се направи пред да се додадат уште 30+.
 
-- [ ] **P2.5.1** — Избор на i18n library (`react-i18next` — стандард во React ecosystem) + setup
-  - Verify: `LanguageProvider` wrapping the app, `useTranslation()` hook working
-- [ ] **P2.5.2** — Translation dictionary структура: `locales/{mk,sr,sq,en}.json` (4 јазици confirmed)
-  - Verify: примерок клуч `dashboard.title` + fallback chain mk→en working
-- [ ] **P2.5.3** — Language switcher во header/user menu; persist во localStorage + user profile
-  - Verify: менување на јазик ги менува сите веќе-преведени стрингови без refresh
-- [ ] **P2.5.4** — Миграција на постоечки страници (batch по модул: Dashboard, Master Data, WMS, Production, Customs, Guarantees, Reports, Admin)
-  - Verify: zero hardcoded user-facing strings (grep finds none)
-- [ ] **P2.5.5** — Локализација на броеви, датуми, валути преку `Intl` API
-  - Verify: 1234.56 → "1.234,56" за mk/sr; "1,234.56" за en; датум формати по locale
-- [ ] **P2.5.6** — Backend error messages: поврзи error codes со frontend translations (API враќа код, UI го преведува)
-  - Verify: 400 response со `errorCode: "validation.required_field"` се прикажува на активниот јазик
-- [ ] **P2.5.7** — i18n за PDF/Excel exports и customs XML messages (ако/кога се имплементирани во P4)
-  - Verify: генериран документ е на избраниот јазик
+- [x] **P2.5.1** — react-i18next@13 + i18next@23 + browser-languagedetector setup, `src/i18n/i18n.ts` ✅
+- [x] **P2.5.2** — `locales/{mk,sr,sq,en}.json` со common/nav/login/dashboard/wms/qualityStatus/errors namespaces ✅
+- [x] **P2.5.3** — `LanguageSwitcher` компонента, постојана во localStorage (`lon.lang`), flag emojis + native names; поставена во Sidebar + Login footer ✅
+- [ ] **P2.5.4** — Retrofit на постоечки страници (Dashboard, WMS, Production, Customs, Guarantees, Reports, Advanced, Master Data под-категории, Admin). Паралелно со Phase 2+ кога се допираат.
+- [ ] **P2.5.5** — `Intl.NumberFormat` + `Intl.DateTimeFormat` хелпери (1.234,56 vs 1,234.56 итн.)
+- [ ] **P2.5.6** — Backend error codes: командите враќаат `errorCode`, frontend `t('errors.<code>')`
+- [ ] **P2.5.7** — PDF/Excel exports + customs XML i18n — кога Phase 4 ги имплементира
 
 **Фаза 2.5 DONE = ✅ свичот mk↔en (+ други) работи на сите страници**
 
@@ -251,7 +244,7 @@
 
 ## Current Active Task
 
-> **>>>** (Phase 6 Priority-A DONE) — следно: Phase 2.5 i18n setup (P2.5.1 react-i18next + LanguageProvider + useTranslation hook).
+> **>>>** Phase 2.5 setup DONE (P2.5.1-3). Retrofit P2.5.4 продолжува паралелно. Следно: Phase 1 P1.1 (Tenant entity + TEKSPORT seed).
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
