@@ -1631,6 +1631,26 @@ export interface paths {
         };
       };
     };
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateProductionReceiptCommand"];
+          "text/json": components["schemas"]["CreateProductionReceiptCommand"];
+          "application/*+json": components["schemas"]["CreateProductionReceiptCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
   };
   "/api/Production/boms": {
     get: {
@@ -2332,6 +2352,27 @@ export interface components {
       salesOrderReference?: string | null;
       notes?: string | null;
     };
+    CreateProductionReceiptCommand: {
+      /** Format: uuid */
+      productionOrderId?: string;
+      /** Format: date-time */
+      receiptDate?: string;
+      /** Format: uuid */
+      itemId?: string;
+      /** Format: double */
+      quantity?: number;
+      /** Format: double */
+      scrapQuantity?: number | null;
+      /** Format: uuid */
+      uoMId?: string;
+      /** Format: uuid */
+      locationId?: string;
+      batchNumber?: string | null;
+      qualityStatus?: components["schemas"]["QualityStatus"];
+      /** Format: uuid */
+      receivedByEmployeeId?: string | null;
+      materialConsumption?: components["schemas"]["MaterialConsumptionDto"][] | null;
+    };
     CreateReceiptCommand: {
       /** Format: date-time */
       receiptDate?: string;
@@ -2542,6 +2583,12 @@ export interface components {
       workCenterId?: string;
       serialNumber?: string | null;
       isActive?: boolean;
+    };
+    MaterialConsumptionDto: {
+      /** Format: uuid */
+      materialIssueId?: string;
+      /** Format: double */
+      quantity?: number;
     };
     MaterialIssueLineDto: {
       /** Format: uuid */

@@ -2823,6 +2823,46 @@
       }
     },
     "/api/Production/orders/{id}/receipts": {
+      "post": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductionReceiptCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductionReceiptCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductionReceiptCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
       "get": {
         "tags": [
           "Production"
@@ -4236,6 +4276,60 @@
         },
         "additionalProperties": false
       },
+      "CreateProductionReceiptCommand": {
+        "type": "object",
+        "properties": {
+          "productionOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "receiptDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "scrapQuantity": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "uoMId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "qualityStatus": {
+            "$ref": "#/components/schemas/QualityStatus"
+          },
+          "receivedByEmployeeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "materialConsumption": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialConsumptionDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateReceiptCommand": {
         "type": "object",
         "properties": {
@@ -4837,6 +4931,20 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MaterialConsumptionDto": {
+        "type": "object",
+        "properties": {
+          "materialIssueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false

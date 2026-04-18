@@ -1,5 +1,6 @@
 using LON.Application.Production.Commands.CreateMaterialIssue;
 using LON.Application.Production.Commands.CreateProductionOrder;
+using LON.Application.Production.Commands.CreateProductionReceipt;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -81,6 +82,16 @@ public class ProductionController : BaseController
             .ToListAsync();
 
         return Ok(issues);
+    }
+
+    [HttpPost("orders/{id}/receipts")]
+    public async Task<IActionResult> CreateProductionReceipt(Guid id, [FromBody] CreateProductionReceiptCommand command)
+    {
+        var bound = command with { ProductionOrderId = id };
+        var result = await Mediator.Send(bound);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
     }
 
     [HttpGet("orders/{id}/receipts")]
