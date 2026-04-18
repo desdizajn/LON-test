@@ -335,3 +335,31 @@ Summary по таскови:
 - Git commit `f92c754` носи незначајни bin/obj фајлови бидејќи `.gitignore` беше избришан пред оваа сесија. Cleanup таск додаден во Phase 6.
 
 ---
+
+## 2026-04-18 — P0.6 UI Create Receipt fix (3 contract bugs)
+
+**Trigger:** Корисник пробал Create Receipt од `/inventory` → HTTP 400 „Failed to create receipt".
+
+**Three bugs in the wire contract:**
+1. Form испраќа `expiryDate: ""` (празен стринг), backend `DateTime? ExpiryDate` не прима празен стринг → 400 на model binding.
+2. Form испраќа `supplierId`, backend очекува `partnerId` → молчешкум null (не blocker но data loss).
+3. Form испраќа per-line `locationId`, backend имаше LocationId само на header ниво → per-line се игнорираше.
+
+**Status:** [x] done
+**Files changed:**
+- `src/LON.Domain/Entities/WMS/WMS.cs` — додаден `ReceiptLine.LocationId: Guid?` + navigation
+- `src/LON.Application/WMS/Commands/CreateReceipt/CreateReceiptCommand.cs` — `ReceiptLineDto.LocationId`; handler префера line-level LocationId > header > auto-resolve
+- `src/LON.Infrastructure/Migrations/20260418152539_AddLocationToReceiptLine.cs` (new) — `AddColumn + CreateIndex + AddForeignKey`
+- `frontend/web/src/components/WMS/ReceiptForm.tsx` — нормализација на payload во `handleSubmit`: `supplierId → partnerId`, празни стрингови → undefined, forward line.locationId. Подобрена error toast (чита `errorMessage` и `errors[]`).
+
+**How verified (after deploy):**
+- Curl со form-realistic payload: partnerId (не supplierId), per-line locationId, без празни стрингови, qualityStatus=1 → HTTP 200 + receipt `ff34c93b-...`
+- GET `/api/wms/inventory` → 2 балансы: SF-001 25 + нов **RM-002 30 KG qualityStatus=1** на RCV-01 ✅
+- Login HTTP 200 by end-to-end.
+
+**Meta-finding (самокритика):**
+Овие 3 bug-а беа „контракт / plumbing" — Claude можеше и морaшe да ги фати. Користевме curl со MOJ payload наместо реалниот payload од form-от. Додадено:
+- Memory `feedback_contract_hygiene.md` — workflow правила што ги адоптирам веднаш (grep frontend при DTO change, POST+GET+DB assert при handler, Preview tools за UI smoke).
+- WORK_PLAN P6.TEST — infrastructure: xUnit + WebApplicationFactory + Testcontainers, auto-generated TS од OpenAPI, CI gate.
+
+---

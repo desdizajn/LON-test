@@ -206,6 +206,11 @@
 - [ ] **Vector Store OOM root cause** — `VectorStoreInitializer.InitializeAsync` или `DocumentSeeder` фрлаат `OutOfMemoryException` на startup и покрај 3GB container limit. Документите во `DocumentSeeder` се тривијални (4 hardcoded sections), OOM-от е во `OpenAIEmbeddingService` или `IndexDocumentAsync`. Истражи и поправи; да не се вчитуваат сите embeddings во memory.
 - [ ] **LocationDto serialization drops Type** — API враќа `type: null` за сите локации и покрај MapLocation што expose-ира `location.Type`. Истражи LocationDto конструктор или JSON serializer. Handler-от користи code prefix fallback, па не е blocker но UI-от не може да филтрира по тип.
 - [ ] **.gitignore restore** — deleted in HEAD~N, bin/obj/node_modules сега untracked по дефолт. Некои obj/ фајлови заостанаа во commit `f92c754` — cleanup потребен.
+- [ ] **P6.TEST — Testing infrastructure (високи приоритет)** — домен експерт фаќа business correctness; Claude треба да фаќа plumbing/contract bugs автоматски. Три слоеви:
+  - **xUnit integration tests со `WebApplicationFactory` + Testcontainers-SqlServer** — per endpoint: POST → GET → assert DB row. 30-40 реда per flow. Би ги фатила P0.4-те три bug-а и P0.6 UI mismatches во секунди.
+  - **Auto-generated TypeScript од OpenAPI/Swagger** (NSwag или `openapi-typescript`) — frontend увезува истите типови/имиња како backend. Kill contract divergence целосно.
+  - **CI gate** (GitHub Actions) — `dotnet test` + `npm run build` + OpenAPI contract diff мора да поминат пред `main` merge или deploy.
+  - **Claude self-workflow changes** (не-инфра): (1) grep frontend за API endpoint кога се менуваat DTO-а; (2) секој нов handler има curl test што потврдува DB state, не само HTTP код; (3) користи Claude Preview tools локално за browser-side smoke пред deploy.
 
 ---
 
