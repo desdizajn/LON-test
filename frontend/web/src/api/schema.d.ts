@@ -2272,6 +2272,8 @@ export interface components {
       fullName?: string | null;
       password?: string | null;
       roleIds?: string[] | null;
+      /** Format: uuid */
+      tenantId?: string | null;
     };
     CreditGuaranteeCommand: {
       /** Format: uuid */

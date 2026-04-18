@@ -57,8 +57,12 @@ public static class DependencyInjection
 
         services.AddScoped<VectorStoreInitializer>();
 
-        // Auth Service
+        // Auth Service — AuthService also implements IPasswordHasher so
+        // Application-layer handlers can hash passwords without referencing
+        // Infrastructure (see CreateUserCommand).
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<LON.Application.Common.Interfaces.IPasswordHasher>(
+            sp => sp.GetRequiredService<IAuthService>());
 
         // Vector Store Background Service
         services.AddHostedService<VectorStoreBackgroundService>();

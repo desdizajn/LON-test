@@ -9,12 +9,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace LON.Infrastructure.Services;
 
-public interface IAuthService
+public interface IAuthService : LON.Application.Common.Interfaces.IPasswordHasher
 {
     string GenerateJwtToken(User user, List<string> roles, List<string> permissions);
     string GenerateRefreshToken();
     Task<User?> ValidateRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
-    string HashPassword(string password);
     bool VerifyPassword(string password, string passwordHash);
     Task<List<string>> GetUserPermissionsAsync(Guid userId, CancellationToken cancellationToken = default);
 }

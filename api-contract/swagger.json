@@ -4128,6 +4128,11 @@
               "format": "uuid"
             },
             "nullable": true
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false

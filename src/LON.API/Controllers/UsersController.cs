@@ -1,11 +1,14 @@
+using LON.Application.Users.Commands.CreateUser;
 using LON.Domain.Entities.MasterData;
 using LON.Infrastructure.Persistence;
 using LON.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LON.API.Controllers;
 
+[Authorize(Roles = "Administrator")]
 public class UsersController : BaseController
 {
     private readonly ApplicationDbContext _context;
@@ -54,41 +57,20 @@ public class UsersController : BaseController
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        if (await _context.Users.AnyAsync(u => u.Username == request.Username))
+        var command = new CreateUserCommand
         {
-            return BadRequest(new { message = "Корисничкото име веќе постои." });
-        }
-
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
+            TenantId = request.TenantId,
             Username = request.Username,
             Email = request.Email,
-            PasswordHash = _authService.HashPassword(request.Password),
-            IsActive = true
+            Password = request.Password,
+            RoleIds = request.RoleIds ?? new()
         };
 
-        await _context.Users.AddAsync(user);
+        var result = await Mediator.Send(command);
+        if (!result.IsSuccess)
+            return BadRequest(new { errorMessage = result.ErrorMessage, errors = result.Errors });
 
-        if (request.RoleIds.Any())
-        {
-            var roles = await _context.Roles
-                .Where(r => request.RoleIds.Contains(r.Id))
-                .ToListAsync();
-
-            foreach (var role in roles)
-            {
-                _context.UserRoles.Add(new UserRole
-                {
-                    UserId = user.Id,
-                    RoleId = role.Id
-                });
-            }
-        }
-
-        await _context.SaveChangesAsync();
-
-        return Ok(MapUser(await LoadUser(user.Id)));
+        return Ok(MapUser(await LoadUser(result.Data)));
     }
 
     [HttpPut("{id:guid}")]
@@ -223,7 +205,8 @@ public record CreateUserRequest(
     string Email,
     string FullName,
     string Password,
-    List<Guid> RoleIds
+    List<Guid> RoleIds,
+    Guid? TenantId = null
 );
 
 public record UpdateUserRequest(
