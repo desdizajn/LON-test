@@ -155,3 +155,33 @@
 - [ ] P0.3.5 BOM.ItemId1 shadow property (код промени)
 
 ---
+
+## 2026-04-18 — P0.3.4 Decimal precision warnings fix
+
+**Status:** [x] done
+**Files changed:**
+- `src/LON.Infrastructure/Persistence/Configurations/CustomsConfigurations.cs` (+8 HasColumnType lines)
+- `src/LON.Infrastructure/Migrations/20260418134239_FixDecimalPrecisions.cs` (new)
+- `src/LON.Infrastructure/Migrations/20260418134239_FixDecimalPrecisions.Designer.cs` (new)
+- `src/LON.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs` (updated)
+
+**What was done:**
+- Додадено `HasColumnType("decimal(18,4)")` за 8 недефинирани decimal properties:
+  - `CustomsDeclaration.TotalInvoiceAmount`, `ExchangeRate`
+  - `CustomsDeclarationLine.GrossWeight`, `NetWeight`, `ItemPrice`, `AdjustmentRate`, `StatisticalValue`, `UsedQuantityFromPrevious`
+- Избрана е `decimal(18,4)` precision (18 total digits, 4 decimal places) за да се совпаѓа со постоечката конвенција во истиот фајл (`DutyRate`, `VATRate`, `TotalCustomsValue` итн.).
+- EF генерираше миграција `FixDecimalPrecisions` со 8 ALTER COLUMN statements; non-destructive (increasing precision).
+
+**How verified:**
+- Локален `dotnet build` помина: 0 warnings, 0 errors.
+- На VPS: `docker compose build api worker` + `up -d` успешно, images rebuilt.
+- Миграцијата аплицирана: API log → `Database is ready (migrations applied or already up to date).`
+- `docker logs lon-api 2>&1 | grep -c 'No store type was specified for the decimal property'` → **0** (беше 8).
+- Login endpoint: HTTP 200.
+
+**Follow-ups / discoveries:**
+- 🔴 **Нов проблем откриен:** `System.OutOfMemoryException` при Vector Store initialization. Причина: мојот лимит од 1.5GB (P0.3.7) е претесен за .NET API + document embedding load. App-от gracefully fail-а: "The system will continue to function without RAG capabilities". → Додаден **P0.3.8** за bump на 3GB.
+- ENABLE_VECTOR_STORE=True на VPS .env — значи RAG се очекува да работи.
+- Останаа warnings: global query filter (Phase 1 multi-tenant work ќе ги reshape-ира) + BOM.ItemId1 (P0.3.5).
+
+---

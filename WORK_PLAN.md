@@ -27,6 +27,7 @@
   - [ ] **P0.3.5** — Поправи `BOM.ItemId1` shadow property (правилен FK config)
   - [x] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup) ✅
   - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
+  - [ ] **P0.3.8** — Bump API memory 1.5G → 3G (Vector Store OOM при init со 1.5G)
   - Verify: before/after evidence per sub-task во SESSION_LOG
 - [ ] **P0.4** — E2E smoke test на VPS: login → create item → create warehouse → create receipt → видливо во UI
   - Verify: screencast или чекор-по-чекор screenshots
@@ -93,7 +94,7 @@
 
 - [ ] **P2.5.1** — Избор на i18n library (`react-i18next` — стандард во React ecosystem) + setup
   - Verify: `LanguageProvider` wrapping the app, `useTranslation()` hook working
-- [ ] **P2.5.2** — Translation dictionary структура: `locales/mk.json`, `locales/en.json`, и други по избор (Albanian/Serbian TBD)
+- [ ] **P2.5.2** — Translation dictionary структура: `locales/{mk,sr,sq,en}.json` (4 јазици confirmed)
   - Verify: примерок клуч `dashboard.title` + fallback chain mk→en working
 - [ ] **P2.5.3** — Language switcher во header/user menu; persist во localStorage + user profile
   - Verify: менување на јазик ги менува сите веќе-преведени стрингови без refresh
