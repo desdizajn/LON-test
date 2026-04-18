@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface SidebarProps {
   activeModule: string;
@@ -8,6 +10,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [masterDataExpanded, setMasterDataExpanded] = useState(false);
   const [adminExpanded, setAdminExpanded] = useState(false);
   const [wmsExpanded, setWmsExpanded] = useState(false);
@@ -15,13 +18,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
-    { id: 'inventory', label: 'WMS & Inventory', icon: '📦', path: '/inventory' },
-    { id: 'production', label: 'Production (LON)', icon: '🏭', path: '/production' },
-    { id: 'customs', label: 'Customs & MRN', icon: '🛃', path: '/customs' },
-    { id: 'guarantees', label: 'Guarantees', icon: '💰', path: '/guarantees' },
-    { id: 'traceability', label: 'Traceability', icon: '🔍', path: '/traceability' },
-    { id: 'knowledge-base', label: 'Knowledge Base', icon: '🧠', path: '/knowledge-base' },
+    { id: 'dashboard', label: t('nav.dashboard'), icon: '📊', path: '/dashboard' },
+    { id: 'inventory', label: t('nav.wmsInventory'), icon: '📦', path: '/inventory' },
+    { id: 'production', label: t('nav.production'), icon: '🏭', path: '/production' },
+    { id: 'customs', label: t('nav.customsMrn'), icon: '🛃', path: '/customs' },
+    { id: 'guarantees', label: t('nav.guarantees'), icon: '💰', path: '/guarantees' },
+    { id: 'traceability', label: t('nav.traceability'), icon: '🔍', path: '/traceability' },
+    { id: 'knowledge-base', label: t('nav.knowledgeBase'), icon: '🧠', path: '/knowledge-base' },
   ];
 
   const wmsSubItems = [
@@ -101,8 +104,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h1>LON System</h1>
-        <p>Production + WMS + Customs</p>
+        <h1>{t('app.name')}</h1>
+        <p>{t('app.tagline')}</p>
       </div>
       <ul className="nav">
         {menuItems.map(item => (
@@ -146,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
         
         <li className="menu-section" onClick={toggleReports}>
           <span style={{ marginRight: '10px' }}>📊</span>
-          Reports
+          {t('nav.reports')}
           <span style={{ marginLeft: 'auto' }}>{reportsExpanded ? '▼' : '▶'}</span>
         </li>
         
@@ -169,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
         
         <li className="menu-section" onClick={toggleAdvanced}>
           <span style={{ marginRight: '10px' }}>🚀</span>
-          Advanced Features
+          {t('nav.advancedFeatures')}
           <span style={{ marginLeft: 'auto' }}>{advancedExpanded ? '▼' : '▶'}</span>
         </li>
         
@@ -192,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
 
         <li className="menu-section" onClick={toggleAdmin}>
           <span style={{ marginRight: '10px' }}>🧑‍💼</span>
-          Administration
+          {t('nav.administration')}
           <span style={{ marginLeft: 'auto' }}>{adminExpanded ? '▼' : '▶'}</span>
         </li>
 
@@ -215,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
         
         <li className="menu-section" onClick={toggleMasterData}>
           <span style={{ marginRight: '10px' }}>⚙️</span>
-          Master Data
+          {t('nav.masterData')}
           <span style={{ marginLeft: 'auto' }}>{masterDataExpanded ? '▼' : '▶'}</span>
         </li>
         
@@ -236,6 +239,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
           </ul>
         )}
       </ul>
+      <div style={{ padding: '12px 16px', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <LanguageSwitcher compact />
+      </div>
     </div>
   );
 };

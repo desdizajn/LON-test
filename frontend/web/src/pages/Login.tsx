@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { authService } from '../services/authService';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import './Login.css';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +22,9 @@ const Login: React.FC = () => {
       await authService.login({ username, password });
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Грешка при најава. Проверете ги податоците.');
+      const status = err.response?.status;
+      if (status === 401) setError(t('login.invalidCredentials'));
+      else setError(err.response?.data?.message || t('login.serverError'));
     } finally {
       setLoading(false);
     }
@@ -29,8 +34,8 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <h1>LON System</h1>
-          <p>Логирајте се за да продолжите</p>
+          <h1>{t('login.title')}</h1>
+          <p>{t('login.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -41,13 +46,12 @@ const Login: React.FC = () => {
           )}
 
           <div className="form-group">
-            <label htmlFor="username">Корисничко име</label>
+            <label htmlFor="username">{t('login.username')}</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Внесете корисничко име"
               required
               autoFocus
               disabled={loading}
@@ -55,25 +59,25 @@ const Login: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Лозинка</label>
+            <label htmlFor="password">{t('login.password')}</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Внесете лозинка"
               required
               disabled={loading}
             />
           </div>
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Се најавувате...' : 'Најави се'}
+            {loading ? t('common.loading') : t('login.submit')}
           </button>
         </form>
 
         <div className="login-footer">
-          <p>LON - Lager i Obrabotka na Namirnici</p>
+          <p>{t('login.footer')}</p>
+          <LanguageSwitcher />
         </div>
       </div>
     </div>
