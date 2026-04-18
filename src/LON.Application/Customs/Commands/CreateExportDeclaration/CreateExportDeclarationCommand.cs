@@ -366,6 +366,25 @@ public class CreateExportDeclarationCommandHandler
         decimal qty,
         CancellationToken ct)
     {
+        // Check the DbSet.Local cache first — when a single command transitions
+        // both InProduction and Imported portions against the same MRN,
+        // FirstOrDefaultAsync issues a DB read that won't see the Exported row
+        // we just added (it's Added but not yet SaveChanges-ed). Without the
+        // local probe we'd end up with two Exported rows for the same key.
+        var tracked = _context.InventoryBalances.Local.FirstOrDefault(b =>
+            b.ItemId == source.ItemId
+            && b.LocationId == source.LocationId
+            && b.BatchNumber == source.BatchNumber
+            && b.MRN == source.MRN
+            && b.UoMId == source.UoMId
+            && b.QualityStatus == source.QualityStatus
+            && b.LonProcessState == LonProcessState.Exported);
+        if (tracked is not null)
+        {
+            tracked.AddQuantity(qty);
+            return;
+        }
+
         var target = await _context.InventoryBalances.FirstOrDefaultAsync(b =>
                 b.ItemId == source.ItemId
                 && b.LocationId == source.LocationId
