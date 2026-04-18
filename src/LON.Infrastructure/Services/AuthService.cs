@@ -40,7 +40,8 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email),
-            new("EmployeeId", user.EmployeeId?.ToString() ?? string.Empty)
+            new("EmployeeId", user.EmployeeId?.ToString() ?? string.Empty),
+            new("tenant_id", user.TenantId.ToString())
         };
 
         // Add roles

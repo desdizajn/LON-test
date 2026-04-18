@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
@@ -36,6 +37,24 @@ public class AuthTests : IClassFixture<LonApiFactory>
             new { username = "admin", password = "not-the-password" });
 
         resp.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Login_JwtContainsTenantIdClaim_MatchingSeededTenant()
+    {
+        var client = _factory.CreateClient();
+
+        var resp = await client.PostAsJsonAsync("/api/auth/login",
+            new { username = "admin", password = "Admin123!" });
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await resp.Content.ReadFromJsonAsync<LoginResponse>();
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(body!.AccessToken);
+
+        var tenantClaim = token.Claims.FirstOrDefault(c => c.Type == "tenant_id");
+        tenantClaim.Should().NotBeNull("login must emit tenant_id claim for downstream scoping");
+        Guid.TryParse(tenantClaim!.Value, out var tenantId).Should().BeTrue();
+        tenantId.Should().NotBe(Guid.Empty);
     }
 
     [Fact]

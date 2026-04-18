@@ -160,21 +160,25 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         // Inlined here (instead of using ICurrentTenantService) to avoid a DI
         // cycle: ICurrentTenantService needs DbContext, DbContext would need it.
         // Resolution order:
-        //   1. Current user's TenantId (via ICurrentUserService + Users lookup)
-        //   2. First active Tenant in DB (seeders, background jobs, migrations)
+        //   1. `tenant_id` JWT claim via ICurrentUserService (P1.3, zero DB hits)
+        //   2. Current user's TenantId (Users row lookup — for pre-P1.3 tokens)
+        //   3. First active Tenant in DB (seeders, background jobs, migrations)
         var scopedEntries = ChangeTracker.Entries<Domain.Common.ITenantScoped>()
             .Where(e => e.State == EntityState.Added && e.Entity.TenantId == Guid.Empty)
             .ToList();
         if (scopedEntries.Count > 0)
         {
-            Guid? tenantId = null;
-            var userId = _currentUser?.UserId;
-            if (userId.HasValue)
+            Guid? tenantId = _currentUser?.TenantId;
+            if (tenantId is null || tenantId == Guid.Empty)
             {
-                tenantId = await Users
-                    .Where(u => u.Id == userId.Value)
-                    .Select(u => (Guid?)u.TenantId)
-                    .FirstOrDefaultAsync(cancellationToken);
+                var userId = _currentUser?.UserId;
+                if (userId.HasValue)
+                {
+                    tenantId = await Users
+                        .Where(u => u.Id == userId.Value)
+                        .Select(u => (Guid?)u.TenantId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
             }
             if (tenantId is null || tenantId == Guid.Empty)
             {
