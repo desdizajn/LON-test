@@ -14,6 +14,29 @@
 
 ---
 
+## 2026-04-18 — P1.2-B3 WH-TEK-VN (Vinica) warehouse seeded
+
+**Status:** [x] done
+**Commits:** `b609f4b phase-1.2-B3: seed WH-TEK-VN`, `f845c5d phase-1.2-B3: use ASCII for WH-TEK-VN address`
+**Files changed:** `src/LON.Infrastructure/Persistence/ApplicationDbContextSeed.cs`
+
+**What was done:**
+1. `SeedWarehouses` refactored to per-code idempotent upsert (`SeedWarehousesIdempotent`). Definitions extracted into `WarehouseSeed`/`LocationSeed` records so additional sites can land as data-only diffs.
+2. Added `WH-TEK-VN` (TEKSPORT Vinica) with 7 default locations (same codes as WH-MAIN; `Location.Code` unique per warehouse only).
+3. `TenantId` populated by `ApplicationDbContext.SaveChangesAsync` auto-fill (TEKSPORT fallback) — handler stayed untouched.
+
+**How verified на VPS (elon.elbosoft.click):**
+- `SELECT ... FROM Warehouses` → 2 rows: `WH-MAIN` + `WH-TEK-VN`, both `TenantId = b8d4fe76-...`
+- `SELECT ... FROM Locations WHERE w.Code='WH-TEK-VN'` → 7 locations RCV-01/STG-A-01/STG-A-02/PICK-01/PROD-01/SHIP-01/QUA-01, Types 1–6, all TenantId = TEKSPORT
+- `GET /api/masterdata/warehouses` (admin bearer) → both warehouses, address `"Vinica, North Macedonia"` clean ASCII ✅
+
+**Discoveries / follow-ups:**
+- **UTF-8 source encoding bug (PRE-EXISTING, not introduced by B3)** — Cyrillic string literals in seed files get stored as CP1251→UTF-8 mojibake in the DB. TEKSPORT tenant `Address` (seeded in P1.1) already has this corruption. Root cause: `.cs` files lack UTF-8 BOM and the compiler guesses the wrong codepage on the Linux build container. Initial Vinica address `"Виница, Република Северна Македонија"` triggered the same issue; switched to ASCII `"Vinica, North Macedonia"` to scope the fix. **New Phase 6 ticket:** `P6.18 — Fix UTF-8 source encoding`, covers BOM/csproj setting + one-shot backfill of corrupted rows (Tenants.Address at minimum).
+- Seeder's new per-code idempotent pattern is safe to reuse for other master-data types that should grow across releases (items, partners, procedures). Previously `AnyAsync()` guards would have blocked growth.
+- Noted during CLAUDE.md hydration: Current Active Task recommendation was B3 → B2 → P1.3; B3 done. Next recommended: B2.
+
+---
+
 ## 2026-04-18 — Kickoff
 
 **Status:** [x] done

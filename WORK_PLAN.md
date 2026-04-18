@@ -84,7 +84,7 @@
 - [/] **P1.2** — `ITenantScoped` interface + auto-fill TenantId во SaveChangesAsync. Split in two:
   - [x] **P1.2-B1** ✅ — 10 core entities (Item, Warehouse, Location, Partner, Employee, User, Receipt+Line, InventoryBalance, InventoryMovement). Migration со inline SQL backfill за постојни редови → TEKSPORT. Auto-fill inlined во SaveChangesAsync (ICurrentTenantService постои за handlers, но DbContext го избегнува за DI cycle).
   - [ ] **P1.2-B2** — extend ITenantScoped на останатите ~25 scoped entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment, etc.). Миграција + backfill.
-  - [ ] **P1.2-B3 (бонус)** — создади `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje (user info: TEKSPORT има 2 сајта)
+  - [x] **P1.2-B3** ✅ — `WH-TEK-VN` (TEKSPORT Vinica) + 7 default locations seeded. `SeedWarehouses` refactored to per-code idempotent upsert. TenantId auto-filled (commit `f845c5d`, verified on VPS via API + SQL).
 - [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
   - Verify: login враќа token со tenant claim; decode потврдува
 - [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
@@ -259,6 +259,7 @@
 - [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
 - [ ] **P6.15** — Structured logging (Serilog со JSON output) + реал health checks со DB probe (`/health/ready`, `/health/live`).
 - [ ] **P6.16** — DataProtection XML encryptor warning (логови: „Key may be persisted to storage in unencrypted form"). Cert-based или DPAPI-like решение.
+- [ ] **P6.18** — Fix UTF-8 source encoding for Cyrillic string literals. `.cs` files without BOM + compiler codepage guess → Cyrillic strings stored as CP1251→UTF-8 mojibake (confirmed on `Tenants.Address` from P1.1, and would have affected `Warehouses.Address` in P1.2-B3 before we switched to ASCII). Fix options: (a) add `<Features>strict</Features>` or similar MSBuild property forcing UTF-8 source detection, (b) add UTF-8 BOM to source files with Cyrillic, (c) standardize on `\u####` escapes for all non-ASCII literals. Plus one-shot UPDATE backfill for `Tenants.Address` on VPS.
 
 ### 6F — Claude self-workflow (вградено во CLAUDE.md)
 
@@ -278,21 +279,31 @@
 
 ## Current Active Task
 
-> **>>>** P1.2-B2: extend `ITenantScoped` на останатите ~25 entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment + их деца). Pattern е воспоставен во B1; мигрaija + inline SQL backfill.
+> **>>>** P1.2-B2: extend `ITenantScoped` на останатите ~25 entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment + их деца). Pattern е воспоставен во B1; миграција + inline SQL backfill.
 
-**Алтернативи (корисник одбира):**
-- **P1.2-B3** (брзо, 15 мин): seed `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje. Low-risk.
+**Алтернативи:**
 - **P1.3** (средно, 30–60 мин): `tenant_id` claim во JWT на login; `CurrentTenantService` почне да го чита. Unblocks Phase 2 end-to-end flow.
-- **P1.2-B2** (голем, 1–2 часа): останатите 25 entities ITenantScoped. Consistent multi-tenant foundation.
+- **P6.18** (мало, 30 мин): поправи UTF-8 source encoding па да можеме одново да користиме Cyrillic во seeds/code.
 
-**Препорака:** одам по редослед — прво B3 (брза победа), потоа B2 (foundations доминуваат), потоа P1.3. Ако корисник сака да прескокне на P1.3 веднаш, тоа е OK — B2 може да се заврши паралелно без да блокира.
+**Препорака:** B2 → P1.3 → (паралелно) P6.18. Откако сите core entity-ја се tenant-scoped, JWT tenant claim завршува multi-tenant foundation.
 
-### Важно при продолжување — контекст од претходна сесија:
+### Контекст за P1.2-B2:
 
-- **P1.2-B1 deploy-нато и потврдено** на VPS (commit `7a4ebc0`). Сите 5 постоечки receipts + 2 inventory balance-и backfilled на TEKSPORT. Нов receipt авто-добива TenantId преку `ApplicationDbContext.SaveChangesAsync`.
-- **Pattern за B2:** идентичен со B1 — `: ITenantScoped` + `public Guid TenantId { get; set; }` на entity, migration со inline Sql backfill.
+- **B1 pattern повтори:** на секоја entity додај `: ITenantScoped` + `public Guid TenantId { get; set; }`. `ApplicationDbContext.OnModelCreating` веќе auto-wire-ира FK + index преку reflection. `SaveChangesAsync` auto-fill-а TenantId на `Added` entities со `Guid.Empty`.
+- **Migration per-batch:** `AddColumn(defaultValue=Guid.Empty)` + `CreateIndex` + `Sql("UPDATE ... SET TenantId = (SELECT TOP 1 Id FROM Tenants WHERE IsActive=1) WHERE TenantId='00000000-...'")` + `AddForeignKey`. Groupiraj сродни entities во една миграција (e.g., сите Production entities заедно).
+- **Scope list (~25 entities):**
+  - Production: `BOM`, `BOMComponent`, `Routing`, `RoutingStep`, `WorkCenter`, `Machine`, `ProductionOrder`, `ProductionOrderOperation`, `MaterialIssue`, `FGReceipt`
+  - Customs: `CustomsDeclaration`, `CustomsDeclarationLine`, `CustomsProcedure`, `LONAuthorization`
+  - Guarantee: `GuaranteeAccount`, `GuaranteeTransaction`
+  - Traceability: `ItemBatch`, `InventoryLot`, `LotGenealogy`
+  - Transfer/CycleCount/PickTask/Shipment + нивни lines
 - **DI cycle одбегнат:** `ApplicationDbContext` НЕ injectira `ICurrentTenantService` (cycle). Auto-fill inline во SaveChangesAsync. `ICurrentTenantService` е за handlers кои сакаат експлицитно resolve-ирање пред SaveChanges.
-- **OpenAPI/TS regeneration:** `./scripts/gen-api-types.sh` (per Contract Hygiene rule 2).
+- **OpenAPI/TS regeneration:** `./scripts/gen-api-types.sh` ако некоја DTO промени shape.
+
+### Recent context (2026-04-18):
+
+- **B3 completed** — `WH-TEK-VN` + 7 locations, seeder сега per-code idempotent. Commit `f845c5d`.
+- **P1.2-B1 verified** — all 5 receipts + 2 inventory balances tenant-scoped to TEKSPORT (commit `7a4ebc0`).
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
