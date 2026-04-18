@@ -33,6 +33,9 @@
   - Откриени и поправени 3 bug-ови: IApplicationDbContext incomplete (expanded to 38 DbSets), CreateReceiptCommandHandler missing Add() (fixed), JSON cycle в GET (IgnoreCycles)
 - [x] **P0.5** — Замена на `CreatedBy = "System"` hack со `ICurrentUserService` ✅
   - Verify: нов receipt има `createdBy: "admin"`; стар (пред fix) остана `"System"` — audit trail работи
+- [x] **P0.6** — Receipt ажурира InventoryBalance + InventoryMovement (откриено од доменскиот експерт: „нема инвентори, а има приеми")
+  - ResolveLandingLocation со fallback chain (explicit → Type=Receiving → code prefix RCV → first active)
+  - Verify: POST receipt `qty=25` → GET `/api/wms/inventory` враќа 1 балансот со quantity 25.0000 на RCV-01 ✅
 
 **🎯 ФАЗА 0 ГОТОВА.** Следен focus: Phase 1 (multi-tenant foundation).
 
@@ -173,6 +176,8 @@
 - [ ] Structured logging + health checks со real DB probe
 - [ ] Ремувал на dead files: `.vs/`, bin/, obj/ во .gitignore
 - [ ] **Vector Store OOM root cause** — `VectorStoreInitializer.InitializeAsync` или `DocumentSeeder` фрлаат `OutOfMemoryException` на startup и покрај 3GB container limit. Документите во `DocumentSeeder` се тривијални (4 hardcoded sections), OOM-от е во `OpenAIEmbeddingService` или `IndexDocumentAsync`. Истражи и поправи; да не се вчитуваат сите embeddings во memory.
+- [ ] **LocationDto serialization drops Type** — API враќа `type: null` за сите локации и покрај MapLocation што expose-ира `location.Type`. Истражи LocationDto конструктор или JSON serializer. Handler-от користи code prefix fallback, па не е blocker но UI-от не може да филтрира по тип.
+- [ ] **.gitignore restore** — deleted in HEAD~N, bin/obj/node_modules сега untracked по дефолт. Некои obj/ фајлови заостанаа во commit `f92c754` — cleanup потребен.
 
 ---
 
@@ -186,6 +191,6 @@
 
 ## Current Active Task
 
-> **>>>** P1.1 — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant
+> **>>>** (FAZA 0 DONE) — следен: P1.1 `Tenant` entity + CRUD API + seed `TEKSPORT` tenant. Пред тоа: корисник да потврди во UI дека Inventory, Movements, Receipts страниците прикажуваат податоци.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

@@ -304,3 +304,34 @@ Summary по таскови:
 **Фаза 1 (multi-tenant) започнува:** P1.1 Tenant entity + CRUD + seed TEKSPORT.
 
 ---
+
+## 2026-04-18 — P0.6 Receipt ажурира inventory (foundered by domain expert feedback)
+
+**Trigger:** Домен експерт / корисник провери во UI: „Нема инвентори, а има приеми." Movement Reports покажа 2 receipts (AUDIT-TEST 50, SMOKE-TEST 100), но Inventory by Location беше празен.
+
+**Root cause:** CreateReceiptCommandHandler го зачувуваше само `Receipt` + `ReceiptLine`. Никогаш не создаваше `InventoryMovement` ниту не ажурираше `InventoryBalance`. Receipts беа видливи во Receipts извештај, но stock-от „не стигнуваше" во магацин.
+
+**Status:** [x] done
+**Files changed:**
+- `src/LON.Application/WMS/Commands/CreateReceipt/CreateReceiptCommand.cs` — комплетен rewrite на handler
+- `src/LON.Infrastructure/Migrations/20260418150546_BackfillLocationTypes.cs` (new)
+
+**What was done:**
+1. Handler сега создава еден `InventoryMovement` (Type=Receipt) per line.
+2. Handler upsert-ира `InventoryBalance` (match on Item+Location+Batch+MRN+UoM+QualityStatus; ако постои, AddQuantity; ако не, new row).
+3. `ResolveLandingLocationAsync` со fallback chain: explicit LocationId > `Type=Receiving` во warehouse > code prefix `"RCV"` > first active location. Fails 400 ако warehouse нема локации.
+4. `CreateReceiptCommand` прима опционо `LocationId` за override.
+5. Empty `Lines` сега отфрла одмах со 400 (беше silent).
+6. Migration `BackfillLocationTypes` за постоечки redovi: UPDATE Type по code convention (RCV→1, STG→2, PICK→3, PROD→4, SHIP→5, QUA→6).
+
+**How verified на VPS:**
+- POST receipt qty=25 → `{"isSuccess":true,"data":"6934603e-..."}`
+- GET `/api/wms/inventory` → враќа 1 InventoryBalance: `{itemId: SF-001, locationId: 718eee36..., batchNumber: BATCH-INV-001, mrn: 26MK000088888888A1, quantity: 25.0000, qualityStatus: 0}`
+- Landing location резолвиран преку code-prefix fallback (Type сè уште null во API response — посебен LocationDto bug, додаден како follow-up).
+
+**Discoveries & follow-ups:**
+- **LocationDto serialization drops Type** — MapLocation го проследува Type, но API враќа null. Или DTO param mapping е bugged, или JsonSerializer игнорира. Додадено во Phase 6 TODO.
+- Инвентори од **претходни receipts (AUDIT + SMOKE-TEST, вкупно 150 единици)** нема да се појават — тие се создадени пред fix-от. Per CLAUDE.md „no shortcuts": ако сакаме историски consistency, треба backfill script (replay domain events). Засега: prospective fix, корисникот знае.
+- Git commit `f92c754` носи незначајни bin/obj фајлови бидејќи `.gitignore` беше избришан пред оваа сесија. Cleanup таск додаден во Phase 6.
+
+---
