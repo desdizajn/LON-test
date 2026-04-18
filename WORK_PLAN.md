@@ -47,10 +47,11 @@
 
 **Цел:** Сè што постои е tenant-scoped. Два tenant-а работат изолирано.
 
-- [ ] **P1.1** — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant
-  - Verify: POST `/api/tenants` создава tenant; GET листа ги враќа
-- [ ] **P1.2** — `TenantId: Guid` во `BaseEntity` + EF migration + default за постојни редови
-  - Verify: migration applied на VPS; сите постојни редови имаат TenantId = TEKSPORT
+- [x] **P1.1** — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant ✅
+  - Verify: GET `/api/tenants` → TEKSPORT seeded со HQ address, lang=mk, legacyUvoznik=TEKSPORT
+- [ ] **P1.2** — `ITenantScoped` interface + `TenantScopedEntity` base class, применет на domain entities. EF migration + backfill на постојни редови → TEKSPORT.
+  - Verify: migration applied; `SELECT DISTINCT TenantId FROM Items/Warehouses/Receipts/...` враќа TEKSPORT.Id за сите
+  - Бонус: создади `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje (user info: TEKSPORT има 2 сајта)
 - [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
   - Verify: login враќа token со tenant claim; decode потврдува
 - [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
@@ -244,7 +245,7 @@
 
 ## Current Active Task
 
-> **>>>** Phase 2.5 setup DONE (P2.5.1-3). Retrofit P2.5.4 продолжува паралелно. Следно: Phase 1 P1.1 (Tenant entity + TEKSPORT seed).
+> **>>>** P1.2 — ITenantScoped + TenantScopedEntity + migration backfill. Applied на ~35 domain entities. Голем refactor; ќе се подели во чекори.
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 

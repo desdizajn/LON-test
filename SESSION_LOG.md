@@ -336,6 +336,26 @@ Summary по таскови:
 
 ---
 
+## 2026-04-18 — P1.1 Tenant entity + TEKSPORT seed
+
+**Status:** [x] done
+**Files:**
+- `src/LON.Domain/Entities/MasterData/Tenant.cs` (new) — `Code`, `Name`, `LegacyUvoznik`, HQ address, tax number, contact, `CustomsAuthorizationNumber`, `DefaultLanguage`, `IsActive`.
+- `src/LON.Infrastructure/Persistence/Configurations/TenantConfiguration.cs` (new) — unique `Code`, filtered unique `LegacyUvoznik`, default language=mk.
+- `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` + `IApplicationDbContext` — додаден `DbSet<Tenant>` на двете (поука од P0.4 — ако интерфејсот не го изложува, handler-от не може да го зачува).
+- `src/LON.Infrastructure/Migrations/20260418165047_AddTenantEntity.*` — CREATE TABLE + индекси.
+- `src/LON.Infrastructure/Persistence/ApplicationDbContextSeed.cs` → `SeedTenants`: TEKSPORT со HQ Скопје + legacyUvoznik=TEKSPORT + default mk.
+- `src/LON.API/Controllers/TenantsController.cs` (new) — `[Authorize(Roles="Administrator")]` GET/GET(id)/POST/PUT/DELETE (soft). Code auto-uppercase.
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` — regenerated.
+
+**Verified on VPS:**
+- Build + migration applied + seed completed
+- `GET /api/tenants` (admin bearer) → `[{ code: "TEKSPORT", address: "Скопје...", defaultLanguage: "mk", legacyUvoznik: "TEKSPORT", id: "b8d4fe76-..." }]`
+
+**Domain insight запишана во меморија (`project_tenant_multisite.md`):** Tenant = legal entity, може да има повеќе физички сајтови (Warehouses). **TEKSPORT има Скопје + Виница**. Другите Uvoznici исто може имаат многу сајтови. P1.2 ќе създаде WH-TEK-VN покрај постоечкиот.
+
+---
+
 ## 2026-04-18 — 🎯 Phase 2.5 setup done
 
 **Цел:** i18n инфраструктура ready пред Phase 1 Tenant UI.
