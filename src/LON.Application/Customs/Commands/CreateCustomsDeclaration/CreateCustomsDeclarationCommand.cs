@@ -125,18 +125,29 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 return Result<Guid>.Failure($"LONAuthorization '{auth.AuthorizationNumber}' is not yet issued (IssueDate={auth.IssueDate:yyyy-MM-dd}).");
         }
 
-        // MRN: auto-generate a dev-mode placeholder if empty. 18 chars per
-        // MK customs convention: <YY>MK<8-hex><check>. Production path will
-        // pass the real MRN returned by the customs portal.
+        // MRN: auto-generate a dev-mode placeholder if empty. Real customs MRN
+        // is 18 chars (`YY` + `CC` + 13-char serial + check digit). Our
+        // placeholder is shorter (YYMK<8-hex>A1, 14 chars) and is explicitly
+        // labeled as dev-mode — in production the user pastes the real MRN
+        // returned by the customs portal.
         var mrn = string.IsNullOrWhiteSpace(request.MRN)
             ? GeneratePlaceholderMRN(request.DeclarationDate)
             : request.MRN.Trim().ToUpperInvariant();
 
-        // Enforce MRN uniqueness per tenant (prevents replays).
+        // B1: MRN uniqueness must be GLOBAL, not tenant-scoped. Customs issues
+        // MRNs globally (no two tenants can share the same MRN); bypass the
+        // EF query filter so the check sees rows across all tenants.
         var mrnCollision = await _context.CustomsDeclarations
-            .AnyAsync(d => d.MRN == mrn, cancellationToken);
+            .IgnoreQueryFilters()
+            .AnyAsync(d => d.MRN == mrn && !d.IsDeleted, cancellationToken);
         if (mrnCollision)
             return Result<Guid>.Failure($"MRN '{mrn}' is already registered.");
+
+        var mrnRegistryCollision = await _context.MRNRegistries
+            .IgnoreQueryFilters()
+            .AnyAsync(r => r.MRN == mrn && !r.IsDeleted, cancellationToken);
+        if (mrnRegistryCollision)
+            return Result<Guid>.Failure($"MRN '{mrn}' is already present in the MRN registry.");
 
         var declaration = new CustomsDeclaration
         {
@@ -150,7 +161,9 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             TotalCustomsValue = request.TotalCustomsValue,
             Currency = request.Currency,
             DueDate = request.DueDate,
-            DeclarationType = "IM",
+            // B6: derive SAD Box 01 from procedure kind. Export procedures
+            // (type 5) file an "EX" declaration; everything else is "IM".
+            DeclarationType = procedure.Type == CustomsProcedureType.Export ? "EX" : "IM",
             ProcedureCode = procedure.Code,
             SenderName = request.SenderName,
             SenderAddress = request.SenderAddress,
@@ -226,6 +239,13 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
         // credit) can track usage against the declared quantity.
         if (procedure.RequiresMRNTracking)
         {
+            // B4: prefer the authorization's CompletionPeriodDays over the
+            // procedure default. Правилник: completion deadline is set per
+            // Одобрение, not per procedure.
+            var completionDays = auth?.CompletionPeriodDays > 0
+                ? auth.CompletionPeriodDays
+                : procedure.DueDays;
+
             _context.MRNRegistries.Add(new MRNRegistry
             {
                 Id = Guid.NewGuid(),
@@ -234,22 +254,28 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 RegistrationDate = request.DeclarationDate,
                 TotalQuantity = totalQuantity,
                 UsedQuantity = 0m,
-                ExpiryDate = procedure.DueDays.HasValue
-                    ? request.DeclarationDate.AddDays(procedure.DueDays.Value)
+                ExpiryDate = completionDays.HasValue
+                    ? request.DeclarationDate.AddDays(completionDays.Value)
                     : null,
                 IsActive = true
             });
         }
 
-        // P2.2 — auto-debit the guarantee bond for procedures that require one.
-        // Computed atomically with the declaration so no "orphan" declarations
-        // exist without a bond reservation. HARD fail if no matching account
-        // or if the debit would exceed the available limit — compliance posture
-        // deliberately stricter than legacy ELON (Одобренија.ГаранцијаИзнос
-        // was advisory; here we enforce the ceiling).
-        if (procedure.RequiresGuarantee && procedure.GuaranteePercentage > 0)
+        // P2.2 + B3 + B5 — auto-debit the guarantee bond for procedures that
+        // require one. Computed atomically with the declaration so no
+        // "orphan" declarations exist without a bond reservation.
+        // Compliance posture is deliberately stricter than legacy ELON
+        // (Одобренија.ГаранцијаИзнос was advisory):
+        //   - B3: the sum of OUTSTANDING debits tied to this authorization
+        //         cannot exceed auth.GuaranteeAmount.
+        //   - B5: the debit % is taken from auth.GuaranteePercentageOverride
+        //         first, procedure.GuaranteePercentage as fallback.
+        //   - Existing: account-level TotalLimit is still enforced.
+        var effectiveGuaranteePct = auth?.GuaranteePercentageOverride
+                                    ?? procedure.GuaranteePercentage;
+        if (procedure.RequiresGuarantee && effectiveGuaranteePct > 0)
         {
-            var debitResult = await TryDebitGuaranteeAsync(declaration, procedure, cancellationToken);
+            var debitResult = await TryDebitGuaranteeAsync(declaration, procedure, auth, effectiveGuaranteePct, cancellationToken);
             if (!debitResult.IsSuccess)
                 return debitResult;
         }
@@ -270,6 +296,8 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
     private async Task<Result<Guid>> TryDebitGuaranteeAsync(
         CustomsDeclaration declaration,
         CustomsProcedure procedure,
+        LONAuthorization? auth,
+        decimal effectiveGuaranteePct,
         CancellationToken cancellationToken)
     {
         var account = await _context.GuaranteeAccounts
@@ -286,14 +314,14 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
 
         var fullLiability = declaration.TotalDuty + declaration.TotalVAT;
         var debitAmount = Math.Round(
-            fullLiability * procedure.GuaranteePercentage / 100m,
+            fullLiability * effectiveGuaranteePct / 100m,
             2, MidpointRounding.AwayFromZero);
 
         if (debitAmount <= 0m)
         {
             _logger.LogInformation(
                 "Guarantee debit skipped for declaration {DeclarationNumber}: amount is zero (Duty={Duty}, VAT={VAT}, Pct={Pct}).",
-                declaration.DeclarationNumber, declaration.TotalDuty, declaration.TotalVAT, procedure.GuaranteePercentage);
+                declaration.DeclarationNumber, declaration.TotalDuty, declaration.TotalVAT, effectiveGuaranteePct);
             return Result<Guid>.Success(Guid.Empty);
         }
 
@@ -310,6 +338,38 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 $"Required: {debitAmount:0.00}, available: {availableLimit:0.00}, total: {account.TotalLimit:0.00}.");
         }
 
+        // B3: per-authorization bond ceiling. Sum all OUTSTANDING (non-released,
+        // non-soft-deleted) Debit entries tied to declarations filed under the
+        // same LONAuthorization, minus Credits, and ensure the new debit still
+        // fits under auth.GuaranteeAmount. Legacy ELON's Odobrenija.GarancijaIznos
+        // was advisory (free scalar); here we enforce it.
+        if (auth is not null && auth.GuaranteeAmount > 0)
+        {
+            // All declaration ids under this authorization.
+            var authDeclIds = await _context.CustomsDeclarations
+                .Where(d => d.LONAuthorizationId == auth.Id && !d.IsDeleted)
+                .Select(d => d.Id)
+                .ToListAsync(cancellationToken);
+            authDeclIds.Add(declaration.Id); // include current (not yet saved)
+
+            var authOutstanding = await _context.GuaranteeLedgerEntries
+                .Where(e => !e.IsDeleted
+                            && e.CustomsDeclarationId.HasValue
+                            && authDeclIds.Contains(e.CustomsDeclarationId.Value))
+                .SumAsync(
+                    e => e.EntryType == GuaranteeEntryType.Debit ? e.Amount : -e.Amount,
+                    cancellationToken);
+
+            if (authOutstanding + debitAmount > auth.GuaranteeAmount)
+            {
+                return Result<Guid>.Failure(
+                    $"LON authorization '{auth.AuthorizationNumber}' bond ceiling exceeded. " +
+                    $"Current outstanding: {authOutstanding:0.00}, new debit: {debitAmount:0.00}, " +
+                    $"authorized ceiling: {auth.GuaranteeAmount:0.00}. " +
+                    $"Increase the authorization's GuaranteeAmount or close/credit existing bond commitments first.");
+            }
+        }
+
         var entry = new GuaranteeLedgerEntry
         {
             Id = Guid.NewGuid(),
@@ -318,13 +378,13 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             EntryType = GuaranteeEntryType.Debit,
             Amount = debitAmount,
             Currency = declaration.Currency,
-            Description = $"Auto-debit {procedure.Code} — {declaration.DeclarationNumber} ({procedure.GuaranteePercentage}% × (Duty+VAT))",
+            Description = $"Auto-debit {procedure.Code} — {declaration.DeclarationNumber} ({effectiveGuaranteePct}% × (Duty+VAT))",
             ReferenceType = nameof(CustomsDeclaration),
             ReferenceId = declaration.Id,
             MRN = declaration.MRN,
             CustomsDeclarationId = declaration.Id,
-            ExpectedReleaseDate = procedure.DueDays.HasValue
-                ? declaration.DeclarationDate.AddDays(procedure.DueDays.Value)
+            ExpectedReleaseDate = (auth?.CompletionPeriodDays ?? procedure.DueDays ?? 0) > 0
+                ? declaration.DeclarationDate.AddDays(auth?.CompletionPeriodDays ?? procedure.DueDays ?? 0)
                 : null,
             IsReleased = false
         };

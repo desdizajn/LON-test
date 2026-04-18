@@ -54,9 +54,17 @@ public class LONAuthorization : BaseEntity, ITenantScoped
     public string? EconomicConditionCode { get; set; }
     
     /// <summary>
-    /// Износ на гаранција
+    /// Износ на гаранција (ceiling per-authorization; debits linked to
+    /// declarations under this authorization cannot in aggregate exceed this).
     /// </summary>
     public decimal GuaranteeAmount { get; set; }
+
+    /// <summary>
+    /// Per-authorization override of <see cref="CustomsProcedure.GuaranteePercentage"/>.
+    /// Customs can set a risk-adjusted % on a specific Одобрение that differs
+    /// from the procedure default. Null means "use procedure default".
+    /// </summary>
+    public decimal? GuaranteePercentageOverride { get; set; }
     
     /// <summary>
     /// Референца на инструмент за обезбедување

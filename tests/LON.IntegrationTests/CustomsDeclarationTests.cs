@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FluentAssertions;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Entities.MasterData;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -341,6 +342,370 @@ public class CustomsDeclarationTests : IClassFixture<LonApiFactory>
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(d => d.MRN == providedMrn);
         saved.Should().NotBeNull("provided MRN must be preserved (uppercased)");
+    }
+
+    // ================================================================
+    // P2.2.5 blocker regression tests (B1–B7)
+    // ================================================================
+
+    /// <summary>B1: MRN uniqueness must be global, not tenant-scoped.</summary>
+    [Fact]
+    public async Task B1_MRN_IsGloballyUnique_AcrossTenants()
+    {
+        const string sharedMrn = "26MKCROSSTENANTA1";
+
+        // Tenant 1 (admin → TEKSPORT) posts a declaration with the MRN.
+        var clientA = _factory.CreateClient();
+        await Authenticate(clientA);
+        var (procA, authA, itemA, uomA, partnerA, tariffA) = await LoadSeedIdsAsync("4200");
+        var payloadA = new
+        {
+            declarationNumber = $"DEC-B1A-{Guid.NewGuid():N}"[..14],
+            mrn = sharedMrn,
+            declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = procA,
+            lonAuthorizationId = authA,
+            partnerId = partnerA,
+            totalCustomsValue = 100m,
+            currency = "EUR",
+            senderName = "B1 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            lines = new[] { new { itemId = itemA, tariffCode = tariffA, quantity = 10m,
+                uoMId = uomA, customsValue = 100m, countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+        };
+        var respA = await clientA.PostAsJsonAsync("/api/customs/declarations", payloadA);
+        respA.EnsureSuccessStatusCode();
+
+        // Temporarily create a second tenant and attach a user under it, then try
+        // to reuse the same MRN. Without IgnoreQueryFilters() this would succeed.
+        Guid otherTenantId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var existing = await ctx.Tenants.FirstOrDefaultAsync(t => t.Code == "B1-MRN-TEST");
+            if (existing is not null) { ctx.Tenants.Remove(existing); await ctx.SaveChangesAsync(); }
+            var tenant = new Tenant
+            {
+                Id = Guid.NewGuid(), Code = "B1-MRN-TEST", Name = "B1 MRN test",
+                Country = "MK", DefaultLanguage = "mk", IsActive = true,
+                CreatedAt = DateTime.UtcNow, CreatedBy = "B1Test"
+            };
+            ctx.Tenants.Add(tenant);
+            await ctx.SaveChangesAsync();
+            otherTenantId = tenant.Id;
+        }
+
+        // Admin creates a user under B1-MRN-TEST.
+        var adminRoleId = await FetchAdministratorRoleIdAsync();
+        var newUser = $"b1-user-{Guid.NewGuid():N}"[..14];
+        var createUserResp = await clientA.PostAsJsonAsync("/api/users", new
+        {
+            username = newUser, email = $"{newUser}@b1.test",
+            fullName = "B1 User", password = "B1Test123!",
+            roleIds = new[] { adminRoleId }, tenantId = otherTenantId
+        });
+        createUserResp.EnsureSuccessStatusCode();
+
+        // Login as new user and try to POST the same MRN.
+        var clientB = _factory.CreateClient();
+        var loginResp = await clientB.PostAsJsonAsync("/api/auth/login",
+            new { username = newUser, password = "B1Test123!" });
+        loginResp.EnsureSuccessStatusCode();
+        var loginBody = await loginResp.Content.ReadFromJsonAsync<LoginResponse>();
+        clientB.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", loginBody!.AccessToken);
+
+        // Seed a minimal LONAuth + item under the new tenant so we reach the MRN check.
+        // Easier: reuse the seeded 4200 procedure (global master data); LON auth
+        // will fail on tenant-mismatch — but we're testing the MRN uniqueness path.
+        // Workaround: post with an existing MRN and non-LON procedure (FINAL).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var finalProc = await ctx.CustomsProcedures.FirstAsync(p => p.Code == "FINAL");
+            var item = await ctx.Items.FirstAsync();
+            var uom = await ctx.UnitsOfMeasure.FirstAsync(u => u.Code == "KG");
+
+            var payloadB = new
+            {
+                declarationNumber = $"DEC-B1B-{Guid.NewGuid():N}"[..14],
+                mrn = sharedMrn, // SAME as tenant A
+                declarationDate = DateTime.UtcNow.Date,
+                customsProcedureId = finalProc.Id,
+                totalCustomsValue = 100m,
+                currency = "EUR",
+                senderName = "B1 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+                lines = new[] { new { itemId = item.Id, tariffCode = "2905399500",
+                    quantity = 10m, uoMId = uom.Id, customsValue = 100m,
+                    countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+            };
+
+            var respB = await clientB.PostAsJsonAsync("/api/customs/declarations", payloadB);
+            var bodyB = await respB.Content.ReadAsStringAsync();
+            respB.StatusCode.Should().Be(HttpStatusCode.BadRequest, because: bodyB);
+            bodyB.Should().Contain(sharedMrn,
+                "error must cite the colliding MRN to prove global check ran");
+        }
+    }
+
+    /// <summary>B2: editing a non-Draft declaration must fail with 409.</summary>
+    [Fact]
+    public async Task B2_PUT_NonDraftDeclaration_Returns409()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var (procId, authId, itemId, uomId, partnerId, tariffCode) = await LoadSeedIdsAsync("4200");
+
+        var create = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B2-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = procId, lonAuthorizationId = authId, partnerId,
+            totalCustomsValue = 100m, currency = "EUR",
+            senderName = "B2 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            lines = new[] { new { itemId, tariffCode, quantity = 10m, uoMId = uomId,
+                customsValue = 100m, countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+        });
+        create.EnsureSuccessStatusCode();
+        var body = await create.Content.ReadFromJsonAsync<ResultResponse>();
+        var id = body!.Data;
+
+        // Declaration auto-transitions to Registered on create (MRN auto-gen).
+        var put = await client.PutAsJsonAsync($"/api/customs/declarations/{id}",
+            new { notes = "Trying to edit a Registered declaration — should 409" });
+        var putBody = await put.Content.ReadAsStringAsync();
+        put.StatusCode.Should().Be(HttpStatusCode.Conflict, because: putBody);
+        putBody.Should().Contain("cannot be edited");
+    }
+
+    /// <summary>B2: editing a Draft declaration is allowed.</summary>
+    [Fact]
+    public async Task B2_PUT_DraftDeclaration_SucceedsAndUpdatesNotes()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var (procId, authId, itemId, uomId, partnerId, tariffCode) = await LoadSeedIdsAsync("4200");
+
+        var create = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B2D-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = procId, lonAuthorizationId = authId, partnerId,
+            totalCustomsValue = 100m, currency = "EUR",
+            senderName = "B2D Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            status = (int)DeclarationStatus.Draft, // force Draft
+            lines = new[] { new { itemId, tariffCode, quantity = 10m, uoMId = uomId,
+                customsValue = 100m, countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+        });
+        create.EnsureSuccessStatusCode();
+        var body = await create.Content.ReadFromJsonAsync<ResultResponse>();
+        var id = body!.Data;
+
+        var put = await client.PutAsJsonAsync($"/api/customs/declarations/{id}",
+            new { notes = "Edited via Draft update" });
+        put.EnsureSuccessStatusCode();
+
+        using var scope = _factory.Services.CreateScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var saved = await ctx.CustomsDeclarations.IgnoreQueryFilters().FirstAsync(d => d.Id == id);
+        saved.Notes.Should().Be("Edited via Draft update");
+    }
+
+    /// <summary>B3: per-authorization bond ceiling is enforced.</summary>
+    [Fact]
+    public async Task B3_PerAuthorizationBond_Ceiling_Enforced()
+    {
+        // Arrange: clone the seeded TEKSPORT auth with a tiny ceiling.
+        Guid smallAuthId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenant = await ctx.Tenants.FirstAsync(t => t.Code == "TEKSPORT");
+            var partner = await ctx.Partners.IgnoreQueryFilters()
+                .FirstAsync(p => p.TenantId == tenant.Id);
+            var auth = new LONAuthorization
+            {
+                Id = Guid.NewGuid(), TenantId = tenant.Id,
+                AuthorizationNumber = $"B3-SMALL-{Guid.NewGuid():N}"[..14],
+                PartnerId = partner.Id,
+                IssueDate = DateTime.UtcNow.AddDays(-1),
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                AuthorizationType = "Повеќекратно", SystemType = "ОдложеноПлаќање",
+                OperationType = "Обработка", EconomicConditionCode = "10",
+                GuaranteeAmount = 50m, // TINY
+                CompetentCustomsOffice = "MK007", CompletionPeriodDays = 180,
+                Status = "Active", CreatedAt = DateTime.UtcNow, CreatedBy = "B3Test"
+            };
+            ctx.LONAuthorizations.Add(auth);
+            await ctx.SaveChangesAsync();
+            smallAuthId = auth.Id;
+        }
+
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var (procId, _, itemId, uomId, partnerId, tariffCode) = await LoadSeedIdsAsync("4200");
+
+        // Liability = 50 + 189 = 239; × 50% = 119.5; ceiling is 50 → must fail.
+        var resp = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B3-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = procId, lonAuthorizationId = smallAuthId, partnerId,
+            totalCustomsValue = 1000m, currency = "EUR",
+            senderName = "B3 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            lines = new[] { new { itemId, tariffCode, quantity = 100m, uoMId = uomId,
+                customsValue = 1000m, countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+        });
+        var body = await resp.Content.ReadAsStringAsync();
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest, because: body);
+        body.Should().Contain("bond ceiling exceeded",
+            "per-authorization ceiling must bite before account-level TotalLimit");
+    }
+
+    /// <summary>B4 + B5: authorization overrides (CompletionPeriodDays + GuaranteePercentageOverride).</summary>
+    [Fact]
+    public async Task B4_B5_AuthorizationOverrides_ApplyToRegistryExpiryAndGuaranteeDebit()
+    {
+        // Arrange: auth with 90-day completion and 25% guarantee override.
+        Guid overrideAuthId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenant = await ctx.Tenants.FirstAsync(t => t.Code == "TEKSPORT");
+            var partner = await ctx.Partners.IgnoreQueryFilters()
+                .FirstAsync(p => p.TenantId == tenant.Id);
+            var auth = new LONAuthorization
+            {
+                Id = Guid.NewGuid(), TenantId = tenant.Id,
+                AuthorizationNumber = $"B45-OV-{Guid.NewGuid():N}"[..12],
+                PartnerId = partner.Id,
+                IssueDate = DateTime.UtcNow.AddDays(-1),
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
+                AuthorizationType = "Повеќекратно", SystemType = "ОдложеноПлаќање",
+                OperationType = "Обработка", EconomicConditionCode = "10",
+                GuaranteeAmount = 100000m,
+                GuaranteePercentageOverride = 25m, // B5
+                CompetentCustomsOffice = "MK007",
+                CompletionPeriodDays = 90, // B4
+                Status = "Active", CreatedAt = DateTime.UtcNow, CreatedBy = "B45Test"
+            };
+            ctx.LONAuthorizations.Add(auth);
+            await ctx.SaveChangesAsync();
+            overrideAuthId = auth.Id;
+        }
+
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var (procId, _, itemId, uomId, partnerId, tariffCode) = await LoadSeedIdsAsync("4200");
+
+        var declDate = DateTime.UtcNow.Date;
+        var resp = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B45-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = declDate,
+            customsProcedureId = procId, lonAuthorizationId = overrideAuthId, partnerId,
+            totalCustomsValue = 1000m, currency = "EUR",
+            senderName = "B45 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            lines = new[] { new { itemId, tariffCode, quantity = 100m, uoMId = uomId,
+                customsValue = 1000m, countryOfOrigin = "DE", dutyRate = 5m, vatRate = 18m } }
+        });
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadFromJsonAsync<ResultResponse>();
+        var declId = body!.Data;
+
+        using var vscope = _factory.Services.CreateScope();
+        var ctxV = vscope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var registry = await ctxV.MRNRegistries.IgnoreQueryFilters()
+            .FirstAsync(r => r.CustomsDeclarationId == declId);
+        registry.ExpiryDate!.Value.Date.Should().Be(declDate.AddDays(90),
+            "B4: registry expiry must use auth.CompletionPeriodDays (90), not procedure.DueDays (180)");
+
+        var debit = await ctxV.GuaranteeLedgerEntries.IgnoreQueryFilters()
+            .Where(e => e.CustomsDeclarationId == declId &&
+                        e.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit)
+            .SumAsync(e => e.Amount);
+        debit.Should().Be(59.75m, // 239 × 25% = 59.75
+            "B5: debit must use auth.GuaranteePercentageOverride (25%), not procedure default (50%)");
+    }
+
+    /// <summary>B6: Export-type procedure produces an EX declaration, not IM.</summary>
+    [Fact]
+    public async Task B6_ExportProcedure_ProducesEXDeclaration()
+    {
+        Guid exportProcId; Guid itemId; Guid uomId; Guid partnerId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var proc = await ctx.CustomsProcedures.FirstAsync(p =>
+                p.Type == LON.Domain.Enums.CustomsProcedureType.Export && p.IsActive);
+            exportProcId = proc.Id;
+            itemId = (await ctx.Items.FirstAsync()).Id;
+            uomId = (await ctx.UnitsOfMeasure.FirstAsync(u => u.Code == "KG")).Id;
+            partnerId = (await ctx.Partners.OrderBy(p => p.Code).FirstAsync()).Id;
+        }
+
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var resp = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B6-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = exportProcId, partnerId,
+            totalCustomsValue = 100m, currency = "EUR",
+            senderName = "B6 Sender", senderCountry = "MK", countryOfDispatch = "MK",
+            lines = new[] { new { itemId, tariffCode = "2905399500", quantity = 10m,
+                uoMId = uomId, customsValue = 100m, countryOfOrigin = "MK",
+                dutyRate = 0m, vatRate = 0m } }
+        });
+        resp.EnsureSuccessStatusCode();
+        var body = await resp.Content.ReadFromJsonAsync<ResultResponse>();
+
+        using var scope2 = _factory.Services.CreateScope();
+        var ctx2 = scope2.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var saved = await ctx2.CustomsDeclarations.IgnoreQueryFilters()
+            .FirstAsync(d => d.Id == body!.Data);
+        saved.DeclarationType.Should().Be("EX",
+            "procedure.Type=Export must map to SAD Box 01 = 'EX'");
+    }
+
+    /// <summary>B7: a line tariff outside the authorization's ApprovedItems must fail.</summary>
+    [Fact]
+    public async Task B7_LineTariffNotInAuthorization_Returns400()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var (procId, lonAuthId, itemId, uomId, partnerId, _) = await LoadSeedIdsAsync("4200");
+
+        // Seeded TEKSPORT auth ApprovedItems = {2905399500, 1211200050}.
+        // Use a different valid-format tariff that the auth does NOT cover.
+        const string unauthorizedTariff = "0401109000";
+
+        var resp = await client.PostAsJsonAsync("/api/customs/declarations", new
+        {
+            declarationNumber = $"DEC-B7-{Guid.NewGuid():N}"[..14],
+            mrn = "", declarationDate = DateTime.UtcNow.Date,
+            customsProcedureId = procId, lonAuthorizationId = lonAuthId, partnerId,
+            totalCustomsValue = 100m, currency = "EUR",
+            senderName = "B7 Sender", senderCountry = "DE", countryOfDispatch = "DE",
+            lines = new[] { new { itemId, tariffCode = unauthorizedTariff, quantity = 10m,
+                uoMId = uomId, customsValue = 100m, countryOfOrigin = "DE",
+                dutyRate = 5m, vatRate = 18m } }
+        });
+        var body = await resp.Content.ReadAsStringAsync();
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest, because: body);
+        body.Should().Contain(unauthorizedTariff);
+        body.Should().Contain("не е дозволена");
+    }
+
+    // ================================================================
+    // Helpers (shared)
+    // ================================================================
+
+    private async Task<Guid> FetchAdministratorRoleIdAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var role = await ctx.Roles.FirstAsync(r => r.Name == "Administrator");
+        return role.Id;
     }
 
     private async Task<(Guid procedureId, Guid lonAuthId, Guid itemId, Guid uomId,

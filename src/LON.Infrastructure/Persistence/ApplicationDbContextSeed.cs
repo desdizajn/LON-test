@@ -619,5 +619,47 @@ public static class ApplicationDbContextSeed
 
         context.LONAuthorizations.Add(auth);
         await context.SaveChangesAsync();
+
+        // B7: seed a minimal ApprovedItems list so the LONLineTariffWithinAuth
+        // rule can distinguish "explicit scope" vs "allow-all" authorizations.
+        // Pair the auth with two real TARIC codes present in the KB seeded
+        // data (matches tariffs the integration tests and VPS smoke curls
+        // use). If either item is missing (fresh DB without KB), we silently
+        // skip — the rule's allow-all default still protects correctness.
+        var rawMaterial = await context.Items
+            .Where(i => i.TenantId == tenant.Id)
+            .OrderBy(i => i.Code)
+            .FirstOrDefaultAsync();
+        if (rawMaterial is not null)
+        {
+            context.LONAuthorizationItems.AddRange(
+                new LONAuthorizationItem
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenant.Id,
+                    LONAuthorizationId = auth.Id,
+                    ImportItemId = rawMaterial.Id,
+                    ImportTariffCode = "2905399500",
+                    CompensatingTariffCode = null,
+                    YieldRate = 0.95m,
+                    AllowedWastePercentage = 5m,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "Seed"
+                },
+                new LONAuthorizationItem
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenant.Id,
+                    LONAuthorizationId = auth.Id,
+                    ImportItemId = rawMaterial.Id,
+                    ImportTariffCode = "1211200050",
+                    CompensatingTariffCode = null,
+                    YieldRate = 0.90m,
+                    AllowedWastePercentage = 10m,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "Seed"
+                });
+            await context.SaveChangesAsync();
+        }
     }
 }

@@ -1,4 +1,5 @@
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
+using LON.Application.Customs.Commands.UpdateCustomsDeclaration;
 using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
 using LON.Infrastructure.Persistence;
@@ -25,6 +26,25 @@ public class CustomsController : BaseController
         if (result.IsSuccess)
             return Ok(result);
         return BadRequest(result);
+    }
+
+    /// <summary>
+    /// Updates a Draft declaration. Declarations past Draft status are
+    /// rejected with <c>409 Conflict</c> — see
+    /// <see cref="UpdateCustomsDeclarationCommandHandler"/> for the full
+    /// compliance rationale. Full amendment workflow is deferred.
+    /// </summary>
+    [HttpPut("declarations/{id:guid}")]
+    public async Task<IActionResult> UpdateDeclaration(Guid id, [FromBody] UpdateCustomsDeclarationCommand command)
+    {
+        if (command.Id != Guid.Empty && command.Id != id)
+            return BadRequest(new { errorMessage = "Route id and body id do not match." });
+
+        var effective = command with { Id = id };
+        var result = await Mediator.Send(effective);
+        if (result.IsSuccess)
+            return Ok(result);
+        return Conflict(result);
     }
 
     /// <summary>

@@ -189,6 +189,41 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateCustomsDeclarationCommand"];
+          "text/json": components["schemas"]["UpdateCustomsDeclarationCommand"];
+          "application/*+json": components["schemas"]["UpdateCustomsDeclarationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/validate": {
     post: {
       requestBody?: {
@@ -211,21 +246,6 @@ export interface paths {
       parameters: {
         path: {
           tariffCode: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/Customs/declarations/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
         };
       };
       responses: {
@@ -2649,6 +2669,22 @@ export interface components {
       name?: string | null;
       description?: string | null;
       isActive?: boolean;
+    };
+    UpdateCustomsDeclarationCommand: {
+      /** Format: uuid */
+      id?: string;
+      declarationNumber?: string | null;
+      /** Format: uuid */
+      partnerId?: string | null;
+      /** Format: date-time */
+      dueDate?: string | null;
+      senderName?: string | null;
+      senderAddress?: string | null;
+      senderCountry?: string | null;
+      countryOfDispatch?: string | null;
+      countryOfDestination?: string | null;
+      specialRemarks?: string | null;
+      notes?: string | null;
     };
     UpdateEmployeeRequest: {
       firstName?: string | null;
