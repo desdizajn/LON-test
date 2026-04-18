@@ -131,8 +131,7 @@
 **Цел:** Комплетен циклус за еден TEKSPORT пример: увоз → магацин → производство → извоз, со гаранција коректно раздолжена.
 
 - [x] **P2.1** ✅ — `CreateCustomsDeclarationCommand` (MediatR) со enforce LONAuthorizationId за Box 37=4200/5100, auto-MRN fallback (YYMK<8hex>A1), MRNRegistry creation со Total/Used/Expiry, `DeclarationStatus` lifecycle (Draft/Registered/Submitted/Cleared/Cancelled), `CustomsDeclarationCreatedEvent` (P2.2 ќе слуша). 3 нови validation rules (Currency ISO 4217, Country ISO 3166, LONAuthRequired). Frontend: conditional LON auth picker + Box 02/15/17 полиња + status badge. Seed: `INW-PROC`→`4200`, TEKSPORT LON Odobrenie `26/TEKSPORT/0001`. VPS потврдено: declaration creirana со MRN=`26MK62636F15A1`, Status=Registered(1), Duty=50, VAT=189, registry row со Expires=2026-10-15 (commit `c37b011`).
-- [ ] **P2.2** — `GuaranteeLedger` auto-debit на declaration event
-  - Verify: GuaranteeAccount.Balance се зголемува за износот на декларацијата
+- [x] **P2.2** ✅ — Sync guarantee auto-debit во `CreateCustomsDeclarationCommandHandler`. Формула `(Duty+VAT) × procedure.GuaranteePercentage / 100`. Hard-enforce: currency-matched account + available limit. VPS потврда: IM 4200 1000 EUR → debit 119.5 EUR, balance 0→119.5 на GUA-2024-001; `GuaranteeDebitedEvent` емитнат; negative paths покриени во интеграциски тестови (commit `63bf612`).
 - [ ] **P2.3** — `Receipt` + consumes MRN → `InventoryBalance` со batch+MRN
   - Verify: InventoryBalance row со правилни batch/MRN; `MRNRegistry.UsedQuantity` се зголемува
 - [ ] **P2.4** — `MaterialIssue` на `ProductionOrder` (batch+MRN задолжителни; no-negative)
