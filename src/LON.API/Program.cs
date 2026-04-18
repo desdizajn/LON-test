@@ -220,3 +220,6 @@ app.MapGet("/health/db", async (ApplicationDbContext context) =>
 });
 
 app.Run();
+
+// Marker for WebApplicationFactory<Program> in integration tests.
+public partial class Program { }
