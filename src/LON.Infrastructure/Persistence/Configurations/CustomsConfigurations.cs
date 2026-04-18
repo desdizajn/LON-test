@@ -29,6 +29,8 @@ public class CustomsDeclarationConfiguration : IEntityTypeConfiguration<CustomsD
         builder.Property(e => e.DeclarationNumber).IsRequired().HasMaxLength(50);
         builder.Property(e => e.MRN).IsRequired().HasMaxLength(100);
         builder.Property(e => e.Currency).IsRequired().HasMaxLength(3);
+        builder.Property(e => e.TotalInvoiceAmount).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.ExchangeRate).HasColumnType("decimal(18,4)");
         builder.Property(e => e.TotalCustomsValue).HasColumnType("decimal(18,4)");
         builder.Property(e => e.TotalDuty).HasColumnType("decimal(18,4)");
         builder.Property(e => e.TotalVAT).HasColumnType("decimal(18,4)");
@@ -50,13 +52,19 @@ public class CustomsDeclarationLineConfiguration : IEntityTypeConfiguration<Cust
         builder.HasKey(e => e.Id);
         builder.Property(e => e.TariffCode).HasMaxLength(20);
         builder.Property(e => e.CountryOfOrigin).HasMaxLength(3);
+        builder.Property(e => e.GrossWeight).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.NetWeight).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.ItemPrice).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.AdjustmentRate).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.StatisticalValue).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CustomsValue).HasColumnType("decimal(18,4)");
         builder.Property(e => e.DutyRate).HasColumnType("decimal(18,4)");
         builder.Property(e => e.DutyAmount).HasColumnType("decimal(18,4)");
         builder.Property(e => e.VATRate).HasColumnType("decimal(18,4)");
         builder.Property(e => e.VATAmount).HasColumnType("decimal(18,4)");
         builder.Property(e => e.OtherCharges).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.UsedQuantityFromPrevious).HasColumnType("decimal(18,4)");
         
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
