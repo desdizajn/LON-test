@@ -216,7 +216,7 @@ public static class ApplicationDbContextSeed
     private static readonly WarehouseSeed[] SeedWarehouseDefinitions =
     {
         new("WH-MAIN", "Main Warehouse", "Industrial Zone, Skopje", DefaultLocationSet()),
-        new("WH-TEK-VN", "TEKSPORT Vinica", "Виница, Република Северна Македонија", DefaultLocationSet()),
+        new("WH-TEK-VN", "TEKSPORT Vinica", "Vinica, North Macedonia", DefaultLocationSet()),
     };
 
     private static LocationSeed[] DefaultLocationSet() => new[]
