@@ -32,10 +32,9 @@ public static class ApplicationDbContextSeed
             await SeedItems(context);
         }
 
-        if (!await context.Warehouses.AnyAsync())
-        {
-            await SeedWarehouses(context);
-        }
+        // Warehouses are seeded per-code idempotently so new sites (e.g. TEKSPORT
+        // Vinica) can be added across releases without dropping existing data.
+        await SeedWarehousesIdempotent(context);
 
         if (!await context.Partners.AnyAsync())
         {
@@ -211,35 +210,77 @@ public static class ApplicationDbContextSeed
         await context.SaveChangesAsync();
     }
 
-    private static async Task SeedWarehouses(ApplicationDbContext context)
+    private record WarehouseSeed(string Code, string Name, string Address, LocationSeed[] Locations);
+    private record LocationSeed(string Code, string Name, LocationType Type, string? Aisle = null, string? Rack = null);
+
+    private static readonly WarehouseSeed[] SeedWarehouseDefinitions =
     {
-        var warehouse = new Warehouse
+        new("WH-MAIN", "Main Warehouse", "Industrial Zone, Skopje", DefaultLocationSet()),
+        new("WH-TEK-VN", "TEKSPORT Vinica", "Виница, Република Северна Македонија", DefaultLocationSet()),
+    };
+
+    private static LocationSeed[] DefaultLocationSet() => new[]
+    {
+        new LocationSeed("RCV-01", "Receiving Zone 1", LocationType.Receiving),
+        new LocationSeed("STG-A-01", "Storage Aisle A Rack 01", LocationType.Storage, "A", "01"),
+        new LocationSeed("STG-A-02", "Storage Aisle A Rack 02", LocationType.Storage, "A", "02"),
+        new LocationSeed("PICK-01", "Picking Zone 1", LocationType.Picking),
+        new LocationSeed("PROD-01", "Production Floor", LocationType.Production),
+        new LocationSeed("SHIP-01", "Shipping Zone", LocationType.Shipping),
+        new LocationSeed("QUA-01", "Quarantine", LocationType.Quarantine),
+    };
+
+    private static async Task SeedWarehousesIdempotent(ApplicationDbContext context)
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var def in SeedWarehouseDefinitions)
         {
-            Id = Guid.NewGuid(),
-            Code = "WH-MAIN",
-            Name = "Main Warehouse",
-            Address = "Industrial Zone, Skopje",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = "Seed"
-        };
+            var warehouse = await context.Warehouses.FirstOrDefaultAsync(w => w.Code == def.Code);
+            if (warehouse is null)
+            {
+                warehouse = new Warehouse
+                {
+                    Id = Guid.NewGuid(),
+                    Code = def.Code,
+                    Name = def.Name,
+                    Address = def.Address,
+                    IsActive = true,
+                    CreatedAt = now,
+                    CreatedBy = "Seed"
+                };
+                await context.Warehouses.AddAsync(warehouse);
+                await context.SaveChangesAsync();
+            }
 
-        await context.Warehouses.AddAsync(warehouse);
-        await context.SaveChangesAsync();
+            var existingCodes = await context.Locations
+                .Where(l => l.WarehouseId == warehouse.Id)
+                .Select(l => l.Code)
+                .ToListAsync();
 
-        var locations = new[]
-        {
-            new Location { Id = Guid.NewGuid(), Code = "RCV-01", Name = "Receiving Zone 1", WarehouseId = warehouse.Id, Type = LocationType.Receiving, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "STG-A-01", Name = "Storage Aisle A Rack 01", WarehouseId = warehouse.Id, Type = LocationType.Storage, Aisle = "A", Rack = "01", IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "STG-A-02", Name = "Storage Aisle A Rack 02", WarehouseId = warehouse.Id, Type = LocationType.Storage, Aisle = "A", Rack = "02", IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "PICK-01", Name = "Picking Zone 1", WarehouseId = warehouse.Id, Type = LocationType.Picking, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "PROD-01", Name = "Production Floor", WarehouseId = warehouse.Id, Type = LocationType.Production, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "SHIP-01", Name = "Shipping Zone", WarehouseId = warehouse.Id, Type = LocationType.Shipping, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-            new Location { Id = Guid.NewGuid(), Code = "QUA-01", Name = "Quarantine", WarehouseId = warehouse.Id, Type = LocationType.Quarantine, IsActive = true, CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
-        };
+            var missing = def.Locations
+                .Where(l => !existingCodes.Contains(l.Code))
+                .Select(l => new Location
+                {
+                    Id = Guid.NewGuid(),
+                    Code = l.Code,
+                    Name = l.Name,
+                    WarehouseId = warehouse.Id,
+                    Type = l.Type,
+                    Aisle = l.Aisle,
+                    Rack = l.Rack,
+                    IsActive = true,
+                    CreatedAt = now,
+                    CreatedBy = "Seed"
+                })
+                .ToList();
 
-        await context.Locations.AddRangeAsync(locations);
-        await context.SaveChangesAsync();
+            if (missing.Count > 0)
+            {
+                await context.Locations.AddRangeAsync(missing);
+                await context.SaveChangesAsync();
+            }
+        }
     }
 
     private static async Task SeedPartners(ApplicationDbContext context)
