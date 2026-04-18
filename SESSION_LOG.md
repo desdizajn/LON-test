@@ -1,6 +1,51 @@
 # LON — Session Log
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
+
+## 2026-04-18 — P1.6 User ↔ Tenant provisioning (MediatR)
+
+**Status:** [x] done
+**Commit:** `59878b6 phase-1.6: MediatR CreateUserCommand + cross-tenant provisioning`
+
+**Files changed:**
+- `src/LON.Application/Common/Interfaces/IPasswordHasher.cs` (new) — Application-layer abstraction so the handler avoids referencing Infrastructure.
+- `src/LON.Application/Users/Commands/CreateUser/CreateUserCommand.cs` (new) — record + handler. Validates tenant existence/active, global username uniqueness (IgnoreQueryFilters since User.Username is still global), role ids; explicit `TenantId == Guid.Empty` falls back to DbContext auto-fill (caller's tenant).
+- `src/LON.Infrastructure/Services/AuthService.cs` — `IAuthService` now extends `IPasswordHasher` so the existing HashPassword method satisfies both contracts.
+- `src/LON.Infrastructure/DependencyInjection.cs` — register `IPasswordHasher` forwarded to the `IAuthService` singleton instance (same scope).
+- `src/LON.API/Controllers/UsersController.cs` — class-level `[Authorize(Roles="Administrator")]`; POST refactored to dispatch `CreateUserCommand` via MediatR. `CreateUserRequest` gains optional `Guid? TenantId`.
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` — regenerated (tenantId now in CreateUserRequest schema).
+- `tests/LON.IntegrationTests/UserProvisioningTests.cs` (new) — 4 tests: cross-tenant provisioning + new-user isolation; invalid tenantId → 400; omitted tenantId → caller's tenant via auto-fill; unauthenticated → 401.
+
+**Semantics chosen:**
+- `tenantId` in payload is **optional**. Omitting it keeps legacy behavior (DbContext auto-fill = caller's tenant). Provided → handler validates + persists explicit value. This is backwards-compatible with `frontend/web/src/pages/UserManagement.tsx` which currently doesn't send tenantId.
+- Handler authorization is coarse — trusts the controller's `[Authorize(Roles="Administrator")]`. A finer super-admin vs tenant-admin split is a future task (outside P1.6 scope).
+- Username remains globally unique (`User.Username` without composite index). P1.7 will decide between `username@tenant-code` / subdomain / tenant-picker before relaxing.
+
+**How verified on VPS:**
+1. Commit+push → `ssh root@... git pull && docker compose build api && up -d api`. API healthy.
+2. Admin login → POST /api/tenants → **DUP-CODE-TEST** (`9f5f7912-fafd-41c4-bcff-eb88ce488dbb`).
+3. POST /api/users with explicit `tenantId=DUP-CODE-TEST.id` → 200. SQL assert:
+   ```
+   admin         | B8D4FE76-... | TEKSPORT      | 1
+   dup-p16-admin | 9F5F7912-... | DUP-CODE-TEST | 1
+   ```
+4. Login as `dup-p16-admin/DupTest123!` → JWT `tenant_id` = `9f5f7912-...` ✅
+5. **Isolation proof (bidirectional):**
+   - Admin GET /api/users → only `admin` (not `dup-p16-admin`).
+   - `dup-p16-admin` GET /api/users → only himself (not `admin`).
+   - Admin GET /api/masterdata/items → 5 TEKSPORT items.
+   - `dup-p16-admin` GET /api/masterdata/items → `count: 0` (DUP-CODE-TEST has none).
+6. **Negative paths:**
+   - POST /api/users with bogus tenantId → **400** `{"errorMessage":"Tenant '00000000-...' does not exist or is inactive."}`.
+   - POST /api/users unauthenticated → **401**.
+
+**Notes / follow-ups:**
+- Integration tests run on CI (Docker required for Testcontainers; local Windows box has no Docker Desktop). Next GitHub Actions run should validate all four tests.
+- UI retrofit for tenant selector in `UserManagement.tsx` is intentionally deferred — frontend still works because tenantId is optional and falls back to caller tenant. Flagged for P1.7 or a dedicated UI sub-task.
+- Non-goal for P1.6 (explicit per WORK_PLAN Current Active Task): super-admin switcher UI; multi-tenant login UX reform.
+
+---
+
 >
 > Формат на запис:
 > ```

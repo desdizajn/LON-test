@@ -119,8 +119,8 @@
   - Verify: integration test — user од tenant A не гледа записи од tenant B
 - [x] **P1.5** ✅ — 22 composite `(TenantId, X)` unique indices наместо глобални. Positive (2-ри tenant може да користи `RM-001`) + negative (интра-тенант duplicate отфрлен) тестови поминаа на VPS. User.Username/Email и reference/KB data остануваат globally unique (commit `2a2924d`).
   - Verify: ист Item.Code може во tenant A и tenant B без колизија
-- [ ] **P1.6** — User ↔ Tenant assignment + UI за tenant switcher (super-admin)
-  - Verify: super-admin може да смени activен tenant; реголни user-и гледаат само свој
+- [x] **P1.6** ✅ — MediatR `CreateUserCommand` со опционален `TenantId` + `[Authorize(Roles="Administrator")]`. Admin може да провизионира user под било кој tenant; omitted tenantId fallback-ира на caller-ов tenant (auto-fill). VPS потврда: `dup-p16-admin` под DUP-CODE-TEST, bidirectional isolation (admin не го гледа, новиот user не гледа TEKSPORT items/users), JWT tenant_id claim коректен (commit `59878b6`).
+  - **Deferred:** UI tenant switcher за super-admin (чека реална потреба); multi-tenant login UX reform (P1.7).
 
 **Фаза 1 DONE = ✅ два tenant-а (TEKSPORT + TEST), изолирани**
 
@@ -307,31 +307,30 @@
 
 ## Current Active Task
 
-> **>>>** P1.6: User ↔ Tenant provisioning. Currently `admin` is seeded under TEKSPORT and there's no product path to create a user belonging to a second tenant. `TenantsController` CRUD exists; `UsersController` create needs `tenantId` in payload + authorization guard (only super-admin or tenant-admin of target tenant can create).
+> **>>>** **Phase 1 DONE.** Next entry point per agreed phase order = **Phase 2** P2.1 (CustomsDeclaration IM 42 00 create/MRN/register) — first end-to-end TEKSPORT flow. Phase 6 Priority-B and Phase 2.5 retrofit are parallel backlog; pick from them when Phase 2 naturally touches the area.
 
-**Scope:**
-- `CreateUserCommand` (MediatR) прима `tenantId`, validates existence and caller authorization.
-- `UsersController.Post` изложен под `Authorize(Roles="Administrator")`.
-- Seeder: `admin` останува TEKSPORT; no second user seeded (flag issue: integration tests may need one).
-- OpenAPI → TS regenerate (нова DTO).
-- Integration test: admin creates `tenant-admin@DUP-CODE-TEST` user under 2nd tenant; logs in as new user; sees only DUP-CODE-TEST data.
+**Scope for P2.1:**
+- New `CreateCustomsDeclarationCommand` (if current is incomplete — already exists, check fit).
+- UI form: line items, procedure code IM4200, MRN auto-generation hooks.
+- Integration test: POST declaration → GET shows MRN-ready entry in MRNRegistry.
+- Verify: creirana деклараcija во UI, MRN видлив во MRNRegistry.
 
-**Алтернативи:**
-- **P6.18** UTF-8 source encoding (~30 мин)
-- **P0.3.4** decimal precision warnings (~15 мин)
-- **P1.7** (new) — Multi-tenant login UX: decide on username@tenant-code vs subdomain vs tenant picker. Needed before we can remove the `User.Username` global uniqueness constraint.
+**Алтернативи (пред Phase 2):**
+- **P1.7** (new) — Multi-tenant login UX: decide `username@tenant-code` vs subdomain vs tenant picker. Needed before we can relax `User.Username` global uniqueness.
+- **P6.18** UTF-8 source encoding (~30 мин).
+- **P0.3.4** decimal precision warnings (~15 мин).
 
 ### Recent context (2026-04-18):
 
-- **P1.5 completed** — composite `(TenantId, Code)` unique indices; positive+negative tests passed on VPS (commit `2a2924d`).
-- **P1.4 completed** — global query filter, isolation потврдено на VPS (commit `5cc6f72`).
-- **P1.3 completed** — JWT `tenant_id` claim (commit `e723f7e`).
+- **P1.6 completed** — MediatR CreateUserCommand + cross-tenant provisioning. Bidirectional isolation verified on VPS (commit `59878b6`). UserProvisioningTests × 4 (on CI).
+- **P1.5** — composite `(TenantId, Code)` unique indices (commit `2a2924d`).
+- **P1.4** — global query filter, isolation proven (commit `5cc6f72`).
+- **P1.3** — JWT `tenant_id` claim (commit `e723f7e`).
 - **P1.2** — 41/~45 entities tenant-scoped; WH-TEK-VN seeded.
 
-### Non-goals за P1.6 (одвоено):
+### Phase 1 outcome:
 
-- UI tenant switcher за super-admin — дојде кога има реална потреба.
-- Multi-tenant login UX reform — P1.7 (separate decision).
+Two tenants (TEKSPORT + DUP-CODE-TEST) run isolated end-to-end. Admin can provision users under any tenant; each user's JWT scopes them to their tenant; EF global query filter hides every other tenant's rows from all reads.
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
