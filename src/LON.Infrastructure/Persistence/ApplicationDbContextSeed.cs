@@ -582,10 +582,9 @@ public static class ApplicationDbContextSeed
         var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Code == "TEKSPORT");
         if (tenant is null) return;
 
-        var exists = await context.LONAuthorizations
+        var existing = await context.LONAuthorizations
             .IgnoreQueryFilters()
-            .AnyAsync(a => a.AuthorizationNumber == authNumber);
-        if (exists) return;
+            .FirstOrDefaultAsync(a => a.AuthorizationNumber == authNumber);
 
         // Pick any supplier partner; if none, skip (partners seeded first above).
         var partner = await context.Partners
@@ -593,6 +592,20 @@ public static class ApplicationDbContextSeed
             .OrderBy(p => p.Code)
             .FirstOrDefaultAsync();
         if (partner is null) return;
+
+        // If the authorization already exists (prior seed run), we still need
+        // to backfill ApprovedItems for B7. Skip only if both exist.
+        if (existing is not null)
+        {
+            var hasItems = await context.LONAuthorizationItems
+                .IgnoreQueryFilters()
+                .AnyAsync(ai => ai.LONAuthorizationId == existing.Id);
+            if (!hasItems)
+            {
+                await SeedTeksportApprovedItemsAsync(context, tenant.Id, existing.Id);
+            }
+            return;
+        }
 
         var auth = new LONAuthorization
         {
@@ -620,46 +633,50 @@ public static class ApplicationDbContextSeed
         context.LONAuthorizations.Add(auth);
         await context.SaveChangesAsync();
 
-        // B7: seed a minimal ApprovedItems list so the LONLineTariffWithinAuth
-        // rule can distinguish "explicit scope" vs "allow-all" authorizations.
-        // Pair the auth with two real TARIC codes present in the KB seeded
-        // data (matches tariffs the integration tests and VPS smoke curls
-        // use). If either item is missing (fresh DB without KB), we silently
-        // skip — the rule's allow-all default still protects correctness.
+        await SeedTeksportApprovedItemsAsync(context, tenant.Id, auth.Id);
+    }
+
+    /// <summary>
+    /// B7 helper: pair the TEKSPORT authorization with two real TARIC codes
+    /// present in the KB seed data (the tariffs integration tests + VPS smoke
+    /// curls use). Idempotent via LONAuthorizationId lookup.
+    /// </summary>
+    private static async Task SeedTeksportApprovedItemsAsync(
+        ApplicationDbContext context, Guid tenantId, Guid authId)
+    {
         var rawMaterial = await context.Items
-            .Where(i => i.TenantId == tenant.Id)
+            .Where(i => i.TenantId == tenantId)
             .OrderBy(i => i.Code)
             .FirstOrDefaultAsync();
-        if (rawMaterial is not null)
-        {
-            context.LONAuthorizationItems.AddRange(
-                new LONAuthorizationItem
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenant.Id,
-                    LONAuthorizationId = auth.Id,
-                    ImportItemId = rawMaterial.Id,
-                    ImportTariffCode = "2905399500",
-                    CompensatingTariffCode = null,
-                    YieldRate = 0.95m,
-                    AllowedWastePercentage = 5m,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "Seed"
-                },
-                new LONAuthorizationItem
-                {
-                    Id = Guid.NewGuid(),
-                    TenantId = tenant.Id,
-                    LONAuthorizationId = auth.Id,
-                    ImportItemId = rawMaterial.Id,
-                    ImportTariffCode = "1211200050",
-                    CompensatingTariffCode = null,
-                    YieldRate = 0.90m,
-                    AllowedWastePercentage = 10m,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "Seed"
-                });
-            await context.SaveChangesAsync();
-        }
+        if (rawMaterial is null) return;
+
+        context.LONAuthorizationItems.AddRange(
+            new LONAuthorizationItem
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                LONAuthorizationId = authId,
+                ImportItemId = rawMaterial.Id,
+                ImportTariffCode = "2905399500",
+                CompensatingTariffCode = null,
+                YieldRate = 0.95m,
+                AllowedWastePercentage = 5m,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Seed"
+            },
+            new LONAuthorizationItem
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                LONAuthorizationId = authId,
+                ImportItemId = rawMaterial.Id,
+                ImportTariffCode = "1211200050",
+                CompensatingTariffCode = null,
+                YieldRate = 0.90m,
+                AllowedWastePercentage = 10m,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Seed"
+            });
+        await context.SaveChangesAsync();
     }
 }
