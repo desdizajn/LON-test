@@ -3,9 +3,11 @@ using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
 using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Entities.Guarantee;
 using LON.Domain.Enums;
 using LON.Domain.Events;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace LON.Application.Customs.Commands.CreateCustomsDeclaration;
 
@@ -78,13 +80,16 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
 
     private readonly IApplicationDbContext _context;
     private readonly IDeclarationRuleEngine _ruleEngine;
+    private readonly ILogger<CreateCustomsDeclarationCommandHandler> _logger;
 
     public CreateCustomsDeclarationCommandHandler(
         IApplicationDbContext context,
-        IDeclarationRuleEngine ruleEngine)
+        IDeclarationRuleEngine ruleEngine,
+        ILogger<CreateCustomsDeclarationCommandHandler> logger)
     {
         _context = context;
         _ruleEngine = ruleEngine;
+        _logger = logger;
     }
 
     public async Task<Result<Guid>> Handle(CreateCustomsDeclarationCommand request, CancellationToken cancellationToken)
@@ -236,9 +241,109 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             });
         }
 
+        // P2.2 — auto-debit the guarantee bond for procedures that require one.
+        // Computed atomically with the declaration so no "orphan" declarations
+        // exist without a bond reservation. HARD fail if no matching account
+        // or if the debit would exceed the available limit — compliance posture
+        // deliberately stricter than legacy ELON (Одобренија.ГаранцијаИзнос
+        // was advisory; here we enforce the ceiling).
+        if (procedure.RequiresGuarantee && procedure.GuaranteePercentage > 0)
+        {
+            var debitResult = await TryDebitGuaranteeAsync(declaration, procedure, cancellationToken);
+            if (!debitResult.IsSuccess)
+                return debitResult;
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(declaration.Id);
+    }
+
+    /// <summary>
+    /// Finds an active <see cref="GuaranteeAccount"/> in the declaration's
+    /// currency (tenant auto-scoped by EF query filter), calculates the
+    /// debit amount as <c>(TotalDuty + TotalVAT) × procedure.GuaranteePercentage / 100</c>,
+    /// and queues a <see cref="GuaranteeLedgerEntry"/> Debit entry.
+    /// Returns failure if no matching account or if the debit would breach
+    /// the account's TotalLimit (current balance = Σ Debit − Σ Credit).
+    /// </summary>
+    private async Task<Result<Guid>> TryDebitGuaranteeAsync(
+        CustomsDeclaration declaration,
+        CustomsProcedure procedure,
+        CancellationToken cancellationToken)
+    {
+        var account = await _context.GuaranteeAccounts
+            .Where(a => a.Currency == declaration.Currency && a.IsActive && !a.IsDeleted)
+            .OrderBy(a => a.AccountNumber)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (account is null)
+        {
+            return Result<Guid>.Failure(
+                $"No active GuaranteeAccount in currency '{declaration.Currency}'. " +
+                $"Open a guarantee bond in {declaration.Currency} before filing procedure {procedure.Code}.");
+        }
+
+        var fullLiability = declaration.TotalDuty + declaration.TotalVAT;
+        var debitAmount = Math.Round(
+            fullLiability * procedure.GuaranteePercentage / 100m,
+            2, MidpointRounding.AwayFromZero);
+
+        if (debitAmount <= 0m)
+        {
+            _logger.LogInformation(
+                "Guarantee debit skipped for declaration {DeclarationNumber}: amount is zero (Duty={Duty}, VAT={VAT}, Pct={Pct}).",
+                declaration.DeclarationNumber, declaration.TotalDuty, declaration.TotalVAT, procedure.GuaranteePercentage);
+            return Result<Guid>.Success(Guid.Empty);
+        }
+
+        // Current balance = Σ Debit − Σ Credit (excluding soft-deleted rows).
+        var currentBalance = await _context.GuaranteeLedgerEntries
+            .Where(e => e.GuaranteeAccountId == account.Id && !e.IsDeleted)
+            .SumAsync(e => e.EntryType == GuaranteeEntryType.Debit ? e.Amount : -e.Amount, cancellationToken);
+        var availableLimit = account.TotalLimit - currentBalance;
+
+        if (debitAmount > availableLimit)
+        {
+            return Result<Guid>.Failure(
+                $"Guarantee '{account.AccountNumber}' ({account.Currency}) does not have enough available limit. " +
+                $"Required: {debitAmount:0.00}, available: {availableLimit:0.00}, total: {account.TotalLimit:0.00}.");
+        }
+
+        var entry = new GuaranteeLedgerEntry
+        {
+            Id = Guid.NewGuid(),
+            GuaranteeAccountId = account.Id,
+            EntryDate = DateTime.UtcNow,
+            EntryType = GuaranteeEntryType.Debit,
+            Amount = debitAmount,
+            Currency = declaration.Currency,
+            Description = $"Auto-debit {procedure.Code} — {declaration.DeclarationNumber} ({procedure.GuaranteePercentage}% × (Duty+VAT))",
+            ReferenceType = nameof(CustomsDeclaration),
+            ReferenceId = declaration.Id,
+            MRN = declaration.MRN,
+            CustomsDeclarationId = declaration.Id,
+            ExpectedReleaseDate = procedure.DueDays.HasValue
+                ? declaration.DeclarationDate.AddDays(procedure.DueDays.Value)
+                : null,
+            IsReleased = false
+        };
+
+        entry.AddDomainEvent(new GuaranteeDebitedEvent
+        {
+            GuaranteeAccountId = account.Id,
+            Amount = debitAmount,
+            MRN = declaration.MRN,
+            CustomsDeclarationId = declaration.Id
+        });
+
+        _context.GuaranteeLedgerEntries.Add(entry);
+
+        _logger.LogInformation(
+            "Debited {Amount} {Currency} on guarantee account {AccountNumber} for declaration {DeclarationNumber} (MRN={MRN}).",
+            debitAmount, declaration.Currency, account.AccountNumber, declaration.DeclarationNumber, declaration.MRN);
+
+        return Result<Guid>.Success(entry.Id);
     }
 
     /// <summary>
