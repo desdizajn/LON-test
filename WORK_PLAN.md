@@ -305,19 +305,14 @@
 
 ## Current Active Task
 
-> **>>>** **P2.6a DONE.** Next entry point = **P2.6b Return declaration → bond re-debit** OR **P2.6c Waste declaration → discharge physical residual**. P2.6b is the mirror of EX: a returned export un-credits the bond (write re-Debit for the previously released amount) and restores Exported inventory back to Imported/InProduction. P2.6c models the legacy `Otpad` slot — when an IM is fully discharged but TEKSPORT inflate left physical residual in Imported state, a waste declaration books that residual off by transitioning `LonProcessState=Waste` and optionally settling the rest of the bond (if waste% was under-estimated).
->
-> **Recommended order:** P2.6c first (more common operational flow; most TEKSPORT closures have waste residuals), then P2.6b (return is rarer and introduces reversal complexity). Then P2.7 (remaining validation rules).
-
-**Scope for P2.6c:**
-- `CreateWasteDeclarationCommand` — ItemId, BatchNumber, MRN, QuantityToWaste, Reason. Transitions Imported/InProduction balances → `LonProcessState=Waste` (sibling row pattern). Optional: proportional bond settlement if `waste excess` triggers Правилник 377 provisions.
-- Integration tests: happy path (waste 2.6316 residual after full 50-unit discharge); over-waste guard; non-LON item reject.
+> **>>>** **P2.6c DONE.** Next entry point = **P2.6b Return declaration → bond re-debit**. A returned export un-discharges the bond: the handler locates the prior EX credit entry (or credits aggregated by MRN), writes a re-Debit, and transitions `LonProcessState=Exported` back to `Imported` (or `InProduction` at caller's choice). Sign-flipped mirror of P2.6a. After P2.6b, Phase 2 finishes with P2.7 remaining validation rules.
 
 **Scope for P2.6b:**
-- `CreateReturnDeclarationCommand` — accepts reference to prior EX declaration + FG batch + quantity returned. Reverses the EX discharge: Exported → Imported (or InProduction), bond re-debit equal to the partial credit released.
-- Integration tests: happy path; over-return (more than discharged); bond re-debit exact match.
+- `CreateReturnDeclarationCommand` — `exportDeclarationId` OR `{sourceMRN, returnQuantity}`; + `itemId, batchNumber, quantity, locationId` for FG re-intake + `returnTo: Imported|InProduction` (default Imported).
+- Handler: validate returnQty ≤ `MRN.DischargedQuantity`; decrement `DischargedQuantity`; transition Exported balances back (priority: most-recent Exported row first); re-Debit `credit.Amount × returnQty / dischargedQty` to the guarantee ledger; re-create FG inventory (or increment); write TraceLink reverse-link.
+- Integration tests: happy path; over-return (>discharged) 400; unknown EX ref 400; bond re-debit matches original pro-rata amount; registry IsActive flips back to true if was fully discharged.
 
-**Алтернативи пред P2.6b/c (не-блокери, може да чекаат):**
+**Алтернативи пред P2.6b (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -351,6 +346,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P2.4** ✅ MaterialIssue. `CreateMaterialIssueCommand` with ResolveBalance (exact-match with Imported-priority → FEFO auto-pick with LON-first ordering), LON-mandatory batch+MRN post-resolve, state split (issued portion → sibling InventoryBalance at state=InProduction), `Type=ProductionIssue` movement, `PO.Status` Draft/Released → InProgress. VPS verified: B-CLEAN 42.1053 split to 37.1053 Imported + 5.0 InProduction; over-draw/unknown-batch/FEFO-auto-pick all behaved (commit `3aab9bb`).
 - [x] **P2.5** ✅ ProductionReceipt + TraceLink. `CreateProductionReceiptCommand` books FG `InventoryBalance` at caller's location (LonProcessState=null), writes `Type=ProductionReceipt=5` movement, rolls PO.Produced/Scrap, flips Draft/Released→InProgress and InProgress→Completed on threshold (emits `ProductionOrderCompletedEvent`). TraceLinks: auto-mode links every MaterialIssue on the PO; explicit `materialConsumption` mode decrements InProduction WIP by caller-supplied qty. VPS verified: PR qty=3 → 2 TraceLinks written + FG=3 booked; over-production → 400; qty=6+scrap=1 filling the PO → Status=Completed+ActualEndDate; post-completion PR → 400 (commit `f90cdc3`).
 - [x] **P2.6a** ✅ EX declaration + pro-rata guarantee credit. `CreateExportDeclarationCommand` at `POST /api/customs/declarations/export`. Added `MRNRegistry.DischargedQuantity`; seeded procedure code `3151` (Re-export of LON goods). Handler: FG decrement + InProduction-then-Imported → Exported transition (DbSet.Local consolidation for same-line splits) + TraceLink IM→EX + pro-rata Credit (`debit × dischargeQty/MRN.TotalQty`; full-discharge path settles to exactly 0). VPS verified: partial qty=8→Credit 9.56 EUR, second partial qty=2→Credit 2.39 EUR with Exported consolidation, over-discharge 50>32 remaining → 400, unknown MRN → 400 (commits `ce176bb`, `ef4f25a`, `8b91b65`).
+- [x] **P2.6c** ✅ Waste declaration. `CreateWasteDeclarationCommand` at `POST /api/customs/declarations/waste`. Pool Imported-first + InProduction for the MRN (+ optional Item/Batch/Location filters), transition to `LonProcessState=Waste` via DbSet.Local-consolidated sibling, emit `Type=Adjustment` movement per drained source (shared MovementNumber = `WST-…`). No guarantee impact in v1 (waste-inflate residual is physical-only). Reason field required for audit. VPS verified: waste qty=1 on `26MK8DF9122FA1` → Imported 31.1053→30.1053 + Waste 1.0; over-waste 9999 → 400; empty reason → 400; unknown MRN → 400 (commit `50a8bd1`).
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules
 

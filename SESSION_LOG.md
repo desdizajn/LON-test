@@ -2,6 +2,55 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P2.6c Waste declaration — LON residual → LonProcessState=Waste
+
+**Status:** [x] done
+**Commit:** `50a8bd1`
+
+**What landed:**
+- `src/LON.Application/Customs/Commands/CreateWasteDeclaration/CreateWasteDeclarationCommand.cs` (~150 lines). Single handler; no domain/schema changes needed (reuses `LonProcessState.Waste` from I7 + `MovementType.Adjustment`).
+- `src/LON.API/Controllers/CustomsController.cs` — `POST /api/customs/declarations/waste`.
+- `tests/LON.IntegrationTests/WasteDeclarationTests.cs` — 5 scenarios.
+- OpenAPI + TS types regenerated.
+
+**Handler rules:**
+1. `Quantity > 0`, `Reason` non-empty (required for audit), `MRN` registered (otherwise 400).
+2. Pool query: LON-state balances (`Imported` OR `InProduction`) for the given MRN, with optional `ItemId` / `BatchNumber` / `LocationId` filters applied.
+3. Pool order: Imported-first, then InProduction, then `CreatedAt` asc — residual typically sits in Imported after production drains WIP.
+4. Pool total must cover the demand; otherwise 400 `Insufficient LON inventory for MRN '…'. Demand X, available Y`.
+5. Walk pool: shrink each source by `min(available, remaining)`, upsert a Waste sibling via `DbSet.Local` probe (same pattern as P2.6a to avoid duplicate rows within one SaveChanges).
+6. One `InventoryMovement` row **per drained source** (`Type=Adjustment`, `MovementNumber=WST-YYYYMMDD-xxxxxxxx`, `Notes="Waste: {reason}"`, `FromLocationId=source.LocationId`, `ToLocationId=null`). All movements share the same MovementNumber so the waste event is one logical record even when split across sources.
+7. Emits `InventoryMovedEvent` with `MovementType="Waste"` on the first source for downstream handlers.
+
+**What handler deliberately does NOT do (v1):**
+- No guarantee-ledger movement. Bond is against **declared** quantity; waste-inflate residual is physical-only, so the ledger stays balanced.
+- No `CustomsDeclaration` row. Legacy treats waste as an internal inventory event rather than a portal-submitted declaration. Future P2.6c.2 may add an optional formal customs filing for compliance PDFs.
+- No MRN.DischargedQuantity update. Waste doesn't release the bond (see above); a separate FinalImport re-classification is needed if waste exceeds the authorized %.
+
+**Verified on VPS** (`26MK8DF9122FA1`, Imported 31.1053 pre-waste):
+1. Waste qty=1 reason="VPS smoke: P2.6c spillage scenario" → HTTP 200, movement `WST-20260418-f341bee4`, Imported → 30.1053, new Waste row qty=1.0 (state=9), Notes preserved. Guarantee ledger unchanged (still 47.80 debit + 9.56 + 2.39 credits from prior P2.6a runs). ✅
+2. Waste qty=9999 → 400 `Insufficient LON inventory for MRN '26MK8DF9122FA1' under the applied filters. Demand 9999, available 30.1053`. ✅
+3. Empty reason → 400 `Reason is required for a waste declaration (audit trail)`. ✅
+4. Unknown MRN `26MKUNKNOWNWASTE01` → 400 `not registered for this tenant`. ✅
+
+**Integration tests (WasteDeclarationTests.cs):**
+- `Waste_WithValidReason_TransitionsImportedToWaste` — 21.0526 → 20.0526 Imported, 1.0 Waste, Adjustment movement, ledger net unchanged.
+- `Waste_DrainsImportedThenInProduction_ConsolidatesIntoSingleWasteRow` — engineered 8.5263 Imported + 2.0 InProduction, waste qty=9 drains both, single Waste row = 9.
+- `Waste_OverAvailable_Returns400`.
+- `Waste_UnknownMRN_Returns400`.
+- `Waste_MissingReason_Returns400`.
+
+**Phase 2 progress:**
+- [x] P2.1, [x] P2.2, [x] P2.2.5, [x] P2.3, [x] P2.4, [x] P2.5
+- [x] P2.6a Export
+- [x] **P2.6c Waste** ← this commit
+- [ ] P2.6b Return (rarer; reversal of EX: re-Debit + Exported → Imported/InProduction restore)
+- [ ] P2.7 Remaining declaration validation rules
+
+**Next (P2.6b Return):** Return of previously exported FG triggers reversal: find the EX declaration row (or MRN + previously credited amount), write a re-Debit for the returned portion, transition Exported balance → Imported (or InProduction, caller's choice). Requires mirroring the credit path from P2.6a with inverse bookkeeping.
+
+---
+
 ## 2026-04-19 — P2.6a EX declaration discharges LON bond with pro-rata guarantee credit
 
 **Status:** [x] done
