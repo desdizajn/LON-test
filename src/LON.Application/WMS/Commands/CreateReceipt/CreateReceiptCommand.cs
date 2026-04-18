@@ -82,7 +82,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
             ReceiptDate = receipt.ReceiptDate
         });
 
-        // Context would be accessed via DbContext - this is a placeholder
+        await _context.Receipts.AddAsync(receipt, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(receipt.Id);
