@@ -561,6 +561,26 @@ public static class ApplicationDbContextSeed
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "Seed"
+            },
+            new CustomsProcedure
+            {
+                Id = Guid.NewGuid(),
+                // Box 37: `61` = re-import (return of previously exported goods),
+                // `21` = previous was temporary export (or `31` for full EX).
+                // Used when an exported LON parcel returns to the warehouse —
+                // bond gets re-debited for the returned portion.
+                Code = "6121",
+                Name = "Re-import after export (61 21)",
+                Type = CustomsProcedureType.InwardProcessing,
+                Description = "Return of previously exported LON goods — reverses EX discharge",
+                RequiresGuarantee = false,
+                GuaranteePercentage = 0,
+                RequiresMRNTracking = true,
+                AllowsProduction = true,
+                AllowsExport = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Seed"
             }
         };
 

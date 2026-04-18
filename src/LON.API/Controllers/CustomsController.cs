@@ -1,5 +1,6 @@
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
 using LON.Application.Customs.Commands.CreateExportDeclaration;
+using LON.Application.Customs.Commands.CreateReturnDeclaration;
 using LON.Application.Customs.Commands.CreateWasteDeclaration;
 using LON.Application.Customs.Commands.UpdateCustomsDeclaration;
 using LON.Application.Customs.Validation;
@@ -57,6 +58,21 @@ public class CustomsController : BaseController
     /// </summary>
     [HttpPost("declarations/export")]
     public async Task<IActionResult> CreateExportDeclaration([FromBody] CreateExportDeclarationCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
+    }
+
+    /// <summary>
+    /// P2.6b — Register a Return declaration reversing a previous EX.
+    /// Un-discharges the MRN (drops DischargedQuantity), restores Exported
+    /// balances back to Imported/InProduction, re-debits the guarantee ledger
+    /// proportionally, and re-intakes FG inventory.
+    /// </summary>
+    [HttpPost("declarations/return")]
+    public async Task<IActionResult> CreateReturnDeclaration([FromBody] CreateReturnDeclarationCommand command)
     {
         var result = await Mediator.Send(command);
         if (result.IsSuccess)

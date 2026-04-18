@@ -261,6 +261,23 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/return": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateReturnDeclarationCommand"];
+          "text/json": components["schemas"]["CreateReturnDeclarationCommand"];
+          "application/*+json": components["schemas"]["CreateReturnDeclarationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/waste": {
     post: {
       requestBody?: {
@@ -2440,6 +2457,26 @@ export interface components {
       referenceNumber?: string | null;
       lines?: components["schemas"]["ReceiptLineDto"][] | null;
     };
+    CreateReturnDeclarationCommand: {
+      declarationNumber?: string | null;
+      mrn?: string | null;
+      /** Format: date-time */
+      declarationDate?: string;
+      /** Format: uuid */
+      customsProcedureId?: string;
+      /** Format: uuid */
+      partnerId?: string | null;
+      currency?: string | null;
+      /** Format: double */
+      totalCustomsValue?: number;
+      senderName?: string | null;
+      senderAddress?: string | null;
+      senderCountry?: string | null;
+      countryOfDispatch?: string | null;
+      countryOfDestination?: string | null;
+      specialRemarks?: string | null;
+      lines?: components["schemas"]["ReturnLineDto"][] | null;
+    };
     CreateShiftRequest: {
       name?: string | null;
       startTime?: string | null;
@@ -2666,6 +2703,11 @@ export interface components {
       expiresAt?: string;
       user?: components["schemas"]["UserDto"];
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    LonProcessState: 1 | 6 | 7 | 8 | 9;
     MachineRequest: {
       code?: string | null;
       name?: string | null;
@@ -2765,6 +2807,30 @@ export interface components {
     };
     RefreshTokenRequest: {
       refreshToken?: string | null;
+    };
+    ReturnLineDto: {
+      /** Format: uuid */
+      itemId?: string;
+      tariffCode?: string | null;
+      /** Format: double */
+      quantity?: number;
+      /** Format: uuid */
+      uoMId?: string;
+      /** Format: double */
+      customsValue?: number;
+      countryOfOrigin?: string | null;
+      /** Format: double */
+      netWeight?: number | null;
+      /** Format: double */
+      grossWeight?: number | null;
+      calculationMethod?: string | null;
+      batchNumber?: string | null;
+      /** Format: uuid */
+      locationId?: string;
+      sourceMRN?: string | null;
+      /** Format: double */
+      returnQuantity?: number;
+      returnTo?: components["schemas"]["LonProcessState"];
     };
     RoleDto: {
       /** Format: uuid */
