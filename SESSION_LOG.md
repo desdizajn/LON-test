@@ -108,3 +108,50 @@
 - **VPS е споделен** со други проекти (taskmanagement, inventory, hello-dotnet). Ресурси се зеднички. Треба memory/CPU limits на LON контејнери за да не ги уништат другите.
 
 ---
+
+## 2026-04-18 — P0.3.1 Recreate lon-api
+
+**Status:** [x] done
+**Files changed:** none (infra-only)
+**What was done:**
+- `docker compose rm -f api && docker compose up -d api` на VPS.
+- Контејнерот оживеа, startup sequence помина чисто: migrations aplicирани (up to date), KB seeding skipped (already seeded), Vector Store background init стартуван.
+
+**How verified:**
+- `docker ps --filter name=lon-api` → `Up`
+- `curl -X POST https://elon.elbosoft.click/api/auth/login` со wrong password → HTTP 401 „Invalid username or password" (auth pipeline работи).
+- Real admin login (`admin` / `Admin123!`) → HTTP 200 + JWT token со Administrator role + полни permissions.
+- Корисникот потврди преку browser — dashboard рендерира на `https://elon.elbosoft.click/dashboard` со македонска поздравна порака.
+
+**Follow-ups / discoveries:**
+- Exit 137 на 27.03 не е OOM (logs showed clean startup pre-crash). Причината е containerd shim failure на restart attempt. Решено со `rm` + `up -d`.
+
+---
+
+## 2026-04-18 — P0.3.2/3/6/7 Compose hardening (batched)
+
+**Status:** [x] done
+**Files changed:** `docker-compose.yml`, `CLAUDE.md`, `WORK_PLAN.md`, `SESSION_LOG.md`
+
+**What was done (P0.3.2):** bind SQL Server на `127.0.0.1:1433` (беше `0.0.0.0:1433` — public).
+**What was done (P0.3.3):** додаден volume `lon_dataprotection_keys` монтиран на `/root/.aspnet/DataProtection-Keys` (persistent keys across container recreations).
+**What was done (P0.3.6):** тргнат `version: '3.8'` (obsolete compose warning).
+**What was done (P0.3.7):** `deploy.resources.limits` за сите 4 сервиси (sqlserver 4GB/2cpu, api 1.5GB/1.5cpu, worker 512MB/0.5cpu, frontend 256MB/0.5cpu).
+
+**How verified (per sub-task):**
+- P0.3.2: `docker ps --filter name=lon-sqlserver --format '{{.Ports}}'` → `127.0.0.1:1433->1433/tcp` ✅
+- P0.3.3: `docker inspect lon-api` mounts → `/root/.aspnet/DataProtection-Keys <- lon-test_lon_dataprotection_keys` ✅
+- P0.3.6: `docker compose up` нема повеќе warning за obsolete version ✅
+- P0.3.7: `docker inspect $c --format '{{.HostConfig.Memory}}'` враќа non-zero за сите 4 контејнери (1610612736, 4294967296, 536870912, 268435456) — compose v2 навистина ги применува limits ✅
+- End-to-end после recreate: login HTTP 200, JWT се издава ✅
+
+**Follow-ups / discoveries:**
+- `deploy.resources.limits` се применува од docker compose v2 без да треба swarm mode (за разлика од верзија 1).
+- Конекција до SQL Server од локалната Windows машина сега бара SSH tunnel: `ssh -L 1433:localhost:1433 root@173.212.254.216`. Да се документира во CLAUDE.md ако се бара.
+- VPS имаше divergent git history (PR #9 merge vs PR #10 merge); hard reset на `origin/main` безбедно затоа што VPS е само deploy target. `deploy.sh` мод бит (+x) ресториран после reset.
+
+**P0.3 остана:**
+- [ ] P0.3.4 decimal precision EF config (код промени)
+- [ ] P0.3.5 BOM.ItemId1 shadow property (код промени)
+
+---

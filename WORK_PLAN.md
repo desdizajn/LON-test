@@ -20,13 +20,13 @@
 - [x] **P0.2** — Дијагноза на VPS: статус на сите 4 контејнери, logs, DB migrations, reverse proxy, CORS, env vars
   - Verify: документиран „health snapshot" во SESSION_LOG со конкретни findings ✅
 - [ ] **P0.3** — Fix на блокерите најдени во P0.2 (секој fix = посебен sub-task)
-  - [ ] **P0.3.1** — Recreate `lon-api` (главен блокер): `docker compose rm -f api && docker compose up -d api`
-  - [ ] **P0.3.2** — Затвори SQL Server public exposure: измени `ports: "1433:1433"` → `"127.0.0.1:1433:1433"` (или remove)
-  - [ ] **P0.3.3** — Persistent volume за DataProtection keys (префрли од ephemeral во volume)
+  - [x] **P0.3.1** — Recreate `lon-api` (главен блокер): `docker compose rm -f api && docker compose up -d api` ✅
+  - [x] **P0.3.2** — Затвори SQL Server public exposure: `127.0.0.1:1433:1433` ✅
+  - [x] **P0.3.3** — Persistent volume `lon_dataprotection_keys` за DataProtection keys ✅
   - [ ] **P0.3.4** — Поправи decimal precision warnings (HasPrecision за 8 properties)
   - [ ] **P0.3.5** — Поправи `BOM.ItemId1` shadow property (правилен FK config)
-  - [ ] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup)
-  - [ ] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS)
+  - [x] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup) ✅
+  - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
   - Verify: before/after evidence per sub-task во SESSION_LOG
 - [ ] **P0.4** — E2E smoke test на VPS: login → create item → create warehouse → create receipt → видливо во UI
   - Verify: screencast или чекор-по-чекор screenshots
@@ -82,6 +82,31 @@
   - Verify: невалидна декларација враќа структурирани errors по rule
 
 **Фаза 2 DONE = ✅ еден реален TEKSPORT flow извршен end-to-end на VPS**
+
+---
+
+## Фаза 2.5 — Internationalization (i18n) инфраструктура
+
+**Цел:** Апликацијата е multilingual. Сите UI стрингови се извлечени во translation dictionaries; има language switcher; датуми/броеви/валути се локализирани.
+
+**Зошто овде (пред Phase 4):** Секоја нова страница додадена во Phase 4/5 треба да е i18n-ready од почеток. Retrofit-от на 30+ постоечки страници треба да се направи пред да се додадат уште 30+.
+
+- [ ] **P2.5.1** — Избор на i18n library (`react-i18next` — стандард во React ecosystem) + setup
+  - Verify: `LanguageProvider` wrapping the app, `useTranslation()` hook working
+- [ ] **P2.5.2** — Translation dictionary структура: `locales/mk.json`, `locales/en.json`, и други по избор (Albanian/Serbian TBD)
+  - Verify: примерок клуч `dashboard.title` + fallback chain mk→en working
+- [ ] **P2.5.3** — Language switcher во header/user menu; persist во localStorage + user profile
+  - Verify: менување на јазик ги менува сите веќе-преведени стрингови без refresh
+- [ ] **P2.5.4** — Миграција на постоечки страници (batch по модул: Dashboard, Master Data, WMS, Production, Customs, Guarantees, Reports, Admin)
+  - Verify: zero hardcoded user-facing strings (grep finds none)
+- [ ] **P2.5.5** — Локализација на броеви, датуми, валути преку `Intl` API
+  - Verify: 1234.56 → "1.234,56" за mk/sr; "1,234.56" за en; датум формати по locale
+- [ ] **P2.5.6** — Backend error messages: поврзи error codes со frontend translations (API враќа код, UI го преведува)
+  - Verify: 400 response со `errorCode: "validation.required_field"` се прикажува на активниот јазик
+- [ ] **P2.5.7** — i18n за PDF/Excel exports и customs XML messages (ако/кога се имплементирани во P4)
+  - Verify: генериран документ е на избраниот јазик
+
+**Фаза 2.5 DONE = ✅ свичот mk↔en (+ други) работи на сите страници**
 
 ---
 
@@ -157,6 +182,6 @@
 
 ## Current Active Task
 
-> **>>>** P0.3.1 — Recreate `lon-api` container (главен блокер — exited 3 weeks ago)
+> **>>>** P0.3.4 — Поправи decimal precision warnings (HasPrecision за 8 properties во Customs config)
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
