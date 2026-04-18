@@ -1,0 +1,162 @@
+# LON — Work Plan
+
+> **Правила на работа:** види [`CLAUDE.md`](CLAUDE.md). Verification Protocol е задолжителен за секој таск.
+
+## Status Legend
+- `[ ]` Не започнат
+- `[/]` Во тек
+- `[x]` Готов + верификуван (со SESSION_LOG доказ)
+- `[!]` Блокиран (причина во SESSION_LOG)
+- `[~]` Скипнат (причина во SESSION_LOG)
+
+---
+
+## Фаза 0 — VPS Stabilization + дијагноза
+
+**Цел:** Апликацијата работи end-to-end на VPS. Може да се логира корисник, да се види празен dashboard, да се создаде 1 receipt.
+
+- [x] **P0.1** — SSH access setup од локален Windows до VPS
+  - Verify: `ssh user@vps` враќа shell prompt; `docker ps` прикажува сите контејнери ✅
+- [x] **P0.2** — Дијагноза на VPS: статус на сите 4 контејнери, logs, DB migrations, reverse proxy, CORS, env vars
+  - Verify: документиран „health snapshot" во SESSION_LOG со конкретни findings ✅
+- [ ] **P0.3** — Fix на блокерите најдени во P0.2 (секој fix = посебен sub-task)
+  - [ ] **P0.3.1** — Recreate `lon-api` (главен блокер): `docker compose rm -f api && docker compose up -d api`
+  - [ ] **P0.3.2** — Затвори SQL Server public exposure: измени `ports: "1433:1433"` → `"127.0.0.1:1433:1433"` (или remove)
+  - [ ] **P0.3.3** — Persistent volume за DataProtection keys (префрли од ephemeral во volume)
+  - [ ] **P0.3.4** — Поправи decimal precision warnings (HasPrecision за 8 properties)
+  - [ ] **P0.3.5** — Поправи `BOM.ItemId1` shadow property (правилен FK config)
+  - [ ] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup)
+  - [ ] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS)
+  - Verify: before/after evidence per sub-task во SESSION_LOG
+- [ ] **P0.4** — E2E smoke test на VPS: login → create item → create warehouse → create receipt → видливо во UI
+  - Verify: screencast или чекор-по-чекор screenshots
+- [ ] **P0.5** — Замена на `CreatedBy = "System"` hack со `ICurrentUserService`
+  - Verify: нов receipt има реален username во `CreatedBy` колоната (SQL query показува)
+
+**Фаза 0 DONE = ✅ сите checkboxes x + final SESSION_LOG запис „Phase 0 complete"**
+
+---
+
+## Фаза 1 — Multi-tenant foundation ⚠️ КРИТИЧНО
+
+**Цел:** Сè што постои е tenant-scoped. Два tenant-а работат изолирано.
+
+- [ ] **P1.1** — `Tenant` entity + CRUD API + seed `TEKSPORT` tenant
+  - Verify: POST `/api/tenants` создава tenant; GET листа ги враќа
+- [ ] **P1.2** — `TenantId: Guid` во `BaseEntity` + EF migration + default за постојни редови
+  - Verify: migration applied на VPS; сите постојни редови имаат TenantId = TEKSPORT
+- [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
+  - Verify: login враќа token со tenant claim; decode потврдува
+- [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
+  - Verify: integration test — user од tenant A не гледа записи од tenant B
+- [ ] **P1.5** — Unique constraint reform: (TenantId + Code) наместо само Code
+  - Verify: ист Item.Code може во tenant A и tenant B без колизија
+- [ ] **P1.6** — User ↔ Tenant assignment + UI за tenant switcher (super-admin)
+  - Verify: super-admin може да смени activен tenant; реголни user-и гледаат само свој
+
+**Фаза 1 DONE = ✅ два tenant-а (TEKSPORT + TEST), изолирани**
+
+---
+
+## Фаза 2 — Еден end-to-end flow (увоз за облагородување 42 00)
+
+**Цел:** Комплетен циклус за еден TEKSPORT пример: увоз → магацин → производство → извоз, со гаранција коректно раздолжена.
+
+- [ ] **P2.1** — `CustomsDeclaration` IM 42 00: внес на ставки → MRN генерирање → регистрација
+  - Verify: creirana деклараcija во UI, MRN видлив во MRNRegistry
+- [ ] **P2.2** — `GuaranteeLedger` auto-debit на declaration event
+  - Verify: GuaranteeAccount.Balance се зголемува за износот на декларацијата
+- [ ] **P2.3** — `Receipt` + consumes MRN → `InventoryBalance` со batch+MRN
+  - Verify: InventoryBalance row со правилни batch/MRN; `MRNRegistry.UsedQuantity` се зголемува
+- [ ] **P2.4** — `MaterialIssue` на `ProductionOrder` (batch+MRN задолжителни; no-negative)
+  - Verify: обид за issue > залиха враќа 400; обид без batch/MRN враќа 400
+- [ ] **P2.5** — `ProductionReceipt` — нов batch + `TraceLink` до суровината
+  - Verify: BatchGenealogy query враќа lineage од FG назад до raw materials + MRN
+- [ ] **P2.6a** — Извоз (EX декларација + Shipment) → Guarantee credit
+  - Verify: Guarantee balance се враќа на нула после извоз на сите количини
+- [ ] **P2.6b** — Враќање материјал (Vrakanje) → нов `MaterialReturnDeclaration` + credit
+  - Verify: партијално враќање — credit = count * unit guarantee
+- [ ] **P2.6c** — Отпад (Otpad) → нов `WasteDeclaration` + credit
+  - Verify: waste declaration редуцира MRN available + credits guarantee
+- [ ] **P2.7** — Declaration validation rules — пополни ги недостигачките (currency, weight sum, partner country)
+  - Verify: невалидна декларација враќа структурирани errors по rule
+
+**Фаза 2 DONE = ✅ еден реален TEKSPORT flow извршен end-to-end на VPS**
+
+---
+
+## Фаза 3 — Data migration од ELON
+
+**Цел:** Мигрирани реални TEKSPORT податоци во нова апликација за side-by-side споредба со ELON продукција.
+
+- [ ] **P3.1** — Migration tool (конзола app `src/LON.Migration` или Python во `scripts/migration/`)
+  - Verify: CLI работи со ELON Windows auth; dry-run мод печати што ќе мигрира
+- [ ] **P3.2** — Mapping: `tblArtikli` (TEKSPORT filter) → `Item`
+  - Verify: sample check — 10 articles од ELON се идентични во LON (ArtKatBr, naziv, HS code, tip)
+- [ ] **P3.3** — Mapping: `tblFirmi` → `Partner`
+  - Verify: број на Partners = број на distinct Firmi за TEKSPORT во ELON
+- [ ] **P3.4** — Mapping: `Odobrenie` + `Zaklucok` → `LONAuthorization`
+  - Verify: за една Zaklucok — сите authorization детали совпаѓаат
+- [ ] **P3.5** — Mapping: `FakturiU5` + `FakturiU5Art` → `CustomsDeclaration` + Lines
+  - Verify: една U5 faktura мигрирана — сите лини, količini, MRN-ови, davacki матхат
+- [ ] **P3.6** — Mapping: `LagerMaterijali` + `LagerGotoviProizvodi` → `InventoryBalance` + `InventoryMovement`
+  - Verify: сума на lager за TEKSPORT = сума на InventoryBalance (разлика = 0)
+- [ ] **P3.7** — Reconciliation report: една Zaklucok — ELON vs LON side-by-side
+  - Verify: HTML/Excel извештај покажува match на сите бројки
+
+**Фаза 3 DONE = ✅ експертот може визуелно да потврди „LON покажува исто како ELON за оваа Zaklucok"**
+
+---
+
+## Фаза 4 — Legacy gap coverage
+
+**Цел:** Недостигачките legacy features имплементирани во новата архитектура (без legacy кварц).
+
+- [ ] **P4.1** — Zaverka workflow (царинска инспекторска сертификација)
+- [ ] **P4.2** — PEE010–060 XML generation + submission queue
+- [ ] **P4.3** — MozniMinusi — negative stock reconciliation report
+- [ ] **P4.4** — Traffic light gauge на Guarantees UI (threshold alerts, configurable)
+- [ ] **P4.5** — ECD auto-pull интеграција (ако има test environment)
+- [ ] **P4.6** — 4 waste slots + Zaguba во `WasteDeclaration`
+- [ ] **P4.7** — Year-indexed тарифни стапки: `TariffCodeRate` со ValidFrom/ValidTo
+
+*(Verify criteria за секој P4.x ќе се детализира кога фазата ќе почне.)*
+
+---
+
+## Фаза 5 — Productivity parity
+
+**Цел:** Функции што го направија ELON usable 30 години.
+
+- [ ] **P5.1** — Configurable Excel bulk importer (замена за 26 `frmTransfer<Uvoznik>` форми). Mapping конфигурабилен per tenant.
+- [ ] **P5.2** — `BOMTemplate` + auto-apply при ProductionOrder creation (legacy NormativTemplO/S)
+- [ ] **P5.3** — Inflate-for-waste опционална калкулација (per-tenant flag)
+- [ ] **P5.4** — Article picker со „A"-суфикс варијанти за tariff differences
+
+---
+
+## Фаза 6 — Code quality & technical debt
+
+**Паралелно со другите фази, не одделна фаза.** Task се создава ad-hoc кога се забележи debt.
+
+- [ ] Расцепување на `MasterDataController` (1325 линии) на смислени контролери по domain
+- [ ] Мигрирај бизнис-логика од контролери → MediatR команди
+- [ ] Integration test harness (xUnit + Testcontainers)
+- [ ] Structured logging + health checks со real DB probe
+- [ ] Ремувал на dead files: `.vs/`, bin/, obj/ во .gitignore
+
+---
+
+## Фаза 7 — Flutter mobile (последно)
+
+**Цел:** Scan-first mobile app за магационери (receive, pick, issue, FG receipt) со offline queue.
+
+*(Детални таскови после фази 0-5.)*
+
+---
+
+## Current Active Task
+
+> **>>>** P0.3.1 — Recreate `lon-api` container (главен блокер — exited 3 weeks ago)
+
+*Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

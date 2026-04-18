@@ -1,0 +1,110 @@
+# LON — Session Log
+
+> Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
+>
+> Формат на запис:
+> ```
+> ## YYYY-MM-DD — <Task ID> <Task title>
+> **Status:** [/] in-progress | [x] done | [!] blocked | [~] skipped
+> **Files changed:** списак
+> **What was done:** 2-3 реченици
+> **How verified:** доказ (команда, URL, screencast, SQL query output)
+> **Follow-ups / discoveries:** идни таскови, неочекувани наоди
+> ```
+
+---
+
+## 2026-04-18 — Kickoff
+
+**Status:** [x] done
+**Files changed:**
+- `CLAUDE.md` (created)
+- `WORK_PLAN.md` (created)
+- `SESSION_LOG.md` (created)
+- `memory/` (5 memory entries)
+
+**What was done:**
+- Прегледав legacy ELON анализа во [`../PdfToExcel/ELON_Research/`](../PdfToExcel/ELON_Research/) — 30-годишна Access/VBA апликација, multi-tenant по Uvoznik, 3 material outcomes (Izvoz/Vrakanje/Otpad).
+- Аудит на нова LON апликација: 15 controllers (MasterData = 1325 линии = God controller), 7 EF migrations, CQRS тенок (само 5 commands), RAG pipeline е вграден, React web + Flutter mobile скелет.
+- Одлуки: multi-tenant SaaS од почеток, TEKSPORT како test tenant, партијална data migration од локална ELON копија, mobile последно.
+- Создадени работни документи + verification protocol во CLAUDE.md.
+
+**How verified:**
+- Memory files created и прочитани во `C:\Users\БобанКозаров\.claude\projects\C--Users--------------Documents-LON-test\memory\`
+- WORK_PLAN.md содржи 7 фази со таскови и verification criteria
+- CLAUDE.md содржи принципи, verification protocol, environments, defaults
+
+**Follow-ups / discoveries:**
+- VPS е недостапен за Claude до P0.1 (SSH setup)
+- Legacy ELON DB е локална копија; Windows auth, DB = `ELON`
+- Корисникот очекува брзо кодирање (мал тим: корисник + Claude + domain expert за QA)
+
+---
+
+## 2026-04-18 — P0.1 SSH access setup
+
+**Status:** [x] done
+**Files changed:** none (config на VPS + local SSH)
+**What was done:**
+- Корисник веќе имал `id_ed25519` клуч локално (од 15.04.2026, comment `ics2-deploy`).
+- Јавниот клуч додаден во `~/.ssh/authorized_keys` на Contabo VPS `root@173.212.254.216`.
+- Passwordless SSH тестиран и работи од PowerShell + од Claude Bash tool.
+
+**How verified:**
+- `ssh root@173.212.254.216 "hostname"` враќа `vmi3041110` без password prompt.
+- `docker ps` врати 14 контејнери (LON + други проекти: taskmanagement, inventory, caddy, hello-dotnet).
+
+**Follow-ups / discoveries:**
+- VPS е **shared infrastructure** — не е само за LON. Има Caddy reverse proxy кој routa за повеќе домени.
+- Системот има 51 pending apt updates + 1 system restart required. Не итно.
+
+---
+
+## 2026-04-18 — P0.2 VPS дијагноза (health snapshot)
+
+**Status:** [x] done
+**Files changed:** none (read-only диагностика)
+
+**What was done:**
+- Инспекција на сите LON контејнери + compose state + logs + env + Caddy config + ресурси.
+
+**Health snapshot — главни наоди:**
+
+### 🔴 Главен блокер
+- **`lon-api` е EXITED 3 недели** (од 2026-03-27, exit code 137).
+- Exit не е OOM (`OOMKilled: false`). Container резурси: **нема memory limit**; host има 10GB free RAM.
+- Inspect.State.Error: `"DeadlineExceeded: failed to create shim task: failed to start io pipe copy"` — containerd shim failure на обид за restart. Stale state.
+- `restart: unless-stopped` policy е активно, но containerd не успеал да го рестартира → стои мртов.
+- App-от работеше стабилно пред тоа: applying migrations, KB seeding, vector store init сите завршиле успешно (видливо во logs).
+
+### 🟢 Што работи
+- `lon-sqlserver` — healthy, порт 1433 exposed (види ⚠️).
+- `lon-frontend` — Up 3 недели, рендерира login UI.
+- `lon-worker` — Up 3 недели (но бесмислено е без API).
+- `caddy-caddy-1` — Up, routes за `elon.elbosoft.click` точно конфигурирани: `/api*`, `/swagger*`, `/health` → `lon-api:5000`; else → `lon-frontend:80`.
+- `.env` постои со сите потребни keys (SQL_SA_PASSWORD, JWT_SECRET_KEY, OPENAI_API_KEY, ENABLE_VECTOR_STORE, ASPNETCORE_ENVIRONMENT).
+- Image `lon-test-api:latest` постои (799MB).
+- DB миграции аплицирани (видливо во претходни успешни логови).
+
+### ⚠️ Секундарни проблеми (треба fix во P0.3)
+1. **SQL Server порт 1433 изложен на 0.0.0.0** — публично достапен од интернет. Сериозна безбедност. Треба bind на `127.0.0.1:1433` или тотално да се отстрани мапирањето.
+2. **DataProtection keys во ephemeral директориум** (`/root/.aspnet/DataProtection-Keys`) — секој restart invalidira JWT tokens и session state. Треба volume mount.
+3. **Decimal precision warnings во EF** за `ExchangeRate`, `TotalInvoiceAmount`, `AdjustmentRate`, `GrossWeight`, `ItemPrice`, `NetWeight`, `StatisticalValue`, `UsedQuantityFromPrevious` — тивко truncation на вредности. Треба `HasPrecision(18,4)` или слично.
+4. **EF shadow property `BOM.ItemId1`** — неправилен FK мапинг, треба поправка во BOM entity.
+5. **`version: '3.8'` во compose** — обсолетно, генерира warning на секоја команда.
+6. **Global query filter warnings** за CustomsDeclaration↔CustomsDocument, CustomsProcedure↔CustomsProcedureDocument, Partner↔LONAuthorization, Item↔LONAuthorizationItem — треба matching filters и на двете страни или optional navigation. (Прецедент за P1 multi-tenant filter дизајн — ова ќе биде извор на баги ако не се поправи правилно.)
+
+**How verified:**
+- `ssh root@173.212.254.216 "docker ps -a --filter name=lon-"` — показа `lon-api Exited (137) 3 weeks ago`.
+- `docker inspect lon-api` — State.ExitCode=137, State.Error со containerd shim message.
+- `free -m` — 10GB free од 18GB.
+- `df -h /` — 98GB free од 145GB.
+- `docker logs lon-api --tail 80` — покажа successful startup cycle пред crash.
+- `grep -A 15 'elon.elbosoft' Caddyfile` — потврди routing rules.
+- `journalctl -u docker ... | grep lon-api` — потврди последно event на 2026-03-27 20:19.
+
+**Follow-ups / discoveries:**
+- Фрагилен state: `lon-worker` работи 3 недели без API — тоа треба да е невозможно или бениген (да не прави штета без API). Проверка во P0.3.
+- **VPS е споделен** со други проекти (taskmanagement, inventory, hello-dotnet). Ресурси се зеднички. Треба memory/CPU limits на LON контејнери за да не ги уништат другите.
+
+---
