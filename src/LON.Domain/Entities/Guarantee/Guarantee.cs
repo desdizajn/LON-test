@@ -4,8 +4,9 @@ using LON.Domain.Enums;
 
 namespace LON.Domain.Entities.Guarantee;
 
-public class GuaranteeAccount : BaseEntity
+public class GuaranteeAccount : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string AccountNumber { get; set; } = string.Empty;
     public string AccountName { get; set; } = string.Empty;
     public Guid? BankPartnerId { get; set; }
@@ -29,8 +30,9 @@ public class GuaranteeAccount : BaseEntity
     }
 }
 
-public class GuaranteeLedgerEntry : BaseEntity
+public class GuaranteeLedgerEntry : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid GuaranteeAccountId { get; set; }
     public virtual GuaranteeAccount GuaranteeAccount { get; set; } = null!;
     public DateTime EntryDate { get; set; }
@@ -48,8 +50,9 @@ public class GuaranteeLedgerEntry : BaseEntity
     public string? Notes { get; set; }
 }
 
-public class DutyCalculation : BaseEntity
+public class DutyCalculation : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid? CustomsDeclarationId { get; set; }
     public Guid? ItemId { get; set; }
     public virtual Item? Item { get; set; }

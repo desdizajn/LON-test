@@ -28,8 +28,9 @@ public class CustomsProcedureDocument : BaseEntity
     public bool IsMandatory { get; set; }
 }
 
-public class CustomsDeclaration : BaseEntity
+public class CustomsDeclaration : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     // ===== Основни податоци =====
     public string DeclarationNumber { get; set; } = string.Empty;
     public string MRN { get; set; } = string.Empty;
@@ -136,8 +137,9 @@ public class CustomsDeclaration : BaseEntity
     public virtual ICollection<CustomsDocument> Documents { get; set; } = new List<CustomsDocument>();
 }
 
-public class CustomsDeclarationLine : BaseEntity
+public class CustomsDeclarationLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid CustomsDeclarationId { get; set; }
     public virtual CustomsDeclaration CustomsDeclaration { get; set; } = null!;
     public int LineNumber { get; set; }
@@ -215,8 +217,9 @@ public class CustomsDeclarationLine : BaseEntity
     public decimal? UsedQuantityFromPrevious { get; set; }
 }
 
-public class CustomsDocument : BaseEntity
+public class CustomsDocument : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid CustomsDeclarationId { get; set; }
     public virtual CustomsDeclaration CustomsDeclaration { get; set; } = null!;
     public DocumentType DocumentType { get; set; }
@@ -226,8 +229,9 @@ public class CustomsDocument : BaseEntity
     public string? Notes { get; set; }
 }
 
-public class MRNRegistry : BaseEntity
+public class MRNRegistry : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string MRN { get; set; } = string.Empty;
     public Guid? CustomsDeclarationId { get; set; }
     public virtual CustomsDeclaration? CustomsDeclaration { get; set; }

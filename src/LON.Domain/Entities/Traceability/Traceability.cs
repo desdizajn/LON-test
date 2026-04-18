@@ -3,8 +3,9 @@ using LON.Domain.Entities.MasterData;
 
 namespace LON.Domain.Entities.Traceability;
 
-public class TraceLink : BaseEntity
+public class TraceLink : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string SourceType { get; set; } = string.Empty; // "Receipt", "MaterialIssue", "ProductionReceipt", "Shipment"
     public Guid SourceId { get; set; }
     public string? SourceBatchNumber { get; set; }
@@ -19,8 +20,9 @@ public class TraceLink : BaseEntity
     public DateTime LinkDate { get; set; }
 }
 
-public class BatchGenealogy : BaseEntity
+public class BatchGenealogy : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string BatchNumber { get; set; } = string.Empty;
     public Guid ItemId { get; set; }
     public virtual Item Item { get; set; } = null!;

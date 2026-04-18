@@ -4,8 +4,9 @@ using LON.Domain.Enums;
 
 namespace LON.Domain.Entities.Production;
 
-public class BOM : BaseEntity
+public class BOM : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public Guid ItemId { get; set; }
     public virtual Item Item { get; set; } = null!;
@@ -17,8 +18,9 @@ public class BOM : BaseEntity
     public virtual ICollection<BOMLine> Lines { get; set; } = new List<BOMLine>();
 }
 
-public class BOMLine : BaseEntity
+public class BOMLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid BOMId { get; set; }
     public virtual BOM BOM { get; set; } = null!;
     public int LineNumber { get; set; }
@@ -30,8 +32,9 @@ public class BOMLine : BaseEntity
     public decimal ScrapPercentage { get; set; }
 }
 
-public class Routing : BaseEntity
+public class Routing : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public Guid ItemId { get; set; }
     public virtual Item Item { get; set; } = null!;
@@ -40,8 +43,9 @@ public class Routing : BaseEntity
     public virtual ICollection<RoutingOperation> Operations { get; set; } = new List<RoutingOperation>();
 }
 
-public class RoutingOperation : BaseEntity
+public class RoutingOperation : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid RoutingId { get; set; }
     public virtual Routing Routing { get; set; } = null!;
     public int SequenceNumber { get; set; }
@@ -53,8 +57,9 @@ public class RoutingOperation : BaseEntity
     public decimal SetupTimeMinutes { get; set; }
 }
 
-public class ProductionOrder : BaseEntity
+public class ProductionOrder : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string OrderNumber { get; set; } = string.Empty;
     public Guid ItemId { get; set; }
     public virtual Item Item { get; set; } = null!;
@@ -80,8 +85,9 @@ public class ProductionOrder : BaseEntity
     public virtual ICollection<ProductionReceipt> ProductionReceipts { get; set; } = new List<ProductionReceipt>();
 }
 
-public class ProductionOrderMaterial : BaseEntity
+public class ProductionOrderMaterial : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid ProductionOrderId { get; set; }
     public virtual ProductionOrder ProductionOrder { get; set; } = null!;
     public int LineNumber { get; set; }
@@ -94,8 +100,9 @@ public class ProductionOrderMaterial : BaseEntity
     public virtual UnitOfMeasure UoM { get; set; } = null!;
 }
 
-public class ProductionOrderOperation : BaseEntity
+public class ProductionOrderOperation : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid ProductionOrderId { get; set; }
     public virtual ProductionOrder ProductionOrder { get; set; } = null!;
     public int SequenceNumber { get; set; }
@@ -112,8 +119,9 @@ public class ProductionOrderOperation : BaseEntity
     public DateTime? EndDate { get; set; }
 }
 
-public class MaterialIssue : BaseEntity
+public class MaterialIssue : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string IssueNumber { get; set; } = string.Empty;
     public DateTime IssueDate { get; set; }
     public Guid ProductionOrderId { get; set; }
@@ -129,8 +137,9 @@ public class MaterialIssue : BaseEntity
     public virtual Employee? IssuedByEmployee { get; set; }
 }
 
-public class ProductionReceipt : BaseEntity
+public class ProductionReceipt : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string ReceiptNumber { get; set; } = string.Empty;
     public DateTime ReceiptDate { get; set; }
     public Guid ProductionOrderId { get; set; }

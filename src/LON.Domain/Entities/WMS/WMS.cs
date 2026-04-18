@@ -89,8 +89,9 @@ public class InventoryMovement : BaseEntity, ITenantScoped
     public string? Notes { get; set; }
 }
 
-public class Transfer : BaseEntity
+public class Transfer : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string TransferNumber { get; set; } = string.Empty;
     public DateTime TransferDate { get; set; }
     public Guid FromLocationId { get; set; }
@@ -101,8 +102,9 @@ public class Transfer : BaseEntity
     public virtual ICollection<TransferLine> Lines { get; set; } = new List<TransferLine>();
 }
 
-public class TransferLine : BaseEntity
+public class TransferLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid TransferId { get; set; }
     public virtual Transfer Transfer { get; set; } = null!;
     public int LineNumber { get; set; }
@@ -115,8 +117,9 @@ public class TransferLine : BaseEntity
     public virtual UnitOfMeasure UoM { get; set; } = null!;
 }
 
-public class CycleCount : BaseEntity
+public class CycleCount : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string CountNumber { get; set; } = string.Empty;
     public DateTime ScheduledDate { get; set; }
     public DateTime? CompletedDate { get; set; }
@@ -127,8 +130,9 @@ public class CycleCount : BaseEntity
     public virtual ICollection<CycleCountLine> Lines { get; set; } = new List<CycleCountLine>();
 }
 
-public class CycleCountLine : BaseEntity
+public class CycleCountLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid CycleCountId { get; set; }
     public virtual CycleCount CycleCount { get; set; } = null!;
     public Guid LocationId { get; set; }
@@ -144,8 +148,9 @@ public class CycleCountLine : BaseEntity
     public virtual UnitOfMeasure UoM { get; set; } = null!;
 }
 
-public class PickingWave : BaseEntity
+public class PickingWave : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string WaveNumber { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
     public DateTime? CompletedDate { get; set; }
@@ -154,8 +159,9 @@ public class PickingWave : BaseEntity
     public virtual ICollection<PickTask> PickTasks { get; set; } = new List<PickTask>();
 }
 
-public class PickTask : BaseEntity
+public class PickTask : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string TaskNumber { get; set; } = string.Empty;
     public Guid? WaveId { get; set; }
     public virtual PickingWave? Wave { get; set; }
@@ -175,8 +181,9 @@ public class PickTask : BaseEntity
     public DateTime? PickedDate { get; set; }
 }
 
-public class Shipment : BaseEntity
+public class Shipment : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string ShipmentNumber { get; set; } = string.Empty;
     public DateTime ShipmentDate { get; set; }
     public Guid? CustomerId { get; set; }
@@ -189,8 +196,9 @@ public class Shipment : BaseEntity
     public virtual ICollection<ShipmentLine> Lines { get; set; } = new List<ShipmentLine>();
 }
 
-public class ShipmentLine : BaseEntity
+public class ShipmentLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid ShipmentId { get; set; }
     public virtual Shipment Shipment { get; set; } = null!;
     public int LineNumber { get; set; }

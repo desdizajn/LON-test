@@ -148,8 +148,9 @@ public class RolePermission
     public virtual Permission Permission { get; set; } = null!;
 }
 
-public class Shift : BaseEntity
+public class Shift : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public TimeSpan StartTime { get; set; }
@@ -159,8 +160,9 @@ public class Shift : BaseEntity
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }
 
-public class WorkCenter : BaseEntity
+public class WorkCenter : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -170,8 +172,9 @@ public class WorkCenter : BaseEntity
     public virtual ICollection<Machine> Machines { get; set; } = new List<Machine>();
 }
 
-public class Machine : BaseEntity
+public class Machine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public Guid WorkCenterId { get; set; }
