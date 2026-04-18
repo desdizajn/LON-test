@@ -92,6 +92,18 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     private readonly ICurrentUserService? _currentUser;
 
+    /// <summary>
+    /// Captured once per DbContext instance from the authenticated JWT's
+    /// `tenant_id` claim (P1.3). Used by the ITenantScoped global query
+    /// filter (P1.4): when non-null, every query for a scoped entity is
+    /// restricted to rows where TenantId matches. When null (seeders,
+    /// migrations, login before authentication), the filter is bypassed
+    /// so those paths see all rows.
+    /// EF re-reads this field for each query (closure over DbContext
+    /// instance), so the value is always current for the request in flight.
+    /// </summary>
+    public Guid? CurrentTenantId { get; }
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
@@ -99,6 +111,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUser) : base(options)
     {
         _currentUser = currentUser;
+        CurrentTenantId = currentUser.TenantId;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -106,26 +119,28 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-        // Auto-wire Tenant FK + index for every ITenantScoped entity.
-        // Uses reflection-dispatched generic helper because the non-generic
-        // EntityTypeBuilder overload cannot target an entity type by Type alone
-        // when no navigation property exists on the dependent side.
+        // Auto-wire Tenant FK + index + global query filter for every
+        // ITenantScoped entity. Uses reflection-dispatched generic helper
+        // because the non-generic EntityTypeBuilder overloads cannot target
+        // an entity type by Type alone when no navigation property exists.
+        // Instance method: the query filter closes over `this.CurrentTenantId`
+        // which EF re-reads per query (per-instance scoping).
         var configureMethod = typeof(ApplicationDbContext).GetMethod(
             nameof(ConfigureTenantScoped),
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(Domain.Common.ITenantScoped).IsAssignableFrom(entityType.ClrType))
             {
                 configureMethod
                     .MakeGenericMethod(entityType.ClrType)
-                    .Invoke(null, new object[] { modelBuilder });
+                    .Invoke(this, new object[] { modelBuilder });
             }
         }
     }
 
-    private static void ConfigureTenantScoped<TEntity>(ModelBuilder modelBuilder)
-        where TEntity : class, Domain.Common.ITenantScoped
+    private void ConfigureTenantScoped<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : BaseEntity, Domain.Common.ITenantScoped
     {
         modelBuilder.Entity<TEntity>()
             .HasOne<Domain.Entities.MasterData.Tenant>()
@@ -135,6 +150,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<TEntity>()
             .HasIndex(nameof(Domain.Common.ITenantScoped.TenantId));
+
+        // Combined filter: soft-delete AND tenant scope. This REPLACES the
+        // per-entity `HasQueryFilter(e => !e.IsDeleted)` that entity
+        // configurations declare — soft delete stays enforced via this
+        // combined filter. When CurrentTenantId is null (seeders, migrations,
+        // login pre-auth), the tenant clause is bypassed so those paths see
+        // every tenant's rows.
+        modelBuilder.Entity<TEntity>()
+            .HasQueryFilter(e => !e.IsDeleted && (CurrentTenantId == null || e.TenantId == CurrentTenantId));
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
