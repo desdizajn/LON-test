@@ -312,19 +312,12 @@
 - Side effects: InventoryMovement (Type=Issue), InventoryBalance.SubtractQuantity, balance.LonProcessState ← InProduction for LON parcels. Emit `MaterialIssuedEvent` (already in domain).
 - Integration tests: happy path; over-issue (400); no-batch with specific MRN (400); FIFO auto-pick; LonProcessState transition.
 
-**Алтернативи пред P2.4:** none particularly pressing right now. Cyrillic mojibake (P6.18) and Vector Store OOM (P6.14) remain in the deferred backlog.
-
-**Алтернативи пред P2.3:**
+**Алтернативи пред P2.4 (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
-- **P6.18** UTF-8 source encoding in KB JSON (~30 min).
+- **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
 - **P0.3.4** decimal precision warnings (~15 min).
-
-**Алтернативи пред P2.2:**
-- **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
-- **P6.18** UTF-8 source encoding in KB JSON (~30 min, unblocks i18n of errorMessageMK).
-- **P6.14** Vector Store OOM root-cause (still crashing on every startup — non-blocking but noisy).
-- **P0.3.4** decimal precision warnings (~15 min).
+- **LONAuthorizationItem.CompensatingTariffCode** EF config: currently `IsRequired()` despite `string?` CLR; workaround with `string.Empty` in seed. Proper fix = `IsRequired(false)` + migration.
 
 ### Recent context (2026-04-18):
 
