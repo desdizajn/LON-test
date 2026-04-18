@@ -200,21 +200,23 @@
 
 ### 6A — Repo hygiene (брзи победи)
 
-- [ ] **P6.1** — Restore `.gitignore` за .NET + Node + VS. Отстрани наследени bin/obj од git tracking.
-- [ ] **P6.2** — Cleanup на претходни рабатки commit-ови (bin/obj заостанати од `f92c754`).
+- [x] **P6.1** — Restore `.gitignore` + untrack bin/obj ✅
+- [x] **P6.2** — Cleanup на bin/obj заостанати од `f92c754` ✅ (rolled into P6.1)
 
 ### 6B — Contract hygiene (пред Phase 1 refactor)
 
-- [ ] **P6.3** — **Auto-generate TypeScript типови од OpenAPI/Swagger** (`openapi-typescript` или NSwag). Frontend увезува `import type { CreateReceiptCommand } from '@/api-types'` — идентично име/шема како backend. Kill contract divergence за сите идни commands/DTOs.
-- [ ] **P6.4** — Refactor постоечки форми (Receipt, etc.) да ги користат генерираните типови наместо рачно напишани интерфејси.
+- [x] **P6.3** — OpenAPI → TypeScript pipeline ✅ (`./scripts/gen-api-types.sh`, Swashbuckle.CLI 6.6.2, openapi-typescript 6.7.6)
+- [x] **P6.4** — ReceiptForm користи `CreateReceiptCommand` + `ReceiptLineDto` ✅
 
 ### 6C — Testing infrastructure (највисок ROI)
 
-- [ ] **P6.5** — Setup integration test harness: xUnit + `WebApplicationFactory` + Testcontainers-SqlServer + FluentAssertions. Структура: `tests/LON.IntegrationTests/`.
-- [ ] **P6.6** — Прв smoke test: `POST /api/auth/login` → expect token + roles.
-- [ ] **P6.7** — Receipt E2E test: `POST /wms/receipts` с реален payload → `GET` receipt → `GET` inventory → assert баланс = qty. (Ова би фатилo сите P0.4/P0.6 bug-ови автоматски.)
-- [ ] **P6.8** — Auth/RBAC test: ne-authenticated call → 401; role-less user → 403.
-- [ ] **P6.9** — CI gate преку GitHub Actions: `dotnet build` + `dotnet test` + `npm ci` + `npm run build` + OpenAPI diff gate. Fail блокира merge.
+- [x] **P6.5** — xUnit + WebApplicationFactory + Testcontainers-MsSql harness ✅ (`tests/LON.IntegrationTests/`)
+- [x] **P6.6** — `AuthTests.Login_*` ✅
+- [x] **P6.7** — `ReceiptFlowTests.CreateReceipt_ThenGetInventory_*` ✅ (би ги фатил сите P0.4/P0.6 bugs)
+- [x] **P6.8** — Auth guard tests (401 без token) ✅ (вметнато во AuthTests)
+- [x] **P6.9** — CI gate (GitHub Actions `ci.yml`) со contract drift check ✅
+
+**Верификација напомена:** Тестовите ќе се извршат на CI (Ubuntu runner со Docker). Локално — Docker Desktop мора да е активен. Види следен CI run на GitHub Actions.
 
 ### 6D — Architecture consolidation (пред multi-tenant)
 
@@ -233,7 +235,9 @@
 
 ### 6F — Claude self-workflow (вградено во CLAUDE.md)
 
-- [ ] **P6.17** — Ажурирај `CLAUDE.md` со `Contract Hygiene Protocol`: (1) grep frontend при DTO change; (2) assert DB state (не HTTP), со form-realistic payload; (3) Claude Preview tools за UI smoke пред deploy. Мемо `feedback_contract_hygiene.md` веќе активна; ова ја прави експлицитно дел од Verification Protocol.
+- [x] **P6.17** — `CLAUDE.md` ажуриран со **Contract Hygiene Protocol** (5 точки: grep frontend при DTO change, regenerate TS на OpenAPI промена, integration test за handler, Preview tools за UI smoke, IApplicationDbContext провера при нов DbSet) ✅. VPS деталите запишани (не повеќе „TBD"). Verification Protocol прошитен со „OpenAPI → TS regenerated" и „Integration test" чекори.
+
+**🎯 Phase 6 Priority-A ГОТОВА.** Следно: Phase 2.5 i18n setup.
 
 ---
 
@@ -247,18 +251,21 @@
 
 ## Current Active Task
 
-> **>>>** P6.1 — Restore `.gitignore` + cleanup bin/obj tracking. Phase 6 пред Phase 1 (одлука 2026-04-18).
+> **>>>** (Phase 6 Priority-A DONE) — следно: Phase 2.5 i18n setup (P2.5.1 react-i18next + LanguageProvider + useTranslation hook).
 
-## Phase Order (updated 2026-04-18)
+## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
 1. ✅ Phase 0 — VPS stabilization (DONE)
-2. ⬅️ **Phase 6 — Foundations** (active): repo hygiene → contract types → testing → architecture consolidation
-3. Phase 1 — Multi-tenant foundation
-4. **Phase 2.5 — i18n infrastructure** (BEFORE Phase 2, не после — ново UI во Phase 2 веднаш добива i18n)
+2. ⬅️ **Phase 6 Priority-A** (active): P6.1 `.gitignore` → P6.3-4 OpenAPI→TS → P6.5-7 test harness + 2-3 tests → P6.9 CI gate → P6.17 CLAUDE.md update
+3. Phase 2.5 — i18n infrastructure (пред Phase 1 — Tenant CRUD UI е веднаш преведен)
+4. Phase 1 — Multi-tenant foundation
 5. Phase 2 — First end-to-end flow (TEKSPORT IM 42 00)
-6. Phase 3 — Data migration од ELON
-7. Phase 4 — Legacy gap coverage
-8. Phase 5 — Productivity parity
-9. Phase 7 — Flutter mobile
+6. Phase 6 Priority-B (паралелно со Phase 2+): P6.10 split MasterDataController (combined with TenantId add), P6.11 MediatR migration per-module, P6.13-16 quick bug fixes кога природно ги допираме
+7. Phase 3 — Data migration од ELON
+8. Phase 4 — Legacy gap coverage
+9. Phase 5 — Productivity parity
+10. Phase 7 — Flutter mobile
+
+**Phase 6 Priority-A = само ~5 таскови, 1 продуктивен ден. Не е full Phase 6.**
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

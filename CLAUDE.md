@@ -25,7 +25,8 @@
 - [ ] `dotnet build` поминува без warnings за новите фајлови
 - [ ] `npm run build` (frontend) поминува без errors
 - [ ] EF migration (ако има DB промени) се создава и аплицира локално
-- [ ] Unit/integration test (за backend логика) минува — ако таскот е business-logic
+- [ ] **OpenAPI → TS types regenerated** ако е допрена DTO/command (`./scripts/gen-api-types.sh`) и commit-ирани
+- [ ] **Integration test** за business logic — види Contract Hygiene Protocol
 - [ ] Manual smoke test со **реални податоци** (TEKSPORT или мигрирани од ELON)
 - [ ] **Deploy на VPS** — git push + rebuild + restart контејнери
 - [ ] **Verify на VPS** преку UI или curl/Postman — screencast или конкретен output
@@ -34,6 +35,20 @@
 
 **Ако било кој чекор се прескокнува — мора да се образложи во SESSION_LOG со причина.**
 
+### Contract Hygiene Protocol (вграден после P0.4/P0.6 bug-ови)
+
+Шест plumbing bug-ови во Phase 0 ја изложија следната рупа: Claude тестираше API со СОПСТВЕН curl payload, не со payload-от што form-от реално го испраќа. Правилата се обврзувачки:
+
+1. **Кога допираш DTO/command/handler** — grep frontend за callers пред да кажеш „готово":
+   ```bash
+   grep -r "createReceipt\|wmsApi\." frontend/web/src
+   ```
+   Прочитај го **handleSubmit**-от и тренинг што навистина се испраќа.
+2. **Кога менуваш ANY OpenAPI-exposed DTO** — изврши `./scripts/gen-api-types.sh` + commit. CI gate fail-а ако не го направиш.
+3. **Секој нов/изменет handler** бара integration test во `tests/LON.IntegrationTests/`. Pattern: `POST endpoint` → `GET` → assert DB state (не само HTTP 200). Види `ReceiptFlowTests` како примерок.
+4. **UI change** (form/page) — пред deploy, користи Claude Preview tools локално (`preview_start`, `preview_fill`, `preview_click`) за smoke. `npm run build` поминува ≠ UI работи.
+5. **Нова ентитет/DbSet** — провери (a) е во `ApplicationDbContext`, (b) е експониран во `IApplicationDbContext`. MediatR handlers не можат да зачувуваат преку интерфејс што не ги изложува.
+
 ---
 
 ## 4. Средини (Environments)
@@ -41,7 +56,7 @@
 | Средина | Детали | Како се користи |
 |---|---|---|
 | **Local dev** | Windows 11, SQL Server express со Windows auth, working dir: `C:\Users\БобанКозаров\Documents\LON-test` | `docker compose up` за integration; `dotnet run` за API-only |
-| **VPS (production-test)** | ⚠️ TBD — корисникот ќе даде IP + SSH credentials | Сите промени **секогаш** се deploy-ираат тука. Не се прашува „дали". |
+| **VPS (production-test)** | Contabo, `root@173.212.254.216`, домен `elon.elbosoft.click`, app path `/opt/apps/LON/LON-test`, Caddy reverse proxy + auto SSL | Сите промени **секогаш** се deploy-ираат тука. Не се прашува „дали". Passwordless SSH од local `~/.ssh/id_ed25519`. |
 | **Legacy ELON DB** | Локален SQL Server, Windows Authentication, база: `ELON` | Read-only за миграција и споредба. НИКОГАШ не се менува. |
 
 ### Legacy DB конекција (за миграции и споредба)
