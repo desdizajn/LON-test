@@ -129,11 +129,37 @@ const ReceiptForm: React.FC<ReceiptFormProps> = ({ onSuccess, onCancel }) => {
 
     setLoading(true);
     try {
-      await wmsApi.createReceipt(formData);
+      // Backend CreateReceiptCommand field names + strict types. Normalize:
+      //  - supplierId -> partnerId (backend uses partner abstraction)
+      //  - empty strings for optional dates/ids -> undefined (DateTime? can't parse "")
+      //  - line.locationId forwarded per-line (backend respects line override)
+      const toOptional = (v: unknown) => (v === '' || v == null ? undefined : v);
+      const payload = {
+        receiptDate: formData.receiptDate,
+        warehouseId: formData.warehouseId,
+        partnerId: toOptional(formData.supplierId),
+        referenceNumber: toOptional(formData.referenceNumber),
+        lines: formData.lines.map(line => ({
+          itemId: line.itemId,
+          quantity: line.quantity,
+          uoMId: line.uoMId,
+          batchNumber: toOptional(line.batchNumber),
+          mrn: toOptional(line.mrn),
+          locationId: toOptional(line.locationId),
+          qualityStatus: line.qualityStatus,
+          expiryDate: toOptional(line.expiryDate),
+        })),
+      };
+      await wmsApi.createReceipt(payload);
       toast.success('Receipt created successfully!');
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create receipt');
+      const msg =
+        err.response?.data?.errorMessage ||
+        err.response?.data?.message ||
+        err.response?.data?.errors?.join?.('; ') ||
+        'Failed to create receipt';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

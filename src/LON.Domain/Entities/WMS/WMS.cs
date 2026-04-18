@@ -29,6 +29,8 @@ public class ReceiptLine : BaseEntity
     public virtual UnitOfMeasure UoM { get; set; } = null!;
     public string? BatchNumber { get; set; }
     public string? MRN { get; set; }
+    public Guid? LocationId { get; set; }
+    public virtual Location? Location { get; set; }
     public QualityStatus QualityStatus { get; set; }
     public DateTime? ExpiryDate { get; set; }
     public Guid? CustomsDeclarationId { get; set; }

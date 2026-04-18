@@ -164,7 +164,7 @@
 **Еден UI, сите клиенти.** Не 26 custom форми — еден конфигурабилен importer со именовани mapping profiles.
 
 - [ ] **P5.1.1** — File upload (Excel .xlsx/.xls, CSV, TSV, XML, JSON) + format auto-detect + preview на првите 20 редови
-- [ ] **P5.1.2** — Column mapping UI: source колоните се влечат/спуштаат на target полиња (item_code, quantity, batch, MRN, ...). Save mapping како **named profile** per tenant (пример: „TEKSPORT faktura Excel v1", „DREKKV invoice CSV")
+- [ ] **P5.1.2** — Column mapping UI: source колоните се влечат/спуштаат на target полиња (item_code, quantity, batch, MRN, ...). Save mapping како **named profile** со **контекст** (tenant + target_entity + **partner/supplier** + optional label). Пример: „TEKSPORT invoice excel — MAGNA supplier". Кога корисник избере partner/supplier во import wizard, системот **авто-предлага само мапирањата сочувани за тој partner** (0 клика ако има само еден) + „Create new mapping" опција. Последно-користеното мапирање е default.
 - [ ] **P5.1.3** — **Header-level defaults** — полиња што важат за сите редови (Warehouse, Location, MRN, CustomsDeclaration, Partner, Date). Корисник ги пополнува еднаш; редовите наследуваат + може line-level override
 - [ ] **P5.1.4** — Transform rules per column (UPPER, TRIM, decimal comma→dot, date parse со формат, lookup на шифра → id)
 - [ ] **P5.1.5** — Target entity селектор: Receipts / Items catalog / Partners / BOMs / CustomsDeclarations. Секој target има своја validation суита пред commit

@@ -26,6 +26,8 @@ public record ReceiptLineDto
     public Guid UoMId { get; init; }
     public string? BatchNumber { get; init; }
     public string? MRN { get; init; }
+    /// <summary>Per-line location. Falls back to CreateReceiptCommand.LocationId, then auto-resolve.</summary>
+    public Guid? LocationId { get; init; }
     public QualityStatus QualityStatus { get; init; }
     public DateTime? ExpiryDate { get; init; }
     public Guid? CustomsDeclarationId { get; init; }
@@ -45,11 +47,9 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         if (request.Lines.Count == 0)
             return Result<Guid>.Failure("Receipt must contain at least one line.");
 
-        var landingLocationId = await ResolveLandingLocationAsync(request, cancellationToken);
-        if (landingLocationId is null)
-            return Result<Guid>.Failure(
-                $"No landing location available in warehouse {request.WarehouseId}. " +
-                "Provide LocationId on the request or configure a Receiving location.");
+        var fallbackLocationId = await ResolveLandingLocationAsync(request, cancellationToken);
+        // fallback may be null if no locations at all in the warehouse; individual lines may still
+        // succeed if they specify their own LocationId.
 
         var receipt = new Receipt
         {
@@ -65,6 +65,12 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         int lineNumber = 1;
         foreach (var lineDto in request.Lines)
         {
+            var lineLocationId = lineDto.LocationId ?? fallbackLocationId;
+            if (lineLocationId is null)
+                return Result<Guid>.Failure(
+                    $"Line {lineNumber}: no location resolved. " +
+                    "Specify LocationId on the line, on the receipt, or configure a Receiving location in the warehouse.");
+
             var line = new ReceiptLine
             {
                 Id = Guid.NewGuid(),
@@ -75,6 +81,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 UoMId = lineDto.UoMId,
                 BatchNumber = lineDto.BatchNumber,
                 MRN = lineDto.MRN,
+                LocationId = lineLocationId,
                 QualityStatus = lineDto.QualityStatus,
                 ExpiryDate = lineDto.ExpiryDate,
                 CustomsDeclarationId = lineDto.CustomsDeclarationId
@@ -91,7 +98,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 BatchNumber = lineDto.BatchNumber,
                 MRN = lineDto.MRN,
                 FromLocationId = null,
-                ToLocationId = landingLocationId.Value,
+                ToLocationId = lineLocationId.Value,
                 Quantity = lineDto.Quantity,
                 UoMId = lineDto.UoMId,
                 ReferenceNumber = receipt.ReceiptNumber,
@@ -100,7 +107,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
 
             var balance = await _context.InventoryBalances.FirstOrDefaultAsync(b =>
                     b.ItemId == lineDto.ItemId &&
-                    b.LocationId == landingLocationId.Value &&
+                    b.LocationId == lineLocationId.Value &&
                     b.BatchNumber == lineDto.BatchNumber &&
                     b.MRN == lineDto.MRN &&
                     b.UoMId == lineDto.UoMId &&
@@ -113,7 +120,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 {
                     Id = Guid.NewGuid(),
                     ItemId = lineDto.ItemId,
-                    LocationId = landingLocationId.Value,
+                    LocationId = lineLocationId.Value,
                     BatchNumber = lineDto.BatchNumber,
                     MRN = lineDto.MRN,
                     Quantity = lineDto.Quantity,
