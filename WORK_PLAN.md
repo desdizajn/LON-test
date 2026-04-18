@@ -85,7 +85,7 @@
   - [x] **P1.2-B1** ✅ — 10 core entities (Item, Warehouse, Location, Partner, Employee, User, Receipt+Line, InventoryBalance, InventoryMovement). Migration со inline SQL backfill за постојни редови → TEKSPORT. Auto-fill inlined во SaveChangesAsync (ICurrentTenantService постои за handlers, но DbContext го избегнува за DI cycle).
   - [x] **P1.2-B2** ✅ — 31 entities добија ITenantScoped (MasterData: Shift/WorkCenter/Machine; WMS: Transfer±Line/CycleCount±Line/PickingWave/PickTask/Shipment±Line; Customs: Declaration±Line/Document/MRN; LONAuthorization±Item; Guarantee: Account/Ledger/Duty; Production: BOM±Line/Routing±Op/PO+Mat+Op/MaterialIssue/ProductionReceipt; Traceability: TraceLink/BatchGenealogy). Migration со 31 AddColumn + 31 Index + inline SQL backfill + 31 FK. Verified on VPS (commit `bbf8ac9`). 41/~45 business entities tenant-scoped.
   - [x] **P1.2-B3** ✅ — `WH-TEK-VN` (TEKSPORT Vinica) + 7 default locations seeded. `SeedWarehouses` refactored to per-code idempotent upsert. TenantId auto-filled (commit `f845c5d`, verified on VPS via API + SQL).
-- [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
+- [x] **P1.3** ✅ — JWT `tenant_id` claim + `ICurrentUserService.TenantId` + DbContext auto-fill prefers claim (zero DB hits for authenticated writes). Integration test added. Verified on VPS (commit `e723f7e`).
   - Verify: login враќа token со tenant claim; decode потврдува
 - [ ] **P1.4** — EF global query filters по TenantId за сите ентитети
   - Verify: integration test — user од tenant A не гледа записи од tenant B
@@ -279,31 +279,30 @@
 
 ## Current Active Task
 
-> **>>>** P1.3: JWT `tenant_id` claim на login + `CurrentTenantService` почнува да го чита. Ова е последниот чекор за end-to-end tenant isolation пред query filters (P1.4).
+> **>>>** P1.4: apply EF global query filter `HasQueryFilter(e => e.TenantId == currentTenant)` to every ITenantScoped entity via `OnModelCreating` reflection (same mechanism that wires up the FK + index for `ITenantScoped`). Then seed a second tenant and prove data isolation end-to-end.
 
 **Алтернативи:**
-- **P1.4** (следно чекор): global query filter `HasQueryFilter(e => e.TenantId == _tenantService.Id)` на сите ITenantScoped entities. Ова конечно го изолира secondary tenant (ако се seed-ира) од TEKSPORT's data.
 - **P6.18** (мало, 30 мин): поправи UTF-8 source encoding па да можеме одново да користиме Cyrillic во seeds/code.
 
-**Препорака:** P1.3 → P1.4 (со test: seed 2nd tenant, verify isolation).
+**Препорака:** P1.4 сега — без него, tenant_id во JWT (P1.3) е само audit-trail; една стара query со `_context.Items.ToList()` би вратила податоци од сите tenant-и. P1.4 ја затвора таа дупка.
 
-### Контекст за P1.3:
+### Контекст за P1.4:
 
-- **Scope:** JWT generation (`JwtService` или каде што се emit-уваат claim-овите) мора да додаде `tenant_id` + можеби `tenant_code` claim. Login response треба да врати tenant info. `CurrentTenantService` веќе постои (од B1) — сега да чита од `HttpContext.User` наместо fallback-first-active.
-- **Verification:** декодирај JWT (`jwt.io`) и провери дека има `tenant_id` со TEKSPORT's Guid. Integration test што login-ира и assert-ира дека `ICurrentTenantService.TenantId` == очекуван.
-- **Risk:** existing users (admin) мора да добијат TenantId. Admin веќе има (auto-fill го среди на login migration). Ако некои sessions имаат cached stale JWT без `tenant_id`, fallback chain мора да остане функционален додека тие не re-login.
+- **Mechanism:** EF8 дозволува `HasQueryFilter` со captured delegate. Pattern: inject `ICurrentTenantService` into DbContext (watch out — cycle risk; safer approach is a wrapper lazy service or a field that's read lazily). Alternative: inject `IHttpContextAccessor` directly into DbContext and read the claim. Same pattern као auto-fill во SaveChangesAsync.
+- **Filters are AND-ed** с постоечките (`!e.IsDeleted`), така DbContext-ot мора да знае и за soft-delete + tenant заедно. EF автоматски комбинира кога постои global filter и ќе биде додаден уште еден преку `HasQueryFilter` со expression што опфаќа обете услови.
+- **Seeder/migration concern:** seeding со `IgnoreQueryFilters()` кога треба да напише cross-tenant data. Повеќето место-то нашиот seeder е "single tenant at a time" па ОК.
+- **Verification:** seed втор Tenant (e.g. code=`DEMO`), create a user + а partner + an item under DEMO. Login како admin (TEKSPORT) → `/api/masterdata/items` не смее да ги врати DEMO items-ите. Login како DEMO user → не смее да ги види TEKSPORT's. Integration test що го прави тоа.
 
 ### Recent context (2026-04-18):
 
-- **P1.2-B2 completed** — 31 entities ITenantScoped, 41/~45 business entities now tenant-scoped (commit `bbf8ac9`). Migration applied на VPS без грешки, сите постоечки redovi backfilled до TEKSPORT.
-- **B3 completed** — `WH-TEK-VN` + 7 locations, seeder per-code idempotent (commit `f845c5d`).
-- **P1.2-B1 verified** — 10 core entities tenant-scoped (commit `7a4ebc0`).
+- **P1.3 completed** — JWT има `tenant_id` claim, auto-fill во DbContext го користи (commit `e723f7e`). `tenant_id: b8d4fe76-...` потврден преку base64-decode.
+- **P1.2-B2 completed** — 41/~45 business entities tenant-scoped (commit `bbf8ac9`).
+- **B3 completed** — `WH-TEK-VN` + 7 locations (commit `f845c5d`).
 
-### Non-goals за P1.3 (одвоено):
+### Non-goals за P1.4 (одвоено):
 
-- Global query filter (тоа е P1.4).
-- Multi-tenant UI ("switch tenant" dropdown) — доаѓа во Phase 2+ кога ќе има 2+ тенанти.
-- OpenAPI/TS regen — ако login response shape промени (веројатно ќе), тогаш `./scripts/gen-api-types.sh`.
+- Multi-tenant UI ("switch tenant" dropdown) — доаѓа кога ќе има ≥2 тенанти активно.
+- `IgnoreQueryFilters` UI за admin cross-tenant read — Phase 7 или посебен P6 ticket.
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 

@@ -14,6 +14,38 @@
 
 ---
 
+## 2026-04-18 — P1.3 tenant_id JWT claim + claim-based auto-fill
+
+**Status:** [x] done
+**Commits:** `e723f7e phase-1.3: tenant_id JWT claim + zero-lookup auto-fill path`
+**Files changed:**
+- `src/LON.Infrastructure/Services/AuthService.cs` — `GenerateJwtToken` emits `tenant_id` claim from `user.TenantId`
+- `src/LON.Application/Common/Interfaces/ICurrentUserService.cs` — new `Guid? TenantId` property
+- `src/LON.API/Services/CurrentUserService.cs` — implementation reads `tenant_id` claim via IHttpContextAccessor
+- `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` — auto-fill resolution order now: claim → Users lookup → first active
+- `tests/LON.IntegrationTests/AuthTests.cs` — `Login_JwtContainsTenantIdClaim_MatchingSeededTenant` asserts the claim is present and is a non-empty Guid
+
+**What was done:**
+1. `AuthService` adds one claim (`tenant_id` = `user.TenantId.ToString()`) to every issued JWT. Safe for admin and non-admin users — all users are tenant-scoped since B1.
+2. `ICurrentUserService.TenantId` exposes the claim without hitting DB. Safe to inject into `ApplicationDbContext` (no DI cycle since ICurrentUserService only depends on `IHttpContextAccessor`).
+3. `CurrentTenantService.GetTenantIdAsync` (from B1) already preferred the claim as step 1 — now that path actually fires. Users lookup + first-active fallbacks remain for background jobs, seeders, and legacy tokens.
+4. `ApplicationDbContext.SaveChangesAsync` auto-fill: reads `_currentUser?.TenantId` as first choice (zero DB hits for authenticated writes); falls back to `Users` lookup then first-active for background jobs.
+
+**How verified на VPS:**
+- Login + base64-decode JWT payload → `"tenant_id": "b8d4fe76-8d94-470b-a251-f8111d3f1db3"` ✅ (matches TEKSPORT id seeded in P1.1)
+- Full claim set intact: nameidentifier, name, email, EmployeeId, role, Permission[] — no regression.
+- Existing reads continue to work (`receipts` → 6, `inventory` → 3, `items` → 5, `partners` → 4).
+- Integration test `Login_JwtContainsTenantIdClaim_MatchingSeededTenant` added; runs on CI (Testcontainers-MsSql needs Docker, not available on the local Windows host at time of commit — to be observed on next CI run).
+
+**Follow-ups / notes:**
+- **Refresh tokens still work** — `ValidateRefreshTokenAsync` looks up user, then re-issues a JWT via `GenerateJwtToken`. New JWT will include the claim automatically.
+- **Stale tokens before deploy**: any in-flight token issued before this commit lacks the claim. They still work thanks to the Users-lookup fallback. After their natural expiry (ExpiryMinutes), they disappear.
+- **Ready for P1.4** — global query filters can now call `ICurrentTenantService.GetTenantIdAsync()` which, in an authenticated request, resolves via claim with zero DB round-trip.
+
+**Next:** P1.4 — apply `HasQueryFilter(e => e.TenantId == tenantId)` to every ITenantScoped entity via reflection (same pattern as auto-FK-wiring in `OnModelCreating`). Then seed a 2nd tenant and verify data isolation.
+
+---
+
 ## 2026-04-18 — P1.2-B2 ITenantScoped on 31 remaining entities
 
 **Status:** [x] done
