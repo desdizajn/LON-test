@@ -2,6 +2,65 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P2.6b Return declaration — reverses EX discharge
+
+**Status:** [x] done
+**Commit:** `95501ae`
+
+**What landed:**
+- `src/LON.Infrastructure/Persistence/ApplicationDbContextSeed.cs` — seed CustomsProcedure code `6121` (Re-import after export, Type=InwardProcessing) in fresh-install path.
+- `src/LON.Infrastructure/Migrations/20260418234241_P26b_Seed6121Procedure.cs` — idempotent `INSERT ... WHERE NOT EXISTS` for existing deployments (same pattern as P2.6a's 3151 migration).
+- `src/LON.Application/Customs/Commands/CreateReturnDeclaration/CreateReturnDeclarationCommand.cs` (~340 lines) — `CreateReturnDeclarationCommand`, `ReturnLineDto`, handler.
+- `src/LON.API/Controllers/CustomsController.cs` — `POST /api/customs/declarations/return`.
+- `tests/LON.IntegrationTests/ReturnDeclarationTests.cs` — 4 scenarios.
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated.
+
+**Handler rules:**
+1. Lines>0, procedure exists+active, each line's `returnTo` must be `Imported` or `InProduction`.
+2. Pre-resolve all source MRNs; aggregate `returnQuantity` per MRN must not exceed `DischargedQuantity` → 400 `exceeds previously discharged qty`.
+3. Per line:
+   - `RestoreFromExportedAsync` walks Exported balances **reverse-FEFO** (most recent first — returns typically mirror the latest EX), shrinks each by `min(available, remaining)`, upserts the target-state (`returnTo`) sibling via `DbSet.Local`.
+   - `UpsertFgBalance` increments FG inventory at caller's `LocationId` (Local probe; falls back to fresh row — duplicate rows merge on next receipt).
+   - `CustomsDeclarationLine` carries `PreviousMRN` + `UsedQuantityFromPrevious` for audit.
+   - `InventoryMovement` with `Type=Return`, `ToLocationId=FG location`.
+   - `TraceLink` Return → IM (backward pointer; symmetric with EX's forward link from P2.6a).
+   - `ReDebitGuaranteeAsync`: `imDebit.Amount × returnQty / MRN.TotalQuantity`, rounded 2dp — symmetric with the P2.6a credit math. Checks account `TotalLimit`; flips any prior full-release Credit back to `IsReleased=false` + clears `ActualReleaseDate`.
+4. Decrements `MRN.DischargedQuantity`; re-activates (`IsActive=true`) when previously closed MRN now has outstanding undischarged qty again.
+5. Creates return-own `MRNRegistry` row (`IsActive=true`, `TotalQuantity=Σ returnQty`) for symmetry with IM.
+6. Emits `CustomsDeclarationCreatedEvent` + `GuaranteeDebitedEvent`.
+
+**DeclarationType="IM"** (returned goods re-enter the territory), **ProcedureCode from caller's procedure**, **Box 37 PreviousProcedureCode="31"** auto-derived for procedure codes starting with `61` (typical 61 21 / 61 31 flow).
+
+**Verified on VPS** (`26MK8DF9122FA1`, pre-state: Discharged=10, Exported rows 7.0 + 3.0, Imported 30.1053):
+1. Return qty=4 FG=2 to `LonProcessState.Imported`:
+   - HTTP 200. Registry.Discharged 10→6. 
+   - Exported reverse-FEFO: 3.0 → 0 (took 3), 7.0 → 6.0 (took 1). 
+   - Imported: new sibling `4.0` added alongside existing `30.1053` (minor non-consolidation; same state rolls up correctly in sum queries).
+   - FG `B-CLEAN` (MRN=null): new row `Quantity=2`.
+   - Guarantee: **Re-Debit 4.78 EUR** (47.80 × 4/40). Net outstanding = 47.80 − 9.56 − 2.39 + 4.78 = **40.63** = (34/40) × 47.80. ✅
+2. Over-return qty=999 (Discharged=6 after step 1) → 400 `return qty 999 exceeds previously discharged qty 6.0000`. ✅
+3. Unknown MRN → 400 `not registered for this tenant`. ✅
+
+**Integration tests (ReturnDeclarationTests.cs):**
+- `Return_PartialReverseOfExport_RestoresImportedAndReDebits` — FG −5/+3, Imported 52.6316−20+12=44.6316, Registry.Discharged 20→8, re-debit = debit × 12/50.
+- `Return_AfterFullDischarge_ReactivatesMrnAndReopensCredit` — full-discharge MRN (IsActive=false, Credit.IsReleased=true) + return 3 → IsActive=true, prior Credit.IsReleased=false, ActualReleaseDate=null.
+- `Return_OverDischargedQty_Returns400`.
+- `Return_UnknownMRN_Returns400`.
+
+**Discoveries & deferred:**
+- **Imported-state non-consolidation on restore.** `UpsertRestoredBalance` probes `DbSet.Local` only — it won't find an existing Imported row that's in the DB but not yet tracked by the current context. Result: the returned portion lands as a separate Imported sibling alongside the pre-existing one. Aggregate state is correct (reports sum by MRN + state), but storage bloats by one row per restore. Same caveat for `UpsertFgBalance`. Will revisit if UI rollups expose the duplicates as a UX issue — until then, deferred as **P6.20** (low priority).
+- **Return on a partial-discharge MRN doesn't touch the prior Credit's `IsReleased` flag** because that flag is only ever set to `true` on full discharge. Verified behavior is consistent.
+
+**Phase 2 status:**
+- [x] P2.1, [x] P2.2, [x] P2.2.5, [x] P2.3, [x] P2.4, [x] P2.5
+- [x] P2.6a Export, [x] P2.6c Waste
+- [x] **P2.6b Return** ← this commit
+- [ ] P2.7 Remaining declaration validation rules
+
+**Next (P2.7):** Rule-engine completeness pass. WORK_PLAN lists remaining validators: tariff-code format + TARIC check-digit, country-code whitelist (ISO 3166-1 alpha-2), exchange-rate window, net-weight ≥ gross-weight sanity, VAT-rate = {0, 5, 18} whitelist, duplicate-line detection within a declaration. Reuse the existing `IDeclarationRuleEngine` pattern; add unit tests per rule. No migration expected.
+
+---
+
 ## 2026-04-19 — P2.6c Waste declaration — LON residual → LonProcessState=Waste
 
 **Status:** [x] done

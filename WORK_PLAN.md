@@ -280,6 +280,7 @@
 
 ### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
 
+- [ ] **P6.20** — **Imported/FG restore non-consolidation in Return handler.** `UpsertRestoredBalance` (and `UpsertFgBalance`) in `CreateReturnDeclarationCommand` probe `DbSet.Local` only; an existing DB row that isn't tracked in the current context won't match, so returns append a new sibling instead of consolidating. Aggregate sum queries are correct; storage bloats by one row per restore. Fix options: (a) add async DB lookup fallback keyed on (Item, Location, Batch, MRN, UoM, Quality, State), (b) batch all restores at the end and run one SaveChanges per (key) group. Same pattern present implicitly in `UpsertFgBalance` for return re-intake.
 - [ ] **P6.19** — **`CreateProductionOrderCommandHandler` never persists.** Handler constructs a local `order` variable, calls `_context.SaveChangesAsync()`, but never adds it to `_context.ProductionOrders`. Endpoint returns `{isSuccess:true, data:<newGuid>}` while the DB stays empty. Uncovered during P2.4 VPS smoke (worked around with direct SQL insert). Fix = add `_context.ProductionOrders.Add(order)` before SaveChanges; add integration test `CreateProductionOrder_Persists_VisibleInList` to prevent regression.
 - [ ] **P6.13** — **LocationDto serialization drops Type** — API враќа `type: null` и покрај MapLocation. Или DTO constructor или JSON naming policy. Handler-от го користи code prefix fallback; UI-от не може да филтрира по тип.
 - [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
@@ -305,14 +306,24 @@
 
 ## Current Active Task
 
-> **>>>** **P2.6c DONE.** Next entry point = **P2.6b Return declaration → bond re-debit**. A returned export un-discharges the bond: the handler locates the prior EX credit entry (or credits aggregated by MRN), writes a re-Debit, and transitions `LonProcessState=Exported` back to `Imported` (or `InProduction` at caller's choice). Sign-flipped mirror of P2.6a. After P2.6b, Phase 2 finishes with P2.7 remaining validation rules.
+> **>>>** **P2.6 complete (a/b/c all done).** Next entry point = **P2.7 Remaining declaration validation rules**. Extend the existing `IDeclarationRuleEngine` with compliance validators that aren't yet enforced:
+>
+> 1. **Tariff code format** — 10 digits + optional TARIC/national suffix; numeric-only.
+> 2. **Country codes** — whitelist against ISO 3166-1 alpha-2 (use static list or `CodeListItem` table).
+> 3. **Currency** — must be one of the codes present in an active `GuaranteeAccount` (or a generic whitelist {EUR, USD, GBP, MKD, ...}).
+> 4. **Exchange rate window** — when present, must fall within ±20% of NBRM reference rate for the declaration date (defer actual NBRM fetch; rule scaffolding only, hook into `IExchangeRateProvider` stub).
+> 5. **Weight sanity** — net weight ≤ gross weight; both > 0 when provided.
+> 6. **VAT rate whitelist** — {0, 5, 18} (MK rates); flag others as warning.
+> 7. **Duplicate-line detection** — two lines with same (ItemId, TariffCode, CountryOfOrigin) on one declaration → warning.
+>
+> All rules additive (non-blocking unless tagged Critical); run in `ValidateAsync` before SaveChanges in both IM and EX handlers. Unit tests per rule (rule-engine unit tests, not full integration). Integration test updates only if a change in verdict flips a declaration from green to 400.
 
-**Scope for P2.6b:**
-- `CreateReturnDeclarationCommand` — `exportDeclarationId` OR `{sourceMRN, returnQuantity}`; + `itemId, batchNumber, quantity, locationId` for FG re-intake + `returnTo: Imported|InProduction` (default Imported).
-- Handler: validate returnQty ≤ `MRN.DischargedQuantity`; decrement `DischargedQuantity`; transition Exported balances back (priority: most-recent Exported row first); re-Debit `credit.Amount × returnQty / dischargedQty` to the guarantee ledger; re-create FG inventory (or increment); write TraceLink reverse-link.
-- Integration tests: happy path; over-return (>discharged) 400; unknown EX ref 400; bond re-debit matches original pro-rata amount; registry IsActive flips back to true if was fully discharged.
+**Scope for P2.7:**
+- New rule classes under `src/LON.Application/Customs/Validation/Rules/` matching the existing pattern (look at `RequiredFieldsRule` as template).
+- Register in `DeclarationRuleEngine`'s rule list.
+- Unit tests under `tests/LON.IntegrationTests/` (or a new `LON.UnitTests/` project if the factory-driven pattern is overkill — prefer plain xUnit for rule tests).
 
-**Алтернативи пред P2.6b (не-блокери, може да чекаат):**
+**Алтернативи пред P2.7 (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -347,6 +358,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P2.5** ✅ ProductionReceipt + TraceLink. `CreateProductionReceiptCommand` books FG `InventoryBalance` at caller's location (LonProcessState=null), writes `Type=ProductionReceipt=5` movement, rolls PO.Produced/Scrap, flips Draft/Released→InProgress and InProgress→Completed on threshold (emits `ProductionOrderCompletedEvent`). TraceLinks: auto-mode links every MaterialIssue on the PO; explicit `materialConsumption` mode decrements InProduction WIP by caller-supplied qty. VPS verified: PR qty=3 → 2 TraceLinks written + FG=3 booked; over-production → 400; qty=6+scrap=1 filling the PO → Status=Completed+ActualEndDate; post-completion PR → 400 (commit `f90cdc3`).
 - [x] **P2.6a** ✅ EX declaration + pro-rata guarantee credit. `CreateExportDeclarationCommand` at `POST /api/customs/declarations/export`. Added `MRNRegistry.DischargedQuantity`; seeded procedure code `3151` (Re-export of LON goods). Handler: FG decrement + InProduction-then-Imported → Exported transition (DbSet.Local consolidation for same-line splits) + TraceLink IM→EX + pro-rata Credit (`debit × dischargeQty/MRN.TotalQty`; full-discharge path settles to exactly 0). VPS verified: partial qty=8→Credit 9.56 EUR, second partial qty=2→Credit 2.39 EUR with Exported consolidation, over-discharge 50>32 remaining → 400, unknown MRN → 400 (commits `ce176bb`, `ef4f25a`, `8b91b65`).
 - [x] **P2.6c** ✅ Waste declaration. `CreateWasteDeclarationCommand` at `POST /api/customs/declarations/waste`. Pool Imported-first + InProduction for the MRN (+ optional Item/Batch/Location filters), transition to `LonProcessState=Waste` via DbSet.Local-consolidated sibling, emit `Type=Adjustment` movement per drained source (shared MovementNumber = `WST-…`). No guarantee impact in v1 (waste-inflate residual is physical-only). Reason field required for audit. VPS verified: waste qty=1 on `26MK8DF9122FA1` → Imported 31.1053→30.1053 + Waste 1.0; over-waste 9999 → 400; empty reason → 400; unknown MRN → 400 (commit `50a8bd1`).
+- [x] **P2.6b** ✅ Return declaration (reverse of EX). `CreateReturnDeclarationCommand` at `POST /api/customs/declarations/return`. Seeded procedure `6121`. Handler: reverse-FEFO walk of Exported → Imported/InProduction (caller choice) + FG re-intake + TraceLink Return→IM + re-Debit `imDebit × returnQty/TotalQty` (symmetric with EX credit). Decrements `MRN.DischargedQuantity`; re-activates (`IsActive=true`) previously closed MRNs; flips prior full-release Credits' `IsReleased=false`. VPS verified: return qty=4 → Discharged 10→6, re-debit 4.78 EUR (net 40.63 outstanding); over-return 999 → 400; unknown MRN → 400 (commit `95501ae`).
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules
 
