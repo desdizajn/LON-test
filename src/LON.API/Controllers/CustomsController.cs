@@ -1,4 +1,5 @@
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
+using LON.Application.Customs.Commands.CreateExportDeclaration;
 using LON.Application.Customs.Commands.UpdateCustomsDeclaration;
 using LON.Application.Customs.Validation;
 using LON.Domain.Entities.Customs;
@@ -45,6 +46,21 @@ public class CustomsController : BaseController
         if (result.IsSuccess)
             return Ok(result);
         return Conflict(result);
+    }
+
+    /// <summary>
+    /// P2.6a — Register an EX (re-export) declaration. Discharges LON bond
+    /// on the referenced IM MRNs, transitions Imported/InProduction balances
+    /// to Exported, credits the guarantee ledger proportionally, and
+    /// decrements FG inventory.
+    /// </summary>
+    [HttpPost("declarations/export")]
+    public async Task<IActionResult> CreateExportDeclaration([FromBody] CreateExportDeclarationCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
     }
 
     /// <summary>

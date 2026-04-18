@@ -542,6 +542,25 @@ public static class ApplicationDbContextSeed
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "Seed"
+            },
+            new CustomsProcedure
+            {
+                Id = Guid.NewGuid(),
+                // Box 37: `31` = export, `51` = previous was inward processing
+                // (suspension) — i.e. re-export of LON-processed goods. This
+                // is the customs code that discharges a LON 4200 bond.
+                Code = "3151",
+                Name = "Re-export of LON goods (31 51)",
+                Type = CustomsProcedureType.Export,
+                Description = "Export after inward processing — discharges LON bond (MK Правилник)",
+                RequiresGuarantee = false,
+                GuaranteePercentage = 0,
+                RequiresMRNTracking = true,
+                AllowsProduction = false,
+                AllowsExport = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "Seed"
             }
         };
 

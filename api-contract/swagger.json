@@ -455,6 +455,37 @@
         }
       }
     },
+    "/api/Customs/declarations/export": {
+      "post": {
+        "tags": [
+          "Customs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportDeclarationCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportDeclarationCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportDeclarationCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations/validate": {
       "post": {
         "tags": [
@@ -4206,6 +4237,72 @@
         },
         "additionalProperties": false
       },
+      "CreateExportDeclarationCommand": {
+        "type": "object",
+        "properties": {
+          "declarationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrn": {
+            "type": "string",
+            "nullable": true
+          },
+          "declarationDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customsProcedureId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalCustomsValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "senderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderCountry": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryOfDispatch": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryOfDestination": {
+            "type": "string",
+            "nullable": true
+          },
+          "specialRemarks": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportLineDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateMaterialIssueCommand": {
         "type": "object",
         "properties": {
@@ -4659,6 +4756,67 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExportLineDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tariffCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "uoMId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customsValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "countryOfOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "netWeight": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "grossWeight": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "calculationMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceMRN": {
+            "type": "string",
+            "nullable": true
+          },
+          "dischargeQuantity": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false

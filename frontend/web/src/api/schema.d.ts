@@ -244,6 +244,23 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/export": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateExportDeclarationCommand"];
+          "text/json": components["schemas"]["CreateExportDeclarationCommand"];
+          "application/*+json": components["schemas"]["CreateExportDeclarationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/validate": {
     post: {
       requestBody?: {
@@ -2325,6 +2342,26 @@ export interface components {
       department?: string | null;
       hireDate?: string | null;
     };
+    CreateExportDeclarationCommand: {
+      declarationNumber?: string | null;
+      mrn?: string | null;
+      /** Format: date-time */
+      declarationDate?: string;
+      /** Format: uuid */
+      customsProcedureId?: string;
+      /** Format: uuid */
+      partnerId?: string | null;
+      currency?: string | null;
+      /** Format: double */
+      totalCustomsValue?: number;
+      senderName?: string | null;
+      senderAddress?: string | null;
+      senderCountry?: string | null;
+      countryOfDispatch?: string | null;
+      countryOfDestination?: string | null;
+      specialRemarks?: string | null;
+      lines?: components["schemas"]["ExportLineDto"][] | null;
+    };
     CreateMaterialIssueCommand: {
       /** Format: uuid */
       productionOrderId?: string;
@@ -2488,6 +2525,29 @@ export interface components {
       hireDate?: string | null;
       shift?: components["schemas"]["ShiftDto"];
       isActive?: boolean;
+    };
+    ExportLineDto: {
+      /** Format: uuid */
+      itemId?: string;
+      tariffCode?: string | null;
+      /** Format: double */
+      quantity?: number;
+      /** Format: uuid */
+      uoMId?: string;
+      /** Format: double */
+      customsValue?: number;
+      countryOfOrigin?: string | null;
+      /** Format: double */
+      netWeight?: number | null;
+      /** Format: double */
+      grossWeight?: number | null;
+      calculationMethod?: string | null;
+      batchNumber?: string | null;
+      /** Format: uuid */
+      locationId?: string | null;
+      sourceMRN?: string | null;
+      /** Format: double */
+      dischargeQuantity?: number;
     };
     GuaranteeAccountRequest: {
       accountNumber?: string | null;

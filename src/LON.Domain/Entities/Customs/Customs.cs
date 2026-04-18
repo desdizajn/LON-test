@@ -248,6 +248,18 @@ public class MRNRegistry : BaseEntity, ITenantScoped
     public decimal UsedQuantity { get; set; }
     public decimal RemainingQuantity => TotalQuantity - UsedQuantity;
     public bool IsFullyUsed => RemainingQuantity <= 0;
+
+    /// <summary>
+    /// P2.6a — cumulative declared quantity that has been discharged via EX
+    /// (re-export) declarations. Must stay &lt;= TotalQuantity. When equal,
+    /// the LON bond for this MRN is fully released.
+    /// </summary>
+    public decimal DischargedQuantity { get; set; }
+
+    /// <summary>Outstanding declared quantity still under LON bond (received but not yet re-exported).</summary>
+    public decimal UndischargedQuantity => UsedQuantity - DischargedQuantity;
+    public bool IsFullyDischarged => DischargedQuantity >= TotalQuantity && TotalQuantity > 0;
+
     public DateTime? ExpiryDate { get; set; }
     public bool IsActive { get; set; }
     public string? Notes { get; set; }

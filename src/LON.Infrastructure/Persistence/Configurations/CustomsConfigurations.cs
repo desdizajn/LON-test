@@ -84,6 +84,8 @@ public class MRNRegistryConfiguration : IEntityTypeConfiguration<MRNRegistry>
         builder.Property(e => e.MRN).IsRequired().HasMaxLength(100);
         builder.Property(e => e.TotalQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.UsedQuantity).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.DischargedQuantity).HasColumnType("decimal(18,4)");
+        builder.Ignore(e => e.UndischargedQuantity);
         builder.Property(e => e.Notes).HasMaxLength(500);
 
         builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique();
