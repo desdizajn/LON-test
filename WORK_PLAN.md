@@ -157,12 +157,40 @@
 
 ## Фаза 5 — Productivity parity
 
-**Цел:** Функции што го направија ELON usable 30 години.
+**Цел:** Функции што го направија ELON usable 30 години. Сè насочено кон **минимум/нула keystrokes** за повторувачки операции.
 
-- [ ] **P5.1** — Configurable Excel bulk importer (замена за 26 `frmTransfer<Uvoznik>` форми). Mapping конфигурабилен per tenant.
-- [ ] **P5.2** — `BOMTemplate` + auto-apply при ProductionOrder creation (legacy NormativTemplO/S)
-- [ ] **P5.3** — Inflate-for-waste опционална калкулација (per-tenant flag)
-- [ ] **P5.4** — Article picker со „A"-суфикс варијанти за tariff differences
+### 5A — Generic data importer (замена за 26 `frmTransfer<Uvoznik>` форми)
+
+**Еден UI, сите клиенти.** Не 26 custom форми — еден конфигурабилен importer со именовани mapping profiles.
+
+- [ ] **P5.1.1** — File upload (Excel .xlsx/.xls, CSV, TSV, XML, JSON) + format auto-detect + preview на првите 20 редови
+- [ ] **P5.1.2** — Column mapping UI: source колоните се влечат/спуштаат на target полиња (item_code, quantity, batch, MRN, ...). Save mapping како **named profile** per tenant (пример: „TEKSPORT faktura Excel v1", „DREKKV invoice CSV")
+- [ ] **P5.1.3** — **Header-level defaults** — полиња што важат за сите редови (Warehouse, Location, MRN, CustomsDeclaration, Partner, Date). Корисник ги пополнува еднаш; редовите наследуваат + може line-level override
+- [ ] **P5.1.4** — Transform rules per column (UPPER, TRIM, decimal comma→dot, date parse со формат, lookup на шифра → id)
+- [ ] **P5.1.5** — Target entity селектор: Receipts / Items catalog / Partners / BOMs / CustomsDeclarations. Секој target има своја validation суита пред commit
+- [ ] **P5.1.6** — Dry-run mode (preview на валидации + error список) + atomic commit (сè или ништо)
+- [ ] **P5.1.7** — XML-specific: customs XML (PEE формати) како посебен target (ако корисникот прима XML од партнер)
+
+### 5B — Bulk workflow actions (zero/min keystroke движења)
+
+**Legacy inspiration:** `frmPodeliBaranjaBrz`, `frmRaspredeliPoProizvoditeliBrz`, template auto-apply.
+
+- [ ] **P5.2.1** — **Issue all materials for Production Order** (1 клик) — систем пики по BOM, FIFO/FEFO алгоритам избира batch, креира N `MaterialIssue` редови во една операција
+- [ ] **P5.2.2** — **Move batch across stages** (1 клик) — избери batch → target stage (Production / Shipping / Quarantine); сите inventory balances на тој batch се transfer-ираат
+- [ ] **P5.2.3** — **Bulk receipt from invoice** (1 клик) — постоечки CustomsDeclaration + upload-наa faktura → авто-генерирање на Receipt со сите ReceiptLines
+- [ ] **P5.2.4** — **Bulk shipment from FG selection** — selektiraj FG редови по item/batch/PO → креира Shipment + EX декларација во еден flow
+- [ ] **P5.2.5** — **FIFO/FEFO auto-pick** — кога издаваш количина, системот автоматски го избира најстариот compatible batch/MRN (можно disable per tenant)
+- [ ] **P5.2.6** — **Release Production Order** (1 клик) — Draft → Released: резервира материјали, создава Operations по Routing, calculates планирано завршување
+- [ ] **P5.2.7** — **Mass location change** — филтрирај inventory (by item/batch/PO/warehouse) → избери target location → сите се transfer-ираат
+- [ ] **P5.2.8** — **Quick-entry bar** — single-line command за power users: `issue PO-123 50 BATCH-X` → auto-parse + execute
+
+### 5C — Template auto-apply (legacy pattern)
+
+- [ ] **P5.3.1** — `BOMTemplate` + auto-apply при ProductionOrder creation (legacy NormativTemplO/S) — zero keystrokes за repeat products
+- [ ] **P5.3.2** — `NormativeOverride` per partner/tenant (различни BOM-ови per Uvoznik за ист item)
+- [ ] **P5.3.3** — Inflate-for-waste опционална калкулација (per-tenant flag)
+- [ ] **P5.3.4** — Article picker со „A"-суфикс варијанти за tariff differences
+- [ ] **P5.3.5** — **Recent values** dropdown — полињата памтат последните 10 внесени вредности per user + date
 
 ---
 
