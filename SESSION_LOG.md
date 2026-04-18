@@ -14,6 +14,45 @@
 
 ---
 
+## 2026-04-18 — P1.5 Composite (TenantId, Code) unique indices
+
+**Status:** [x] done
+**Commits:** `2a2924d phase-1.5: composite (TenantId, Code) unique indices for tenant-scoped entities`
+**Files changed:**
+- 6 config files updated: `MasterDataConfigurations.cs`, `UserManagementConfiguration.cs`, `CustomsConfigurations.cs`, `LONAuthorizationConfiguration.cs`, `GuaranteeConfigurations.cs`, `ProductionConfigurations.cs`, `WMSConfigurations.cs`
+- New migration `20260418182719_CompositeTenantUniqueIndices.cs` (dropped 22 globally-unique indices, created 22 composite (TenantId, X) unique indices)
+
+**What was done:**
+22 single-column unique indices replaced with composite `(TenantId, X)`:
+- MasterData (8): `Item.Code`, `Warehouse.Code`, `Partner.Code`, `Shift.Code`, `WorkCenter.Code`, `Machine.Code`, `Employee.EmployeeNumber`, `Employee.Email`
+- WMS (6): `Receipt.ReceiptNumber`, `Shipment.ShipmentNumber`, `PickTask.TaskNumber`, `Transfer.TransferNumber`, `PickingWave.WaveNumber`, `CycleCount.CountNumber`
+- Production (3): `ProductionOrder.OrderNumber`, `MaterialIssue.IssueNumber`, `ProductionReceipt.ReceiptNumber`
+- Customs (3): `CustomsDeclaration.DeclarationNumber`, `CustomsDeclaration.MRN`, `MRNRegistry.MRN`
+- Guarantee (1): `GuaranteeAccount.AccountNumber`
+- LON (1): `LONAuthorization.AuthorizationNumber`
+
+**Explicitly LEFT globally unique:**
+- `User.Username`, `User.Email` — login flow assumes global uniqueness. Multi-tenant login UX (tenant-code prefix, subdomain, etc.) is a deferred decision.
+- `Tenant.Code`, `Tenant.LegacyUvoznik` — the scope root.
+- Reference/KB data: `UnitOfMeasure.Code`, `Role.Name`, `Permission.Name`, `TariffCode.TariffNumber`, `CodeListItem.(ListType,Code)`, `CustomsProcedure.Code`, `DeclarationRule.RuleCode`.
+
+**How verified на VPS:**
+- Migration applied cleanly (no errors in logs).
+- DB check: 22 `IX_*_TenantId_*` unique indices exist on the expected tables.
+- **Positive test** — inserted `Items.Code='RM-001'` under a new 2nd tenant (`DUP-CODE-TEST`) while TEKSPORT already has `RM-001` → both rows coexist. ✅
+- **Negative test** — attempted to insert a SECOND `RM-001` under TEKSPORT → rejected with `Msg 2601: Cannot insert duplicate key row in object 'dbo.Items' with unique index 'IX_Items_TenantId_Code'. The duplicate key value is (b8d4fe76-..., RM-001).` ✅
+- Regression counts unchanged: Receipts 6, Inventory 3, Items 5, Partners 4, Warehouses 2, Tenants 1.
+- Artifacts cleaned up afterward.
+
+**Follow-ups / notes:**
+- `ShiftConfiguration` lives in `UserManagementConfiguration.cs` (legacy from when Shift was user-adjacent). Single source of truth — no duplicate config today — but misplaced. Add to deferred backlog as a tiny move if we touch the file again.
+- `EmployeeNumber + Email` per-tenant uniqueness assumes employees never straddle tenants. That's the intended model (Employee is tenant-scoped).
+- EF warnings about cross-filter required relationships fire on `ef migrations add` (CustomsProcedure↔CustomsProcedureDocument, User↔UserRole, etc.). Advisory only. Tracked mentally; no action needed until a broken query surfaces.
+
+**Next (new session recommended — see end-of-turn note):** P1.6 — User ↔ Tenant provisioning UX. Currently the seeder pins `admin` to TEKSPORT and we have no way to create a second-tenant user through the product. TenantsController CRUD exists; user-create with tenant assignment is the missing piece.
+
+---
+
 ## 2026-04-18 — P1.4 EF global query filter for every ITenantScoped entity
 
 **Status:** [x] done
