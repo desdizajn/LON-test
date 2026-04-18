@@ -1,3 +1,4 @@
+using LON.Application.Production.Commands.CreateMaterialIssue;
 using LON.Application.Production.Commands.CreateProductionOrder;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
@@ -57,6 +58,16 @@ public class ProductionController : BaseController
             return NotFound();
 
         return Ok(order);
+    }
+
+    [HttpPost("orders/{id}/issues")]
+    public async Task<IActionResult> CreateMaterialIssue(Guid id, [FromBody] CreateMaterialIssueCommand command)
+    {
+        var bound = command with { ProductionOrderId = id };
+        var result = await Mediator.Send(bound);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
     }
 
     [HttpGet("orders/{id}/material-issues")]

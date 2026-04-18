@@ -1580,6 +1580,28 @@ export interface paths {
       };
     };
   };
+  "/api/Production/orders/{id}/issues": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateMaterialIssueCommand"];
+          "text/json": components["schemas"]["CreateMaterialIssueCommand"];
+          "application/*+json": components["schemas"]["CreateMaterialIssueCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Production/orders/{id}/material-issues": {
     get: {
       parameters: {
@@ -2283,6 +2305,15 @@ export interface components {
       department?: string | null;
       hireDate?: string | null;
     };
+    CreateMaterialIssueCommand: {
+      /** Format: uuid */
+      productionOrderId?: string;
+      /** Format: date-time */
+      issueDate?: string;
+      /** Format: uuid */
+      issuedByEmployeeId?: string | null;
+      lines?: components["schemas"]["MaterialIssueLineDto"][] | null;
+    };
     CreateProductionOrderCommand: {
       /** Format: uuid */
       itemId?: string;
@@ -2511,6 +2542,18 @@ export interface components {
       workCenterId?: string;
       serialNumber?: string | null;
       isActive?: boolean;
+    };
+    MaterialIssueLineDto: {
+      /** Format: uuid */
+      itemId?: string;
+      /** Format: double */
+      quantity?: number;
+      /** Format: uuid */
+      uoMId?: string;
+      batchNumber?: string | null;
+      mrn?: string | null;
+      /** Format: uuid */
+      locationId?: string | null;
     };
     PartnerRequest: {
       code?: string | null;
