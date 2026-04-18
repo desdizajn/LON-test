@@ -305,15 +305,15 @@
 
 ## Current Active Task
 
-> **>>>** **P2.4 DONE.** Next entry point = **P2.5** ProductionReceipt + TraceLink. A `ProductionReceipt` consumes WIP (`InventoryBalance` rows with `LonProcessState=InProduction` created by P2.4) and produces Finished Goods at a designated production-out location. Core responsibilities: (a) `CreateProductionReceiptCommand` (MediatR) taking `ProductionOrderId`, `ItemId` (FG), `Quantity`, `BatchNumber`, `LocationId`, optional ScrapQuantity; (b) roll `ProductionOrder.ProducedQuantity` forward, flip Status → Completed when `ProducedQuantity + ScrapQuantity ≥ OrderQuantity`; (c) create FG `InventoryMovement` (`Type=ProductionReceipt`=5) + `InventoryBalance` at FG location (qty stays declared, no inflate); (d) write `TraceLink` rows connecting the new FG batch to each source `MaterialIssue` that fed this run (needed for PEE060 Proces=7 export later); (e) emit `FGReceivedEvent`. Integration tests: happy path + ProducedQuantity rollup + terminal state flip + TraceLink linkage.
+> **>>>** **P2.5 DONE.** Next entry point = **P2.6a Export (EX) declaration + guarantee credit**. When an EX declaration (Box 37 procedure `3151` / `3100`) is registered, the LON bond previously debited by the matching IM 4200 MRN is discharged. Core responsibilities: (a) `CreateExportDeclarationCommand` accepting one or more FG batches + link to the IM declaration (or auto-resolved via TraceLinks); (b) compute the freed guarantee amount (proportional to exported qty vs imported qty) and write a `GuaranteeLedgerEntry` Credit; (c) transition the Imported/InProduction `InventoryBalance` rows for the underlying MRNs to `LonProcessState=Exported`; (d) mark the source `MRNRegistry` as fully discharged only when all its parcels are Exported; (e) emit `GuaranteeCreditedEvent`. Expect reuse of the MRN-context pattern from P2.3 and the TraceLink forward-join from P2.5.
 
-**Scope for P2.5:**
-- DTO + handler under `src/LON.Application/Production/Commands/CreateProductionReceipt/`.
-- REST: `POST /api/production/orders/{id}/receipts`.
-- `TraceLink` entity already exists in `LON.Domain/Entities/Traceability` — verify shape first.
-- Regenerate TS types; add integration test covering happy path + status flip.
+**Scope for P2.6a:**
+- DTO + handler under `src/LON.Application/Customs/Commands/CreateExportDeclaration/` (or `Guarantee/.../Credit`) — decide location by analogy with P2.2.
+- REST: likely `POST /api/customs/declarations` already handles IM; either overload or add a sibling endpoint for EX.
+- Integration tests: happy path (single FG batch back to single MRN) + partial discharge + already-exported guard + no-orphan-credits.
+- TraceLink reverse resolution: `FG batch → MaterialIssue → Imported balance → MRN → MRNRegistry.CustomsDeclaration.Guarantee`.
 
-**Алтернативи пред P2.5 (не-блокери, може да чекаат):**
+**Алтернативи пред P2.6 (не-блокери, може да чекаат):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -345,7 +345,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
       - I1 TEKSPORT inflate-for-waste flag; I2 landing-costs pro-rata; I3 duty-rate lookup warning; I4 PreviousProcedureCode; I5 SAD Box 38 required + 30/35/47 advisories; I6 strict currency policy documented; I7 LonProcessState enum + Imported on Receipt; I8 audit log with JSON diffs + GET /api/audit.
 - [x] **P2.3** ✅ Receipt consumes MRN. Handler pre-validates (registered + active + unexpired + no aggregate overdraw), inflates booked qty for TEKSPORT via LONAuthorizationItem.AllowedWastePercentage, atomically increments MRNRegistry.UsedQuantity, flips IsActive=false when fully used, sets LonProcessState=Imported only for 4200/5100. VPS verified: qty=40 MRN → Used=40, balance=42.1053 (5% waste), overdraw/unknown/full-consumption negatives all return 400 (commits `f557899`, `38ce54f`).
 - [x] **P2.4** ✅ MaterialIssue. `CreateMaterialIssueCommand` with ResolveBalance (exact-match with Imported-priority → FEFO auto-pick with LON-first ordering), LON-mandatory batch+MRN post-resolve, state split (issued portion → sibling InventoryBalance at state=InProduction), `Type=ProductionIssue` movement, `PO.Status` Draft/Released → InProgress. VPS verified: B-CLEAN 42.1053 split to 37.1053 Imported + 5.0 InProduction; over-draw/unknown-batch/FEFO-auto-pick all behaved (commit `3aab9bb`).
-- [ ] P2.5 ProductionReceipt + TraceLink
+- [x] **P2.5** ✅ ProductionReceipt + TraceLink. `CreateProductionReceiptCommand` books FG `InventoryBalance` at caller's location (LonProcessState=null), writes `Type=ProductionReceipt=5` movement, rolls PO.Produced/Scrap, flips Draft/Released→InProgress and InProgress→Completed on threshold (emits `ProductionOrderCompletedEvent`). TraceLinks: auto-mode links every MaterialIssue on the PO; explicit `materialConsumption` mode decrements InProduction WIP by caller-supplied qty. VPS verified: PR qty=3 → 2 TraceLinks written + FG=3 booked; over-production → 400; qty=6+scrap=1 filling the PO → Status=Completed+ActualEndDate; post-completion PR → 400 (commit `f90cdc3`).
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules
 

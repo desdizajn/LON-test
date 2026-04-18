@@ -2,6 +2,55 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.5 ProductionReceipt books FG + TraceLinks + status lifecycle
+
+**Status:** [x] done
+**Commit:** `f90cdc3` (main)
+
+**What landed:**
+- `src/LON.Application/Production/Commands/CreateProductionReceipt/CreateProductionReceiptCommand.cs` (new, ~230 lines). `CreateProductionReceiptCommand` + `MaterialConsumptionDto` + handler.
+- `src/LON.API/Controllers/ProductionController.cs` — POST `/api/production/orders/{id}/receipts` (sibling to existing GET).
+- `tests/LON.IntegrationTests/ProductionReceiptTests.cs` (new, 4 scenarios: happy + auto-TraceLink + completion flip + over-production + explicit consumption).
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated.
+
+**Handler rules:**
+1. Validate qty>0, scrap≥0, batch required. PO must exist and not be Cancelled/Completed/Closed. PR.ItemId must match PO.ItemId.
+2. No-over-production: `ProducedQuantity + ScrapQuantity` after roll must not exceed `OrderQuantity`.
+3. `ProductionReceipt` row + `InventoryMovement(Type=ProductionReceipt=5, From=null, To=LocationId)` + upsert FG `InventoryBalance` at LocationId (`LonProcessState=null` — FG is treated as domestic product; lineage lives in TraceLinks, not on the balance).
+4. **TraceLinks**, two modes:
+   - **Explicit** `materialConsumption: [{materialIssueId, qty}]` — one TraceLink per entry with caller-supplied quantity; decrements the matching `LonProcessState=InProduction` sibling balance by that qty.
+   - **Auto** (omitted) — one TraceLink per `MaterialIssue` on the PO, quantity echoes the full issue qty. Informational lineage; WIP reconciliation deferred to P2.6.
+5. Roll `ProducedQuantity + ScrapQuantity` forward; flip Draft/Released → InProgress on first touch; flip → Completed + set ActualEndDate + emit `ProductionOrderCompletedEvent` when `Produced + Scrap ≥ OrderQuantity`.
+6. Always emit `FGReceivedEvent`.
+
+**Verified on VPS** (PO-VPS-P24-202604182059, orderQty=10; pre-existing 2 MaterialIssues from P2.4 smoke):
+1. Auto-mode PR qty=3 → `PR-20260418-3ee57269`. DB: FG `FG-VPS-P25-01` balance=3, state=null, at RCV-01. Movement Type=5 qty=3 To=RCV-01. **2 TraceLinks** (1 per MaterialIssue): B-VPS-P23/26MKF59796F0A1 qty=2 + B-CLEAN/26MK8DF9122FA1 qty=5. PO: Produced=3, Status=3 InProgress. ✅
+2. Over-production qty=999 → 400 `Production receipt would exceed ordered quantity. Ordered 10.0000, produced-after=1002.0000`. ✅
+3. Filling PR qty=6 + scrap=1 (pushing total to 9+1=10) → 200. PO: Produced=9, Scrap=1, Status=4 **Completed**, ActualEndDate set. ✅
+4. Post-completion PR qty=1 → 400 `Cannot receive production into ProductionOrder in status Completed`. ✅
+
+**Integration tests (ProductionReceiptTests.cs):**
+- `PR_HappyPath_BooksFgAndTraceLinksEachIssue` — full side-effect check including auto-mode TraceLink.
+- `PR_FillingOrderQuantity_CompletesOrder` — exact-fill triggers Completed + ActualEndDate.
+- `PR_OverProduction_Returns400` — guardrail.
+- `PR_ExplicitConsumption_DecrementsWipAndWeightsLinks` — materialConsumption flow decrements WIP from 15 → 11 and writes a weighted TraceLink qty=4 (will run on CI).
+
+**Discoveries / design notes:**
+- Explicit WIP consumption is opt-in by design. Phase 2.5 ships forward traceability (TraceLinks always created) but leaves "how much WIP was actually burned into this FG batch" to the caller when precision matters. Auto-mode trace-links the full issued qty — good enough for legacy PEE060-style forward reports, overstated for exact MRN attribution. Full WIP reconciliation (proportional burn-down on PO close) belongs to P2.6.
+- `FG balance.LonProcessState = null` keeps FG out of the LON state chain. When P2.6 pairs the FG batch with an EX declaration, the Exported transition will be written on the source MRN's Imported/InProduction buckets (not on the FG balance itself). TraceLinks provide the join.
+
+**Phase 2 progress:**
+- [x] P2.1, [x] P2.2, [x] P2.2.5 (B1-B7 + I1-I8)
+- [x] P2.3 Receipt consumes MRN
+- [x] P2.4 MaterialIssue
+- [x] **P2.5 ProductionReceipt + TraceLink** ← this commit
+- [ ] P2.6a/b/c Export / Return / Waste → guarantee credit + LonProcessState Imported/InProduction → Exported/FinalImport/Waste
+- [ ] P2.7 Remaining declaration validation rules
+
+**Next (P2.6a Export):** EX declaration (Box 37 procedure `3151` / `3100`) that discharges the LON bond. Consumes FG batches via TraceLink lookup → identifies the underlying MRNs → transitions their Imported/InProduction balances to Exported + credits the guarantee ledger in a single transaction. Expect reuse of the MRN context pattern from P2.3.
+
+---
+
 ## 2026-04-18 — P2.4 MaterialIssue consumes inventory with FEFO + LON state split
 
 **Status:** [x] done
