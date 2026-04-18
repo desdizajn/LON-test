@@ -311,6 +311,20 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                     continue;
             }
 
+            // Resolve TenantId from the audited entity when possible. The
+            // IAuditable entities in scope today (CustomsDeclaration, Receipt,
+            // User, LONAuthorization, GuaranteeLedgerEntry) are all
+            // ITenantScoped — we pull TenantId directly from the changed row
+            // so audit never FK-fails at login (CurrentTenantId is null until
+            // the JWT is issued).
+            Guid auditTenantId = Guid.Empty;
+            if (e.Entity is ITenantScoped scoped && scoped.TenantId != Guid.Empty)
+                auditTenantId = scoped.TenantId;
+            else if (CurrentTenantId.HasValue && CurrentTenantId.Value != Guid.Empty)
+                auditTenantId = CurrentTenantId.Value;
+            else
+                continue; // cannot attach to any tenant — skip rather than corrupt the log
+
             results.Add(new AuditLogEntry
             {
                 Id = Guid.NewGuid(),
@@ -323,10 +337,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 OccurredAt = auditTs,
                 CreatedAt = auditTs,
                 CreatedBy = userName,
-                // TenantId auto-filled by the scoped-entity loop above when
-                // it ran; for audit rows added here we set explicitly so the
-                // check constraint doesn't bite.
-                TenantId = CurrentTenantId ?? Guid.Empty
+                TenantId = auditTenantId
             });
         }
 
