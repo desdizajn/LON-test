@@ -327,7 +327,9 @@
 
 ### Recent context (2026-04-18):
 
-- **P2.1 completed** — IM 4200 backend + UI + E2E verified on VPS. MRN auto-gen, LON auth enforce, DeclarationStatus lifecycle, MRNRegistry opens 180-day window. Commit `c37b011`.
+- **P2.2.5 completed** — 7 compliance blockers (B1 MRN global uniq, B2 immutable post-Draft, B3 per-auth bond ceiling, B4 auth completion days, B5 auth % override, B6 DeclarationType IM/EX, B7 tariff-within-auth). VPS verified B1/B2/B6/B7 live; B3/B4/B5 covered by integration tests. Commits `b933078/c65216e/39ef2d6`.
+- **P2.2 completed** — Sync guarantee auto-debit in handler. Commit `63bf612`.
+- **P2.1 completed** — IM 4200 backend + UI + E2E verified on VPS (commit `c37b011`).
 - **P1.6** — MediatR CreateUserCommand + cross-tenant provisioning (commit `59878b6`).
 - **P1.5** — composite `(TenantId, Code)` unique indices (commit `2a2924d`).
 - **P1.4** — global query filter isolation (commit `5cc6f72`).
@@ -342,6 +344,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 - [x] P2.1 IM 4200 declaration + MRN registration + LON auth enforce + status lifecycle
 - [x] P2.2 Guarantee auto-debit on declaration creation (sync, hard-enforce limit)
+- [x] **P2.2.5** Compliance blockers B1–B7: MRN global uniq, immutable post-Draft, per-auth bond ceiling, auth-level completion days + guarantee % override, DeclarationType IM/EX, tariff-within-auth rule
 - [ ] P2.3 Receipt consumes MRN → batch+MRN inventory (NEXT)
 - [ ] P2.4 MaterialIssue (batch+MRN mandatory, no-negative)
 - [ ] P2.5 ProductionReceipt + TraceLink

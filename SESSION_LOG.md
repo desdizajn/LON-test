@@ -2,6 +2,73 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-18 — P2.2.5 compliance blockers (B1–B7) fixed before P2.3
+
+**Status:** [x] done
+**Commits:** `b933078` (main) + `c65216e` (seed backfill refactor) + `39ef2d6` (EF config mismatch fix)
+
+**Why:** User asked for full compliance audit of P0–P2.2 flows against Правилник and legacy ELON, and selected option 3 — fix all 7 BLOCKERS as an interim task before continuing to P2.3. Rationale: P2.3 (Receipt consume MRN) would inherit the MRN-scope bug in B1; cleaner to land the fixes atomically.
+
+**Fixes (with compliance / legacy reference):**
+
+| ID | Fix | Reference |
+|---|---|---|
+| B1 | MRN uniqueness now global. `IgnoreQueryFilters()` on both `CustomsDeclarations` and `MRNRegistries` before uniqueness check. | Customs allocates MRN globally — two tenants cannot share one. Placeholder MRNs used to be tenant-scoped only. |
+| B2 | `UpdateCustomsDeclarationCommand` (MediatR) + new `PUT /api/customs/declarations/{id}`. Refuses non-Draft with 409; for Draft exposes header-text fields only (lines/bond/MRN frozen). | Customs forbids silent mutation of filed declarations — amendments go through a separate workflow (deferred to Phase 4.x). |
+| B3 | Per-authorization bond ceiling. `Σ outstanding debits (Debit − Credit) for declarations under this LONAuthorization + new debit ≤ auth.GuaranteeAmount`. | Legacy `Одобренија.GarancijaIznos` was advisory (no FK); ours is enforced. УСЦЗ: each Одобрение carries its own bond limit. |
+| B4 | `MRNRegistry.ExpiryDate` and `GuaranteeLedger.ExpectedReleaseDate` prefer `auth.CompletionPeriodDays` over `procedure.DueDays`. | Правилник: completion deadline is set per Одобрение, not per procedure default. |
+| B5 | `LONAuthorization.GuaranteePercentageOverride: decimal?` + migration. Handler picks auth override first, `procedure.GuaranteePercentage` fallback. | Customs can risk-adjust % on an individual authorization without changing procedure defaults. |
+| B6 | `DeclarationType` (SAD Box 01) derived from `procedure.Type`: Export → `"EX"`, else → `"IM"`. | Unblocks P2.6a (EX declaration for inward-processing closure); previously hardcoded `"IM"`. |
+| B7 | New `LONLineTariffWithinAuthorizationRule` (Priority=26). When LONAuthorization has a non-empty ApprovedItems list, each `Line.TariffCode` must be in it. Allow-all when list is empty (back-compat). TEKSPORT auth seeded with 2 ApprovedItems. | УСЦЗ член 349: IM 4200 only for tariffs named in the authorization. |
+
+**Migration:** `AddGuaranteePercentageOverrideToLONAuth` (single nullable decimal column).
+
+**Files:**
+- `src/LON.Domain/Entities/Customs/LONAuthorization.cs` — +GuaranteePercentageOverride.
+- `src/LON.Application/Customs/Commands/CreateCustomsDeclaration/CreateCustomsDeclarationCommand.cs` — B1 IgnoreQueryFilters, B4 completion-days fallback, B5 % override, B6 DeclarationType map, B3 per-auth ceiling in `TryDebitGuaranteeAsync`.
+- `src/LON.Application/Customs/Commands/UpdateCustomsDeclaration/UpdateCustomsDeclarationCommand.cs` (new) — B2 status guard.
+- `src/LON.Application/Customs/Validation/Rules/LONLineTariffWithinAuthorizationRule.cs` (new) — B7 tariff scope.
+- `src/LON.Infrastructure/DependencyInjection.cs` — register new rule.
+- `src/LON.Infrastructure/Persistence/ApplicationDbContextSeed.cs` — seed 2 LONAuthorizationItems, refactored to backfill on upgrade path (not just fresh DB).
+- `src/LON.API/Controllers/CustomsController.cs` — PUT endpoint.
+- `tests/LON.IntegrationTests/CustomsDeclarationTests.cs` — 7 new tests (one per blocker).
+
+**Integration tests added (7):**
+- B1 MRN is globally unique across tenants.
+- B2 PUT non-Draft → 409.
+- B2 PUT Draft → 200 (notes updated).
+- B3 per-authorization bond ceiling enforced (small auth, big declaration).
+- B4+B5 authorization overrides apply (90-day expiry + 25% debit).
+- B6 Export procedure → DeclarationType="EX".
+- B7 unauthorized tariff on IM 4200 → 400.
+
+**VPS verification (deployed `39ef2d6`):**
+
+| Blocker | Verified | Evidence |
+|---|---|---|
+| B1 | ✅ | Dup MRN `26MKVPSTEST01A1` → 400 `MRN '...' is already registered` |
+| B2 | ✅ | PUT Registered decl `DEC-B2-VPS` → 409 `in status 'Registered' and cannot be edited` |
+| B3 | tested via CI only | VPS seed has 100k auth limit; would need a test-only small auth |
+| B4+B5 | tested via CI only | Override fields not set on seeded auth |
+| B6 | ✅ | Export procedure yielded decl row `DEC-B6-VPS \| EX \| EXPORT` |
+| B7 | ✅ | Tariff `0401109000` → 400 with `Одобрени тарифи: 2905399500, 1211200050` |
+
+**Compliance footprint after P2.2.5:**
+- MRN uniqueness now true global scope (placeholder + real MRN both protected).
+- Registered declarations are immutable (no silent edits); amendment flow clearly signposted as future work.
+- Two layers of bond enforcement: per-authorization (B3) + account total limit (existing). A declaration cannot land if either would overflow.
+- Per-authorization % and completion window (B4/B5) take precedence over procedure defaults — authorization is the contract, procedure is the default.
+- Tariff scope tied to Одобрение ApprovedItems (B7) — matches УСЦЗ член 349.
+
+**Follow-ups worth noting (in order of likely impact):**
+- EF configuration mismatch: `LONAuthorizationItem.CompensatingTariffCode` is `string?` in CLR but `IsRequired()` in configuration. Currently worked around with `string.Empty` in seed; real fix: `IsRequired(false)` + migration. Added to the backlog.
+- Vector Store OOM still crashes startup (P6.14 unchanged).
+- I3 preferential duty rate lookup (legacy year-indexed ST\<year\>) — not addressed; DutyRate remains user-input.
+- I1 TEKSPORT inflate-for-waste — not addressed; per-tenant flag needed when P2.3 touches receipts.
+
+---
+
+
 ## 2026-04-18 — P2.2 Guarantee auto-debit on declaration
 
 **Status:** [x] done
