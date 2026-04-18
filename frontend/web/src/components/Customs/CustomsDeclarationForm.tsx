@@ -105,6 +105,11 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
     partnerId: '',
     currency: 'EUR',
     dueDate: '',
+    senderName: '',
+    senderAddress: '',
+    senderCountry: '',
+    countryOfDispatch: '',
+    countryOfDestination: 'MK',
   });
 
   // --- Lines state ---
@@ -163,6 +168,11 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
         partnerId: declaration.partnerId || '',
         currency: declaration.currency || 'EUR',
         dueDate: declaration.dueDate?.split('T')[0] || '',
+        senderName: declaration.senderName || '',
+        senderAddress: declaration.senderAddress || '',
+        senderCountry: declaration.senderCountry || '',
+        countryOfDispatch: declaration.countryOfDispatch || '',
+        countryOfDestination: declaration.countryOfDestination || 'MK',
       });
       if (declaration.lines && declaration.lines.length > 0) {
         setLines(
@@ -303,6 +313,10 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
       errs.declarationNumber = 'Декларацискиот број е задолжителен';
       summary.push('Декларацискиот број е задолжителен');
     }
+    if (!formData.senderName.trim()) {
+      errs.senderName = 'Box 02: Испраќач е задолжителен';
+      summary.push('Box 02: Испраќач / извозник е задолжителен');
+    }
     if (!formData.customsProcedureId) {
       errs.customsProcedureId = 'Царинската процедура е задолжителна';
       summary.push('Царинската процедура е задолжителна');
@@ -358,6 +372,11 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
       totalCustomsValue,
       currency: formData.currency,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+      senderName: formData.senderName || null,
+      senderAddress: formData.senderAddress || null,
+      senderCountry: formData.senderCountry || null,
+      countryOfDispatch: formData.countryOfDispatch || null,
+      countryOfDestination: formData.countryOfDestination || null,
       lines: lines.map((l) => ({
         itemId: l.itemId,
         tariffCode: l.tariffCode,
@@ -587,6 +606,54 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => handleHeaderChange('dueDate', e.target.value)}
+              />
+            </div>
+
+            {/* Box 02 Sender */}
+            <div className="form-group">
+              <label>Box 02 — Испраќач *</label>
+              <input
+                type="text"
+                value={formData.senderName}
+                onChange={(e) => handleHeaderChange('senderName', e.target.value)}
+                placeholder="Име на испраќач / извозник"
+                className={errors.senderName ? 'error' : ''}
+              />
+              {errors.senderName && <span className="error-message">{errors.senderName}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Box 02 — Земја на испраќач</label>
+              <input
+                type="text"
+                maxLength={2}
+                value={formData.senderCountry}
+                onChange={(e) => handleHeaderChange('senderCountry', e.target.value.toUpperCase())}
+                placeholder="ISO (DE, IT, CN ...)"
+              />
+            </div>
+
+            {/* Box 15 Country of dispatch */}
+            <div className="form-group">
+              <label>Box 15 — Земја на испраќање</label>
+              <input
+                type="text"
+                maxLength={2}
+                value={formData.countryOfDispatch}
+                onChange={(e) => handleHeaderChange('countryOfDispatch', e.target.value.toUpperCase())}
+                placeholder="ISO"
+              />
+            </div>
+
+            {/* Box 17 Country of destination */}
+            <div className="form-group">
+              <label>Box 17 — Земја на дестинација</label>
+              <input
+                type="text"
+                maxLength={2}
+                value={formData.countryOfDestination}
+                onChange={(e) => handleHeaderChange('countryOfDestination', e.target.value.toUpperCase())}
+                placeholder="MK"
               />
             </div>
           </div>

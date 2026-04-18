@@ -34,6 +34,20 @@ public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
     public string Currency { get; init; } = "EUR";
     public DateTime? DueDate { get; init; }
 
+    // ---- SAD boxes propagated to the entity so rule engine sees them ----
+    /// <summary>Box 02 — Sender/Exporter name.</summary>
+    public string? SenderName { get; init; }
+    /// <summary>Box 02 — Sender address.</summary>
+    public string? SenderAddress { get; init; }
+    /// <summary>Box 02 — Sender country (ISO 3166-1 alpha-2).</summary>
+    public string? SenderCountry { get; init; }
+    /// <summary>Box 15 — Country of dispatch (ISO 3166-1 alpha-2).</summary>
+    public string? CountryOfDispatch { get; init; }
+    /// <summary>Box 17 — Country of destination (ISO 3166-1 alpha-2).</summary>
+    public string? CountryOfDestination { get; init; }
+    /// <summary>Box 44 — Special remarks / attached documents.</summary>
+    public string? SpecialRemarks { get; init; }
+
     /// <summary>Optional pre-set for testing; defaults to Draft or Registered
     /// depending on whether an MRN ends up being present after handling.</summary>
     public DeclarationStatus? Status { get; init; }
@@ -133,6 +147,12 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             DueDate = request.DueDate,
             DeclarationType = "IM",
             ProcedureCode = procedure.Code,
+            SenderName = request.SenderName,
+            SenderAddress = request.SenderAddress,
+            SenderCountry = request.SenderCountry,
+            CountryOfDispatch = request.CountryOfDispatch,
+            CountryOfDestination = request.CountryOfDestination,
+            SpecialRemarks = request.SpecialRemarks,
             Status = request.Status ?? DeclarationStatus.Registered, // auto-MRN → Registered
             IsCleared = false
         };

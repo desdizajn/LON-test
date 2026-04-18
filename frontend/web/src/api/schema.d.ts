@@ -2211,6 +2211,12 @@ export interface components {
       currency?: string | null;
       /** Format: date-time */
       dueDate?: string | null;
+      senderName?: string | null;
+      senderAddress?: string | null;
+      senderCountry?: string | null;
+      countryOfDispatch?: string | null;
+      countryOfDestination?: string | null;
+      specialRemarks?: string | null;
       status?: components["schemas"]["DeclarationStatus"];
       lines?: components["schemas"]["DeclarationLineDto"][] | null;
     };

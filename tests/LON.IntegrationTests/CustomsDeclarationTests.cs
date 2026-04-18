@@ -200,7 +200,8 @@ public class CustomsDeclarationTests : IClassFixture<LonApiFactory>
     }
 
     private static object BuildMinimalPayload(Guid procedureId, Guid? lonAuthId,
-        Guid itemId, Guid uomId, Guid partnerId, string tariffCode, string currency)
+        Guid itemId, Guid uomId, Guid partnerId, string tariffCode, string currency,
+        string senderName = "Sender GmbH", string senderCountry = "DE")
     {
         return new
         {
@@ -213,8 +214,8 @@ public class CustomsDeclarationTests : IClassFixture<LonApiFactory>
             totalCustomsValue = 100m,
             currency,
             countryOfDispatch = "DE",
-            senderName = "Sender",
-            senderCountry = "DE",
+            senderName,
+            senderCountry,
             lines = new[]
             {
                 new
