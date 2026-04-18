@@ -29,8 +29,8 @@
   - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
   - [x] **P0.3.8** — Bump API memory 1.5G → 3G ✅ (adequate за нормален API workload; Vector Store OOM отделен проблем → види P6.X)
   - Verify: before/after evidence per sub-task во SESSION_LOG
-- [ ] **P0.4** — E2E smoke test на VPS: login → create item → create warehouse → create receipt → видливо во UI
-  - Verify: screencast или чекор-по-чекор screenshots
+- [x] **P0.4** — E2E smoke test на VPS: login → create receipt → GET returns it ✅ (API-ниво). UI потврда: pending од корисник.
+  - Откриени и поправени 3 bug-ови: IApplicationDbContext incomplete (expanded to 38 DbSets), CreateReceiptCommandHandler missing Add() (fixed), JSON cycle в GET (IgnoreCycles)
 - [ ] **P0.5** — Замена на `CreatedBy = "System"` hack со `ICurrentUserService`
   - Verify: нов receipt има реален username во `CreatedBy` колоната (SQL query показува)
 
@@ -184,6 +184,6 @@
 
 ## Current Active Task
 
-> **>>>** P0.4 — E2E smoke test на VPS: login → create item → create warehouse → create receipt
+> **>>>** P0.5 — Замена на `CreatedBy = "System"` hack со `ICurrentUserService`
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

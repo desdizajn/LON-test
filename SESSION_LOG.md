@@ -234,3 +234,33 @@
 **P0.3 ГОТОВ.**
 
 ---
+
+## 2026-04-18 — P0.4 E2E smoke test (API level)
+
+**Status:** [x] done на API ниво (UI потврда: pending од корисник)
+**Files changed:**
+- `src/LON.Application/Common/Interfaces/IApplicationDbContext.cs` — експандиран со сите 38 DbSets (беше само 6 KB-related)
+- `src/LON.Application/WMS/Commands/CreateReceipt/CreateReceiptCommand.cs` — додаден `_context.Receipts.AddAsync(receipt)`
+- `src/LON.API/Program.cs` — `ReferenceHandler.IgnoreCycles` во JSON options
+
+**What was done & discoveries (3 bugs откриени):**
+
+1. 🐛 **`IApplicationDbContext` изложуваше само 6 DbSets** (KB-related). Сите MediatR handlers (CreateReceipt, CreateProductionOrder, CreateCustomsDeclaration, Debit/CreditGuarantee) имаат ист проблем — не можат да persist-ираат преку интерфејсот. → Експандиран на сите 38 DbSets.
+
+2. 🐛 **`CreateReceiptCommandHandler` никогаш не го додаваше Receipt-от во DbContext.** Коментар во кодот велеше „placeholder". SaveChangesAsync со 0 tracked entities = no-op. POST враќаше HTTP 200 + fake Guid; податоците исчезнуваа. → Додадено `AddAsync(receipt, cancellationToken)` пред SaveChanges.
+
+3. 🐛 **GET /api/wms/receipts враќаше празно тело** поради JSON циклична референца (Receipt → Lines → Line.Receipt → ...). System.Text.Json infinite loop. → `ReferenceHandler.IgnoreCycles` глобално во AddJsonOptions.
+
+**How verified end-to-end на VPS:**
+- Login → JWT токен
+- POST `/api/wms/receipts` со partner SUP-001, warehouse WH-MAIN, item SF-001, 100 BOX, batch BATCH-SMOKE-001, MRN 26MK000012345678A1 → HTTP 200, receipt ID `ceabc418-c15d-4adf-a6ae-6f70440b012f`
+- GET `/api/wms/receipts` → list враќа 1 receipt со правилен receiptNumber `RCP-20260418-9fe2f6a0`
+- GET `/api/wms/receipts/{id}` → details со полна line (quantity 100.0000 — precision од P0.3.4 работи), batch, MRN, uoMId.
+- Корисник треба да потврди преку `https://elon.elbosoft.click/inventory` дали receipt е видлив во UI.
+
+**Follow-ups:**
+- **InventoryBalance НЕ се ажурира** при create receipt. Handler-от фрла domain event во outbox; Worker треба да ги процесира. Неjasno дали Worker навистина ажурира InventoryBalance. За провера во P2.3 (end-to-end flow).
+- **Другите 4 MediatR handlers имаат ист missing Add()**. Ќе се поправи per task кога ќе се користат во Phase 2.
+- P0.4 criterion „видливо во UI" е pending дури корисникот да провери.
+
+---
