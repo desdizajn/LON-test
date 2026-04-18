@@ -55,6 +55,10 @@ builder.Services.AddSwaggerGen(c =>
 // Add Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Current user (audit) — depends on IHttpContextAccessor.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<LON.Application.Common.Interfaces.ICurrentUserService, LON.API.Services.CurrentUserService>();
+
 // Add MediatR
 builder.Services.AddMediatR(cfg =>
 {

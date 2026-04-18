@@ -87,8 +87,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
+    private readonly ICurrentUserService? _currentUser;
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
+    }
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserService currentUser) : base(options)
+    {
+        _currentUser = currentUser;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,6 +106,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var auditName = _currentUser?.AuditName ?? "System";
         var entries = ChangeTracker.Entries<BaseEntity>();
 
         foreach (var entry in entries)
@@ -106,12 +114,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = DateTime.UtcNow;
-                entry.Entity.CreatedBy = "System"; // Should be replaced with actual user context
+                entry.Entity.CreatedBy = auditName;
             }
             else if (entry.State == EntityState.Modified)
             {
                 entry.Entity.ModifiedAt = DateTime.UtcNow;
-                entry.Entity.ModifiedBy = "System"; // Should be replaced with actual user context
+                entry.Entity.ModifiedBy = auditName;
             }
         }
 
