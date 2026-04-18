@@ -8,7 +8,7 @@ namespace LON.Domain.Entities.Customs;
 /// LON Одобрение - Одобрение за увоз за облагородување
 /// Извор: УСЦЗ Прилог 27, Упатство увоз за облагородување
 /// </summary>
-public class LONAuthorization : BaseEntity, ITenantScoped
+public class LONAuthorization : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid TenantId { get; set; }
 

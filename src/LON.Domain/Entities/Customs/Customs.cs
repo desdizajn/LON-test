@@ -28,7 +28,7 @@ public class CustomsProcedureDocument : BaseEntity
     public bool IsMandatory { get; set; }
 }
 
-public class CustomsDeclaration : BaseEntity, ITenantScoped
+public class CustomsDeclaration : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid TenantId { get; set; }
     // ===== Основни податоци =====

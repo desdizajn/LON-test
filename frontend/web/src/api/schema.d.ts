@@ -93,6 +93,26 @@ export interface paths {
       };
     };
   };
+  "/api/Audit": {
+    get: {
+      parameters: {
+        query?: {
+          entityType?: string;
+          entityId?: string;
+          action?: string;
+          from?: string;
+          to?: string;
+          take?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Auth/login": {
     post: {
       requestBody?: {
@@ -2231,6 +2251,11 @@ export interface components {
       currency?: string | null;
       /** Format: date-time */
       dueDate?: string | null;
+      previousProcedureCode?: string | null;
+      /** Format: double */
+      landingCosts?: number | null;
+      /** Format: double */
+      discount?: number | null;
       senderName?: string | null;
       senderAddress?: string | null;
       senderCountry?: string | null;
@@ -2363,6 +2388,14 @@ export interface components {
       dutyRate?: number;
       /** Format: double */
       vatRate?: number;
+      locationOfGoods?: string | null;
+      /** Format: double */
+      grossWeight?: number | null;
+      /** Format: double */
+      netWeight?: number | null;
+      /** Format: double */
+      additionalUnit?: number | null;
+      calculationMethod?: string | null;
     };
     /**
      * Format: int32
@@ -2649,6 +2682,7 @@ export interface components {
       customsAuthorizationNumber?: string | null;
       defaultLanguage?: string | null;
       isActive?: boolean;
+      inflateImportForWaste?: boolean;
     };
     TenantRequest: {
       code?: string | null;

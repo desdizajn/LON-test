@@ -36,6 +36,8 @@ public static class DependencyInjection
         services.AddScoped<IDeclarationRule, CountryIsoRule>();
         services.AddScoped<IDeclarationRule, LONAuthorizationRequiredRule>();
         services.AddScoped<IDeclarationRule, LONLineTariffWithinAuthorizationRule>();
+        services.AddScoped<IDeclarationRule, SadFieldAdvisoriesRule>();
+        services.AddScoped<IDeclarationRule, DutyRateLookupWarningRule>();
         
         // Knowledge Base Services
         services.AddScoped<IDocumentChunkingService, DocumentChunkingService>();

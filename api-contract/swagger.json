@@ -144,6 +144,67 @@
         }
       }
     },
+    "/api/Audit": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Auth/login": {
       "post": {
         "tags": [
@@ -3956,6 +4017,20 @@
             "format": "date-time",
             "nullable": true
           },
+          "previousProcedureCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "landingCosts": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "discount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
           "senderName": {
             "type": "string",
             "nullable": true
@@ -4339,6 +4414,29 @@
           "vatRate": {
             "type": "number",
             "format": "double"
+          },
+          "locationOfGoods": {
+            "type": "string",
+            "nullable": true
+          },
+          "grossWeight": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "netWeight": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "additionalUnit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "calculationMethod": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5194,6 +5292,9 @@
             "nullable": true
           },
           "isActive": {
+            "type": "boolean"
+          },
+          "inflateImportForWaste": {
             "type": "boolean"
           }
         },

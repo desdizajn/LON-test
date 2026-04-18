@@ -65,6 +65,11 @@ public static class ApplicationDbContextSeed
         // a valid `LONAuthorizationId` out of the box. Idempotent via
         // AuthorizationNumber lookup.
         await SeedTeksportLONAuthorizationIdempotent(context);
+
+        // I1 idempotent backfill: ensure TEKSPORT inflate-for-waste is on
+        // (existing DBs upgraded from earlier versions where the column
+        // didn't exist default to false from the migration defaultValue).
+        await BackfillTeksportInflateFlagAsync(context);
     }
 
     private static async Task SeedUnitsOfMeasure(ApplicationDbContext context)
@@ -97,6 +102,16 @@ public static class ApplicationDbContextSeed
     private static async Task SeedTenants(ApplicationDbContext context)
     {
         await SeedTenantsInternal(context);
+    }
+
+    private static async Task BackfillTeksportInflateFlagAsync(ApplicationDbContext context)
+    {
+        var tek = await context.Tenants.FirstOrDefaultAsync(t => t.Code == "TEKSPORT");
+        if (tek is not null && !tek.InflateImportForWaste)
+        {
+            tek.InflateImportForWaste = true;
+            await context.SaveChangesAsync();
+        }
     }
 
     private static async Task SeedTenantsInternal(ApplicationDbContext context)

@@ -1,6 +1,8 @@
 using System.Reflection;
+using System.Text.Json;
 using LON.Application.Common.Interfaces;
 using LON.Domain.Common;
+using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.MasterData;
@@ -86,6 +88,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Traceability
     public DbSet<TraceLink> TraceLinks => Set<TraceLink>();
     public DbSet<BatchGenealogy> BatchGenealogies => Set<BatchGenealogy>();
+
+    // Audit (I8)
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
@@ -247,8 +252,140 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             OutboxMessages.Add(outboxMessage);
         }
 
+        // I8 audit log — snapshot changes to IAuditable entities so every
+        // create/update/soft-delete produces one AuditLogEntry row in the
+        // same transaction. `CaptureAuditEntries()` must run AFTER all
+        // business mutations but BEFORE base.SaveChangesAsync so we have
+        // both the original and current values on tracked entities.
+        var auditEntries = CaptureAuditEntries();
+        if (auditEntries.Count > 0)
+            AuditLogEntries.AddRange(auditEntries);
+
         return await base.SaveChangesAsync(cancellationToken);
     }
+
+    /// <summary>
+    /// Walks the ChangeTracker for <see cref="IAuditable"/> entities in
+    /// Added/Modified/Deleted state and produces one <see cref="AuditLogEntry"/>
+    /// per change. Tracks field-level diffs for updates; skips audit-log rows
+    /// themselves (no recursion).
+    /// </summary>
+    private List<AuditLogEntry> CaptureAuditEntries()
+    {
+        var results = new List<AuditLogEntry>();
+        var auditTs = DateTime.UtcNow;
+        var userId = _currentUser?.UserId;
+        var userName = _currentUser?.AuditName ?? "System";
+
+        foreach (var e in ChangeTracker.Entries<IAuditable>())
+        {
+            if (e.State != EntityState.Added
+                && e.State != EntityState.Modified
+                && e.State != EntityState.Deleted)
+                continue;
+
+            var entityTypeName = e.Entity.GetType().Name;
+            var entityId = GetPrimaryKey(e);
+            if (entityId == Guid.Empty) continue; // shadow PK not yet assigned — skip
+
+            string action;
+            string changesJson;
+            switch (e.State)
+            {
+                case EntityState.Added:
+                    action = "Create";
+                    changesJson = SerializeInitialValues(e);
+                    break;
+                case EntityState.Modified:
+                    // Soft delete shows as Modified with IsDeleted=true.
+                    var isSoftDelete = e.Property(nameof(BaseEntity.IsDeleted)).IsModified
+                        && e.Property(nameof(BaseEntity.IsDeleted)).CurrentValue is true;
+                    action = isSoftDelete ? "Delete" : "Update";
+                    changesJson = SerializeFieldDiffs(e);
+                    break;
+                case EntityState.Deleted:
+                    action = "Delete";
+                    changesJson = "[]";
+                    break;
+                default:
+                    continue;
+            }
+
+            results.Add(new AuditLogEntry
+            {
+                Id = Guid.NewGuid(),
+                EntityType = entityTypeName,
+                EntityId = entityId,
+                Action = action,
+                ChangesJson = changesJson,
+                UserId = userId,
+                UserName = userName,
+                OccurredAt = auditTs,
+                CreatedAt = auditTs,
+                CreatedBy = userName,
+                // TenantId auto-filled by the scoped-entity loop above when
+                // it ran; for audit rows added here we set explicitly so the
+                // check constraint doesn't bite.
+                TenantId = CurrentTenantId ?? Guid.Empty
+            });
+        }
+
+        return results;
+    }
+
+    private static Guid GetPrimaryKey(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        var pk = entry.Metadata.FindPrimaryKey();
+        if (pk is null) return Guid.Empty;
+        var prop = pk.Properties.FirstOrDefault();
+        if (prop is null) return Guid.Empty;
+        var val = entry.Property(prop.Name).CurrentValue;
+        return val is Guid g ? g : Guid.Empty;
+    }
+
+    /// <summary>Returns a JSON array of every scalar property's value — used for Added state.</summary>
+    private static string SerializeInitialValues(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        var diffs = new List<object>();
+        foreach (var prop in entry.Properties)
+        {
+            if (IsAuditNoise(prop.Metadata.Name)) continue;
+            var newValue = prop.CurrentValue;
+            if (newValue is null) continue;
+            diffs.Add(new { field = prop.Metadata.Name, @new = newValue?.ToString() });
+        }
+        return JsonSerializer.Serialize(diffs);
+    }
+
+    /// <summary>Returns a JSON array of fields whose original ≠ current value.</summary>
+    private static string SerializeFieldDiffs(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        var diffs = new List<object>();
+        foreach (var prop in entry.Properties)
+        {
+            if (!prop.IsModified) continue;
+            if (IsAuditNoise(prop.Metadata.Name)) continue;
+            var oldValue = prop.OriginalValue;
+            var newValue = prop.CurrentValue;
+            if (Equals(oldValue, newValue)) continue;
+            diffs.Add(new
+            {
+                field = prop.Metadata.Name,
+                old = oldValue?.ToString(),
+                @new = newValue?.ToString()
+            });
+        }
+        return JsonSerializer.Serialize(diffs);
+    }
+
+    private static bool IsAuditNoise(string fieldName) => fieldName switch
+    {
+        nameof(BaseEntity.ModifiedAt) => true,
+        nameof(BaseEntity.ModifiedBy) => true,
+        nameof(BaseEntity.CreatedAt) => true,
+        nameof(BaseEntity.CreatedBy) => true,
+        _ => false
+    };
 }
 
 public class OutboxMessage : BaseEntity

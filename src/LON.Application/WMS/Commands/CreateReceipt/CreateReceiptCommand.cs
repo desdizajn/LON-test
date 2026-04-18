@@ -130,12 +130,23 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                     Quantity = lineDto.Quantity,
                     UoMId = lineDto.UoMId,
                     QualityStatus = lineDto.QualityStatus,
-                    ExpiryDate = lineDto.ExpiryDate
+                    ExpiryDate = lineDto.ExpiryDate,
+                    // I7: parcels carrying an MRN entered the LON suspension
+                    // chain — mark them `Imported` (legacy Proces=1).
+                    // Non-LON receipts (no MRN) leave LonProcessState null.
+                    LonProcessState = !string.IsNullOrWhiteSpace(lineDto.MRN)
+                        ? LonProcessState.Imported
+                        : null
                 });
             }
             else
             {
                 balance.AddQuantity(lineDto.Quantity);
+                // Promote a previously-unlabeled balance to Imported if this
+                // top-up carries an MRN. Never overwrite a later state
+                // (InProduction / Exported / Waste) — that would hide a bug.
+                if (!balance.LonProcessState.HasValue && !string.IsNullOrWhiteSpace(lineDto.MRN))
+                    balance.LonProcessState = LonProcessState.Imported;
             }
         }
 

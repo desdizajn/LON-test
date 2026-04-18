@@ -4,7 +4,7 @@ using LON.Domain.Enums;
 
 namespace LON.Domain.Entities.WMS;
 
-public class Receipt : BaseEntity, ITenantScoped
+public class Receipt : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid TenantId { get; set; }
     public string ReceiptNumber { get; set; } = string.Empty;
@@ -52,6 +52,14 @@ public class InventoryBalance : BaseEntity, ITenantScoped
     public virtual UnitOfMeasure UoM { get; set; } = null!;
     public QualityStatus QualityStatus { get; set; }
     public DateTime? ExpiryDate { get; set; }
+
+    /// <summary>
+    /// LON business state (legacy `LagerMaterijali.Proces`). Nullable because
+    /// non-LON inventory (domestic, regular import) doesn't carry a Proces
+    /// value. Set to <see cref="Domain.Enums.LonProcessState.Imported"/> on
+    /// Receipt, transitions on MaterialIssue / Shipment / WasteDeclaration.
+    /// </summary>
+    public LonProcessState? LonProcessState { get; set; }
     
     public void AddQuantity(decimal qty)
     {

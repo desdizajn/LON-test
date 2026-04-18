@@ -1,3 +1,4 @@
+using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.MasterData;
@@ -83,6 +84,9 @@ public interface IApplicationDbContext
     // Traceability
     DbSet<TraceLink> TraceLinks { get; }
     DbSet<BatchGenealogy> BatchGenealogies { get; }
+
+    // Audit (I8)
+    DbSet<AuditLogEntry> AuditLogEntries { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

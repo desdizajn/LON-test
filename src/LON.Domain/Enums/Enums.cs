@@ -151,3 +151,21 @@ public enum DeclarationStatus
     Cleared = 3,
     Cancelled = 99
 }
+
+/// <summary>
+/// Business state for a parcel of LON material (legacy `LagerMaterijali.Proces`).
+/// The numeric values mirror legacy so reports / XML (PEE060) stay compatible.
+///   1 = Imported / distributed (receipt booked)
+///   6 = In production (issued to production order)
+///   7 = Exported (consumed against EX declaration)
+///   8 = Final domestic import (converted from LON suspension to regular import)
+///   9 = Waste (written off to waste slot)
+/// </summary>
+public enum LonProcessState
+{
+    Imported = 1,
+    InProduction = 6,
+    Exported = 7,
+    FinalImport = 8,
+    Waste = 9
+}

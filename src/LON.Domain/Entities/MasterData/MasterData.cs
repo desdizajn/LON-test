@@ -100,7 +100,7 @@ public class Employee : BaseEntity, ITenantScoped
     public bool IsActive { get; set; }
 }
 
-public class User : BaseEntity, ITenantScoped
+public class User : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid TenantId { get; set; }
     public string Username { get; set; } = string.Empty;

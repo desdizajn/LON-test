@@ -32,4 +32,13 @@ public class Tenant : BaseEntity
     public string DefaultLanguage { get; set; } = "mk";
 
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// I1: per-tenant opt-in to legacy ELON's inflate-for-waste bookkeeping.
+    /// When true, Receipt handler inflates the booked quantity by
+    /// <c>100/(100 - waste%)</c> using LONAuthorizationItem.AllowedWastePercentage.
+    /// TEKSPORT enables this; most tenants leave it off. Receipt-side
+    /// application lands with P2.3.
+    /// </summary>
+    public bool InflateImportForWaste { get; set; }
 }

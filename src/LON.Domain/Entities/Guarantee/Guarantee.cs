@@ -30,7 +30,7 @@ public class GuaranteeAccount : BaseEntity, ITenantScoped
     }
 }
 
-public class GuaranteeLedgerEntry : BaseEntity, ITenantScoped
+public class GuaranteeLedgerEntry : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid TenantId { get; set; }
     public Guid GuaranteeAccountId { get; set; }

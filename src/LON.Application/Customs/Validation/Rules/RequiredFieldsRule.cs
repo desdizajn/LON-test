@@ -71,8 +71,23 @@ public class RequiredFieldsRule : IDeclarationRule
                     ReferenceDocument = "Правилник, Член 15"
                 });
             }
+
+            // I5: Box 38 NetWeight is required per Правилник for customs
+            // calculation on goods measured by weight. Gross weight (Box 35)
+            // and additional unit (Box 41) are TARIC-dependent — we surface
+            // warnings for those rather than hard errors (see
+            // SadFieldAdvisoriesRule for the soft guards).
+            if (!line.NetWeight.HasValue || line.NetWeight.Value <= 0m)
+            {
+                result.IsValid = false;
+                result.Errors.Add(new ValidationError
+                {
+                    Message = $"Box 38 (Линија {line.LineNumber}): Нето маса е задолжителна и мора да биде > 0.",
+                    ReferenceDocument = "Правилник, Член 15"
+                });
+            }
         }
-        
+
         return await Task.FromResult(result);
     }
 }

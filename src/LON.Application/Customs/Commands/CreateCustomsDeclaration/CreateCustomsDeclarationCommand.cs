@@ -36,6 +36,20 @@ public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
     public string Currency { get; init; } = "EUR";
     public DateTime? DueDate { get; init; }
 
+    /// <summary>
+    /// Box 37 previous-procedure code. Defaults to "00" for fresh imports
+    /// (no previous procedure). For re-export from LON, pass "51" (51 00
+    /// → 31 51 sequence). XML generation (Phase 4.2) will split Box 37
+    /// into the current/previous pair.
+    /// </summary>
+    public string? PreviousProcedureCode { get; init; }
+
+    // ---- I2 landing costs (legacy DodadiTrosociPoFakturaU5) ----
+    /// <summary>Trosoci — total landing/shipping/handling costs for this invoice.</summary>
+    public decimal? LandingCosts { get; init; }
+    /// <summary>Rabat — total discount given by supplier.</summary>
+    public decimal? Discount { get; init; }
+
     // ---- SAD boxes propagated to the entity so rule engine sees them ----
     /// <summary>Box 02 — Sender/Exporter name.</summary>
     public string? SenderName { get; init; }
@@ -67,6 +81,17 @@ public record DeclarationLineDto
     public string? CountryOfOrigin { get; init; }
     public decimal DutyRate { get; init; }
     public decimal VATRate { get; init; }
+    // ---- I5: SAD box required fields ----
+    /// <summary>Box 30 — Location of goods (warehouse identifier / address).</summary>
+    public string? LocationOfGoods { get; init; }
+    /// <summary>Box 35 — Gross weight in kilograms (packaging + product).</summary>
+    public decimal? GrossWeight { get; init; }
+    /// <summary>Box 38 — Net weight in kilograms (product only).</summary>
+    public decimal? NetWeight { get; init; }
+    /// <summary>Box 41 — Additional unit of measure quantity (when TARIC demands it).</summary>
+    public decimal? AdditionalUnit { get; init; }
+    /// <summary>Box 47 — Calculation method (A = ad valorem, S = specific, ...).</summary>
+    public string? CalculationMethod { get; init; }
 }
 
 public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCustomsDeclarationCommand, Result<Guid>>
@@ -165,6 +190,12 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             // (type 5) file an "EX" declaration; everything else is "IM".
             DeclarationType = procedure.Type == CustomsProcedureType.Export ? "EX" : "IM",
             ProcedureCode = procedure.Code,
+            // I4: populate Box 37 previous-procedure pair. "00" = no previous
+            // (fresh IM/EX); callers set explicitly for re-export (e.g., "51"
+            // for 31 51 flow). XML emitter splits Box 37 at submission time.
+            PreviousProcedureCode = string.IsNullOrWhiteSpace(request.PreviousProcedureCode)
+                ? "00"
+                : request.PreviousProcedureCode.Trim(),
             SenderName = request.SenderName,
             SenderAddress = request.SenderAddress,
             SenderCountry = request.SenderCountry,
@@ -175,9 +206,17 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             IsCleared = false
         };
 
+        // I2: landing-cost pro-rata. Net landing = LandingCosts - Discount.
+        // Pro-rated across lines by invoice-value weighting (legacy
+        // DodadiTrosociPoFakturaU5; ELON_Research/04 §1). The adjustment
+        // flows into the customs-value base for duty/VAT, so importing with
+        // trosoci/rabat stays bit-compatible with ELON.
+        var netLanding = (request.LandingCosts ?? 0m) - (request.Discount ?? 0m);
+        var preAdjustInvoiceTotal = request.Lines.Sum(l => l.CustomsValue);
+
         // Line-level duty/VAT: per-line Carina = CustomsValue * DutyRate / 100;
         // Danok (VAT) base = CustomsValue + Carina. Matches legacy
-        // PresmetajDavackiPoNaim (see ELON_Research/04).
+        // PresmetajDavackiPoNaim.
         decimal totalDuty = 0;
         decimal totalVAT = 0;
         int lineNumber = 1;
@@ -185,8 +224,16 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
 
         foreach (var lineDto in request.Lines)
         {
-            var dutyAmount = Math.Round(lineDto.CustomsValue * lineDto.DutyRate / 100m, 2, MidpointRounding.AwayFromZero);
-            var vatAmount = Math.Round((lineDto.CustomsValue + dutyAmount) * lineDto.VATRate / 100m, 2, MidpointRounding.AwayFromZero);
+            // Pro-rata landing-cost adjustment per-line (legacy
+            // `Vrednost += Round(trosok * Vrednost/VrednostVK, 2)`).
+            var landingAdjustment = (netLanding != 0m && preAdjustInvoiceTotal > 0m)
+                ? Math.Round(netLanding * lineDto.CustomsValue / preAdjustInvoiceTotal,
+                             2, MidpointRounding.AwayFromZero)
+                : 0m;
+            var adjustedCustomsValue = lineDto.CustomsValue + landingAdjustment;
+
+            var dutyAmount = Math.Round(adjustedCustomsValue * lineDto.DutyRate / 100m, 2, MidpointRounding.AwayFromZero);
+            var vatAmount = Math.Round((adjustedCustomsValue + dutyAmount) * lineDto.VATRate / 100m, 2, MidpointRounding.AwayFromZero);
 
             declaration.Lines.Add(new CustomsDeclarationLine
             {
@@ -197,13 +244,18 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 TariffCode = lineDto.TariffCode,
                 Quantity = lineDto.Quantity,
                 UoMId = lineDto.UoMId,
-                CustomsValue = lineDto.CustomsValue,
+                CustomsValue = adjustedCustomsValue,
                 CountryOfOrigin = lineDto.CountryOfOrigin,
                 DutyRate = lineDto.DutyRate,
                 DutyAmount = dutyAmount,
                 VATRate = lineDto.VATRate,
                 VATAmount = vatAmount,
-                OtherCharges = 0
+                OtherCharges = 0,
+                // I5: SAD per-line box fields. Null values remain null on the
+                // entity; RequiredFieldsRule flags the critical ones (Box 38).
+                GrossWeight = lineDto.GrossWeight,
+                NetWeight = lineDto.NetWeight,
+                CalculationMethod = lineDto.CalculationMethod
             });
 
             totalDuty += dutyAmount;
