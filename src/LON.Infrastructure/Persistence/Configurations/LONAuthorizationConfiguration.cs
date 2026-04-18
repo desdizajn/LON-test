@@ -47,9 +47,9 @@ public class LONAuthorizationConfiguration : IEntityTypeConfiguration<LONAuthori
             .OnDelete(DeleteBehavior.Cascade);
         
         // Индекси
-        builder.HasIndex(x => x.AuthorizationNumber)
+        builder.HasIndex(x => new { x.TenantId, x.AuthorizationNumber })
             .IsUnique()
-            .HasDatabaseName("IX_LONAuthorizations_AuthorizationNumber");
+            .HasDatabaseName("IX_LONAuthorizations_TenantId_AuthorizationNumber");
         
         builder.HasIndex(x => x.PartnerId)
             .HasDatabaseName("IX_LONAuthorizations_PartnerId");

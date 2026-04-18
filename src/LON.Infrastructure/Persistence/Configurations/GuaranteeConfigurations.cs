@@ -16,7 +16,7 @@ public class GuaranteeAccountConfiguration : IEntityTypeConfiguration<GuaranteeA
         builder.Property(e => e.TotalLimit).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Notes).HasMaxLength(500);
         
-        builder.HasIndex(e => e.AccountNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.AccountNumber }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
         
         builder.Ignore(e => e.LedgerEntries);

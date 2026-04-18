@@ -122,7 +122,7 @@ public class ShiftConfiguration : IEntityTypeConfiguration<Shift>
         
         builder.Property(s => s.Description)
             .HasMaxLength(500);
-        
-        builder.HasIndex(s => s.Code).IsUnique();
+
+        builder.HasIndex(s => new { s.TenantId, s.Code }).IsUnique();
     }
 }

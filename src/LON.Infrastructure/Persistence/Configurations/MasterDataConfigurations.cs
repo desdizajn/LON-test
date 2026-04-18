@@ -16,8 +16,9 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.Property(e => e.HSCode).HasMaxLength(20);
         builder.Property(e => e.CountryOfOrigin).HasMaxLength(3);
         builder.Property(e => e.StandardCost).HasColumnType("decimal(18,4)");
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        // Composite unique: two tenants can each have their own RM-001, FG-001, etc.
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -46,8 +47,8 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(e => e.Code).IsRequired().HasMaxLength(50);
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Address).HasMaxLength(500);
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -89,8 +90,8 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
         builder.Property(e => e.Email).HasMaxLength(100);
         builder.Property(e => e.Phone).HasMaxLength(50);
         builder.Property(e => e.Country).HasMaxLength(3);
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -109,8 +110,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.Department).HasMaxLength(100);
         builder.Property(e => e.Position).HasMaxLength(100);
         
-        builder.HasIndex(e => e.EmployeeNumber).IsUnique();
-        builder.HasIndex(e => e.Email).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.EmployeeNumber }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Email }).IsUnique();
         
         builder.HasOne(e => e.Shift)
             .WithMany(s => s.Employees)
@@ -132,8 +133,8 @@ public class WorkCenterConfiguration : IEntityTypeConfiguration<WorkCenter>
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.StandardCostPerHour).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Capacity).HasColumnType("decimal(18,4)");
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -147,8 +148,8 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
         builder.Property(e => e.Code).IsRequired().HasMaxLength(50);
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
         builder.Property(e => e.SerialNumber).HasMaxLength(100);
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

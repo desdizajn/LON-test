@@ -23,7 +23,7 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
         builder.HasOne(e => e.BOM).WithMany().HasForeignKey(e => e.BOMId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Routing).WithMany().HasForeignKey(e => e.RoutingId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.OrderNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.OrderNumber }).IsUnique();
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.PlannedStartDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
@@ -78,7 +78,7 @@ public class MaterialIssueConfiguration : IEntityTypeConfiguration<MaterialIssue
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.IssueNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.IssueNumber }).IsUnique();
         builder.HasIndex(e => e.ProductionOrderId);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -99,7 +99,7 @@ public class ProductionReceiptConfiguration : IEntityTypeConfiguration<Productio
         builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.ReceiptNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.ReceiptNumber }).IsUnique();
         builder.HasIndex(e => e.ProductionOrderId);
         builder.HasIndex(e => e.BatchNumber);
         builder.HasQueryFilter(e => !e.IsDeleted);

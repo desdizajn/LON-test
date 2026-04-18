@@ -37,8 +37,8 @@ public class CustomsDeclarationConfiguration : IEntityTypeConfiguration<CustomsD
         builder.Property(e => e.TotalOtherCharges).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Notes).HasMaxLength(500);
         
-        builder.HasIndex(e => e.DeclarationNumber).IsUnique();
-        builder.HasIndex(e => e.MRN).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.DeclarationNumber }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique();
         builder.HasIndex(e => e.DeclarationDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -85,8 +85,8 @@ public class MRNRegistryConfiguration : IEntityTypeConfiguration<MRNRegistry>
         builder.Property(e => e.TotalQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.UsedQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Notes).HasMaxLength(500);
-        
-        builder.HasIndex(e => e.MRN).IsUnique();
+
+        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

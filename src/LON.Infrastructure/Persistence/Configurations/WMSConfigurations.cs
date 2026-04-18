@@ -62,7 +62,7 @@ public class ReceiptConfiguration : IEntityTypeConfiguration<Receipt>
         builder.HasOne(e => e.Partner).WithMany().HasForeignKey(e => e.PartnerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Warehouse).WithMany().HasForeignKey(e => e.WarehouseId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.ReceiptNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.ReceiptNumber }).IsUnique();
         builder.HasIndex(e => e.ReceiptDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -101,7 +101,7 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.HasOne(e => e.Customer).WithMany().HasForeignKey(e => e.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Carrier).WithMany().HasForeignKey(e => e.CarrierId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.ShipmentNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.ShipmentNumber }).IsUnique();
         builder.HasIndex(e => e.ShipmentDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -124,7 +124,7 @@ public class PickTaskConfiguration : IEntityTypeConfiguration<PickTask>
         builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.TaskNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.TaskNumber }).IsUnique();
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -161,7 +161,7 @@ public class TransferConfiguration : IEntityTypeConfiguration<Transfer>
         builder.HasOne(e => e.FromLocation).WithMany().HasForeignKey(e => e.FromLocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.ToLocation).WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.TransferNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.TransferNumber }).IsUnique();
         builder.HasIndex(e => e.TransferDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -196,7 +196,7 @@ public class PickingWaveConfiguration : IEntityTypeConfiguration<PickingWave>
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Warehouse).WithMany().HasForeignKey(e => e.WarehouseId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => e.WaveNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.WaveNumber }).IsUnique();
         builder.HasIndex(e => e.CreatedDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -214,7 +214,7 @@ public class CycleCountConfiguration : IEntityTypeConfiguration<CycleCount>
         // CycleCount belongs to Warehouse - cascade delete is appropriate
         builder.HasOne(e => e.Warehouse).WithMany().HasForeignKey(e => e.WarehouseId).OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasIndex(e => e.CountNumber).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.CountNumber }).IsUnique();
         builder.HasIndex(e => e.ScheduledDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
