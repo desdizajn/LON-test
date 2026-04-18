@@ -4,8 +4,9 @@ using LON.Domain.Entities.Production;
 
 namespace LON.Domain.Entities.MasterData;
 
-public class Item : BaseEntity
+public class Item : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -39,8 +40,9 @@ public class ItemUoMConversion : BaseEntity
     public decimal ConversionFactor { get; set; }
 }
 
-public class Warehouse : BaseEntity
+public class Warehouse : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
@@ -48,8 +50,9 @@ public class Warehouse : BaseEntity
     public virtual ICollection<Location> Locations { get; set; } = new List<Location>();
 }
 
-public class Location : BaseEntity
+public class Location : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public Guid WarehouseId { get; set; }
@@ -64,8 +67,9 @@ public class Location : BaseEntity
     public bool IsActive { get; set; }
 }
 
-public class Partner : BaseEntity
+public class Partner : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public PartnerType Type { get; set; }
@@ -78,8 +82,9 @@ public class Partner : BaseEntity
     public bool IsActive { get; set; }
 }
 
-public class Employee : BaseEntity
+public class Employee : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string EmployeeNumber { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
@@ -95,8 +100,9 @@ public class Employee : BaseEntity
     public bool IsActive { get; set; }
 }
 
-public class User : BaseEntity
+public class User : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;

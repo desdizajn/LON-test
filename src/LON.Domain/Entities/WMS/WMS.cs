@@ -4,8 +4,9 @@ using LON.Domain.Enums;
 
 namespace LON.Domain.Entities.WMS;
 
-public class Receipt : BaseEntity
+public class Receipt : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string ReceiptNumber { get; set; } = string.Empty;
     public DateTime ReceiptDate { get; set; }
     public Guid? PartnerId { get; set; }
@@ -17,8 +18,9 @@ public class Receipt : BaseEntity
     public virtual ICollection<ReceiptLine> Lines { get; set; } = new List<ReceiptLine>();
 }
 
-public class ReceiptLine : BaseEntity
+public class ReceiptLine : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid ReceiptId { get; set; }
     public virtual Receipt Receipt { get; set; } = null!;
     public int LineNumber { get; set; }
@@ -36,8 +38,9 @@ public class ReceiptLine : BaseEntity
     public Guid? CustomsDeclarationId { get; set; }
 }
 
-public class InventoryBalance : BaseEntity
+public class InventoryBalance : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public Guid ItemId { get; set; }
     public virtual Item Item { get; set; } = null!;
     public Guid LocationId { get; set; }
@@ -64,8 +67,9 @@ public class InventoryBalance : BaseEntity
     }
 }
 
-public class InventoryMovement : BaseEntity
+public class InventoryMovement : BaseEntity, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string MovementNumber { get; set; } = string.Empty;
     public DateTime MovementDate { get; set; }
     public MovementType Type { get; set; }

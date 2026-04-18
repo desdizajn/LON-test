@@ -47,6 +47,10 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         if (request.Lines.Count == 0)
             return Result<Guid>.Failure("Receipt must contain at least one line.");
 
+        // TenantId on Receipt / ReceiptLine / InventoryMovement / InventoryBalance
+        // is auto-populated by ApplicationDbContext.SaveChangesAsync via
+        // ICurrentTenantService (JWT claim / user lookup / first active tenant).
+
         var fallbackLocationId = await ResolveLandingLocationAsync(request, cancellationToken);
         // fallback may be null if no locations at all in the warehouse; individual lines may still
         // succeed if they specify their own LocationId.

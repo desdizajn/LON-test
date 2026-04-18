@@ -105,6 +105,36 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Auto-wire Tenant FK + index for every ITenantScoped entity.
+        // Uses reflection-dispatched generic helper because the non-generic
+        // EntityTypeBuilder overload cannot target an entity type by Type alone
+        // when no navigation property exists on the dependent side.
+        var configureMethod = typeof(ApplicationDbContext).GetMethod(
+            nameof(ConfigureTenantScoped),
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(Domain.Common.ITenantScoped).IsAssignableFrom(entityType.ClrType))
+            {
+                configureMethod
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(null, new object[] { modelBuilder });
+            }
+        }
+    }
+
+    private static void ConfigureTenantScoped<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, Domain.Common.ITenantScoped
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasOne<Domain.Entities.MasterData.Tenant>()
+            .WithMany()
+            .HasForeignKey(nameof(Domain.Common.ITenantScoped.TenantId))
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TEntity>()
+            .HasIndex(nameof(Domain.Common.ITenantScoped.TenantId));
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -123,6 +153,40 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             {
                 entry.Entity.ModifiedAt = DateTime.UtcNow;
                 entry.Entity.ModifiedBy = auditName;
+            }
+        }
+
+        // Auto-fill TenantId on any ITenantScoped entity being Added without one.
+        // Inlined here (instead of using ICurrentTenantService) to avoid a DI
+        // cycle: ICurrentTenantService needs DbContext, DbContext would need it.
+        // Resolution order:
+        //   1. Current user's TenantId (via ICurrentUserService + Users lookup)
+        //   2. First active Tenant in DB (seeders, background jobs, migrations)
+        var scopedEntries = ChangeTracker.Entries<Domain.Common.ITenantScoped>()
+            .Where(e => e.State == EntityState.Added && e.Entity.TenantId == Guid.Empty)
+            .ToList();
+        if (scopedEntries.Count > 0)
+        {
+            Guid? tenantId = null;
+            var userId = _currentUser?.UserId;
+            if (userId.HasValue)
+            {
+                tenantId = await Users
+                    .Where(u => u.Id == userId.Value)
+                    .Select(u => (Guid?)u.TenantId)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+            if (tenantId is null || tenantId == Guid.Empty)
+            {
+                tenantId = await Tenants
+                    .Where(t => t.IsActive)
+                    .Select(t => (Guid?)t.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+            if (tenantId is not null && tenantId != Guid.Empty)
+            {
+                foreach (var e in scopedEntries)
+                    e.Entity.TenantId = tenantId.Value;
             }
         }
 

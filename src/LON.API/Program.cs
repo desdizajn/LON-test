@@ -58,6 +58,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Current user (audit) — depends on IHttpContextAccessor.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LON.Application.Common.Interfaces.ICurrentUserService, LON.API.Services.CurrentUserService>();
+builder.Services.AddScoped<LON.Application.Common.Interfaces.ICurrentTenantService, LON.API.Services.CurrentTenantService>();
 
 // Add MediatR
 builder.Services.AddMediatR(cfg =>
@@ -123,7 +124,12 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            // Seed User Management data FIRST (critical for login)
+            // Seed tenants FIRST — everything else is tenant-scoped and needs
+            // at least one Tenant row for the SaveChangesAsync auto-fill.
+            logger.LogInformation("Seeding tenants...");
+            await ApplicationDbContextSeed.SeedTenantsAsync(context);
+
+            // Seed User Management data (critical for login)
             logger.LogInformation("Seeding user management data...");
             var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
             await UserManagementSeed.SeedAsync(context, authService, logger);

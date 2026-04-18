@@ -79,7 +79,23 @@ public static class ApplicationDbContextSeed
         await context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Seed the Tenants table. Called separately from Program.cs BEFORE user
+    /// management seed so that new users/items/etc. get a valid TenantId via
+    /// the SaveChangesAsync auto-fill.
+    /// </summary>
+    public static async Task SeedTenantsAsync(ApplicationDbContext context)
+    {
+        if (await context.Tenants.AnyAsync()) return;
+        await SeedTenantsInternal(context);
+    }
+
     private static async Task SeedTenants(ApplicationDbContext context)
+    {
+        await SeedTenantsInternal(context);
+    }
+
+    private static async Task SeedTenantsInternal(ApplicationDbContext context)
     {
         // TEKSPORT is a multi-site tenant (Skopje + Vinica). The Warehouses
         // representing each physical site will be linked to this tenant via
