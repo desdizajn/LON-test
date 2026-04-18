@@ -83,7 +83,7 @@
   - Verify: GET `/api/tenants` → TEKSPORT seeded со HQ address, lang=mk, legacyUvoznik=TEKSPORT
 - [/] **P1.2** — `ITenantScoped` interface + auto-fill TenantId во SaveChangesAsync. Split in two:
   - [x] **P1.2-B1** ✅ — 10 core entities (Item, Warehouse, Location, Partner, Employee, User, Receipt+Line, InventoryBalance, InventoryMovement). Migration со inline SQL backfill за постојни редови → TEKSPORT. Auto-fill inlined во SaveChangesAsync (ICurrentTenantService постои за handlers, но DbContext го избегнува за DI cycle).
-  - [ ] **P1.2-B2** — extend ITenantScoped на останатите ~25 scoped entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment, etc.). Миграција + backfill.
+  - [x] **P1.2-B2** ✅ — 31 entities добија ITenantScoped (MasterData: Shift/WorkCenter/Machine; WMS: Transfer±Line/CycleCount±Line/PickingWave/PickTask/Shipment±Line; Customs: Declaration±Line/Document/MRN; LONAuthorization±Item; Guarantee: Account/Ledger/Duty; Production: BOM±Line/Routing±Op/PO+Mat+Op/MaterialIssue/ProductionReceipt; Traceability: TraceLink/BatchGenealogy). Migration со 31 AddColumn + 31 Index + inline SQL backfill + 31 FK. Verified on VPS (commit `bbf8ac9`). 41/~45 business entities tenant-scoped.
   - [x] **P1.2-B3** ✅ — `WH-TEK-VN` (TEKSPORT Vinica) + 7 default locations seeded. `SeedWarehouses` refactored to per-code idempotent upsert. TenantId auto-filled (commit `f845c5d`, verified on VPS via API + SQL).
 - [ ] **P1.3** — JWT extension: `tenant` claim; `ICurrentTenantService`
   - Verify: login враќа token со tenant claim; decode потврдува
@@ -279,31 +279,31 @@
 
 ## Current Active Task
 
-> **>>>** P1.2-B2: extend `ITenantScoped` на останатите ~25 entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment + их деца). Pattern е воспоставен во B1; миграција + inline SQL backfill.
+> **>>>** P1.3: JWT `tenant_id` claim на login + `CurrentTenantService` почнува да го чита. Ова е последниот чекор за end-to-end tenant isolation пред query filters (P1.4).
 
 **Алтернативи:**
-- **P1.3** (средно, 30–60 мин): `tenant_id` claim во JWT на login; `CurrentTenantService` почне да го чита. Unblocks Phase 2 end-to-end flow.
+- **P1.4** (следно чекор): global query filter `HasQueryFilter(e => e.TenantId == _tenantService.Id)` на сите ITenantScoped entities. Ова конечно го изолира secondary tenant (ако се seed-ира) од TEKSPORT's data.
 - **P6.18** (мало, 30 мин): поправи UTF-8 source encoding па да можеме одново да користиме Cyrillic во seeds/code.
 
-**Препорака:** B2 → P1.3 → (паралелно) P6.18. Откако сите core entity-ја се tenant-scoped, JWT tenant claim завршува multi-tenant foundation.
+**Препорака:** P1.3 → P1.4 (со test: seed 2nd tenant, verify isolation).
 
-### Контекст за P1.2-B2:
+### Контекст за P1.3:
 
-- **B1 pattern повтори:** на секоја entity додај `: ITenantScoped` + `public Guid TenantId { get; set; }`. `ApplicationDbContext.OnModelCreating` веќе auto-wire-ира FK + index преку reflection. `SaveChangesAsync` auto-fill-а TenantId на `Added` entities со `Guid.Empty`.
-- **Migration per-batch:** `AddColumn(defaultValue=Guid.Empty)` + `CreateIndex` + `Sql("UPDATE ... SET TenantId = (SELECT TOP 1 Id FROM Tenants WHERE IsActive=1) WHERE TenantId='00000000-...'")` + `AddForeignKey`. Groupiraj сродни entities во една миграција (e.g., сите Production entities заедно).
-- **Scope list (~25 entities):**
-  - Production: `BOM`, `BOMComponent`, `Routing`, `RoutingStep`, `WorkCenter`, `Machine`, `ProductionOrder`, `ProductionOrderOperation`, `MaterialIssue`, `FGReceipt`
-  - Customs: `CustomsDeclaration`, `CustomsDeclarationLine`, `CustomsProcedure`, `LONAuthorization`
-  - Guarantee: `GuaranteeAccount`, `GuaranteeTransaction`
-  - Traceability: `ItemBatch`, `InventoryLot`, `LotGenealogy`
-  - Transfer/CycleCount/PickTask/Shipment + нивни lines
-- **DI cycle одбегнат:** `ApplicationDbContext` НЕ injectira `ICurrentTenantService` (cycle). Auto-fill inline во SaveChangesAsync. `ICurrentTenantService` е за handlers кои сакаат експлицитно resolve-ирање пред SaveChanges.
-- **OpenAPI/TS regeneration:** `./scripts/gen-api-types.sh` ако некоја DTO промени shape.
+- **Scope:** JWT generation (`JwtService` или каде што се emit-уваат claim-овите) мора да додаде `tenant_id` + можеби `tenant_code` claim. Login response треба да врати tenant info. `CurrentTenantService` веќе постои (од B1) — сега да чита од `HttpContext.User` наместо fallback-first-active.
+- **Verification:** декодирај JWT (`jwt.io`) и провери дека има `tenant_id` со TEKSPORT's Guid. Integration test што login-ира и assert-ира дека `ICurrentTenantService.TenantId` == очекуван.
+- **Risk:** existing users (admin) мора да добијат TenantId. Admin веќе има (auto-fill го среди на login migration). Ако некои sessions имаат cached stale JWT без `tenant_id`, fallback chain мора да остане функционален додека тие не re-login.
 
 ### Recent context (2026-04-18):
 
-- **B3 completed** — `WH-TEK-VN` + 7 locations, seeder сега per-code idempotent. Commit `f845c5d`.
-- **P1.2-B1 verified** — all 5 receipts + 2 inventory balances tenant-scoped to TEKSPORT (commit `7a4ebc0`).
+- **P1.2-B2 completed** — 31 entities ITenantScoped, 41/~45 business entities now tenant-scoped (commit `bbf8ac9`). Migration applied на VPS без грешки, сите постоечки redovi backfilled до TEKSPORT.
+- **B3 completed** — `WH-TEK-VN` + 7 locations, seeder per-code idempotent (commit `f845c5d`).
+- **P1.2-B1 verified** — 10 core entities tenant-scoped (commit `7a4ebc0`).
+
+### Non-goals за P1.3 (одвоено):
+
+- Global query filter (тоа е P1.4).
+- Multi-tenant UI ("switch tenant" dropdown) — доаѓа во Phase 2+ кога ќе има 2+ тенанти.
+- OpenAPI/TS regen — ако login response shape промени (веројатно ќе), тогаш `./scripts/gen-api-types.sh`.
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 

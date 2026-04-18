@@ -14,6 +14,46 @@
 
 ---
 
+## 2026-04-18 — P1.2-B2 ITenantScoped on 31 remaining entities
+
+**Status:** [x] done
+**Commits:** `bbf8ac9 phase-1.2-B2: ITenantScoped on 31 remaining domain entities`
+**Files changed:**
+- `src/LON.Domain/Entities/MasterData/MasterData.cs` (+3: Shift, WorkCenter, Machine)
+- `src/LON.Domain/Entities/WMS/WMS.cs` (+8: Transfer, TransferLine, CycleCount, CycleCountLine, PickingWave, PickTask, Shipment, ShipmentLine)
+- `src/LON.Domain/Entities/Customs/Customs.cs` (+4: CustomsDeclaration, CustomsDeclarationLine, CustomsDocument, MRNRegistry)
+- `src/LON.Domain/Entities/Customs/LONAuthorization.cs` (+2: LONAuthorization, LONAuthorizationItem)
+- `src/LON.Domain/Entities/Guarantee/Guarantee.cs` (+3: GuaranteeAccount, GuaranteeLedgerEntry, DutyCalculation)
+- `src/LON.Domain/Entities/Production/Production.cs` (+9: BOM, BOMLine, Routing, RoutingOperation, ProductionOrder, ProductionOrderMaterial, ProductionOrderOperation, MaterialIssue, ProductionReceipt)
+- `src/LON.Domain/Entities/Traceability/Traceability.cs` (+2: TraceLink, BatchGenealogy)
+- `src/LON.Infrastructure/Migrations/20260418174311_AddTenantIdToRemainingEntities.cs` (new)
+- `src/LON.Infrastructure/Migrations/ApplicationDbContextModelSnapshot.cs` (regenerated)
+
+**What was done:**
+1. 31 entities got `: ITenantScoped` + `public Guid TenantId { get; set; }` (first property of each class).
+2. `OnModelCreating` auto-configures FK + index per ITenantScoped via reflection (unchanged since B1). `SaveChangesAsync` auto-fills TenantId on new inserts (unchanged since B1).
+3. Migration `AddTenantIdToRemainingEntities`:
+   - 31 AddColumn with `defaultValue = Guid.Empty`
+   - 31 CreateIndex `IX_<Table>_TenantId`
+   - **Inline SQL backfill block** (manually inserted between CreateIndex and AddForeignKey) — resolves TEKSPORT tenant (fallback: first active), then 31 `UPDATE ... SET TenantId = @tenantId WHERE TenantId = '00000000-...'` so the FK constraints accept every row.
+   - 31 AddForeignKey to `Tenants(Id) ON DELETE RESTRICT`.
+4. Explicitly kept NON-tenant-scoped (per ITenantScoped.cs comment): `Tenant` itself, `UnitOfMeasure`, `ItemUoMConversion`, `Role`, `Permission`, `CustomsProcedure`, `CustomsProcedureDocument`, all KB tables (`TariffCode`, `CodeListItem`, `CustomsRegulation`, `DeclarationRule`, `KnowledgeDocument`, `KnowledgeDocumentChunk`).
+
+**Verified на VPS (elon.elbosoft.click):**
+- `docker compose build api && up -d api` → migrations applied cleanly (logs: "Database is ready (migrations applied or already up to date)").
+- SQL: `INFORMATION_SCHEMA.COLUMNS` check against 31 table names → **0 tables missing the TenantId column** ✅
+- SQL sample: `WorkCenters`(2 rows), `GuaranteeAccounts`(2), `BOMs`(1), `Shifts`(3) — every row backfilled to TEKSPORT (0 `Guid.Empty` survivors) ✅
+- API smoke: `GET /api/wms/receipts` → 6, `GET /api/wms/inventory` → 3, `GET /api/masterdata/items` → 5, `GET /api/masterdata/partners` → 4 — no query-filter regressions ✅
+
+**Follow-ups / discoveries:**
+- EF validation warnings (advisory, not errors) about required relationships crossing query-filter boundaries: CustomsDeclaration↔CustomsDocument, CustomsProcedure↔CustomsProcedureDocument, Partner↔LONAuthorization, Item↔LONAuthorizationItem. Two of those (CustomsDeclaration↔Document, Partner↔LONAuthorization) are now tenant-filtered on both sides, but config-side filter alignment should still be revisited when query filters land (P1.4). Logged as context for P1.4.
+- Receipt count went 5 → 6 between B3 and B2 verifications. Not a bug: auto-fill kept working through the schema change; new insert correctly tenant-scoped.
+- **41 of ~45 business entities are now tenant-scoped.** The 4 remaining "global" reference-data DbSets and joined tables (UoMs, Roles, Perms, CustomsProcedures, KB) stay shared across tenants by design.
+
+**Next:** P1.3 — JWT `tenant_id` claim on login, `CurrentTenantService` starts reading it. Unblocks Phase 2 end-to-end tenant isolation.
+
+---
+
 ## 2026-04-18 — P1.2-B3 WH-TEK-VN (Vinica) warehouse seeded
 
 **Status:** [x] done
