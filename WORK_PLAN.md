@@ -194,23 +194,46 @@
 
 ---
 
-## Фаза 6 — Code quality & technical debt
+## Фаза 6 — Code quality & foundations ⬅️ **СЕГА АКТИВНА (пред Phase 1)**
 
-**Паралелно со другите фази, не одделна фаза.** Task се создава ad-hoc кога се забележи debt.
+**Одлука 2026-04-18:** Корисник одлучи Phase 6 оди прво. Не заради „срамот" — туку затоа што тука се базичните инфра работи (testing harness, contract hygiene, чиста архитектура). Подобро да се вградат пред мулти-тенант и пред Phase 2 каде се очекува најмногу итерација.
 
-- [ ] Расцепување на `MasterDataController` (1325 линии) на смислени контролери по domain
-- [ ] Мигрирај бизнис-логика од контролери → MediatR команди
-- [ ] Integration test harness (xUnit + Testcontainers)
-- [ ] Structured logging + health checks со real DB probe
-- [ ] Ремувал на dead files: `.vs/`, bin/, obj/ во .gitignore
-- [ ] **Vector Store OOM root cause** — `VectorStoreInitializer.InitializeAsync` или `DocumentSeeder` фрлаат `OutOfMemoryException` на startup и покрај 3GB container limit. Документите во `DocumentSeeder` се тривијални (4 hardcoded sections), OOM-от е во `OpenAIEmbeddingService` или `IndexDocumentAsync`. Истражи и поправи; да не се вчитуваат сите embeddings во memory.
-- [ ] **LocationDto serialization drops Type** — API враќа `type: null` за сите локации и покрај MapLocation што expose-ира `location.Type`. Истражи LocationDto конструктор или JSON serializer. Handler-от користи code prefix fallback, па не е blocker но UI-от не може да филтрира по тип.
-- [ ] **.gitignore restore** — deleted in HEAD~N, bin/obj/node_modules сега untracked по дефолт. Некои obj/ фајлови заостанаа во commit `f92c754` — cleanup потребен.
-- [ ] **P6.TEST — Testing infrastructure (високи приоритет)** — домен експерт фаќа business correctness; Claude треба да фаќа plumbing/contract bugs автоматски. Три слоеви:
-  - **xUnit integration tests со `WebApplicationFactory` + Testcontainers-SqlServer** — per endpoint: POST → GET → assert DB row. 30-40 реда per flow. Би ги фатила P0.4-те три bug-а и P0.6 UI mismatches во секунди.
-  - **Auto-generated TypeScript од OpenAPI/Swagger** (NSwag или `openapi-typescript`) — frontend увезува истите типови/имиња како backend. Kill contract divergence целосно.
-  - **CI gate** (GitHub Actions) — `dotnet test` + `npm run build` + OpenAPI contract diff мора да поминат пред `main` merge или deploy.
-  - **Claude self-workflow changes** (не-инфра): (1) grep frontend за API endpoint кога се менуваat DTO-а; (2) секој нов handler има curl test што потврдува DB state, не само HTTP код; (3) користи Claude Preview tools локално за browser-side smoke пред deploy.
+### 6A — Repo hygiene (брзи победи)
+
+- [ ] **P6.1** — Restore `.gitignore` за .NET + Node + VS. Отстрани наследени bin/obj од git tracking.
+- [ ] **P6.2** — Cleanup на претходни рабатки commit-ови (bin/obj заостанати од `f92c754`).
+
+### 6B — Contract hygiene (пред Phase 1 refactor)
+
+- [ ] **P6.3** — **Auto-generate TypeScript типови од OpenAPI/Swagger** (`openapi-typescript` или NSwag). Frontend увезува `import type { CreateReceiptCommand } from '@/api-types'` — идентично име/шема како backend. Kill contract divergence за сите идни commands/DTOs.
+- [ ] **P6.4** — Refactor постоечки форми (Receipt, etc.) да ги користат генерираните типови наместо рачно напишани интерфејси.
+
+### 6C — Testing infrastructure (највисок ROI)
+
+- [ ] **P6.5** — Setup integration test harness: xUnit + `WebApplicationFactory` + Testcontainers-SqlServer + FluentAssertions. Структура: `tests/LON.IntegrationTests/`.
+- [ ] **P6.6** — Прв smoke test: `POST /api/auth/login` → expect token + roles.
+- [ ] **P6.7** — Receipt E2E test: `POST /wms/receipts` с реален payload → `GET` receipt → `GET` inventory → assert баланс = qty. (Ова би фатилo сите P0.4/P0.6 bug-ови автоматски.)
+- [ ] **P6.8** — Auth/RBAC test: ne-authenticated call → 401; role-less user → 403.
+- [ ] **P6.9** — CI gate преку GitHub Actions: `dotnet build` + `dotnet test` + `npm ci` + `npm run build` + OpenAPI diff gate. Fail блокира merge.
+
+### 6D — Architecture consolidation (пред multi-tenant)
+
+**Зошто пред Phase 1:** Multi-tenant додава TenantId query filter на секое место. Ако е консистентно (MediatR + IApplicationDbContext), automation работи. Ако е хаос (controllers со DbContext + handlers со interface), мора per-query мануелно.
+
+- [ ] **P6.10** — Расцепи `MasterDataController` (1325 линии) на ~8 domain-focused контролери (Items, Partners, Warehouses, Locations, UoMs, BOMs, Routings, WorkCenters+Machines).
+- [ ] **P6.11** — Селективна MediatR миграција: за секое read/write во контролер, командa/query преку Mediator. Почни со Items + Partners (најмногу користени).
+- [ ] **P6.12** — Consistent response shape: `{ data, errorMessage?, errors[]? }` везде. Refactor controllers што враќаат голи entities.
+
+### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
+
+- [ ] **P6.13** — **LocationDto serialization drops Type** — API враќа `type: null` и покрај MapLocation. Или DTO constructor или JSON naming policy. Handler-от го користи code prefix fallback; UI-от не може да филтрира по тип.
+- [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
+- [ ] **P6.15** — Structured logging (Serilog со JSON output) + реал health checks со DB probe (`/health/ready`, `/health/live`).
+- [ ] **P6.16** — DataProtection XML encryptor warning (логови: „Key may be persisted to storage in unencrypted form"). Cert-based или DPAPI-like решение.
+
+### 6F — Claude self-workflow (вградено во CLAUDE.md)
+
+- [ ] **P6.17** — Ажурирај `CLAUDE.md` со `Contract Hygiene Protocol`: (1) grep frontend при DTO change; (2) assert DB state (не HTTP), со form-realistic payload; (3) Claude Preview tools за UI smoke пред deploy. Мемо `feedback_contract_hygiene.md` веќе активна; ова ја прави експлицитно дел од Verification Protocol.
 
 ---
 
@@ -224,6 +247,18 @@
 
 ## Current Active Task
 
-> **>>>** (FAZA 0 DONE) — следен: P1.1 `Tenant` entity + CRUD API + seed `TEKSPORT` tenant. Пред тоа: корисник да потврди во UI дека Inventory, Movements, Receipts страниците прикажуваат податоци.
+> **>>>** P6.1 — Restore `.gitignore` + cleanup bin/obj tracking. Phase 6 пред Phase 1 (одлука 2026-04-18).
+
+## Phase Order (updated 2026-04-18)
+
+1. ✅ Phase 0 — VPS stabilization (DONE)
+2. ⬅️ **Phase 6 — Foundations** (active): repo hygiene → contract types → testing → architecture consolidation
+3. Phase 1 — Multi-tenant foundation
+4. **Phase 2.5 — i18n infrastructure** (BEFORE Phase 2, не после — ново UI во Phase 2 веднаш добива i18n)
+5. Phase 2 — First end-to-end flow (TEKSPORT IM 42 00)
+6. Phase 3 — Data migration од ELON
+7. Phase 4 — Legacy gap coverage
+8. Phase 5 — Productivity parity
+9. Phase 7 — Flutter mobile
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
