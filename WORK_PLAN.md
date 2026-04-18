@@ -2,6 +2,38 @@
 
 > **Правила на работа:** види [`CLAUDE.md`](CLAUDE.md). Verification Protocol е задолжителен за секој таск.
 
+---
+
+## 🎯 SESSION KICKOFF — што да направиш ПРВО во нова сесија
+
+**НЕ ПРАШУВАЈ ЗА ВПС / КРЕДЕНЦИЈАЛИ / ТЕСТОВИ — СИТЕ СЕ ВО МЕМОРИЈА.** Прочитај ги овие 4 работи (5 минути) пред било што друго:
+
+1. **`memory/MEMORY.md`** — индекс на 14 persistent факти (autoloaded, само провери да не си заборавил нешто).
+2. **`CLAUDE.md` секции 3–7** — Verification Protocol, Environments, Defaults. Особено **Contract Hygiene Protocol** (точки 1–5 под §3).
+3. **Ова WORK_PLAN.md — делот „Current Active Task"** (на дно) + состојбата на активните фази.
+4. **Последни 3 записи во `SESSION_LOG.md`** — последни docoведени работи + discoveries.
+
+### Quick facts (можеш да ги користиш одма без проверка):
+
+| Работа | Вредност |
+|---|---|
+| VPS | `root@173.212.254.216` (Contabo, Ubuntu 24.04), passwordless SSH преку `~/.ssh/id_ed25519` |
+| App path на VPS | `/opt/apps/LON/LON-test` |
+| Домен | `https://elon.elbosoft.click` (Caddy reverse proxy + auto SSL) |
+| Admin login | `admin` / `Admin123!` (seeded) |
+| Контејнери | `lon-sqlserver`, `lon-api`, `lon-worker`, `lon-frontend` |
+| TEKSPORT tenant id | `b8d4fe76-8d94-470b-a251-f8111d3f1db3` (seeded на VPS) |
+| Legacy ELON DB | `localhost` Windows auth, DB=`ELON`, read-only |
+| i18n јазици | mk (primary), sr, sq, en — `frontend/web/src/i18n/locales/` |
+| Deploy flow | Локален commit + push → `ssh root@... && cd /opt/apps/LON/LON-test && git pull && docker compose build <svc> && docker compose up -d <svc>` |
+| Тестови | `tests/LON.IntegrationTests/` (Testcontainers-MsSql; CI на Ubuntu) |
+
+### Ако корисникот ти пише „продолжи" или „почнувај":
+
+Оди на **Current Active Task** на дното од овој документ и започни веднаш. Без прашања. Без „како сте", без re-introduction. Продолжи тамо каде последната сесија запре.
+
+---
+
 ## Status Legend
 - `[ ]` Не започнат
 - `[/]` Во тек
@@ -246,7 +278,21 @@
 
 ## Current Active Task
 
-> **>>>** P1.2 — ITenantScoped + TenantScopedEntity + migration backfill. Applied на ~35 domain entities. Голем refactor; ќе се подели во чекори.
+> **>>>** P1.2-B2: extend `ITenantScoped` на останатите ~25 entities (Production, Customs, Guarantee, Traceability, Transfer, CycleCount, PickTask, Shipment + их деца). Pattern е воспоставен во B1; мигрaija + inline SQL backfill.
+
+**Алтернативи (корисник одбира):**
+- **P1.2-B3** (брзо, 15 мин): seed `WH-TEK-VN` (TEKSPORT Виница) warehouse покрај постоечкиот Skopje. Low-risk.
+- **P1.3** (средно, 30–60 мин): `tenant_id` claim во JWT на login; `CurrentTenantService` почне да го чита. Unblocks Phase 2 end-to-end flow.
+- **P1.2-B2** (голем, 1–2 часа): останатите 25 entities ITenantScoped. Consistent multi-tenant foundation.
+
+**Препорака:** одам по редослед — прво B3 (брза победа), потоа B2 (foundations доминуваат), потоа P1.3. Ако корисник сака да прескокне на P1.3 веднаш, тоа е OK — B2 може да се заврши паралелно без да блокира.
+
+### Важно при продолжување — контекст од претходна сесија:
+
+- **P1.2-B1 deploy-нато и потврдено** на VPS (commit `7a4ebc0`). Сите 5 постоечки receipts + 2 inventory balance-и backfilled на TEKSPORT. Нов receipt авто-добива TenantId преку `ApplicationDbContext.SaveChangesAsync`.
+- **Pattern за B2:** идентичен со B1 — `: ITenantScoped` + `public Guid TenantId { get; set; }` на entity, migration со inline Sql backfill.
+- **DI cycle одбегнат:** `ApplicationDbContext` НЕ injectira `ICurrentTenantService` (cycle). Auto-fill inline во SaveChangesAsync. `ICurrentTenantService` е за handlers кои сакаат експлицитно resolve-ирање пред SaveChanges.
+- **OpenAPI/TS regeneration:** `./scripts/gen-api-types.sh` (per Contract Hygiene rule 2).
 
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 

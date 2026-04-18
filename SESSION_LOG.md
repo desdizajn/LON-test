@@ -336,6 +336,26 @@ Summary по таскови:
 
 ---
 
+## 2026-04-18 — Session wrap + handoff prepared
+
+**Why:** Корисник изрази дека има „лошо искуство" со нови сесии кои бараат re-explanation. Подготвен handoff материјал така што следна сесија да продолжи без прекинат контекст.
+
+**Added / updated:**
+- `CLAUDE.md §8.1` — NEW „ПРЕД првата реплика на корисник — задолжителна hydration". Експлицитно: НЕ ПРАШУВАЈ за VPS/креденцијали/одлуки, сè е запишано. Чекори: MEMORY.md → CLAUDE.md 3–7 → WORK_PLAN Current Active Task + first 40 lines → last 3 SESSION_LOG entries.
+- `WORK_PLAN.md` (top) — NEW „🎯 SESSION KICKOFF" блок со quick-facts табела (VPS, admin creds, TEKSPORT id, ELON DB, languages, deploy flow, TEST project).
+- `WORK_PLAN.md` Current Active Task — ажурирано со експлицитни алтернативи (P1.2-B3 брзо, P1.3 средно, P1.2-B2 голем) + препорака + контекст „што мора да знаеш од претходна сесија" (DI cycle, pattern, регенерирање API types).
+- `memory/session_handoff.md` (NEW) — најрепрезентативен memory document; индекс-ориентирана hydration за следна сесија, со сите quick-facts.
+- `memory/MEMORY.md` — додаден pointer со **„READ FIRST."** ознака за handoff.
+
+**State на main (last good):**
+- Commit `7a4ebc0 log: P1.2-B1 verified — 5 receipts + 2 balances backfilled to TEKSPORT`
+- Phase 0 done. Phase 6-A done. Phase 2.5 setup done (retrofit паралелно — Login, Sidebar, Dashboard преведени; ~30 страници чекаат). Phase 1 P1.1 done + P1.2-B1 done.
+- VPS up, API healthy, admin login works, 5 receipts + 2 inventory balances сите со TEKSPORT TenantId.
+
+**Следна сесија очекува:** P1.2-B3 (брз: Виница warehouse seed) → P1.2-B2 (extend ITenantScoped to remaining entities) → P1.3 (JWT tenant claim). Друг редослед прифатлив ако корисникот одлучи.
+
+---
+
 ## 2026-04-18 — P1.2-B1 ITenantScoped на 10 core entities
 
 **Status:** [x] done — partial scope (B1 of B1/B2/B3)
