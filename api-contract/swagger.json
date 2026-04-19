@@ -1275,6 +1275,100 @@
         }
       }
     },
+    "/api/import/sessions/{id}/mapping": {
+      "put": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMappingRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMappingRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyMappingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/mapping-profiles": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "targetEntity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partnerContextId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/mapping-profiles/{id}": {
+      "delete": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/KnowledgeBase/ask": {
       "post": {
         "tags": [
@@ -4290,6 +4384,28 @@
   },
   "components": {
     "schemas": {
+      "ApplyMappingRequest": {
+        "type": "object",
+        "properties": {
+          "mapping": {
+            "$ref": "#/components/schemas/ImportMapping"
+          },
+          "targetEntity": {
+            "type": "string",
+            "nullable": true
+          },
+          "partnerContextId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "saveAsProfileLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BOMLineRequest": {
         "type": "object",
         "properties": {
@@ -5356,6 +5472,36 @@
             "type": "string",
             "format": "uuid",
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportMapping": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportMappingColumn"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportMappingColumn": {
+        "type": "object",
+        "properties": {
+          "sourceHeader": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetField": {
+            "type": "string",
+            "nullable": true
+          },
+          "ignore": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

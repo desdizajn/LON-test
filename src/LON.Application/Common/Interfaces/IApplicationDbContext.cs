@@ -92,6 +92,7 @@ public interface IApplicationDbContext
 
     // Importing (P5.1)
     DbSet<ImportSession> ImportSessions { get; }
+    DbSet<ImportMappingProfile> ImportMappingProfiles { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -32,6 +32,9 @@ public class GetImportSessionQueryHandler
         var headers = JsonSerializer.Deserialize<List<string>>(session.HeadersJson) ?? new List<string>();
         var allRows = JsonSerializer.Deserialize<List<List<string?>>>(session.RowsJson) ?? new List<List<string?>>();
         var preview = allRows.Take(PreviewRowLimit).Select(r => (IReadOnlyList<string?>)r).ToList();
+        ImportMapping? mapping = null;
+        if (!string.IsNullOrWhiteSpace(session.MappingJson))
+            mapping = JsonSerializer.Deserialize<ImportMapping>(session.MappingJson);
 
         return Result<ImportSessionDto>.Success(new ImportSessionDto(
             session.Id,
@@ -44,6 +47,7 @@ public class GetImportSessionQueryHandler
             allRows.Count,
             session.TargetEntity,
             session.PartnerContextId,
-            session.CreatedAt));
+            session.CreatedAt,
+            mapping));
     }
 }

@@ -19,4 +19,5 @@ public sealed record ImportSessionDto(
     int TotalRowCount,
     string? TargetEntity,
     Guid? PartnerContextId,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    ImportMapping? Mapping = null);

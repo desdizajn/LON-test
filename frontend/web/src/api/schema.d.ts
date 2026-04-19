@@ -720,6 +720,59 @@ export interface paths {
       };
     };
   };
+  "/api/import/sessions/{id}/mapping": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ApplyMappingRequest"];
+          "text/json": components["schemas"]["ApplyMappingRequest"];
+          "application/*+json": components["schemas"]["ApplyMappingRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/mapping-profiles": {
+    get: {
+      parameters: {
+        query?: {
+          targetEntity?: string;
+          partnerContextId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/mapping-profiles/{id}": {
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/KnowledgeBase/ask": {
     post: {
       requestBody?: {
@@ -2433,6 +2486,13 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    ApplyMappingRequest: {
+      mapping?: components["schemas"]["ImportMapping"];
+      targetEntity?: string | null;
+      /** Format: uuid */
+      partnerContextId?: string | null;
+      saveAsProfileLabel?: string | null;
+    };
     BOMLineRequest: {
       /** Format: uuid */
       componentItemId?: string;
@@ -2804,6 +2864,14 @@ export interface components {
       occurredOn?: string;
       /** Format: uuid */
       eventId?: string;
+    };
+    ImportMapping: {
+      columns?: components["schemas"]["ImportMappingColumn"][] | null;
+    };
+    ImportMappingColumn: {
+      sourceHeader?: string | null;
+      targetField?: string | null;
+      ignore?: boolean;
     };
     IssueAllMaterialsBody: {
       /** Format: date-time */

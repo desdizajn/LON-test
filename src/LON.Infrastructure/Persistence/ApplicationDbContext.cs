@@ -96,6 +96,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     // Importing (P5.1)
     public DbSet<ImportSession> ImportSessions => Set<ImportSession>();
+    public DbSet<ImportMappingProfile> ImportMappingProfiles => Set<ImportMappingProfile>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

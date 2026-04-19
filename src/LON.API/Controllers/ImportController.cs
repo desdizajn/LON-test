@@ -1,6 +1,10 @@
+using LON.Application.Importing.Commands.ApplyImportMapping;
+using LON.Application.Importing.Commands.DeleteMappingProfile;
 using LON.Application.Importing.Commands.UploadImportFile;
+using LON.Application.Importing.DTOs;
 using LON.Application.Importing.Queries.GetImportSession;
 using LON.Application.Importing.Queries.ListImportSessions;
+using LON.Application.Importing.Queries.SuggestMappingProfiles;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LON.API.Controllers;
@@ -54,6 +58,41 @@ public class ImportController : BaseController
     public async Task<IActionResult> ListSessions([FromQuery] int take = 50)
     {
         var result = await Mediator.Send(new ListImportSessionsQuery(take));
+        return Ok(result);
+    }
+
+    // ---------- P5.1.2 — column mapping + named profiles ----------
+
+    public record ApplyMappingRequest(
+        ImportMapping Mapping,
+        string TargetEntity,
+        Guid? PartnerContextId,
+        string? SaveAsProfileLabel);
+
+    [HttpPut("sessions/{id}/mapping")]
+    public async Task<IActionResult> ApplyMapping(Guid id, [FromBody] ApplyMappingRequest req)
+    {
+        var result = await Mediator.Send(new ApplyImportMappingCommand(
+            id, req.Mapping, req.TargetEntity, req.PartnerContextId, req.SaveAsProfileLabel));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("mapping-profiles")]
+    public async Task<IActionResult> SuggestProfiles(
+        [FromQuery] string targetEntity,
+        [FromQuery] Guid? partnerContextId = null)
+    {
+        var result = await Mediator.Send(new SuggestMappingProfilesQuery(targetEntity, partnerContextId));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpDelete("mapping-profiles/{id}")]
+    public async Task<IActionResult> DeleteProfile(Guid id)
+    {
+        var result = await Mediator.Send(new DeleteMappingProfileCommand(id));
+        if (!result.IsSuccess) return NotFound(result);
         return Ok(result);
     }
 }
