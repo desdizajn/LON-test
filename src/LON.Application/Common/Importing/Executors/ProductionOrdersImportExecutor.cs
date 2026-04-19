@@ -37,10 +37,12 @@ public class ProductionOrdersImportExecutor : IImportTargetExecutor
             ? ProductionOrderStatus.Released
             : ProductionOrderStatus.Draft;
 
-        // Group rows by WorkOrder number.
+        // Group rows by WorkOrder number. Trim so Excel trailing whitespace
+        // doesn't produce duplicate groups that collide on the unique index
+        // (SQL Server's default collation trims padding on string compare).
         var groups = rows
             .Where(r => !string.IsNullOrWhiteSpace(r.GetOrDefault<string>("workOrderNumber")))
-            .GroupBy(r => r.GetOrDefault<string>("workOrderNumber")!, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(r => r.GetOrDefault<string>("workOrderNumber")!.Trim(), StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         // Dedup against existing POs in the same tenant — imports are not
