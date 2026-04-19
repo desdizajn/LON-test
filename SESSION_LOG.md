@@ -2,6 +2,67 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — KW12 reset + color/size/parent model; full 7582-row Matriks imported
+
+**Status:** [x] done. Commits `c9fb38e`, `c54b059`, `15093b3`. TEKSPORT wiped of fictitious data; KW12 is the new baseline.
+
+### Cleanup (`scripts/kw12_cleanup_teksport.sql`)
+
+Soft-deleted every transactional row in TEKSPORT while keeping the 2 170 legacy items from the P3 migration. Subsequent hard-delete of those soft-deleted rows was required because SQL Server's unique index on `(TenantId, OrderNumber)` is NOT filtered — orphan tombstones from prior test runs were blocking fresh inserts (same logic applies to other entity uniques).
+
+### Domain + migration `KW12_ColorSizeParent`
+
+```
+Item:
+  BaseCode   nvarchar(20)   -- "18248" / "1000010"
+  ColorCode  nvarchar(10)   -- "542" / "010"
+  SizeCode   nvarchar(20)   -- "2XL-3" / "5"
+  ParentItemId  FK → Items  -- variant → base
+ProductionOrder:
+  MainOrderNumber  nvarchar(50)   -- "PA2602067"
+  SubOrderNumber   nvarchar(20)   -- "0001"
+  ParentOrderId    FK → PO        -- sub → main
+```
+
+Both parent FKs use `OnDelete(NoAction)` so soft-deleting a parent doesn't break FK validity for children.
+
+### ItemsImportExecutor — code decomposition + parent-variant creation
+
+`DecomposeCode(code, type)` applies:
+- FG (type != RawMaterial): `^(\d{5})(\d{3})(.*)$` → 5-char base + 3-char color + rest size.
+- Material: `^(\d{7})(\d{3})(.*)$` when len ≥ 10; `^\d{7}$` → no color/size.
+Explicit `baseCode`/`colorCode`/`sizeCode` mapped fields override parsing (used for Matriks where columns R/S already carry color/size).
+
+When a row is a variant, the executor auto-finds-or-creates the BASE item (Code=`BaseCode`) and links `ParentItemId`. Per-session cache so 21 variants of `18248` all share one parent lookup. Active legacy rows get only the shape fields patched (`BaseCode ??=`, etc.), leaving name/type/cost authoritative.
+
+### ProductionOrdersImportExecutor — main PA / sub linkage
+
+`SplitMainSub(orderNumber)` cleaves on the trailing `-[0-9A-Za-z]+`. For every sub-order (has suffix), the executor auto-creates/reuses the parent main-PA PO with `ItemId` = base FG (looked up via `Item.ParentItemId`) and `OrderQuantity` accumulated from children. `MainOrderNumber`/`SubOrderNumber`/`ParentOrderId` populated on every row.
+
+### VPS full run (`https://elon.elbosoft.click`)
+
+```
+Items    :  259 rows → 269 entities committed  (base items auto-created for variants)
+Matriks  : 7582 rows → 7714 entities committed in 143.8s atomic
+           (6 parent POs + 126 child POs + 7582 POMaterials)
+```
+
+DB verification:
+- `SELECT COUNT(*) … ParentOrderId IS NULL AND SubOrderNumber IS NULL` = **6** ✓
+- `SELECT COUNT(*) … ParentOrderId IS NOT NULL` = **126** ✓
+- `SELECT COUNT(DISTINCT MainOrderNumber)` = **6** (PA2602006/007/012/013/067/068)
+- Parent OrderQuantity = sum(children): PA2602006=40 (15 variants), PA2602007=40 (16), PA2602012=2 (2), …
+- All 7 582 POMaterials carry `PreAssignedMRN = 26MKIM10150003D7B3`; 1 267 carry an `EfficiencyFactor` per the KW12 EFF column.
+- Item variants with `ParentItemId IS NOT NULL` = **137** (126 FG + 11 materials with color/size).
+
+### Known follow-ups (surfaced but not fixed here)
+
+- **Legacy color/size backfill** — legacy app never tracked color/size; 2 170 legacy items have NULL `BaseCode`. A one-shot backfill via `DecomposeCode` over the legacy catalog is the proper next step so reports aggregate them by base too.
+- **Per-import material attributes** — same material code can be imported from AT/TR/US with different tariff code + preferential flag. Model-wise this already lives on `CustomsDeclarationLine` (tariff/origin/pref per-line, per-import). Needs a report/view that surfaces "for material X, what are the distinct (tariff, origin, pref) tuples across active MRN batches?" No new schema — aggregation task.
+- **Unique indexes are not filtered** — SQL Server `IX_*_TenantId_Code` + `IX_*_TenantId_OrderNumber` etc. don't carry `WHERE IsDeleted=0`, so soft-deleted tombstones block re-inserts of the same value. Workaround today: hard-delete test rows. Long-term: change those indexes to filtered.
+
+---
+
 ## 2026-04-19 — KW12 gaps G1–G9 closed; Matriks end-to-end on VPS
 
 **Status:** [x] done. Commit `69471b2`. KW12 weekly textile file can be auto-imported.
