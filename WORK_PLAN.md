@@ -58,6 +58,7 @@
 - [ ] **P2.5.7** — PDF/Excel/XML i18n (gated on Phase 4)
 
 **Phase 6 Priority-B (паралелно со Phase 2+):**
+- [ ] **P6.21** — **CreateMaterialIssue ResolveBalanceAsync returns "no inventory available" for a balance visible via GET /api/wms/inventory.** Flagged during 2026-04-19 P5.2.1 UAT. Same tenant, same auth token, same UoM, QualityStatus=0, Quantity=10, LonProcessState=1, MRN registered. Non-bulk `/issues` with exact (BatchNumber, MRN) also returns "no inventory matches…". Both handlers share IApplicationDbContext. Integration tests still pass. Likely root cause: EF closure in `ResolveBalanceAsync`'s `Where` chain misinterpreting `CurrentTenantId` on the global filter when called from a MediatR handler vs. direct controller injection, OR dual HasQueryFilter between `InventoryBalanceConfiguration.HasQueryFilter(!e.IsDeleted)` and the reflection-applied tenant-scoped filter. Repro: create PO w/ BOM, release, receipt matching UoM with MRN registered + LonProcessState=1, then POST /api/production/orders/{id}/issues with exact batch/mrn.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
 - [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)
 - [ ] **P6.12** — Consistent API response shape `{ data, errorMessage?, errors[]? }`

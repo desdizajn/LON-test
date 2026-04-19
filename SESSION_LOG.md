@@ -2,6 +2,38 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — UAT backend + frontend UI for Phase 3/4/5 endpoints
+
+**Status:** [x] done. Commit `dd0f53d`. Frontend deployed; all new i18n keys verified in prod bundle.
+
+### Backend UAT (VPS, `https://elon.elbosoft.click`)
+
+ - **P6.19 ✅** — `POST /api/production/orders` → `GET /api/production/orders/{id}` returns 200 with populated `orderNumber`. Before fix, returned 404 because handler never called `Add()`.
+ - **P5.2.6 Release PO ✅** — Draft order (id `2818e0b7…`) transitioned Status 0 → 2 (Released); ProductionOrderMaterial row created for RM-001 with RequiredQuantity=5.1 (OrderQty=5 × BaseQty=1 × 1.02 scrap factor) and ReservedQuantity=5.1. Routing-ops expansion untested (no Routing seeded for FG-001).
+ - **P5.2.1 Bulk issue** — Wrapper plumbing verified: the endpoint walks ProductionOrderMaterials, computes `Required − Issued`, delegates to CreateMaterialIssueCommand. Inner `ResolveBalanceAsync` returns "no inventory available" even when a qualifying InventoryBalance exists and is visible via GET /api/wms/inventory. Pre-existing behaviour, not caused by this work — flagged for investigation. Could be a Where-clause closure issue or dual-filter interaction between `InventoryBalanceConfiguration.HasQueryFilter(!IsDeleted)` and the reflection-applied tenant filter. **Follow-up task added.**
+ - **P4.6 4 waste slots + Zaguba ✅** — Waste declaration on `LEG-2392`, total qty=3 split across SlotIndex 1/2/0 created three InventoryMovements `WST-20260419-aad616d2/W1`, `/W2`, `/Z` with notes `Otpad1 (Edge trimming)`, `Otpad2 (Sticky residue)`, `Zaguba (Unrecoverable)` respectively. Sibling Waste balance (LonProcessState=9) = 3.0, Imported balance dropped by 3.0.
+
+### Frontend UI (React, commit `dd0f53d`)
+
+ - **api.ts** — 7 new methods: `certifyDeclaration`, `generatePee060` (blob), `createWasteDeclaration`, `getMozniMinusi`, `getTrafficLights`, `releaseOrder`, `issueAllMaterials`.
+ - **i18n** — 80 new keys across 4 locales (mk/sr/sq/en): `zaverka.*`, `pee.*`, `mozniMinusi.*`, `trafficLight.*`, `production.release/bulkIssue*`, `waste.*` (slots). Verified via grep on the prod bundle post-deploy.
+ - **New components** — `TrafficLightGuarantees` (on Guarantees page), `CertifyDeclarationModal`, `Pee060Panel`, `WasteDeclarationModal`.
+ - **New page** — `MozniMinusi` wired at `/reports/mozni-minusi`; nav entry in Sidebar.
+ - **Customs page** — header gets `+ Waste declaration` and `PEE060` buttons; declarations row gets `Certify` action and `✓ Certified` badge once cleared.
+ - **Production page** — `Release` button on Draft orders, `Bulk issue` button alongside `Issue` on Released/InProgress orders.
+
+### Deployed
+
+ - Frontend image rebuilt; bundle hash `main.1e5bfb1e.js`; `lon-frontend` container `running`.
+ - Smoke: i18n keys from all 5 namespaces confirmed present in prod bundle.
+ - Live URL for manual UAT by expert: `https://elon.elbosoft.click` (admin / Admin123!).
+
+### Follow-ups
+
+ - **P5.2.1 inner resolve debug** — CreateMaterialIssueCommand ResolveBalanceAsync returns "no inventory available" for an exact-match balance that IS visible via GET /api/wms/inventory. Needs EF query logging to diagnose. Added as deferred item to WORK_PLAN.
+
+---
+
 ## 2026-04-19 — Autonomous overnight session: Phase 3 migration tool + Phase 4 gap coverage + Phase 5 quick wins + P6.19
 
 **Status:** [/] multi-phase bundle, commit `8462a2d`, deployed to VPS in follow-up.
