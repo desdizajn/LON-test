@@ -46,15 +46,35 @@ public class DutyRateLookupWarningRule : IDeclarationRule
         if (tariffCodes.Count == 0)
             return result;
 
+        // Look up both the base TariffCode (current) and any year-indexed TariffCodeRate
+        // rows whose validity window covers the declaration date. The year-indexed row
+        // wins when present (P4.7).
         var lookup = await _context.TariffCodes
             .Where(t => tariffCodes.Contains(t.TariffNumber) && t.IsActive)
-            .Select(t => new { t.TariffNumber, t.CustomsRate, t.VATRate })
+            .Select(t => new { t.Id, t.TariffNumber, t.CustomsRate, t.VATRate })
             .ToDictionaryAsync(t => t.TariffNumber, cancellationToken);
+
+        var tariffIds = lookup.Values.Select(v => v.Id).ToList();
+        var declDate = declaration.DeclarationDate;
+        var yearRates = await _context.TariffCodeRates
+            .Where(r => tariffIds.Contains(r.TariffCodeId)
+                        && r.ValidFrom <= declDate
+                        && (r.ValidTo == null || r.ValidTo > declDate)
+                        && !r.IsDeleted)
+            .Select(r => new { r.TariffCodeId, r.CustomsRate, r.VATRate })
+            .ToDictionaryAsync(r => r.TariffCodeId, cancellationToken);
 
         foreach (var line in declaration.Lines)
         {
             if (string.IsNullOrWhiteSpace(line.TariffCode)) continue;
-            if (!lookup.TryGetValue(line.TariffCode, out var row)) continue;
+            if (!lookup.TryGetValue(line.TariffCode, out var baseRow)) continue;
+
+            // Effective row: year-indexed override if present, else KnigaNai default.
+            decimal? effCustoms = yearRates.TryGetValue(baseRow.Id, out var yr)
+                ? yr.CustomsRate : baseRow.CustomsRate;
+            decimal? effVat = yearRates.TryGetValue(baseRow.Id, out var yr2)
+                ? yr2.VATRate : baseRow.VATRate;
+            var row = new { CustomsRate = effCustoms, VATRate = effVat };
 
             // TariffCode.CustomsRate / VATRate могат да бидат nullable во KB.
             // Ако не се познати, го прескокнуваме check-от.

@@ -1,4 +1,5 @@
 using LON.Application.WMS.Commands.CreateReceipt;
+using LON.Application.WMS.Queries.MozniMinusi;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -70,6 +71,19 @@ public class WMSController : BaseController
 
         var inventory = await query.ToListAsync();
         return Ok(inventory);
+    }
+
+    /// <summary>
+    /// P4.3 — MozniMinusi (negative-stock reconciliation report).
+    /// Returns (Item, Batch, MRN) groups with net-negative net movement totals
+    /// plus any InventoryBalance rows with Quantity &lt; 0.
+    /// </summary>
+    [HttpGet("inventory/mozni-minusi")]
+    public async Task<IActionResult> GetMozniMinusi()
+    {
+        var result = await Mediator.Send(new MozniMinusiQuery());
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
     }
 
     [HttpGet("shipments")]

@@ -108,6 +108,58 @@ public class GuaranteeController : BaseController
         return Ok(entries);
     }
 
+    /// <summary>
+    /// P4.4 — Traffic-light indicator per guarantee account.
+    /// Thresholds:
+    ///   &lt; 60% utilised  = "green"
+    ///   60–80%           = "yellow"
+    ///   &gt; 80%           = "red"
+    ///   &gt; 95%           = "critical"
+    /// Thresholds are fixed for v1; future work can make them tenant-configurable.
+    /// </summary>
+    [HttpGet("accounts/traffic-light")]
+    public async Task<IActionResult> GuaranteeTrafficLights()
+    {
+        var accounts = await _context.GuaranteeAccounts
+            .Where(a => a.IsActive)
+            .Select(a => new { a.Id, a.AccountNumber, a.AccountName, a.Currency, a.TotalLimit })
+            .ToListAsync();
+
+        var totals = await _context.GuaranteeLedgerEntries
+            .Where(l => !l.IsDeleted && l.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit && !l.IsReleased)
+            .GroupBy(l => l.GuaranteeAccountId)
+            .Select(g => new { GuaranteeAccountId = g.Key, Debited = g.Sum(l => l.Amount) })
+            .ToListAsync();
+
+        string Color(decimal pct) => pct switch
+        {
+            > 95m => "critical",
+            > 80m => "red",
+            > 60m => "yellow",
+            _ => "green",
+        };
+
+        var rows = accounts.Select(a =>
+        {
+            var used = totals.FirstOrDefault(t => t.GuaranteeAccountId == a.Id)?.Debited ?? 0m;
+            var pct = a.TotalLimit > 0 ? Math.Round(used * 100m / a.TotalLimit, 2) : 0m;
+            return new
+            {
+                a.Id,
+                a.AccountNumber,
+                a.AccountName,
+                a.Currency,
+                a.TotalLimit,
+                Used = used,
+                Available = a.TotalLimit - used,
+                UtilisationPercent = pct,
+                Indicator = Color(pct),
+            };
+        }).OrderByDescending(x => x.UtilisationPercent);
+
+        return Ok(rows);
+    }
+
     [HttpGet("active-guarantees")]
     public async Task<IActionResult> GetActiveGuarantees()
     {

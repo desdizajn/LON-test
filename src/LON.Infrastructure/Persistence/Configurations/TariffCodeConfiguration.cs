@@ -54,3 +54,28 @@ public class TariffCodeConfiguration : IEntityTypeConfiguration<TariffCode>
             .HasMaxLength(1000);
     }
 }
+
+public class TariffCodeRateConfiguration : IEntityTypeConfiguration<TariffCodeRate>
+{
+    public void Configure(EntityTypeBuilder<TariffCodeRate> builder)
+    {
+        builder.ToTable("TariffCodeRates");
+        builder.HasKey(x => x.Id);
+
+        builder.HasOne(x => x.TariffCode)
+            .WithMany()
+            .HasForeignKey(x => x.TariffCodeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(x => x.CustomsRate).HasPrecision(5, 2);
+        builder.Property(x => x.VATRate).HasPrecision(5, 2);
+        builder.Property(x => x.Source).HasMaxLength(200);
+
+        builder.HasIndex(x => new { x.TariffCodeId, x.ValidFrom })
+            .IsUnique()
+            .HasDatabaseName("IX_TariffCodeRates_TariffCodeId_ValidFrom");
+
+        builder.HasIndex(x => new { x.TariffCodeId, x.ValidTo })
+            .HasDatabaseName("IX_TariffCodeRates_TariffCodeId_ValidTo");
+    }
+}

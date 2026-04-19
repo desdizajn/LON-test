@@ -1,3 +1,4 @@
+using LON.Application.Customs.Commands.CertifyDeclaration;
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
 using LON.Application.Customs.Commands.CreateExportDeclaration;
 using LON.Application.Customs.Commands.CreateReturnDeclaration;
@@ -91,6 +92,37 @@ public class CustomsController : BaseController
         if (result.IsSuccess)
             return Ok(result);
         return BadRequest(result);
+    }
+
+    /// <summary>
+    /// P4.1 — Zaverka (customs certification). Inspector stamps the declaration;
+    /// sets ZaverkaNumber/Date + Status=Cleared. Idempotent attempts on an
+    /// already-cleared declaration return 400.
+    /// </summary>
+    [HttpPost("declarations/{id:guid}/certify")]
+    public async Task<IActionResult> CertifyDeclaration(Guid id, [FromBody] CertifyDeclarationBody body)
+    {
+        var cmd = new CertifyDeclarationCommand(id, body.ZaverkaNumber, body.ZaverkaDate);
+        var result = await Mediator.Send(cmd);
+        if (result.IsSuccess) return Ok(result);
+        return BadRequest(result);
+    }
+
+    public record CertifyDeclarationBody(string ZaverkaNumber, DateTime ZaverkaDate);
+
+    /// <summary>
+    /// P4.2 — Generate PEE060 monthly zadolzuvanje/razdolzuvanje XML for a LON
+    /// authorization over a date window. Returns the XML as a file download.
+    /// </summary>
+    [HttpGet("pee/060")]
+    public async Task<IActionResult> GeneratePee060(
+        [FromQuery] Guid authorizationId, [FromQuery] DateTime from, [FromQuery] DateTime to)
+    {
+        var result = await Mediator.Send(
+            new LON.Application.Customs.Queries.GeneratePee060Xml.GeneratePee060XmlQuery(authorizationId, from, to));
+        if (!result.IsSuccess || result.Data == null) return BadRequest(result);
+        return File(System.Text.Encoding.UTF8.GetBytes(result.Data.Xml),
+            "application/xml", result.Data.FileName);
     }
 
     /// <summary>

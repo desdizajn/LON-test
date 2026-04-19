@@ -1,6 +1,8 @@
 using LON.Application.Production.Commands.CreateMaterialIssue;
 using LON.Application.Production.Commands.CreateProductionOrder;
 using LON.Application.Production.Commands.CreateProductionReceipt;
+using LON.Application.Production.Commands.IssueAllMaterials;
+using LON.Application.Production.Commands.ReleaseProductionOrder;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -70,6 +72,25 @@ public class ProductionController : BaseController
             return Ok(result);
         return BadRequest(result);
     }
+
+    /// <summary>P5.2.6 — Release PO (Draft → Released). Expands BOM + Routing inline.</summary>
+    [HttpPost("orders/{id}/release")]
+    public async Task<IActionResult> ReleaseOrder(Guid id)
+    {
+        var result = await Mediator.Send(new ReleaseProductionOrderCommand(id));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>P5.2.1 — Issue all remaining materials for a PO with FEFO auto-pick.</summary>
+    [HttpPost("orders/{id}/issues/bulk")]
+    public async Task<IActionResult> IssueAllMaterials(Guid id, [FromBody] IssueAllMaterialsBody body)
+    {
+        var cmd = new IssueAllMaterialsCommand(id, body.IssueDate, body.IssuedByEmployeeId);
+        var result = await Mediator.Send(cmd);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    public record IssueAllMaterialsBody(DateTime IssueDate, Guid? IssuedByEmployeeId = null);
 
     [HttpGet("orders/{id}/material-issues")]
     public async Task<IActionResult> GetMaterialIssues(Guid id)

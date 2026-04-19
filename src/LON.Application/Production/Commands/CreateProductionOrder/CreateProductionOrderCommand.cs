@@ -51,6 +51,11 @@ public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProduct
             CreatedBy = "System"
         };
 
+        // P6.19 fix: the handler used to SaveChanges without adding to the DbSet,
+        // so the API returned Success(newGuid) while the DB stayed empty. Every
+        // subsequent "Release" or MaterialIssue failed because the PO wasn't
+        // persisted. Add it explicitly now.
+        _context.ProductionOrders.Add(order);
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(order.Id);

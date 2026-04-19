@@ -37,6 +37,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     
     // Knowledge Base - Master Data
     public DbSet<TariffCode> TariffCodes => Set<TariffCode>();
+    public DbSet<TariffCodeRate> TariffCodeRates => Set<TariffCodeRate>();
     public DbSet<CustomsRegulation> CustomsRegulations => Set<CustomsRegulation>();
     public DbSet<DeclarationRule> DeclarationRules => Set<DeclarationRule>();
     public DbSet<CodeListItem> CodeListItems => Set<CodeListItem>();

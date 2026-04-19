@@ -54,6 +54,28 @@ public class CustomsClearedEvent : DomainEvent
     public DateTime ClearedDate { get; set; }
 }
 
+/// <summary>
+/// P4.1 — raised when an inspector stamps a declaration (zaverka).
+/// Carries zaverka identifier + date so downstream auditing and PEE XML exports
+/// can refer to the certified reference.
+/// </summary>
+public class CustomsDeclarationCertifiedEvent : DomainEvent
+{
+    public Guid CustomsDeclarationId { get; }
+    public string MRN { get; }
+    public string ZaverkaNumber { get; }
+    public DateTime ZaverkaDate { get; }
+
+    public CustomsDeclarationCertifiedEvent(
+        Guid customsDeclarationId, string mrn, string zaverkaNumber, DateTime zaverkaDate)
+    {
+        CustomsDeclarationId = customsDeclarationId;
+        MRN = mrn;
+        ZaverkaNumber = zaverkaNumber;
+        ZaverkaDate = zaverkaDate;
+    }
+}
+
 public class ProductionOrderCompletedEvent : DomainEvent
 {
     public Guid ProductionOrderId { get; set; }

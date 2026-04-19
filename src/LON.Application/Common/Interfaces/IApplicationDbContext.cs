@@ -33,6 +33,7 @@ public interface IApplicationDbContext
 
     // Knowledge Base
     DbSet<TariffCode> TariffCodes { get; }
+    DbSet<TariffCodeRate> TariffCodeRates { get; }
     DbSet<CustomsRegulation> CustomsRegulations { get; }
     DbSet<DeclarationRule> DeclarationRules { get; }
     DbSet<CodeListItem> CodeListItems { get; }

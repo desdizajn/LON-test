@@ -134,10 +134,23 @@ public class CustomsDeclaration : BaseEntity, ITenantScoped, IAuditable
     public DeclarationStatus Status { get; set; } = DeclarationStatus.Draft;
 
     public bool IsCleared { get; set; }
-    
+
+    /// <summary>
+    /// Заверка: број на заверка од царинарница (инспекторска сертификација). Се
+    /// пополнува при preminot од Submitted → Cleared. Legacy еквивалент:
+    /// FakturiU5Z.ZaverkaBroj. Null додека декларацијата не е заверена.
+    /// </summary>
+    public string? ZaverkaNumber { get; set; }
+
+    /// <summary>
+    /// Датум на заверка (legacy FakturiU5Z.ZaverkaDatum). Се пополнува заедно со
+    /// <see cref="ZaverkaNumber"/>. Го поставува и <see cref="ClearedDate"/>.
+    /// </summary>
+    public DateTime? ZaverkaDate { get; set; }
+
     // ===== Box 44 - Посебни напомени / Документи =====
     public string? SpecialRemarks { get; set; }
-    
+
     public string? Notes { get; set; }
     
     // ===== Колекции =====
