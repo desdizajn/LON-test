@@ -1,0 +1,121 @@
+{
+  "items": [
+    {
+      "code": "1000010010",
+      "name": "IB TEX 220",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1000010151",
+      "name": "IB TEX 220",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1000010203",
+      "name": "IB TEX 220",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1000060460",
+      "name": "TXA SCHEUERSCHUTZ",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1000068203",
+      "name": "NXT",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1000192203",
+      "name": "NOMEX® ELASTIC_300",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "1500010203",
+      "name": "NOMEX VISKOSE 120",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "25000244525",
+      "name": "PE SCHAUM PLATTE",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "25000314525",
+      "name": "PE-SCHAUM PLATTE PERFORIERT",
+      "uom": "M",
+      "type": "RawMaterial"
+    },
+    {
+      "code": "3000010460",
+      "name": "NOMEXGEWEBE PU",
+      "uom": "M",
+      "type": "RawMaterial"
+    }
+  ],
+  "item_count": 259,
+  "tariff_codes": [
+    "58062000",
+    "39201024",
+    "48081000",
+    "79070000",
+    "49119900",
+    "39232100",
+    "55129100",
+    "60063100",
+    "59039091",
+    "39191080",
+    "96071900",
+    "96061000",
+    "39211900",
+    "62171000",
+    "58071010",
+    "58063290",
+    "59070000",
+    "39269097",
+    "55081010",
+    "49089000",
+    "61179000",
+    "59069990",
+    "49019900",
+    "58071090",
+    "56039290",
+    "73269098",
+    "85238010",
+    "56041000",
+    "48191000",
+    "55159190",
+    "55129990",
+    "62179000",
+    "59032090",
+    "55169200",
+    "58063210"
+  ],
+  "origins": [
+    "EU",
+    "JP no pref.",
+    "CZ",
+    "AT",
+    "TR",
+    "TW no pref.",
+    "SI",
+    "IT",
+    "TR no pref.",
+    "HR",
+    "BG",
+    "AT no pref.",
+    "CN no pref.",
+    "DE",
+    "DE no pref.",
+    "EU no pref.",
+    "US no pref."
+  ]
+}
