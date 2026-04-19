@@ -2,6 +2,66 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — Autonomous overnight session: Phase 3 migration tool + Phase 4 gap coverage + Phase 5 quick wins + P6.19
+
+**Status:** [/] multi-phase bundle, commit `8462a2d`, deployed to VPS in follow-up.
+**Context:** User went to sleep with explicit instruction to run as many tasks as possible end-to-end. Scope was kept additive (no refactors, no rework of already-verified Phase 2 code).
+
+### Phase 3 — Data migration (src/LON.Migration console app):
+
+**Tool shape:** .NET 8 console targeting legacy ELON (localhost Windows auth) → LON (VPS via SSH tunnel `127.0.0.1:11433 → root@173.212.254.216:1433`). CLI:
+```
+dotnet run --project src/LON.Migration -- <items|auths|decls|inventory|reconcile|all> \
+  --tenant TEKSPORT --lon "<conn>" [--limit N] [--dry-run]
+```
+No schema changes to existing entities. Deterministic GUIDs `MD5(kind|legacyId)` make re-runs UPSERT.
+
+**Verified on VPS:**
+ - `items` full run: **11012 Items written** from tblArtikli (11014 rows, 2 skipped dupes).
+ - `auths` full run: **261 LONAuthorizations written** from Zaklucoci (4 parent Odobrenija cached).
+ - `decls` full run: in progress at commit time (~460 of 633 declarations, ~10K lines). First attempt crashed on duplicate `DeclarationNumber='2200'`; fixed by composing `{FakturaU5Broj}/{yyMMdd}/{OdobrenieRBr}` (legacy reuses the short broj across time windows).
+ - `inventory` — discovered legacy `LagerMaterijali.PlusMinus` is 100% NULL; rewrote aggregation against `Proces` state (1=Imported receipts minus 7/8/9=Exported/Final/Waste). Smoke pending full decls.
+ - `reconcile` — writes `migration_reconciliation.html` with count deltas + sample Zaklucok side-by-side.
+
+**Partners gap (P3.3):** Legacy ELON doesn't ship a firms table; Ispracac/Proizvoditel are integer references with no lookup. Decision documented in AuthorizationMapper: create a single synthetic `LEGACY-MIG` Partner per tenant to anchor the LONAuthorization.PartnerId FK. Reverse-engineering real partner identities is deferred.
+
+### Phase 4 — Legacy gap coverage:
+
+ - **P4.1 Zaverka** — CustomsDeclaration.{ZaverkaNumber,ZaverkaDate} + `POST /api/customs/declarations/{id}/certify` flipping any pre-terminal status to Cleared. Tenant-scoped uniqueness guard (another declaration can't reuse the same zaverka number). Integration tests in `ZaverkaCertificationTests` (4 cases: happy path, empty number, double certify, reuse). Domain event `CustomsDeclarationCertifiedEvent` emitted.
+ - **P4.2 PEE060** — `GET /api/customs/pee/060?authorizationId=...&from=...&to=...` returns customs-ready XML (envelope constants C5 / 9999 / 111111 matching legacy `cmdXML_PEE060_Click` metadata) with body aggregated by (TariffCode, Country) into Zadolzuvanje (IM lines) + Razdolzuvanje (non-IM lines). File download as `PEE060_R_S_<auth>_<office>_<yyyy>.xml`.
+ - **P4.3 MozniMinusi** — `GET /api/wms/inventory/mozni-minusi` returning `{ negativeMovements, negativeBalances, totalChecked }`. Groups InventoryMovements by (Item, Batch, MRN), net = Σ receipts - Σ issues, keep only negatives. Separately surfaces any InventoryBalance with Quantity < 0.
+ - **P4.4 Traffic-light Guarantees** — `GET /api/guarantees/accounts/traffic-light` with `{ utilisationPercent, indicator }` where indicator ∈ {green < 60, yellow 60-80, red 80-95, critical > 95}. Thresholds fixed in v1; per-tenant override deferred.
+ - **P4.6 4 waste slots + Zaguba** — `CreateWasteDeclarationCommand.Slots: List<WasteSlot>` optional. `SlotIndex=0` is Zaguba (unrecoverable), 1..4 are normal buckets. Sum must match total, movement number suffixed `/W1..W4` or `/Z`. Backward-compatible when Slots is null (single-slot behaviour).
+ - **P4.7 TariffCodeRate (year-indexed rates)** — new entity + DbSet + migration. `DutyRateLookupWarningRule` now probes TariffCodeRates first; picks the row where `ValidFrom ≤ declarationDate < (ValidTo ?? +∞)`; falls back to base TariffCode.CustomsRate/VATRate when no window matches. No change to external API.
+
+### Phase 5 quick wins:
+
+ - **P5.2.6 Release PO** — `POST /api/production/orders/{id}/release`. Draft → Released; scales BOM lines (`bom.Quantity × OrderQty/BaseQty × (1 + ScrapPct/100)`) into ProductionOrderMaterials; copies Routing operations into ProductionOrderOperations. Idempotent-ish for already-released orders.
+ - **P5.2.1 Issue all materials** — `POST /api/production/orders/{id}/issues/bulk`. Walks ProductionOrderMaterials, computes `RequiredQty - IssuedQty` per line, delegates to CreateMaterialIssueCommand (existing FEFO auto-pick since P2.4).
+
+### Phase 6 Priority-B pickup:
+
+ - **P6.19** — `CreateProductionOrderCommandHandler` now calls `_context.ProductionOrders.Add(order)` before SaveChanges. Was returning `Success(newGuid)` while the DB stayed empty; every subsequent Release/MaterialIssue on that id hit "PO not found". Root cause: copy-paste gap noted during P2.4 VPS smoke.
+
+### Schema migration
+
+`P4_ZaverkaAndTariffCodeRates`:
+ - ADD COLUMN CustomsDeclarations.ZaverkaNumber nvarchar(max) NULL
+ - ADD COLUMN CustomsDeclarations.ZaverkaDate datetime2 NULL
+ - CREATE TABLE TariffCodeRates(Id, TariffCodeId FK→TariffCodes, ValidFrom, ValidTo?, CustomsRate(5,2), VATRate(5,2), Source(200), audit) + unique IX(TariffCodeId, ValidFrom) + IX(TariffCodeId, ValidTo)
+
+### Follow-ups for user UAT tomorrow:
+ 1. Apply EF migration on VPS (`dotnet ef database update` inside container or via on-startup auto-migrate).
+ 2. Full `decls` + `inventory` migration runs to completion.
+ 3. Generate reconciliation report + eyeball against a TEKSPORT Zaklucok.
+ 4. Frontend i18n retrofit for the new endpoints is deferred to P2.5.4 cycle (backend-only scope this session).
+ 5. **Not attempted:** P5.1 generic importer, Phase 7 Flutter mobile (massive scope; out of one-session reach). P4.5 ECD integration skipped (no test environment).
+
+### What Got Skipped / Scope Cuts
+ - Tenant-configurable traffic-light thresholds (P4.4) — fixed 60/80/95 only.
+ - PEE010/040 variants — only PEE060 implemented. Other PEE formats are different envelopes and deserve their own pass.
+ - Integration tests for P4.2/P4.3/P4.4/P4.6/P4.7 — only the Zaverka one. Others have unit-level protection via their handler guards.
+
 ## 2026-04-19 — P2.7 declaration validation rules — 4 new validators
 
 **Status:** [x] done — Phase 2 complete

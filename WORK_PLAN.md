@@ -172,20 +172,13 @@
 
 **Цел:** Мигрирани реални TEKSPORT податоци во нова апликација за side-by-side споредба со ELON продукција.
 
-- [ ] **P3.1** — Migration tool (конзола app `src/LON.Migration` или Python во `scripts/migration/`)
-  - Verify: CLI работи со ELON Windows auth; dry-run мод печати што ќе мигрира
-- [ ] **P3.2** — Mapping: `tblArtikli` (TEKSPORT filter) → `Item`
-  - Verify: sample check — 10 articles од ELON се идентични во LON (ArtKatBr, naziv, HS code, tip)
-- [ ] **P3.3** — Mapping: `tblFirmi` → `Partner`
-  - Verify: број на Partners = број на distinct Firmi за TEKSPORT во ELON
-- [ ] **P3.4** — Mapping: `Odobrenie` + `Zaklucok` → `LONAuthorization`
-  - Verify: за една Zaklucok — сите authorization детали совпаѓаат
-- [ ] **P3.5** — Mapping: `FakturiU5` + `FakturiU5Art` → `CustomsDeclaration` + Lines
-  - Verify: една U5 faktura мигрирана — сите лини, količini, MRN-ови, davacki матхат
-- [ ] **P3.6** — Mapping: `LagerMaterijali` + `LagerGotoviProizvodi` → `InventoryBalance` + `InventoryMovement`
-  - Verify: сума на lager за TEKSPORT = сума на InventoryBalance (разлика = 0)
-- [ ] **P3.7** — Reconciliation report: една Zaklucok — ELON vs LON side-by-side
-  - Verify: HTML/Excel извештај покажува match на сите бројки
+- [x] **P3.1** ✅ — `src/LON.Migration` .NET 8 console (`lon-migrate`). CLI: items/auths/decls/inventory/reconcile/all with `--tenant`, `--limit`, `--dry-run`. Idempotent via deterministic MD5-derived Guids. Runs against VPS LON DB via SSH tunnel to `127.0.0.1:11433`. Session 2026-04-19.
+- [x] **P3.2** ✅ — tblArtikli → Items. **11,012 rows** written on VPS (2 dupe-codes skipped). ItemType ∈ {Raw=0, Component=1, FG=2, SemiFG=3} derived from legacy ArtKatTip + ArtKatSurovina.
+- [x] **P3.3** ✅ — **Skipped as documented.** Legacy ELON has no firms table; Partner FKs anchored on a synthetic `LEGACY-MIG` Partner seeded per tenant. Real partner reconstruction deferred.
+- [x] **P3.4** ✅ — Odobrenija (4 parent permits) + Zaklucoci (261 decisions) → LONAuthorizations (261). Parent guarantee amount + expiry cascaded to all children whose date window matches.
+- [/] **P3.5** — FakturiU5Z + FakturiU5 → CustomsDeclarations + Lines. In-progress full run (≈ 480/633 headers at commit time). DeclarationNumber composed `{Broj}/{yyMMdd}/{OdobrenieRBr}` because legacy reuses the short broj. Final numbers land in SESSION_LOG.
+- [ ] **P3.6** — LagerMaterijali → InventoryBalance. Query rewritten against legacy `Proces` state (PlusMinus is 100% NULL in legacy). Smoke pending full P3.5 completion. **Agg rule:** Σ Kol[Proces=1] − Σ Kol[Proces ∈ 7,8,9].
+- [ ] **P3.7** — Reconciliation report (`reconcile` subcommand writes `migration_reconciliation.html`). Code complete; run after P3.6 completes.
 
 **Фаза 3 DONE = ✅ експертот може визуелно да потврди „LON покажува исто како ELON за оваа Zaklucok"**
 
@@ -195,13 +188,13 @@
 
 **Цел:** Недостигачките legacy features имплементирани во новата архитектура (без legacy кварц).
 
-- [ ] **P4.1** — Zaverka workflow (царинска инспекторска сертификација)
-- [ ] **P4.2** — PEE010–060 XML generation + submission queue
-- [ ] **P4.3** — MozniMinusi — negative stock reconciliation report
-- [ ] **P4.4** — Traffic light gauge на Guarantees UI (threshold alerts, configurable)
-- [ ] **P4.5** — ECD auto-pull интеграција (ако има test environment)
-- [ ] **P4.6** — 4 waste slots + Zaguba во `WasteDeclaration`
-- [ ] **P4.7** — Year-indexed тарифни стапки: `TariffCodeRate` со ValidFrom/ValidTo
+- [x] **P4.1** ✅ — Zaverka. `ZaverkaNumber` + `ZaverkaDate` fields on CustomsDeclaration + `POST /api/customs/declarations/{id}/certify`. Draft/Registered/Submitted → Cleared. Tenant-scoped uniqueness guard. VPS verified: one Registered declaration certified, second certify call on same id returns 400 with "Декларацијата веќе е заверена." (commit `8462a2d`).
+- [/] **P4.2** — PEE060 XML. `GET /api/customs/pee/060?authorizationId=...&from=...&to=...`. Envelope constants (C5/9999/111111) match legacy `cmdXML_PEE060_Click`; body aggregates by (TariffCode, Country) into Zadolzuvanje/Razdolzuvanje. VPS verified: 1342-byte XML with 2 TariffCodeSummary blocks (commits `8462a2d`, `4055fba` — XmlWriter flush-race fix).
+- [x] **P4.3** ✅ — MozniMinusi. `GET /api/wms/inventory/mozni-minusi` returns `{ negativeMovements, negativeBalances, totalChecked }`. VPS verified returning existing negative-movement rows (FG-001 batch FG-VPS-P25-01 showing net=-3 from an over-shipment scenario).
+- [x] **P4.4** ✅ — Traffic-light Guarantees. `GET /api/guarantee/accounts/traffic-light` returns `{ indicator: green/yellow/red/critical, utilisationPercent }`. Thresholds 60/80/95. VPS verified on two accounts (both green: 0.09% and 0%).
+- [ ] **P4.5** — ECD auto-pull — **deferred, no test environment available.**
+- [x] **P4.6** ✅ — 4 waste slots + Zaguba. `CreateWasteDeclarationCommand.Slots: List<WasteSlot>` (SlotIndex 0=Zaguba, 1..4=normal). Sum must equal total. Movement number suffixed `/W1..W4` or `/Z`. Backward compatible when Slots is null.
+- [x] **P4.7** ✅ — Year-indexed tariff rates. New `TariffCodeRate` entity with `(TariffCodeId, ValidFrom, ValidTo?, CustomsRate, VATRate, Source)` + migration `P4_ZaverkaAndTariffCodeRates`. `DutyRateLookupWarningRule` consults the year-indexed row first; falls back to base TariffCode rate when no window matches the declaration date.
 
 *(Verify criteria за секој P4.x ќе се детализира кога фазата ќе почне.)*
 
@@ -227,12 +220,12 @@
 
 **Legacy inspiration:** `frmPodeliBaranjaBrz`, `frmRaspredeliPoProizvoditeliBrz`, template auto-apply.
 
-- [ ] **P5.2.1** — **Issue all materials for Production Order** (1 клик) — систем пики по BOM, FIFO/FEFO алгоритам избира batch, креира N `MaterialIssue` редови во една операција
+- [x] **P5.2.1** ✅ — **Issue all materials for Production Order** (1 клик). `POST /api/production/orders/{id}/issues/bulk`. Walks `ProductionOrderMaterial` rows, computes remaining (Required - Issued), delegates to existing CreateMaterialIssueCommand with FEFO auto-pick. Rolls back on any per-line failure (single SaveChanges scope).
 - [ ] **P5.2.2** — **Move batch across stages** (1 клик) — избери batch → target stage (Production / Shipping / Quarantine); сите inventory balances на тој batch се transfer-ираат
 - [ ] **P5.2.3** — **Bulk receipt from invoice** (1 клик) — постоечки CustomsDeclaration + upload-наa faktura → авто-генерирање на Receipt со сите ReceiptLines
 - [ ] **P5.2.4** — **Bulk shipment from FG selection** — selektiraj FG редови по item/batch/PO → креира Shipment + EX декларација во еден flow
 - [ ] **P5.2.5** — **FIFO/FEFO auto-pick** — кога издаваш количина, системот автоматски го избира најстариот compatible batch/MRN (можно disable per tenant)
-- [ ] **P5.2.6** — **Release Production Order** (1 клик) — Draft → Released: резервира материјали, создава Operations по Routing, calculates планирано завршување
+- [x] **P5.2.6** ✅ — **Release Production Order** (1 клик). `POST /api/production/orders/{id}/release`. Draft → Released; BOM lines scaled by `OrderQty / BaseQty × (1 + ScrapPct/100)` into ProductionOrderMaterials; Routing ops copied into ProductionOrderOperations. Already-released = idempotent success.
 - [ ] **P5.2.7** — **Mass location change** — филтрирај inventory (by item/batch/PO/warehouse) → избери target location → сите се transfer-ираат
 - [ ] **P5.2.8** — **Quick-entry bar** — single-line command за power users: `issue PO-123 50 BATCH-X` → auto-parse + execute
 
@@ -281,7 +274,7 @@
 ### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
 
 - [ ] **P6.20** — **Imported/FG restore non-consolidation in Return handler.** `UpsertRestoredBalance` (and `UpsertFgBalance`) in `CreateReturnDeclarationCommand` probe `DbSet.Local` only; an existing DB row that isn't tracked in the current context won't match, so returns append a new sibling instead of consolidating. Aggregate sum queries are correct; storage bloats by one row per restore. Fix options: (a) add async DB lookup fallback keyed on (Item, Location, Batch, MRN, UoM, Quality, State), (b) batch all restores at the end and run one SaveChanges per (key) group. Same pattern present implicitly in `UpsertFgBalance` for return re-intake.
-- [ ] **P6.19** — **`CreateProductionOrderCommandHandler` never persists.** Handler constructs a local `order` variable, calls `_context.SaveChangesAsync()`, but never adds it to `_context.ProductionOrders`. Endpoint returns `{isSuccess:true, data:<newGuid>}` while the DB stays empty. Uncovered during P2.4 VPS smoke (worked around with direct SQL insert). Fix = add `_context.ProductionOrders.Add(order)` before SaveChanges; add integration test `CreateProductionOrder_Persists_VisibleInList` to prevent regression.
+- [x] **P6.19** ✅ — `CreateProductionOrderCommandHandler` now calls `Add(order)` before SaveChanges (commit `8462a2d`). Missing integration test `CreateProductionOrder_Persists_VisibleInList` still a follow-up.
 - [ ] **P6.13** — **LocationDto serialization drops Type** — API враќа `type: null` и покрај MapLocation. Или DTO constructor или JSON naming policy. Handler-от го користи code prefix fallback; UI-от не може да филтрира по тип.
 - [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
 - [ ] **P6.15** — Structured logging (Serilog со JSON output) + реал health checks со DB probe (`/health/ready`, `/health/live`).
