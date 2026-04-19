@@ -20,7 +20,11 @@ startIndex = Math.Max(endIndex - overlap, startIndex + 1);
 
 **Regression guard:** `tests/LON.IntegrationTests/DocumentChunkingUnitTests.cs` with 4 cases — empty string, short string (single chunk), 1 050-char edge case (the exact boundary that caused the hang), and a ~120 KB Cyrillic Pravilnik-shape document. All 4 pass in 36 ms; without the fix, the first of these would never terminate.
 
-**Deploy:** commit pending, VPS rebuild to follow. Startup logs will confirm `✅ Vector Store seeded successfully` replacing the prior OOM trace.
+**Deploy:** commit `6cdb949` shipped to VPS (branch `p6.14-chunking-oom-fix` → SSH fast-forward). Post-deploy logs:
+
+- `OutOfMemoryException` trace **gone** — chunking completes.
+- New error: `System.Net.Http.HttpRequestException: Response status code does not indicate success: 401 (Unauthorized)` from `OpenAIEmbeddingService.GenerateEmbeddingAsync`. The OpenAI API key is missing or invalid on VPS — tracked as new task **P6.41** (requires operator to set env var; sandbox refuses to read the VPS `.env` for secret safety).
+- `VectorStoreBackgroundService` now correctly degrades gracefully (logged "The system will continue to function without RAG capabilities"). API startup completes without crash; business endpoints unaffected.
 
 ---
 
