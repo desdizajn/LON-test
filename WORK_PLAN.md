@@ -76,20 +76,20 @@
 - [ ] **P6.36** — **Waste / calculations / controls UI wiring.** Backend (P2.3 MRN consume, P2.2 guarantee auto-debit, P4.6 waste slots, I2 landing-costs, I3 duty-rate warnings, I5 SAD advisories, P2.7 rule engine) is live but the Customs/Production/Guarantees pages don't surface them: no per-line duty breakdown, no MRN consumption meter, no waste-slot preview, no advisory panel. Needs a design pass per page (tie to P6.37).
 - [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Настройки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
   - [x] **P6.37.0** — IA design doc (`docs/design/P6-37-ia.md`) + WORK_PLAN breakdown + TodoWrite — *2026-04-19*
-  - [ ] **P6.37.1** — Verify seeded roles + audit frontend AuthService / JWT role claim exposure
-  - [ ] **P6.37.2** — `PlaceholderPage` component + route convention (title + WORK_PLAN link + "Coming soon")
-  - [ ] **P6.37.3** — Sidebar refactor: role-aware filtering (`useNavForRoles`) + collapsible groups + localStorage persist
-  - [ ] **P6.37.4** — Cross-cutting bar (Search modal stub / AI / Import admin-only / Language)
-  - [ ] **P6.37.5** — 🏭 Warehouse group (**pilot**): 9 items (3 existing, 1 partial, 5 placeholders)
-  - [ ] **P6.37.6** — 🛃 Customs group: 8 items
-  - [ ] **P6.37.7** — ✂️ Production group: 10 items
-  - [ ] **P6.37.8** — 📦 Finished Goods group: 9 items
-  - [ ] **P6.37.9** — 👥 HR group: 9 items
-  - [ ] **P6.37.10** — ⚙️ Machines / Work Centers / Efficiency group: 9 items
-  - [ ] **P6.37.11** — 💵 Finance group: 10 items
-  - [ ] **P6.37.12** — 🎯 Management (KPI) group: 11 items
-  - [ ] **P6.37.13** — i18n keys `nav.<group>.<item>` × 4 languages (mk primary, sr/sq/en mk-fallback; proper translation → P2.5.4)
-  - [ ] **P6.37.14** — VPS deploy + per-role smoke (seed Customs Officer / Production Manager / HR / Finance users) + SESSION_LOG + commit
+  - [x] **P6.37.1** — Verified seeded roles + frontend AuthService role exposure — *2026-04-19*
+  - [x] **P6.37.2** — `PlaceholderPage` component + i18n `placeholder.*` in 4 langs — *2026-04-19*
+  - [x] **P6.37.3** — Sidebar refactor: role-aware filtering (`useNavForRoles`) + collapsible groups + localStorage persist — *2026-04-19*
+  - [x] **P6.37.4** — TopBar cross-cutting bar (Search stub / AI → /knowledge-base / Import admin-only / Logout / user identity) — *2026-04-19*
+  - [x] **P6.37.5** — 🏭 Warehouse group (**pilot**): 9 items (3 reuse existing pages, 1 partial, 5 placeholders) — *2026-04-19*
+  - [x] **P6.37.6** — 🛃 Customs group: 8 items (3 reuse, 5 placeholders) — *2026-04-19*
+  - [x] **P6.37.7** — ✂️ Production group: 10 items (1 reuse Production page, 9 placeholders) — *2026-04-19*
+  - [x] **P6.37.8** — 📦 Finished Goods group: 9 items (all placeholders — new domain) — *2026-04-19*
+  - [x] **P6.37.9** — 👥 HR group: 9 items (2 reuse Employee/Shift mgmt, 7 placeholders) — *2026-04-19*
+  - [x] **P6.37.10** — ⚙️ Machines / Work Centers / Efficiency group: 9 items (1 reuse WorkCenters, 8 placeholders) — *2026-04-19*
+  - [x] **P6.37.11** — 💵 Finance group: 10 items (1 reuse Guarantees, 9 placeholders) — *2026-04-19*
+  - [x] **P6.37.12** — 🎯 Management (KPI) group: 11 items (1 reuse Dashboard, 10 placeholders) — *2026-04-19*
+  - [/] **P6.37.13** — VPS deploy done (commit `3f78c6f`), HTTP 200 + tekuser login OK with `Warehouse Manager` role. **Visual per-role smoke pending user check.** 7 additional roles (Customs Officer, Production Operator, QC, HR Manager, Maintenance Tech, Finance Clerk, Warehouse Operator) not yet seeded — deferred to P6.37.14.
+  - [ ] **P6.37.14** — Legacy sidebar cutover: remove legacy flat section, add `<Navigate>` redirects from old → new routes (`/inventory` → `/warehouse/receipts`, `/customs` → `/customs/import-docs`, etc.), seed 7 missing roles + test users, per-role UI verification
   - [ ] **P6.37.15** — (follow-up, deferred) `design:accessibility-review` audit across full app
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
@@ -333,6 +333,13 @@
 ---
 
 ## Current Active Task
+
+> **>>>** **2026-04-19 session wrap — P6.37.0–P6.37.12 shipped (commit `3f78c6f`). Sidebar IA redesigned to role + process driven (9 groups × ~80 items) with honest placeholder system.**
+>
+> **Next session pick one:**
+> 1. **P6.37.14** — Legacy sidebar cutover + 7 additional role seeds + per-role UI smoke. Finishes the IA redesign cycle.
+> 2. **P6.37 consumer verification** — user logs in to VPS (`admin` / `tekuser`) and spot-checks the new sidebar groups, reports back any item wording / grouping that's wrong before it ossifies.
+> 3. **Return to Phase 3/6 backlog** (below).
 
 > **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**
 >
