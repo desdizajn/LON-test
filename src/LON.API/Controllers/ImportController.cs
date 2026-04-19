@@ -5,6 +5,7 @@ using LON.Application.Importing.Commands.SetImportTransforms;
 using LON.Application.Importing.Commands.UploadImportFile;
 using LON.Application.Importing.DTOs;
 using LON.Application.Importing.Queries.GetImportSession;
+using LON.Application.Importing.Queries.GetImportTargets;
 using LON.Application.Importing.Queries.ListImportSessions;
 using LON.Application.Importing.Queries.PreviewTransformedRows;
 using LON.Application.Importing.Queries.SuggestMappingProfiles;
@@ -127,6 +128,23 @@ public class ImportController : BaseController
     public async Task<IActionResult> PreviewTransformed(Guid id, [FromQuery] int take = 20)
     {
         var result = await Mediator.Send(new PreviewTransformedRowsQuery(id, take));
+        if (!result.IsSuccess) return NotFound(result);
+        return Ok(result);
+    }
+
+    // ---------- P5.1.5 — target entity schemas ----------
+
+    [HttpGet("targets")]
+    public async Task<IActionResult> ListTargets()
+    {
+        var result = await Mediator.Send(new GetImportTargetsQuery());
+        return Ok(result);
+    }
+
+    [HttpGet("targets/{name}")]
+    public async Task<IActionResult> GetTarget(string name)
+    {
+        var result = await Mediator.Send(new GetImportTargetQuery(name));
         if (!result.IsSuccess) return NotFound(result);
         return Ok(result);
     }

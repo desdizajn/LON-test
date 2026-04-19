@@ -1,4 +1,5 @@
 using LON.Application.Common.Importing;
+using LON.Application.Common.Importing.Targets;
 using LON.Application.Common.Interfaces;
 using LON.Application.Customs.Validation;
 using LON.Application.Customs.Validation.Rules;
@@ -90,6 +91,14 @@ public static class DependencyInjection
         services.AddScoped<IImportFileParser, JsonImportParser>();
         services.AddScoped<IImportFileParser, XmlImportParser>();
         services.AddScoped<IImportFileParserRegistry, ImportFileParserRegistry>();
+
+        // P5.1.5 — target schema registry. One schema per supported entity.
+        services.AddSingleton<IImportTargetSchema, ReceiptsTargetSchema>();
+        services.AddSingleton<IImportTargetSchema, ItemsTargetSchema>();
+        services.AddSingleton<IImportTargetSchema, PartnersTargetSchema>();
+        services.AddSingleton<IImportTargetSchema, BOMsTargetSchema>();
+        services.AddSingleton<IImportTargetSchema, CustomsDeclarationsTargetSchema>();
+        services.AddSingleton<IImportTargetRegistry, ImportTargetRegistry>();
 
         return services;
     }

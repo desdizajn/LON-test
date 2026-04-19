@@ -32,8 +32,8 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         var mapping = new
         {
             mapping = new { columns = new[] {
-                new { sourceHeader = "Code", targetField = "itemCode", ignore = false },
-                new { sourceHeader = "Qty",  targetField = "quantity", ignore = false }
+                new { sourceHeader = "Code", targetField = "code", ignore = false },
+                new { sourceHeader = "Qty",  targetField = "standardCost", ignore = false }
             }},
             targetEntity = "Items",
             partnerContextId = (Guid?)null,
@@ -49,7 +49,7 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         session.Data.TargetEntity.Should().Be("Items");
         session.Data.Mapping!.Columns.Should().HaveCount(2);
         session.Data.Mapping.Columns[0].SourceHeader.Should().Be("Code");
-        session.Data.Mapping.Columns[0].TargetField.Should().Be("itemCode");
+        session.Data.Mapping.Columns[0].TargetField.Should().Be("code");
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         var payload = new
         {
             mapping = new { columns = new[] {
-                new { sourceHeader = "Code", targetField = "itemCode", ignore = false },
-                new { sourceHeader = "Qty",  targetField = "quantity", ignore = false }
+                new { sourceHeader = "Code", targetField = "code", ignore = false },
+                new { sourceHeader = "Qty",  targetField = "standardCost", ignore = false }
             }},
             targetEntity = "Items",
             partnerContextId = (Guid?)partner,
@@ -99,14 +99,14 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         var partner = Guid.NewGuid();
         var s1 = await UploadCsvAsync(client, "A,B\n1,2\n", "generic.csv");
         await client.PutAsJsonAsync($"/api/import/sessions/{s1}/mapping", new {
-            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "a", ignore = false } } },
+            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "code", ignore = false } } },
             targetEntity = "Items",
             partnerContextId = (Guid?)null,
             saveAsProfileLabel = "generic"
         });
         var s2 = await UploadCsvAsync(client, "A,B\n1,2\n", "partner.csv");
         await client.PutAsJsonAsync($"/api/import/sessions/{s2}/mapping", new {
-            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "a", ignore = false } } },
+            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "code", ignore = false } } },
             targetEntity = "Items",
             partnerContextId = (Guid?)partner,
             saveAsProfileLabel = "MAGNA"
@@ -127,8 +127,40 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         var sessionId = await UploadCsvAsync(client, "Code,Qty\nA,1\n", "bad.csv");
 
         var resp = await client.PutAsJsonAsync($"/api/import/sessions/{sessionId}/mapping", new {
-            mapping = new { columns = new[] { new { sourceHeader = "Missing", targetField = "x", ignore = false } } },
+            mapping = new { columns = new[] { new { sourceHeader = "Missing", targetField = "code", ignore = false } } },
             targetEntity = "Items",
+            partnerContextId = (Guid?)null,
+            saveAsProfileLabel = (string?)null
+        });
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Mapping_UnknownTargetField_Returns400()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var sessionId = await UploadCsvAsync(client, "Code,Qty\nA,1\n", "bad.csv");
+
+        var resp = await client.PutAsJsonAsync($"/api/import/sessions/{sessionId}/mapping", new {
+            mapping = new { columns = new[] { new { sourceHeader = "Code", targetField = "nonexistent", ignore = false } } },
+            targetEntity = "Items",
+            partnerContextId = (Guid?)null,
+            saveAsProfileLabel = (string?)null
+        });
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Mapping_UnknownTarget_Returns400()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var sessionId = await UploadCsvAsync(client, "Code\nA\n", "x.csv");
+
+        var resp = await client.PutAsJsonAsync($"/api/import/sessions/{sessionId}/mapping", new {
+            mapping = new { columns = new[] { new { sourceHeader = "Code", targetField = "code", ignore = false } } },
+            targetEntity = "DoesNotExist",
             partnerContextId = (Guid?)null,
             saveAsProfileLabel = (string?)null
         });
@@ -144,7 +176,7 @@ public class ImportMappingTests : IClassFixture<LonApiFactory>
         var partner = Guid.NewGuid();
         var sessionId = await UploadCsvAsync(client, "A,B\n1,2\n", "delme.csv");
         var save = await client.PutAsJsonAsync($"/api/import/sessions/{sessionId}/mapping", new {
-            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "a", ignore = false } } },
+            mapping = new { columns = new[] { new { sourceHeader = "A", targetField = "code", ignore = false } } },
             targetEntity = "Partners",
             partnerContextId = (Guid?)partner,
             saveAsProfileLabel = "tobe-deleted"

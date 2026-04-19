@@ -835,6 +835,31 @@ export interface paths {
       };
     };
   };
+  "/api/import/targets": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/targets/{name}": {
+    get: {
+      parameters: {
+        path: {
+          name: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/KnowledgeBase/ask": {
     post: {
       requestBody?: {
