@@ -2,6 +2,104 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P5.1 COMPLETE: generic importer backend + React wizard UI
+
+**Status:** [x] done. Seven sub-tasks + UI landed in one session. All VPS-verified.
+
+### Commits
+
+| Sub | Commit | Summary |
+|---|---|---|
+| P5.1.2 | `f8c2b17` | Column mapping + named profiles (partner-scoped suggestions) |
+| P5.1.3+4 | `d650efa` | Header defaults + per-column transforms (TRIM/UPPER/DECIMAL/DATE_PARSE/LOOKUP) |
+| P5.1.5 | `f59b128` | 5 target schemas + registry + mapping-target validation |
+| P5.1.6 | `1623aaa` | Row resolver + LOOKUP-to-DB + atomic commit pipeline |
+| P5.1.7 | `6bcd20b` | CustomsDeclarations executor (draft from partner file) |
+| UI | `135ef4a` | React 5-step wizard at `/tools/import` + i18n × 4 locales |
+
+### End-to-end VPS smoke (`https://elon.elbosoft.click`)
+
+Full wizard exercised via curl from VPS:
+
+1. POST multipart → `ImportSession.id` with 3-row preview + headers.
+2. PUT `/mapping` with `{Code→code, Name→name}`, target=Items, profile saved.
+3. GET `/mapping-profiles?targetEntity=Items&partnerContextId=...` returns the saved profile (UsageCount=1; tenant-scoped).
+4. PUT `/defaults` with `type=RawMaterial` + `baseUoMCode=BOX` — empty string stripped.
+5. PUT `/transforms` with TRIM+UPPER on Code, DECIMAL_COMMA_TO_DOT on Qty, DATE_PARSE:dd.MM.yyyy on Dt. GET `/preview-transformed`: `" a "→"A"`, `"2,5"→"2.5"`, `"01.05.2026"→"2026-05-01T00:00:00..."`.
+6. POST `/dry-run` → `committable: true, rowsWithErrors: 0`.
+7. POST `/commit` → `entitiesCreated: 2, wasCommitted: true`.
+8. GET `/api/masterdata/items` confirms both new items present.
+9. Re-commit same session → 400 "Session is already committed" (idempotency guard).
+10. Invalid target field → 400; invalid target → 400; unknown LOOKUP value → dry-run reports error, commit aborts.
+
+### Pipeline architecture
+
+- **ImportRowResolver** (Application layer) — maps source cells to target fields per the stored mapping, merges header defaults, applies in-memory transforms (`ImportTransformRunner`), resolves `LOOKUP:<Entity>.<Field>` against DbContext (Items/UnitsOfMeasure/Warehouses/Locations/Partners/CustomsDeclarations/LONAuthorizations), coerces to the field's declared type (string/decimal/int/bool/date/guid/enum), validates required fields.
+- **IImportTargetExecutor** — per-target commit logic. Items + Partners + Receipts + CustomsDeclarations implemented; BOMs stub. Single `SaveChanges` after executor runs → atomic.
+- **IImportTargetSchema** — declarative field metadata for 5 targets; drives UI field pickers + commit-time required-field validation.
+- **IImportFileParser** — ClosedXML for xlsx; hand-rolled RFC-4180 CSV with `,/;/\t` auto-detect; JSON (array or `{data:[]}`); XML (most-frequent-child record heuristic).
+
+### Migration
+
+- `P5_1_AddImportSessions` — single `ImportSessions` table (JSON payloads for headers/rows/mapping/defaults/transforms) + composite index on `(TenantId, Status)`.
+- `P5_1_2_AddImportMappingProfiles` — saved profiles with unique index on `(TenantId, TargetEntity, PartnerContextId, Label)`.
+
+### Test coverage
+
+- `ImportFileTests` (5) — CSV round-trip, TSV autodetect, JSON, XML, unsupported ext, preview cap.
+- `ImportMappingTests` (7) — apply, upsert profile, partner-specific preferred, unknown header/target/field rejected, delete removes from suggestions.
+- `ImportDefaultsAndTransformsTests` (4) — defaults stripping, transforms pipeline, unknown column, LOOKUP no-op at preview.
+- `ImportTargetTests` (3) — list, detail, 404.
+- `ImportRunTests` (5) — missing required, header-fill, commit, duplicate rollback, LOOKUP unknown.
+
+Total: 24 new integration tests. Will run on CI (Docker Desktop unavailable locally); GitHub Actions Ubuntu runner carries them.
+
+### Frontend
+
+- `frontend/web/src/pages/ImportWizard.tsx` (633 LOC) — 5-step wizard, step bar, error banner, live preview, dry-run/commit buttons with status chip. Auto-matches columns by case-insensitive name; applies saved profile from partner-scoped suggestion list.
+- `services/api.ts::importApi` — 11 endpoint wrappers (upload/getSession/listSessions/getTargets/getTarget/applyMapping/suggestProfiles/deleteProfile/setDefaults/setTransforms/previewTransformed/dryRun/commit).
+- i18n namespace `import.*` — ~55 keys in mk/sr/sq/en.
+- Sidebar entry under Advanced: `📥 Увоз на податоци`.
+- Bundle live: `main.403850bf.js`.
+
+### Deferred / out of scope
+
+- BOMs target commit still a stub (schema + dry-run work; executor returns "not implemented").
+- Dedicated PEE-envelope parser — no concrete partner sample to target; generic XmlImportParser handles partner XML; CustomsDeclarations target covers the column surface.
+- Named "Recently used values" dropdown per field (legacy P5.3.5 style) — separate task.
+
+---
+
+## 2026-04-19 — P5.1.1 generic importer foundation (file upload + parsers + preview)
+
+**Status:** [x] done. Commit `9a626a0`. Backend live on VPS, frontend UI deferred to P5.1.2.
+
+### What shipped
+
+- **Domain:** new `ImportSession` entity (TenantScoped) with lifecycle `Uploaded → Mapped → Committed | Failed`. Stores parsed grid as `RowsJson` (JSON array-of-arrays) so dry-run and commit in later sub-tasks replay without re-upload. `HeadersJson`, `MappingJson`, `DefaultsJson`, `TransformsJson` placeholders for P5.1.2–P5.1.4.
+- **Application:** `UploadImportFileCommand` + `GetImportSessionQuery` + `ListImportSessionsQuery`. Preview capped at 20 rows; `TotalRowCount` surfaces full count.
+- **Infrastructure parsers:** `XlsxImportParser` (ClosedXML 0.102.2), `CsvImportParser` (hand-rolled RFC-4180 with `,/;/\t` auto-detect), `TsvImportParser` (derived), `JsonImportParser` (array-of-objects or `{data:[]}` wrapper), `XmlImportParser` (most-frequent-repeated-child record heuristic). Registered via `IImportFileParserRegistry` which dispatches by extension.
+- **API:** `ImportController` under `/api/import/sessions` — POST (multipart, 25 MB `RequestSizeLimit`), GET by id, GET list.
+- **Migration:** `20260419075142_P5_1_AddImportSessions` — single `ImportSessions` table with tenant FK + composite index on `(TenantId, Status)`.
+- **OpenAPI → TS regenerated:** `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` include the new endpoints.
+- **Tests:** 5 integration tests in `ImportFileTests.cs` — CSV round-trip, TSV auto-detect on `.csv`, JSON array, XML records, `.exe` rejection, 20-row preview cap. Will run on CI (Docker Desktop not running locally).
+
+### VPS smoke (https://elon.elbosoft.click)
+
+- CSV upload (`Code,Name,Qty` with 3 rows) → `{"isSuccess": true, "data": {format: 2, headers: ["Code","Name","Qty"], totalRowCount: 3, previewRows: [[...], [...], [...]]}}`.
+- GET `/api/import/sessions/{id}` returns identical payload.
+- XML (`<items><item code=... ><qty>...</qty></item></items>`, 2 rows) → format=5, headers `["code","qty"]`, 2 preview rows.
+- `.exe` upload → HTTP 400 `Unsupported file extension '.exe'. Supported: .xlsx, .xls, .csv, .tsv, .json, .xml.`.
+- GET list shows both sessions, tenant-scoped (admin/TEKSPORT).
+
+### Deployed
+
+- `docker compose build api worker && docker compose up -d api worker` on VPS (`9a626a0` image).
+- New migration applied at startup; `ImportSessions` table live.
+- No frontend UI for this sub-task — wizard lands with P5.1.2.
+
+---
+
 ## 2026-04-19 — UAT backend + frontend UI for Phase 3/4/5 endpoints
 
 **Status:** [x] done. Commit `dd0f53d`. Frontend deployed; all new i18n keys verified in prod bundle.
