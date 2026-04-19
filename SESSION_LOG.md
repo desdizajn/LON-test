@@ -2,6 +2,26 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P5.2.2 move-batch-across-stages (backend + UI)
+
+**Status:** [x] done. Commits `a7a4ffb` (backend) + `b6699ae` (UI).
+
+- `POST /api/wms/inventory/move-batch` — `MoveBatchAcrossStagesCommand`. Moves every positive-qty `InventoryBalance` carrying the batch into a target `LocationType` (or explicit `TargetLocationId`). Per-warehouse target resolution. Multi-source → single target; `DbSet.Local` consolidation so two source rows going to the same target merge in-transaction. Emits one `InventoryMovement` (Type=Transfer) per source row. `LonProcessState` preserved (transfer isn't a state change).
+- 2 integration tests — happy path (receipt → move → verify balance at target), unknown batch 400.
+- Frontend: per-row `🔀 Move` button on `Inventory`, opens `MoveBatchModal` prefilled with the row's batch + warehouse. Toast summary on success, inventory reloads.
+- i18n `moveBatch.*` + `locationType.*` keys in mk/sr/sq/en.
+
+### VPS smoke
+
+1. Created Warehouse `222` + Locations `RCV-222 (Type=Receiving)` + `PROD-222 (Type=Production)` (location POST-Type bug bypassed via SQL — P6.13 in backlog).
+2. `POST /api/wms/receipts` 100 units of KW12 FG `182485422XL-1` at `RCV-222`, batch `KW12-MOVE-02FFA1`.
+3. `POST /api/wms/inventory/move-batch targetStage=4 (Production)` → `balancesMoved=1, totalQty=100, movementNumber=TRF-20260419-b50743d4`.
+4. `GET /api/wms/inventory` — 1 positive-qty row for that batch, located at `PROD-222`.
+5. Repeat move → 400 "No balances needed moving — every row already sits at the target location." (idempotency guard).
+6. Unknown batch → 400 with clear message.
+
+---
+
 ## 2026-04-19 — KW12 reset + color/size/parent model; full 7582-row Matriks imported
 
 **Status:** [x] done. Commits `c9fb38e`, `c54b059`, `15093b3`. TEKSPORT wiped of fictitious data; KW12 is the new baseline.

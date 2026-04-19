@@ -235,7 +235,7 @@
 **Legacy inspiration:** `frmPodeliBaranjaBrz`, `frmRaspredeliPoProizvoditeliBrz`, template auto-apply.
 
 - [x] **P5.2.1** ✅ — **Issue all materials for Production Order** (1 клик). `POST /api/production/orders/{id}/issues/bulk`. Walks `ProductionOrderMaterial` rows, computes remaining (Required - Issued), delegates to existing CreateMaterialIssueCommand with FEFO auto-pick. Rolls back on any per-line failure (single SaveChanges scope).
-- [ ] **P5.2.2** — **Move batch across stages** (1 клик) — избери batch → target stage (Production / Shipping / Quarantine); сите inventory balances на тој batch се transfer-ираат
+- [x] **P5.2.2** ✅ — **Move batch across stages** (1 клик). `POST /api/wms/inventory/move-batch` со `{batchNumber, targetStage, warehouseId?, targetLocationId?, reason?}`. Секоја `InventoryBalance` со даден batch се пренесува во target LocationType (Production/Shipping/Quarantine/...); multi-source + multi-warehouse; LonProcessState се зачувува; DbSet.Local консолидација; idempotent. Frontend: per-row `🔀` button на Inventory со modal и i18n (mk/sr/sq/en). VPS verified: 100 units moved од RCV-222 → PROD-222, idempotent repeat, unknown batch 400 (commits `a7a4ffb`, `b6699ae`). Bundle `main.56c19dea.js`.
 - [ ] **P5.2.3** — **Bulk receipt from invoice** (1 клик) — постоечки CustomsDeclaration + upload-наa faktura → авто-генерирање на Receipt со сите ReceiptLines
 - [ ] **P5.2.4** — **Bulk shipment from FG selection** — selektiraj FG редови по item/batch/PO → креира Shipment + EX декларација во еден flow
 - [ ] **P5.2.5** — **FIFO/FEFO auto-pick** — кога издаваш количина, системот автоматски го избира најстариот compatible batch/MRN (можно disable per tenant)
