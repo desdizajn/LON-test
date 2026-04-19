@@ -147,8 +147,16 @@ public class ItemsImportExecutor : IImportTargetExecutor
                     .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.Code == code, cancellationToken);
             if (existing is not null && !existing.IsDeleted)
             {
-                row.Errors.Add($"Row {row.RowIndex}: Item with code '{code}' already exists.");
-                return (false, created, $"Row {row.RowIndex}: Item code '{code}' is already taken.");
+                // Active legacy item — only patch the NEW shape fields so
+                // legacy ELON rows (which have no BaseCode/ColorCode/SizeCode)
+                // gain the structure needed for variant reporting. Core
+                // attributes (name, type, cost) stay as-is.
+                existing.BaseCode ??= baseCode;
+                existing.ColorCode ??= colorCode;
+                existing.SizeCode ??= sizeCode;
+                existing.ParentItemId ??= parentItemId;
+                created++;
+                continue;
             }
             if (existing is not null && existing.IsDeleted)
             {
