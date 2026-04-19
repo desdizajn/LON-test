@@ -38,6 +38,14 @@ public static class DependencyInjection
         services.AddScoped<IDeclarationRule, LONLineTariffWithinAuthorizationRule>();
         services.AddScoped<IDeclarationRule, SadFieldAdvisoriesRule>();
         services.AddScoped<IDeclarationRule, DutyRateLookupWarningRule>();
+        services.AddScoped<IDeclarationRule, WeightSanityRule>();
+        services.AddScoped<IDeclarationRule, VATRateWhitelistRule>();
+        services.AddScoped<IDeclarationRule, DuplicateLineWarningRule>();
+        services.AddScoped<IDeclarationRule, ExchangeRateWindowRule>();
+
+        // Stub provider until NBRM integration lands. Swap to a real HTTP-backed
+        // provider by replacing this single line.
+        services.AddScoped<IExchangeRateProvider, NullExchangeRateProvider>();
         
         // Knowledge Base Services
         services.AddScoped<IDocumentChunkingService, DocumentChunkingService>();
