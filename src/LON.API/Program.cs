@@ -1,10 +1,11 @@
 using LON.Infrastructure;
 using LON.Infrastructure.Initialization;
 using LON.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -90,6 +91,18 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// ──────────── DataProtection (P6.16) ────────────
+// Make the key ring configuration explicit so startup no longer logs
+// "No XML encryptor configured. Key {id} may be persisted to storage in
+// unencrypted form." Keys persist to the docker volume
+// `lon_dataprotection_keys` (mounted at `/root/.aspnet/DataProtection-Keys`).
+// Setting ApplicationName pins the key-ring discriminator so tokens keep
+// working across container recreations. Certificate-based encryption is
+// deferred until we have a cert-management story on VPS.
+builder.Services.AddDataProtection()
+    .SetApplicationName("LON-API")
+    .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -189,45 +202,51 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+// ──────────────── Health checks (P6.15) ────────────────
+// K8s-style split:
+//   /health/live   — liveness: process is up (always 200 unless the host is
+//                    actively falling over). Caddy / Compose should restart
+//                    the container only when this fails.
+//   /health/ready  — readiness: can the app serve traffic? DB probe.
+//                    Load balancer should withhold traffic during a red status
+//                    rather than restart the container.
+//
+// /health and /health/db kept as deprecated aliases so existing dashboards
+// keep working while consumers migrate.
 
-// Database health check endpoint
-app.MapGet("/health/db", async (ApplicationDbContext context) =>
+static IResult HealthLive() => Results.Ok(new
 {
+    status = "healthy",
+    timestamp = DateTime.UtcNow
+});
+
+static async Task<IResult> HealthReady(ApplicationDbContext context, ILoggerFactory loggerFactory)
+{
+    var logger = loggerFactory.CreateLogger("HealthReady");
     try
     {
         var canConnect = await context.Database.CanConnectAsync();
-        if (canConnect)
-        {
-            return Results.Ok(new
-            {
-                status = "healthy",
-                database = "connected",
-                timestamp = DateTime.UtcNow
-            });
-        }
-        else
-        {
-            return Results.Json(new
-            {
-                status = "unhealthy",
-                database = "disconnected",
-                timestamp = DateTime.UtcNow
-            }, statusCode: 503);
-        }
+        return canConnect
+            ? Results.Ok(new { status = "ready", database = "connected", timestamp = DateTime.UtcNow })
+            : Results.Json(
+                new { status = "not-ready", database = "disconnected", timestamp = DateTime.UtcNow },
+                statusCode: 503);
     }
     catch (Exception ex)
     {
-        return Results.Json(new
-        {
-            status = "unhealthy",
-            database = "error",
-            error = ex.Message,
-            timestamp = DateTime.UtcNow
-        }, statusCode: 503);
+        logger.LogWarning(ex, "Readiness DB probe failed");
+        return Results.Json(
+            new { status = "not-ready", database = "error", error = ex.Message, timestamp = DateTime.UtcNow },
+            statusCode: 503);
     }
-});
+}
+
+app.MapGet("/health/live", HealthLive);
+app.MapGet("/health/ready", HealthReady);
+
+// Backwards-compat aliases (will be removed once monitoring targets migrate).
+app.MapGet("/health", HealthLive);
+app.MapGet("/health/db", HealthReady);
 
 app.Run();
 

@@ -2,6 +2,19 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.15 + P6.16: health checks + DataProtection config
+
+**P6.15 (health checks)** — added K8s-style split endpoints in `Program.cs`:
+- `GET /health/live` — liveness: returns 200 unconditionally (process is up).
+- `GET /health/ready` — readiness: DB probe via `context.Database.CanConnectAsync()`; 503 on failure.
+- `GET /health` / `/health/db` kept as deprecated aliases so existing monitoring keeps working.
+
+**P6.15b (Serilog)** — split out as its own deferred task. Converting the assembly-wide default ILogger to Serilog + JSON console sink is ~30-60 min of config + verification and warrants its own session.
+
+**P6.16 (DataProtection)** — Startup used to log "No XML encryptor configured. Key {id} may be persisted to storage in unencrypted form." Added explicit `builder.Services.AddDataProtection().SetApplicationName("LON-API").PersistKeysToFileSystem(...)` pointing at the pre-existing `/root/.aspnet/DataProtection-Keys` volume. Decisions documented in code comment: certificate-based encryption deferred until cert-management lands on VPS. Keys persist to an encrypted Docker volume on the firewalled VPS — acceptable risk posture for single-tenant prod.
+
+---
+
 ## 2026-04-19 — P6.20: Return + Waste InventoryBalance consolidation
 
 `CreateReturnDeclarationCommand.UpsertRestoredBalance` and `UpsertFgBalance` used to probe only `DbSet.Local`. When a return hit a row that exists on disk but isn't in the current DbContext tracking cache (the common case — we just loaded a related entity via a completely different query), the Local probe missed and a **new sibling InventoryBalance was appended**. Aggregate sum queries stayed correct; raw storage grew by one row per return/waste call.
