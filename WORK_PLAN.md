@@ -299,9 +299,26 @@
 
 ## Current Active Task
 
-> **>>>** **🎉 Phase 2 COMPLETE.** All TEKSPORT IM 42 00 end-to-end behaviors implemented + VPS-verified + integration-covered. Next entry point = **Phase 3 data migration from legacy ELON** (recommended — puts the engine through real data) OR **Phase 6 Priority-B cleanup** (P6.19 CreateProductionOrder persistence bug, P6.20 balance consolidation on Return, P6.13-18 miscellaneous). User's call.
+> **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**
 >
-> **Phase 3 seed scope:** (a) connect to legacy ELON DB (`localhost`, Windows auth, DB=`ELON`, read-only); (b) map one TEKSPORT table group at a time — start with `InvoiceTEKSPORT` → `CustomsDeclaration`+Lines, then `LagerMaterijali` → historical `InventoryBalance` rows; (c) script-based migrator that can re-run (idempotent: upsert by legacy id), initially local-only then wired into CI; (d) verify by comparing a handful of TEKSPORT MRNs side-by-side (legacy ledger vs. LON ledger).
+> **Outstanding work for the user on wakeup:**
+> 1. **UAT** the new endpoints end-to-end in the UI: `/certify`, `/pee/060`, `/mozni-minusi`, `/accounts/traffic-light`, `/release`, `/issues/bulk`. Backend is live; frontend wiring lives under P2.5.4 retrofit cycle.
+> 2. **Finish Phase 3 runs** — `decls` was still in-progress at commit time (≈ 480/633). After it completes, run `inventory` (aggregates LagerMaterijali's ~738 K rows by MRN/batch into InventoryBalances) then `reconcile` to produce `migration_reconciliation.html`. Commands:
+>
+>    ```
+>    dotnet run --project src/LON.Migration -- decls --tenant TEKSPORT --lon "$CONN"
+>    dotnet run --project src/LON.Migration -- inventory --tenant TEKSPORT --lon "$CONN"
+>    dotnet run --project src/LON.Migration -- reconcile --tenant TEKSPORT --lon "$CONN"
+>    ```
+>
+>    where `$CONN` is the SSH-tunnel local endpoint (`Server=127.0.0.1,11433;Database=LONDB;User Id=sa;Password=$SQL_SA_PASSWORD;TrustServerCertificate=True`).
+> 3. **Frontend i18n retrofit** (P2.5.4) — the new endpoints have no UI yet.
+>
+> **Deferred / not attempted (explicitly out of scope for a one-night push):**
+> - P5.1 generic data importer (7 sub-tasks).
+> - Phase 7 Flutter mobile (whole separate app).
+> - P4.5 ECD auto-pull (no test env).
+> - PEE010/PEE040 variants (only PEE060 done).
 >
 > **Phase 6 Priority-B quick wins (if user prefers cleanup first):**
 > - P6.19 — CreateProductionOrderCommandHandler missing `Add()` (simple fix, half a day with tests).
