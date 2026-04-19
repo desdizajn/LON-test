@@ -241,8 +241,15 @@ static async Task<IResult> HealthReady(ApplicationDbContext context, ILoggerFact
     }
 }
 
+// Canonical K8s-style paths (ingress must route /health/* to the API; the
+// VPS Caddyfile currently only allows exact `/health`, so also expose the
+// API-prefixed variants below which go through the existing `/api*` rule).
 app.MapGet("/health/live", HealthLive);
 app.MapGet("/health/ready", HealthReady);
+
+// API-prefixed aliases — live today regardless of ingress config.
+app.MapGet("/api/health/live", HealthLive);
+app.MapGet("/api/health/ready", HealthReady);
 
 // Backwards-compat aliases (will be removed once monitoring targets migrate).
 app.MapGet("/health", HealthLive);
