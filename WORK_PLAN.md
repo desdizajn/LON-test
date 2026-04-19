@@ -49,7 +49,7 @@
 > Експлицитно одложени таскови што се лесно заборавливи („паралелно", „follow-up"). Скенирај ја оваа секција на почеток на секоја сесија. Правило: кога природно ја допираш областа во примарен таск, подигни го одложениот наместо да го оставиш.
 
 **Phase 0 cleanup leftover:**
-- [ ] **P0.3.4** — Fix decimal precision warnings (HasPrecision за 8 properties)
+- [x] **P0.3.4** — *2026-04-19*: only 1 warning remained (`LONAuthorization.GuaranteePercentageOverride`); earlier session fixed the other 7. Added `HasColumnType("decimal(5,2)")` + migration `20260419192743_P0_3_4_DecimalPrecision_CompensatingTariffNullable`. Same migration also corrects `LONAuthorizationItem.CompensatingTariffCode` from `IsRequired()` to `IsRequired(false)` so the schema mirrors the `string?` CLR type (eliminates the `string.Empty` seed workaround).
 
 **Phase 2.5 i18n retrofit (паралелно со Phase 2+):**
 - [ ] **P2.5.4** — Retrofit на постоечки страници (Dashboard, WMS, Production, Customs, Guarantees, Reports, Advanced, Master Data, Admin) — кога се допираат
@@ -118,7 +118,7 @@
   - [x] **P0.3.1** — Recreate `lon-api` (главен блокер): `docker compose rm -f api && docker compose up -d api` ✅
   - [x] **P0.3.2** — Затвори SQL Server public exposure: `127.0.0.1:1433:1433` ✅
   - [x] **P0.3.3** — Persistent volume `lon_dataprotection_keys` за DataProtection keys ✅
-  - [ ] **P0.3.4** — Поправи decimal precision warnings (HasPrecision за 8 properties)
+  - [x] **P0.3.4** — *2026-04-19*: last remaining decimal warning (`LONAuthorization.GuaranteePercentageOverride`) fixed via `HasColumnType("decimal(5,2)")` + migration `P0_3_4_DecimalPrecision_CompensatingTariffNullable`. Also closed the orphan `LONAuthorizationItem.CompensatingTariffCode` `IsRequired()` vs `string?` mismatch.
   - [x] **P0.3.5** — Поправи `BOM.ItemId1` shadow property ✅ (`.WithMany(i => i.BOMs)`)
   - [x] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup) ✅
   - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
@@ -373,8 +373,8 @@
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
-- **P0.3.4** decimal precision warnings (~15 min).
-- **LONAuthorizationItem.CompensatingTariffCode** EF config: currently `IsRequired()` despite `string?` CLR; workaround with `string.Empty` in seed. Proper fix = `IsRequired(false)` + migration.
+- ~~P0.3.4 decimal precision warnings~~ **✅ closed 2026-04-19 (commit pending)**.
+- ~~LONAuthorizationItem.CompensatingTariffCode nullable mismatch~~ **✅ closed 2026-04-19** together with P0.3.4 migration.
 
 ### Recent context (2026-04-18):
 

@@ -2,6 +2,17 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P0.3.4 + CompensatingTariffCode nullable mismatch
+
+Migration `20260419192743_P0_3_4_DecimalPrecision_CompensatingTariffNullable`:
+
+- **P0.3.4 (decimal precision)** — prior session fixed 7 of 8 `decimal` columns with `HasColumnType`. Remaining warning was `LONAuthorization.GuaranteePercentageOverride` (nullable override percentage). Added `HasColumnType("decimal(5,2)")` in `LONAuthorizationConfiguration`. `dotnet ef migrations add` is now warning-free on the decimal validation rule.
+- **`LONAuthorizationItem.CompensatingTariffCode`** — EF config had `IsRequired()` but the CLR type is `string?`; the seed had to pass `string.Empty` to avoid a NOT NULL violation. Changed to `IsRequired(false)` so the schema matches the domain model; the `string.Empty` workaround is no longer required.
+
+Migration shape: two `AlterColumn` calls — (a) `GuaranteePercentageOverride` from `decimal(18,2)` → `decimal(5,2)` (percentage range 0–100 fits 5,2 easily), (b) `CompensatingTariffCode` from NOT NULL → NULL. EF flagged "operation may cause data loss" for the decimal narrowing — safe because percentage overrides are always ≤ 100.
+
+---
+
 ## 2026-04-19 — P6.14: Vector Store OOM root cause
 
 **Observation:** every API startup on VPS logged `System.OutOfMemoryException` from `VectorStoreBackgroundService` → `VectorStoreInitializer.InitializeAsync` → `DocumentSeeder.SeedPravilnikAsync` → `DocumentChunkingService.ChunkDocument` at `List<string>.set_Capacity` / `AddWithResize`.
