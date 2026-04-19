@@ -17,6 +17,16 @@ Migration `20260419190825_P6_32_FilteredUniqueIndexes` adds `HasFilter("[IsDelet
 
 **Build:** `dotnet build` 0/0; `tests/LON.IntegrationTests` compiles clean.
 
+**Functional verification** — via Items API (`DELETE /api/MasterData/items/{id}` sets `IsDeleted=true`, a proper soft-delete, unlike Partners' `DELETE` which only flips `IsActive`):
+
+| Step | HTTP | Behavior |
+|---|---|---|
+| 1. POST /items {code:X} | 200 | fresh code, id captured |
+| 2. DELETE /items/{id} | 204 | soft-delete (sets `IsDeleted=true`) |
+| 3. POST /items {code:X} again | **200** | pre-P6.32 would have been 500 due to unique-violation |
+
+The migration is in effect on VPS.
+
 ---
 
 ## 2026-04-19 — P6.13 + P6.18: serialization bug triage + UTF-8 build safeguard
