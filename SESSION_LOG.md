@@ -2,6 +2,22 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.20: Return + Waste InventoryBalance consolidation
+
+`CreateReturnDeclarationCommand.UpsertRestoredBalance` and `UpsertFgBalance` used to probe only `DbSet.Local`. When a return hit a row that exists on disk but isn't in the current DbContext tracking cache (the common case — we just loaded a related entity via a completely different query), the Local probe missed and a **new sibling InventoryBalance was appended**. Aggregate sum queries stayed correct; raw storage grew by one row per return/waste call.
+
+**Fix** (`src/LON.Application/Customs/Commands/CreateReturnDeclaration/CreateReturnDeclarationCommand.cs`):
+- Renamed both helpers to `*Async`, added `CancellationToken`.
+- Order of checks: (1) `_context.InventoryBalances.Local.FirstOrDefault(...)` — unchanged fast path for multi-line same-command consolidation; (2) `_context.InventoryBalances.FirstOrDefaultAsync(...)` — new, matches pre-existing untracked rows; (3) fall through to `Add(new InventoryBalance {...})` only if still not found.
+- Mirrored the pattern in `CreateWasteDeclarationCommand.UpsertWasteBalanceAsync`.
+- `CreateExportDeclarationCommand` was already doing both probes — no change needed.
+
+**Verification:** `dotnet build` 0/0; 19 fast unit tests pass in 38 ms. Integration tests (`ReturnDeclarationTests`, `WasteDeclarationTests`) still compile against the refactored signatures.
+
+**Out of scope** noted: `MoveBatchAcrossStagesCommand` also uses Local-only probe; deliberately left — its semantics differ (moving a specific batch identity, not merging identical keys).
+
+---
+
 ## 2026-04-19 — P0.3.4 + CompensatingTariffCode nullable mismatch
 
 Migration `20260419192743_P0_3_4_DecimalPrecision_CompensatingTariffNullable`:

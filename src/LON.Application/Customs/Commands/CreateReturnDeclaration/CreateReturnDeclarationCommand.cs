@@ -180,10 +180,12 @@ public class CreateReturnDeclarationCommandHandler
                 return Result<Guid>.Failure($"Line {lineNumber}: {transitionResult.ErrorMessage}");
 
             // FG re-intake. Upsert FG InventoryBalance at caller's location +qty.
-            // Use DbSet.Local first so concurrent same-command lines merge.
-            UpsertFgBalance(
+            // Checks DbSet.Local first (merges same-command lines), then DB
+            // (merges with a pre-existing FG row so returns don't bloat
+            // InventoryBalances with sibling rows — see P6.20).
+            await UpsertFgBalanceAsync(
                 lineDto.ItemId, lineDto.LocationId, lineDto.BatchNumber,
-                lineDto.UoMId, lineDto.Quantity);
+                lineDto.UoMId, lineDto.Quantity, cancellationToken);
 
             // CustomsDeclarationLine
             declaration.Lines.Add(new CustomsDeclarationLine
@@ -325,7 +327,7 @@ public class CreateReturnDeclarationCommandHandler
             if (remaining <= 0m) break;
             var take = Math.Min(src.Quantity, remaining);
             src.SubtractQuantity(take);
-            UpsertRestoredBalance(src, take, returnTo);
+            await UpsertRestoredBalanceAsync(src, take, returnTo, ct);
             remaining -= take;
         }
 
@@ -336,8 +338,11 @@ public class CreateReturnDeclarationCommandHandler
         return TransitionResult.Ok();
     }
 
-    private void UpsertRestoredBalance(InventoryBalance source, decimal qty, LonProcessState returnTo)
+    private async Task UpsertRestoredBalanceAsync(
+        InventoryBalance source, decimal qty, LonProcessState returnTo, CancellationToken ct)
     {
+        // 1) Fast path — already tracked in this DbContext (covers multi-line
+        //    same-command consolidation).
         var tracked = _context.InventoryBalances.Local.FirstOrDefault(b =>
             b.ItemId == source.ItemId
             && b.LocationId == source.LocationId
@@ -346,6 +351,19 @@ public class CreateReturnDeclarationCommandHandler
             && b.UoMId == source.UoMId
             && b.QualityStatus == source.QualityStatus
             && b.LonProcessState == returnTo);
+
+        // 2) DB probe — consolidates with a pre-existing sibling row that
+        //    isn't tracked yet. Before P6.20 this was skipped, producing a
+        //    new sibling per restore call.
+        tracked ??= await _context.InventoryBalances.FirstOrDefaultAsync(b =>
+            b.ItemId == source.ItemId
+            && b.LocationId == source.LocationId
+            && b.BatchNumber == source.BatchNumber
+            && b.MRN == source.MRN
+            && b.UoMId == source.UoMId
+            && b.QualityStatus == source.QualityStatus
+            && b.LonProcessState == returnTo, ct);
+
         if (tracked is not null)
         {
             tracked.AddQuantity(qty);
@@ -367,8 +385,9 @@ public class CreateReturnDeclarationCommandHandler
         });
     }
 
-    private void UpsertFgBalance(
-        Guid itemId, Guid locationId, string batchNumber, Guid uomId, decimal qty)
+    private async Task UpsertFgBalanceAsync(
+        Guid itemId, Guid locationId, string batchNumber, Guid uomId, decimal qty,
+        CancellationToken ct)
     {
         var tracked = _context.InventoryBalances.Local.FirstOrDefault(b =>
             b.ItemId == itemId
@@ -378,15 +397,25 @@ public class CreateReturnDeclarationCommandHandler
             && b.UoMId == uomId
             && b.QualityStatus == QualityStatus.OK
             && b.LonProcessState == null);
+
+        // DB fallback (P6.20): pre-existing FG row for same
+        // (Item, Location, Batch, UoM) must be reused so returns don't bloat
+        // InventoryBalances. The Local-only probe missed this entirely.
+        tracked ??= await _context.InventoryBalances.FirstOrDefaultAsync(b =>
+            b.ItemId == itemId
+            && b.LocationId == locationId
+            && b.BatchNumber == batchNumber
+            && b.MRN == null
+            && b.UoMId == uomId
+            && b.QualityStatus == QualityStatus.OK
+            && b.LonProcessState == null, ct);
+
         if (tracked is not null)
         {
             tracked.AddQuantity(qty);
             return;
         }
 
-        // Fall back to async DB lookup (can't use sync EF here; defer the flag
-        // to the SaveChanges by adding a fresh row. The Local probe covers the
-        // common case. Worst case: one extra row that merges on next receipt.)
         _context.InventoryBalances.Add(new InventoryBalance
         {
             Id = Guid.NewGuid(),
