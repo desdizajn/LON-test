@@ -773,6 +773,68 @@ export interface paths {
       };
     };
   };
+  "/api/import/sessions/{id}/defaults": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["SetDefaultsRequest"];
+          "text/json": components["schemas"]["SetDefaultsRequest"];
+          "application/*+json": components["schemas"]["SetDefaultsRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/sessions/{id}/transforms": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["SetTransformsRequest"];
+          "text/json": components["schemas"]["SetTransformsRequest"];
+          "application/*+json": components["schemas"]["SetTransformsRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/sessions/{id}/preview-transformed": {
+    get: {
+      parameters: {
+        query?: {
+          take?: number;
+        };
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/KnowledgeBase/ask": {
     post: {
       requestBody?: {
@@ -2865,6 +2927,15 @@ export interface components {
       /** Format: uuid */
       eventId?: string;
     };
+    ImportColumnTransform: {
+      sourceHeader?: string | null;
+      rules?: string[] | null;
+    };
+    ImportDefaults: {
+      values?: ({
+        [key: string]: string | null;
+      }) | null;
+    };
     ImportMapping: {
       columns?: components["schemas"]["ImportMappingColumn"][] | null;
     };
@@ -2872,6 +2943,9 @@ export interface components {
       sourceHeader?: string | null;
       targetField?: string | null;
       ignore?: boolean;
+    };
+    ImportTransforms: {
+      columns?: components["schemas"]["ImportColumnTransform"][] | null;
     };
     IssueAllMaterialsBody: {
       /** Format: date-time */
@@ -3113,6 +3187,12 @@ export interface components {
       reference?: string | null;
       /** Format: double */
       similarityScore?: number;
+    };
+    SetDefaultsRequest: {
+      defaults?: components["schemas"]["ImportDefaults"];
+    };
+    SetTransformsRequest: {
+      transforms?: components["schemas"]["ImportTransforms"];
     };
     ShiftDto: {
       /** Format: uuid */

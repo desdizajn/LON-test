@@ -1,9 +1,12 @@
 using LON.Application.Importing.Commands.ApplyImportMapping;
 using LON.Application.Importing.Commands.DeleteMappingProfile;
+using LON.Application.Importing.Commands.SetImportDefaults;
+using LON.Application.Importing.Commands.SetImportTransforms;
 using LON.Application.Importing.Commands.UploadImportFile;
 using LON.Application.Importing.DTOs;
 using LON.Application.Importing.Queries.GetImportSession;
 using LON.Application.Importing.Queries.ListImportSessions;
+using LON.Application.Importing.Queries.PreviewTransformedRows;
 using LON.Application.Importing.Queries.SuggestMappingProfiles;
 using Microsoft.AspNetCore.Mvc;
 
@@ -92,6 +95,38 @@ public class ImportController : BaseController
     public async Task<IActionResult> DeleteProfile(Guid id)
     {
         var result = await Mediator.Send(new DeleteMappingProfileCommand(id));
+        if (!result.IsSuccess) return NotFound(result);
+        return Ok(result);
+    }
+
+    // ---------- P5.1.3 — header-level defaults ----------
+
+    public record SetDefaultsRequest(ImportDefaults Defaults);
+
+    [HttpPut("sessions/{id}/defaults")]
+    public async Task<IActionResult> SetDefaults(Guid id, [FromBody] SetDefaultsRequest req)
+    {
+        var result = await Mediator.Send(new SetImportDefaultsCommand(id, req.Defaults));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    // ---------- P5.1.4 — column transforms ----------
+
+    public record SetTransformsRequest(ImportTransforms Transforms);
+
+    [HttpPut("sessions/{id}/transforms")]
+    public async Task<IActionResult> SetTransforms(Guid id, [FromBody] SetTransformsRequest req)
+    {
+        var result = await Mediator.Send(new SetImportTransformsCommand(id, req.Transforms));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("sessions/{id}/preview-transformed")]
+    public async Task<IActionResult> PreviewTransformed(Guid id, [FromQuery] int take = 20)
+    {
+        var result = await Mediator.Send(new PreviewTransformedRowsQuery(id, take));
         if (!result.IsSuccess) return NotFound(result);
         return Ok(result);
     }

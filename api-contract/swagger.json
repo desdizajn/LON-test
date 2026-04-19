@@ -1369,6 +1369,122 @@
         }
       }
     },
+    "/api/import/sessions/{id}/defaults": {
+      "put": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDefaultsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDefaultsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetDefaultsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/sessions/{id}/transforms": {
+      "put": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTransformsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTransformsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTransformsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/sessions/{id}/preview-transformed": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/KnowledgeBase/ask": {
       "post": {
         "tags": [
@@ -5476,6 +5592,37 @@
         },
         "additionalProperties": false
       },
+      "ImportColumnTransform": {
+        "type": "object",
+        "properties": {
+          "sourceHeader": {
+            "type": "string",
+            "nullable": true
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportDefaults": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ImportMapping": {
         "type": "object",
         "properties": {
@@ -5502,6 +5649,19 @@
           },
           "ignore": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportTransforms": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportColumnTransform"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6200,6 +6360,24 @@
           "similarityScore": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SetDefaultsRequest": {
+        "type": "object",
+        "properties": {
+          "defaults": {
+            "$ref": "#/components/schemas/ImportDefaults"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SetTransformsRequest": {
+        "type": "object",
+        "properties": {
+          "transforms": {
+            "$ref": "#/components/schemas/ImportTransforms"
           }
         },
         "additionalProperties": false

@@ -35,6 +35,12 @@ public class GetImportSessionQueryHandler
         ImportMapping? mapping = null;
         if (!string.IsNullOrWhiteSpace(session.MappingJson))
             mapping = JsonSerializer.Deserialize<ImportMapping>(session.MappingJson);
+        ImportDefaults? defaults = null;
+        if (!string.IsNullOrWhiteSpace(session.DefaultsJson))
+            defaults = JsonSerializer.Deserialize<ImportDefaults>(session.DefaultsJson);
+        ImportTransforms? transforms = null;
+        if (!string.IsNullOrWhiteSpace(session.TransformsJson))
+            transforms = JsonSerializer.Deserialize<ImportTransforms>(session.TransformsJson);
 
         return Result<ImportSessionDto>.Success(new ImportSessionDto(
             session.Id,
@@ -48,6 +54,8 @@ public class GetImportSessionQueryHandler
             session.TargetEntity,
             session.PartnerContextId,
             session.CreatedAt,
-            mapping));
+            mapping,
+            defaults,
+            transforms));
     }
 }

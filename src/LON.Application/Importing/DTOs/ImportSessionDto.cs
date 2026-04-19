@@ -20,4 +20,6 @@ public sealed record ImportSessionDto(
     string? TargetEntity,
     Guid? PartnerContextId,
     DateTime CreatedAt,
-    ImportMapping? Mapping = null);
+    ImportMapping? Mapping = null,
+    ImportDefaults? Defaults = null,
+    ImportTransforms? Transforms = null);
