@@ -2,6 +2,28 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.14: Vector Store OOM root cause
+
+**Observation:** every API startup on VPS logged `System.OutOfMemoryException` from `VectorStoreBackgroundService` → `VectorStoreInitializer.InitializeAsync` → `DocumentSeeder.SeedPravilnikAsync` → `DocumentChunkingService.ChunkDocument` at `List<string>.set_Capacity` / `AddWithResize`.
+
+**Root cause:** the while-loop in `ChunkDocument` advances `startIndex = endIndex − overlap`. When the final iteration clamps `endIndex = content.Length` AND the previous iteration also clamped (e.g. 1 050-char content, `maxChunkSize=1000`, `overlap=200`), `endIndex − overlap` equals or regresses below the current `startIndex`. The loop re-emits the same tail chunk forever, `chunks` grows without bound, `List.set_Capacity` eventually throws OOM. Not an embedding/IO issue — it was a pure algorithm bug.
+
+**Fix** (`src/LON.Infrastructure/Services/DocumentChunkingService.cs:34-50`):
+
+```csharp
+// Stop once we've emitted the final chunk.
+if (endIndex >= content.Length) break;
+
+// Guarantee forward progress even for tiny chunks.
+startIndex = Math.Max(endIndex - overlap, startIndex + 1);
+```
+
+**Regression guard:** `tests/LON.IntegrationTests/DocumentChunkingUnitTests.cs` with 4 cases — empty string, short string (single chunk), 1 050-char edge case (the exact boundary that caused the hang), and a ~120 KB Cyrillic Pravilnik-shape document. All 4 pass in 36 ms; without the fix, the first of these would never terminate.
+
+**Deploy:** commit pending, VPS rebuild to follow. Startup logs will confirm `✅ Vector Store seeded successfully` replacing the prior OOM trace.
+
+---
+
 ## 2026-04-19 — P6.32: filtered unique indexes
 
 Migration `20260419190825_P6_32_FilteredUniqueIndexes` adds `HasFilter("[IsDeleted] = 0")` to every unique index on a BaseEntity-derived table. 20 unique indexes updated: Items, Partners, Warehouses, Locations, WorkCenters, Machines, Employees (EmployeeNumber + Email), UoM, ItemUoMConversions, Routings, RoutingOperations, BOMs, BOMLines, ProductionOrders, ProductionOrderMaterials, ProductionOrderOperations, MaterialIssues, ProductionReceipts, CustomsDeclarations (DeclarationNumber + MRN), CustomsDeclarationLines, MRNRegistries, GuaranteeAccounts, LONAuthorizations, ImportMappingProfiles, CodeListItems, DeclarationRules, TariffCodes, CustomsProcedures.

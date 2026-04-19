@@ -36,12 +36,19 @@ public class DocumentChunkingService : IDocumentChunkingService
             {
                 chunks.Add(chunk);
             }
-            
-            // Движи се напред со overlap
-            startIndex = endIndex - overlap;
-            if (startIndex >= content.Length) break;
+
+            // Stop once we've emitted the final chunk. Without this, when
+            // endIndex clamps to content.Length and the next startIndex
+            // (endIndex − overlap) lands at or below the current startIndex,
+            // the loop re-emits the tail forever → OOM (observed on VPS
+            // seeding of the large Pravilnik document; see P6.14).
+            if (endIndex >= content.Length) break;
+
+            // Guarantee forward progress even for tiny chunks where endIndex
+            // − overlap would go backwards or stall.
+            startIndex = Math.Max(endIndex - overlap, startIndex + 1);
         }
-        
+
         return chunks;
     }
     
