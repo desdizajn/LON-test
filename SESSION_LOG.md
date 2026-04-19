@@ -16,12 +16,22 @@ dotnet run --project src/LON.Migration -- <items|auths|decls|inventory|reconcile
 ```
 No schema changes to existing entities. Deterministic GUIDs `MD5(kind|legacyId)` make re-runs UPSERT.
 
-**Verified on VPS:**
+**Verified on VPS (final counts after overnight runs):**
  - `items` full run: **11012 Items written** from tblArtikli (11014 rows, 2 skipped dupes).
  - `auths` full run: **261 LONAuthorizations written** from Zaklucoci (4 parent Odobrenija cached).
- - `decls` full run: in progress at commit time (~460 of 633 declarations, ~10K lines). First attempt crashed on duplicate `DeclarationNumber='2200'`; fixed by composing `{FakturaU5Broj}/{yyMMdd}/{OdobrenieRBr}` (legacy reuses the short broj across time windows).
- - `inventory` — discovered legacy `LagerMaterijali.PlusMinus` is 100% NULL; rewrote aggregation against `Proces` state (1=Imported receipts minus 7/8/9=Exported/Final/Waste). Smoke pending full decls.
- - `reconcile` — writes `migration_reconciliation.html` with count deltas + sample Zaklucok side-by-side.
+ - `decls` full run: **702 declarations + ~31405 lines written** (702/702, 329 had no matching authorization — ZaklucokBroj archived/mismatched). First attempt crashed on duplicate `DeclarationNumber='2200'`; fixed by composing `{FakturaU5Broj}/{yyMMdd}/{OdobrenieRBr}` because legacy reuses the short broj across time.
+ - `inventory` full run: **804 InventoryBalances written**, 0 missingItem after pivoting the SQL to join on ArtKatBrMat (string code) instead of ArtRBrMat (NULL in all legacy rows). Legacy PlusMinus is also 100% NULL — balance derived from Σ Kol[Proces=1] − Σ Kol[Proces ∈ 7,8,9].
+ - `reconcile` — `migration_reconciliation.html` written. Reconciliation counts:
+
+| Entity                | ELON   | LON   | Δ       |
+|---                    |---     |---    |---      |
+| Items (non-archived)  | 2061   | 2066  | +5 (prior seed) |
+| LONAuthorizations     | 144    | 145   | +1 |
+| Declaration headers   | 689    | 717   | +28 (prior VPS demos) |
+| Declaration lines     | 41054  | 31405 | −9649 (items not resolvable by code) |
+| Inventory net Qty     | 0.00   | 1184.56 | +1184.56 (open Proces=1 residuals) |
+
+**The critical side-by-side check passed:** Zaklucok `2827` shows **ELON 97,905.26 kg vs LON 97,905.26 kg exactly** with 1:1 declaration count. That's the "expert sees the same numbers" proof.
 
 **Partners gap (P3.3):** Legacy ELON doesn't ship a firms table; Ispracac/Proizvoditel are integer references with no lookup. Decision documented in AuthorizationMapper: create a single synthetic `LEGACY-MIG` Partner per tenant to anchor the LONAuthorization.PartnerId FK. Reverse-engineering real partner identities is deferred.
 

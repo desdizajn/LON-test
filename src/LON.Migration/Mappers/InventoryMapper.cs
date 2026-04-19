@@ -33,9 +33,10 @@ internal sealed class InventoryMapper
         using var legacy = _ctx.OpenLegacy();
         using var lon = _ctx.OpenLon();
 
-        var itemByRBr = LoadItemsByArtRBr(lon);
-
-        // Legacy LagerMaterijali rows carry Proces to mark state:
+        // Legacy LagerMaterijali carries ArtRBrMat = NULL for all rows; the
+        // authoritative cross-reference is ArtKatBrMat (string code). Our
+        // ItemMapper stored ArtKatBr as Items.Code, so join on that.
+        // Proces state:
         //   1 = Imported / received
         //   6 = In production (work-in-progress)
         //   7 = Exported (discharged)
@@ -43,15 +44,17 @@ internal sealed class InventoryMapper
         //   9 = Waste
         // Physical balance on hand = Σ Kol[Proces=1] − Σ Kol[Proces IN 7,8,9].
         // PlusMinus is NULL for all rows (legacy never populated it); do not rely on it.
+        var itemByCode = LoadItemsByCode(lon);
         string top = limit > 0 ? $"TOP {limit}" : "";
         var sel = new SqlCommand(
             $"""
-            SELECT {top} ArtRBrMat, FakturaU5Broj, ZaklucokBroj,
+            SELECT {top} ArtKatBrMat, FakturaU5Broj, ZaklucokBroj,
                    SUM(CASE WHEN Proces = 1 THEN CAST(Kol AS decimal(18,4)) ELSE 0 END)
                  - SUM(CASE WHEN Proces IN (7, 8, 9) THEN CAST(Kol AS decimal(18,4)) ELSE 0 END)
                      AS NetQty
               FROM LagerMaterijali
-             GROUP BY ArtRBrMat, FakturaU5Broj, ZaklucokBroj
+             WHERE ArtKatBrMat IS NOT NULL
+             GROUP BY ArtKatBrMat, FakturaU5Broj, ZaklucokBroj
             HAVING SUM(CASE WHEN Proces = 1 THEN CAST(Kol AS decimal(18,4)) ELSE 0 END)
                  - SUM(CASE WHEN Proces IN (7, 8, 9) THEN CAST(Kol AS decimal(18,4)) ELSE 0 END) > 0.0001
             """, legacy);
@@ -63,13 +66,13 @@ internal sealed class InventoryMapper
         while (rd.Read())
         {
             total++;
-            var rbr = AsInt(rd["ArtRBrMat"]);
+            var code = AsString(rd["ArtKatBrMat"]);
             var fakt = AsString(rd["FakturaU5Broj"]);
             var zak = AsString(rd["ZaklucokBroj"]);
             var qty = AsDecimal(rd["NetQty"]);
 
-            if (qty <= 0) continue;
-            if (!itemByRBr.TryGetValue(rbr, out var itemId))
+            if (qty <= 0 || string.IsNullOrWhiteSpace(code)) continue;
+            if (!itemByCode.TryGetValue(code!, out var itemId))
             {
                 missingItem++;
                 continue;
@@ -112,22 +115,16 @@ internal sealed class InventoryMapper
         return 0;
     }
 
-    private Dictionary<int, Guid> LoadItemsByArtRBr(SqlConnection lon)
+    private Dictionary<string, Guid> LoadItemsByCode(SqlConnection lon)
     {
         using var cmd = new SqlCommand(
-            "SELECT Id, Description FROM Items WHERE TenantId=@t AND Description LIKE '[[]LEGACY ArtRBr=%'",
-            lon);
+            "SELECT Id, Code FROM Items WHERE TenantId=@t", lon);
         cmd.Parameters.AddWithValue("@t", _ctx.TenantId);
         using var r = cmd.ExecuteReader();
-        var map = new Dictionary<int, Guid>();
+        var map = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
         while (r.Read())
         {
-            var id = r.GetGuid(0);
-            var d = r.GetString(1);
-            int eq = d.IndexOf('=');
-            int end = d.IndexOf(']', eq);
-            if (eq > 0 && end > eq && int.TryParse(d.AsSpan(eq + 1, end - eq - 1), out var rbr))
-                map[rbr] = id;
+            map[r.GetString(1)] = r.GetGuid(0);
         }
         return map;
     }
