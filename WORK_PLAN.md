@@ -306,24 +306,17 @@
 
 ## Current Active Task
 
-> **>>>** **P2.6 complete (a/b/c all done).** Next entry point = **P2.7 Remaining declaration validation rules**. Extend the existing `IDeclarationRuleEngine` with compliance validators that aren't yet enforced:
+> **>>>** **🎉 Phase 2 COMPLETE.** All TEKSPORT IM 42 00 end-to-end behaviors implemented + VPS-verified + integration-covered. Next entry point = **Phase 3 data migration from legacy ELON** (recommended — puts the engine through real data) OR **Phase 6 Priority-B cleanup** (P6.19 CreateProductionOrder persistence bug, P6.20 balance consolidation on Return, P6.13-18 miscellaneous). User's call.
 >
-> 1. **Tariff code format** — 10 digits + optional TARIC/national suffix; numeric-only.
-> 2. **Country codes** — whitelist against ISO 3166-1 alpha-2 (use static list or `CodeListItem` table).
-> 3. **Currency** — must be one of the codes present in an active `GuaranteeAccount` (or a generic whitelist {EUR, USD, GBP, MKD, ...}).
-> 4. **Exchange rate window** — when present, must fall within ±20% of NBRM reference rate for the declaration date (defer actual NBRM fetch; rule scaffolding only, hook into `IExchangeRateProvider` stub).
-> 5. **Weight sanity** — net weight ≤ gross weight; both > 0 when provided.
-> 6. **VAT rate whitelist** — {0, 5, 18} (MK rates); flag others as warning.
-> 7. **Duplicate-line detection** — two lines with same (ItemId, TariffCode, CountryOfOrigin) on one declaration → warning.
+> **Phase 3 seed scope:** (a) connect to legacy ELON DB (`localhost`, Windows auth, DB=`ELON`, read-only); (b) map one TEKSPORT table group at a time — start with `InvoiceTEKSPORT` → `CustomsDeclaration`+Lines, then `LagerMaterijali` → historical `InventoryBalance` rows; (c) script-based migrator that can re-run (idempotent: upsert by legacy id), initially local-only then wired into CI; (d) verify by comparing a handful of TEKSPORT MRNs side-by-side (legacy ledger vs. LON ledger).
 >
-> All rules additive (non-blocking unless tagged Critical); run in `ValidateAsync` before SaveChanges in both IM and EX handlers. Unit tests per rule (rule-engine unit tests, not full integration). Integration test updates only if a change in verdict flips a declaration from green to 400.
+> **Phase 6 Priority-B quick wins (if user prefers cleanup first):**
+> - P6.19 — CreateProductionOrderCommandHandler missing `Add()` (simple fix, half a day with tests).
+> - P6.20 — Return/FG balance consolidation (medium, async DB probe fallback).
+> - P6.18 — UTF-8 Cyrillic mojibake + Tenants.Address VPS backfill.
+> - P6.14 — Vector Store OOM startup crash diagnosis (no blocker, just noisy).
 
-**Scope for P2.7:**
-- New rule classes under `src/LON.Application/Customs/Validation/Rules/` matching the existing pattern (look at `RequiredFieldsRule` as template).
-- Register in `DeclarationRuleEngine`'s rule list.
-- Unit tests under `tests/LON.IntegrationTests/` (or a new `LON.UnitTests/` project if the factory-driven pattern is overkill — prefer plain xUnit for rule tests).
-
-**Алтернативи пред P2.7 (не-блокери, може да чекаат):**
+**Алтернативи пред Phase 3 / 6 (не-блокери):**
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
@@ -359,6 +352,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P2.6a** ✅ EX declaration + pro-rata guarantee credit. `CreateExportDeclarationCommand` at `POST /api/customs/declarations/export`. Added `MRNRegistry.DischargedQuantity`; seeded procedure code `3151` (Re-export of LON goods). Handler: FG decrement + InProduction-then-Imported → Exported transition (DbSet.Local consolidation for same-line splits) + TraceLink IM→EX + pro-rata Credit (`debit × dischargeQty/MRN.TotalQty`; full-discharge path settles to exactly 0). VPS verified: partial qty=8→Credit 9.56 EUR, second partial qty=2→Credit 2.39 EUR with Exported consolidation, over-discharge 50>32 remaining → 400, unknown MRN → 400 (commits `ce176bb`, `ef4f25a`, `8b91b65`).
 - [x] **P2.6c** ✅ Waste declaration. `CreateWasteDeclarationCommand` at `POST /api/customs/declarations/waste`. Pool Imported-first + InProduction for the MRN (+ optional Item/Batch/Location filters), transition to `LonProcessState=Waste` via DbSet.Local-consolidated sibling, emit `Type=Adjustment` movement per drained source (shared MovementNumber = `WST-…`). No guarantee impact in v1 (waste-inflate residual is physical-only). Reason field required for audit. VPS verified: waste qty=1 on `26MK8DF9122FA1` → Imported 31.1053→30.1053 + Waste 1.0; over-waste 9999 → 400; empty reason → 400; unknown MRN → 400 (commit `50a8bd1`).
 - [x] **P2.6b** ✅ Return declaration (reverse of EX). `CreateReturnDeclarationCommand` at `POST /api/customs/declarations/return`. Seeded procedure `6121`. Handler: reverse-FEFO walk of Exported → Imported/InProduction (caller choice) + FG re-intake + TraceLink Return→IM + re-Debit `imDebit × returnQty/TotalQty` (symmetric with EX credit). Decrements `MRN.DischargedQuantity`; re-activates (`IsActive=true`) previously closed MRNs; flips prior full-release Credits' `IsReleased=false`. VPS verified: return qty=4 → Discharged 10→6, re-debit 4.78 EUR (net 40.63 outstanding); over-return 999 → 400; unknown MRN → 400 (commit `95501ae`).
+- [x] **P2.7** ✅ Declaration validation rules. Rules 1-3 already existed. Added: `WeightSanityRule` (hard-error: negative/zero-when-set/net>gross), `VATRateWhitelistRule` (warn for rates outside {0,5,18}), `DuplicateLineWarningRule` (warn on same ItemId+TariffCode+Country across lines), `ExchangeRateWindowRule` (hard-error ±20% from NBRM; silent skip when MKD/unset/provider null). `IExchangeRateProvider` + `NullExchangeRateProvider` stub registered in DI — real NBRM implementation is a single-line swap. 14 unit tests. VPS verified: net>gross → 400, negative net → 400, VAT=10% warning → HTTP 200 (non-blocking) (commit `ac1378e`).
 - [ ] P2.6a/b/c Export, Return, Waste → Guarantee credit
 - [ ] P2.7 Remaining declaration validation rules
 

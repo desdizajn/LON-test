@@ -2,6 +2,66 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P2.7 declaration validation rules — 4 new validators
+
+**Status:** [x] done — Phase 2 complete
+**Commit:** `ac1378e`
+
+**Context:** Rules 1–3 from the P2.7 scope (TariffCodeFormatRule, CountryIsoRule, CurrencyIsoRule) already existed in the codebase. This commit fills the remaining four (weight sanity, VAT whitelist, duplicate lines, exchange-rate window) and introduces `IExchangeRateProvider` as the seam for a real NBRM integration.
+
+**What landed:**
+- `src/LON.Application/Customs/Validation/Rules/WeightSanityRule.cs` — hard-error: negative or zero-when-set weights on Box 35/38; `NetWeight > GrossWeight` is also a hard error (flip of the soft advisory in `SadFieldAdvisoriesRule`).
+- `src/LON.Application/Customs/Validation/Rules/VATRateWhitelistRule.cs` — warning-only: line VATRate outside {0, 5, 18} (current MK ЗДДВ rates).
+- `src/LON.Application/Customs/Validation/Rules/DuplicateLineWarningRule.cs` — warning: two+ lines sharing (ItemId, TariffCode trimmed, CountryOfOrigin upper) → `"Линии 1, 2: ист Item + Box 33 + Box 34. Провери дали се дупликати."`
+- `src/LON.Application/Customs/Validation/Rules/ExchangeRateWindowRule.cs` — hard-error when Box 23 ExchangeRate deviates >±20% from the NBRM reference rate. Silent skip when (a) currency is MKD, (b) ExchangeRate unset, or (c) provider returns null.
+- `src/LON.Application/Customs/Validation/IExchangeRateProvider.cs` — abstraction; `NullExchangeRateProvider` registered in DI by default (real HTTP-backed NBRM impl is a single-line swap).
+- `src/LON.Infrastructure/DependencyInjection.cs` — 4 new `AddScoped<IDeclarationRule, ...>` + `AddScoped<IExchangeRateProvider, NullExchangeRateProvider>`.
+- `tests/LON.IntegrationTests/DeclarationRuleUnitTests.cs` — 14 unit tests across the 4 rules (no DB, no factory).
+
+**Priorities in the rule pipeline:**
+- `SadFieldAdvisoriesRule` (Priority 12) — existing soft advisories (missing weights, missing Box 47).
+- `WeightSanityRule` (13) — hard-error sibling; fires after advisories but before VAT/duplicate/exchange checks.
+- `VATRateWhitelistRule` (14) — warning-only; never blocks.
+- `ExchangeRateWindowRule` (18) — hard-error but only when a provider rate is available.
+- `DuplicateLineWarningRule` (30) — last; advisory.
+
+**Verified on VPS** (same `/api/customs/declarations` endpoint as IM handler — rule engine fires inside `CreateCustomsDeclarationCommandHandler.Handle`):
+1. Net=10, Gross=5 → HTTP 400 `Линија 1: Нето маса (10) не може да биде поголема од бруто маса (5)`. ✅
+2. Net=-1 → HTTP 400 (combines with `RequiredFieldsRule`) `Box 38 (Линија 1): Нето маса е задолжителна и мора да биде > 0.\nЛинија 1: Нето маса не може да биде негативна (-1)`. ✅
+3. Valid weights + VAT=10% → HTTP 200 `699f996d-…` (warning-only rule didn't block). ✅
+
+**Unit tests (DeclarationRuleUnitTests.cs):**
+- `WeightSanity_NetGreaterThanGross_FailsHard`
+- `WeightSanity_NegativeGross_Fails`
+- `WeightSanity_ZeroWhenSet_Fails`
+- `WeightSanity_BothNull_Passes`
+- `WeightSanity_NetEqualsGross_Passes`
+- `VATRate_ExoticValue_EmitsWarning`
+- `VATRate_StandardRates_NoWarning` (theory × 3: 0/5/18)
+- `DuplicateLines_SameItemTariffCountry_EmitsWarning` (message contains "1, 2")
+- `DuplicateLines_DifferentCountry_NoWarning`
+- `ExchangeRate_WithinTolerance_Passes` (1 EUR ≈ 61.50 MKD, declared 62 — 0.8% off)
+- `ExchangeRate_25PercentOff_Fails` (declared 80 vs. reference 60 → 33% deviation)
+- `ExchangeRate_ProviderReturnsNull_Skips`
+- `ExchangeRate_MKDDeclaration_Skips`
+
+**Phase 2 FINAL status:**
+- [x] P2.1 IM 4200 + MRN registration
+- [x] P2.2 Guarantee auto-debit
+- [x] P2.2.5 Compliance blockers B1-B7 + I1-I8
+- [x] P2.3 Receipt consumes MRN (inflate-for-waste)
+- [x] P2.4 MaterialIssue (FEFO + LON state split)
+- [x] P2.5 ProductionReceipt + TraceLink
+- [x] P2.6a Export + pro-rata guarantee credit
+- [x] P2.6b Return + re-debit
+- [x] P2.6c Waste booking
+- [x] **P2.7 validation rules** ← this commit
+- **🎉 Phase 2 done. First end-to-end TEKSPORT IM 42 00 flow is complete** (IM → Receipt → Issue → ProductionReceipt → Export/Return/Waste, with full rule validation at declaration entry).
+
+**Next:** Per the hybrid phase order, Phase 3 (data migration from ELON) or Phase 4 (legacy gap coverage). Recommended Phase 3 first — with Phase 2 end-to-end green, migrated TEKSPORT data will drive the biggest validation of correctness. Alternative: Phase 6 Priority-B items opportunistically (P6.19 CreateProductionOrder persistence bug, P6.20 balance consolidation, P6.13-18 miscellaneous).
+
+---
+
 ## 2026-04-19 — P2.6b Return declaration — reverses EX discharge
 
 **Status:** [x] done
