@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { productionApi } from '../services/api';
 import ProductionOrderForm from '../components/Production/ProductionOrderForm';
@@ -14,6 +14,7 @@ const Production: React.FC = () => {
   const [showReceiptForm, setShowReceiptForm] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadOrders();
@@ -38,7 +39,6 @@ const Production: React.FC = () => {
     setSelectedOrderId(undefined);
     loadOrders();
   };
-
   const handleFormCancel = () => {
     setShowOrderForm(false);
     setShowIssueForm(false);
@@ -46,148 +46,179 @@ const Production: React.FC = () => {
     setSelectedOrderId(undefined);
   };
 
-  const handleIssue = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setShowIssueForm(true);
-  };
+  const handleIssue = (id: string) => { setSelectedOrderId(id); setShowIssueForm(true); };
+  const handleReceipt = (id: string) => { setSelectedOrderId(id); setShowReceiptForm(true); };
 
-  const handleReceipt = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setShowReceiptForm(true);
-  };
-
-  // P5.2.6 — one-click Release (Draft → Released; expands BOM + Routing).
-  const handleRelease = async (orderId: string) => {
+  const handleRelease = async (id: string) => {
     if (!window.confirm(t('production.releaseConfirm'))) return;
-    setBusyOrderId(orderId);
-    try {
-      await productionApi.releaseOrder(orderId);
-      await loadOrders();
-    } catch (e: any) {
-      alert(e?.response?.data?.errorMessage || t('production.releaseFailed'));
-    } finally {
-      setBusyOrderId(null);
-    }
+    setBusyOrderId(id);
+    try { await productionApi.releaseOrder(id); await loadOrders(); }
+    catch (e: any) { alert(e?.response?.data?.errorMessage || t('production.releaseFailed')); }
+    finally { setBusyOrderId(null); }
   };
-
-  // P5.2.1 — one-click bulk issue of all remaining materials (FEFO auto-pick).
-  const handleBulkIssue = async (orderId: string) => {
+  const handleBulkIssue = async (id: string) => {
     if (!window.confirm(t('production.bulkIssueConfirm'))) return;
-    setBusyOrderId(orderId);
-    try {
-      await productionApi.issueAllMaterials(orderId, new Date().toISOString());
-      await loadOrders();
-    } catch (e: any) {
-      alert(e?.response?.data?.errorMessage || t('production.bulkIssueFailed'));
-    } finally {
-      setBusyOrderId(null);
-    }
+    setBusyOrderId(id);
+    try { await productionApi.issueAllMaterials(id, new Date().toISOString()); await loadOrders(); }
+    catch (e: any) { alert(e?.response?.data?.errorMessage || t('production.bulkIssueFailed')); }
+    finally { setBusyOrderId(null); }
   };
-
-  if (showOrderForm) {
-    return <ProductionOrderForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
-  }
-
-  if (showIssueForm) {
-    return <MaterialIssueForm productionOrderId={selectedOrderId} onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
-  }
-
-  if (showReceiptForm) {
-    return <ProductionReceiptForm productionOrderId={selectedOrderId} onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
-  }
 
   const getStatusBadge = (status: number) => {
-    const statusMap: any = {
-      1: { label: 'Draft', class: 'info' },
-      2: { label: 'Released', class: 'warning' },
-      3: { label: 'In Progress', class: 'warning' },
-      4: { label: 'Completed', class: 'success' },
-      5: { label: 'Closed', class: 'info' },
-      6: { label: 'Cancelled', class: 'danger' },
+    const m: any = {
+      1: { label: 'Draft', class: 'info' }, 2: { label: 'Released', class: 'warning' },
+      3: { label: 'In Progress', class: 'warning' }, 4: { label: 'Completed', class: 'success' },
+      5: { label: 'Closed', class: 'info' }, 6: { label: 'Cancelled', class: 'danger' },
+      0: { label: 'Draft', class: 'info' },
     };
-    const s = statusMap[status] || { label: 'Unknown', class: 'info' };
+    const s = m[status] || { label: 'Unknown', class: 'info' };
     return <span className={`badge badge-${s.class}`}>{s.label}</span>;
   };
 
+  // Group: one bucket per MainOrderNumber (or full OrderNumber when no parent chain).
+  // A bucket with >1 row becomes an expandable parent + child list.
+  const grouped = useMemo(() => {
+    const by: Record<string, { main?: any; children: any[] }> = {};
+    for (const o of orders) {
+      const key = o.mainOrderNumber || o.orderNumber;
+      if (!by[key]) by[key] = { children: [] };
+      if (!o.subOrderNumber && o.parentOrderId == null) by[key].main = o;
+      else by[key].children.push(o);
+    }
+    return Object.entries(by)
+      .map(([key, v]) => ({ key, main: v.main, children: v.children.sort((a: any, b: any) => (a.subOrderNumber || '').localeCompare(b.subOrderNumber || '')) }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }, [orders]);
+
+  const toggle = (k: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
+
+  const renderActions = (o: any) => (
+    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+      {(o.status === 0 || o.status === 1) && (
+        <button className="btn btn-sm" onClick={() => handleRelease(o.id)} disabled={busyOrderId === o.id} title={t('production.release')}>
+          {t('production.release')}
+        </button>
+      )}
+      {(o.status === 2 || o.status === 3) && (
+        <>
+          <button className="btn btn-sm btn-primary" onClick={() => handleIssue(o.id)}>Issue</button>
+          <button className="btn btn-sm" onClick={() => handleBulkIssue(o.id)} disabled={busyOrderId === o.id} title={t('production.bulkIssue')}>
+            {t('production.bulkIssue')}
+          </button>
+          <button className="btn btn-sm btn-success" onClick={() => handleReceipt(o.id)}>Receive</button>
+        </>
+      )}
+    </div>
+  );
+
+  const variantBadges = (item: any) => (
+    <>
+      {item?.colorCode && (
+        <span style={{ background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: 3, fontSize: 11, marginLeft: 4 }}>
+          🎨 {item.colorCode}
+        </span>
+      )}
+      {item?.sizeCode && (
+        <span style={{ background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: 3, fontSize: 11, marginLeft: 4 }}>
+          📏 {item.sizeCode}
+        </span>
+      )}
+    </>
+  );
+
+  if (showOrderForm) return <ProductionOrderForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  if (showIssueForm) return <MaterialIssueForm productionOrderId={selectedOrderId} onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
+  if (showReceiptForm) return <ProductionReceiptForm productionOrderId={selectedOrderId} onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
   if (loading) return <div className="loading">Loading production orders...</div>;
 
   return (
     <div>
       <div className="header">
         <h2>Production Orders (LON)</h2>
-        <button className="btn btn-success" onClick={() => setShowOrderForm(true)}>
-          + New Production Order
-        </button>
+        <button className="btn btn-success" onClick={() => setShowOrderForm(true)}>+ New Production Order</button>
       </div>
 
       <div className="table-container">
         <table>
           <thead>
             <tr>
+              <th style={{ width: 30 }}></th>
               <th>Order Number</th>
               <th>Item</th>
               <th>Order Qty</th>
-              <th>Produced Qty</th>
-              <th>Scrap Qty</th>
+              <th>Produced</th>
+              <th>Scrap</th>
               <th>Status</th>
-              <th>Planned Start</th>
-              <th>Planned End</th>
+              <th>Start</th>
+              <th>End</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order, idx) => (
-              <tr key={idx}>
-                <td><strong>{order.orderNumber}</strong></td>
-                <td>{order.item?.name}</td>
-                <td>{order.orderQuantity.toFixed(2)}</td>
-                <td>{order.producedQuantity.toFixed(2)}</td>
-                <td>{order.scrapQuantity.toFixed(2)}</td>
-                <td>{getStatusBadge(order.status)}</td>
-                <td>{new Date(order.plannedStartDate).toLocaleDateString()}</td>
-                <td>{new Date(order.plannedEndDate).toLocaleDateString()}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                    {order.status === 0 && (
-                      <button
-                        className="btn btn-sm"
-                        onClick={() => handleRelease(order.id)}
-                        disabled={busyOrderId === order.id}
-                        title={t('production.release')}
-                      >
-                        {t('production.release')}
-                      </button>
-                    )}
-                    {(order.status === 2 || order.status === 3) && (
-                      <>
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleIssue(order.id)}
-                          title="Issue Materials"
-                        >
-                          Issue
+            {grouped.map(g => {
+              const hasChildren = g.children.length > 0;
+              const isOpen = expanded.has(g.key);
+              const headRow = g.main || g.children[0];
+              const isStandalone = !g.main && g.children.length === 1;
+              return (
+                <React.Fragment key={g.key}>
+                  <tr style={{ background: hasChildren && g.main ? '#f3f4f6' : undefined, fontWeight: hasChildren ? 600 : undefined }}>
+                    <td style={{ textAlign: 'center' }}>
+                      {hasChildren && !isStandalone && (
+                        <button onClick={() => toggle(g.key)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14 }}>
+                          {isOpen ? '▼' : '▶'}
                         </button>
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => handleBulkIssue(order.id)}
-                          disabled={busyOrderId === order.id}
-                          title={t('production.bulkIssue')}
-                        >
-                          {t('production.bulkIssue')}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleReceipt(order.id)}
-                          title="Receive Finished Goods"
-                        >
-                          Receive
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      )}
+                    </td>
+                    <td>
+                      <strong>{g.main?.orderNumber || g.key}</strong>
+                      {hasChildren && g.main && (
+                        <span style={{ color: '#6b7280', fontSize: 11, marginLeft: 6 }}>
+                          ({g.children.length} {t('production.variants', { defaultValue: 'variants' })})
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {headRow?.item?.name || headRow?.item?.code}
+                      {!g.main && variantBadges(headRow?.item)}
+                    </td>
+                    <td>{headRow?.orderQuantity?.toFixed?.(2) ?? '-'}</td>
+                    <td>{headRow?.producedQuantity?.toFixed?.(2) ?? '-'}</td>
+                    <td>{headRow?.scrapQuantity?.toFixed?.(2) ?? '-'}</td>
+                    <td>{getStatusBadge(headRow?.status)}</td>
+                    <td>{headRow?.plannedStartDate ? new Date(headRow.plannedStartDate).toLocaleDateString() : '-'}</td>
+                    <td>{headRow?.plannedEndDate ? new Date(headRow.plannedEndDate).toLocaleDateString() : '-'}</td>
+                    <td>{g.main ? renderActions(g.main) : renderActions(headRow)}</td>
+                  </tr>
+
+                  {hasChildren && isOpen && g.children.map((c: any) => (
+                    <tr key={c.id} style={{ background: '#ffffff' }}>
+                      <td></td>
+                      <td style={{ paddingLeft: 26, color: '#4b5563' }}>
+                        ↳ <span style={{ fontFamily: 'monospace' }}>{c.subOrderNumber || c.orderNumber}</span>
+                      </td>
+                      <td>
+                        {c.item?.code}
+                        {variantBadges(c.item)}
+                      </td>
+                      <td>{c.orderQuantity.toFixed(2)}</td>
+                      <td>{c.producedQuantity.toFixed(2)}</td>
+                      <td>{c.scrapQuantity.toFixed(2)}</td>
+                      <td>{getStatusBadge(c.status)}</td>
+                      <td>{new Date(c.plannedStartDate).toLocaleDateString()}</td>
+                      <td>{new Date(c.plannedEndDate).toLocaleDateString()}</td>
+                      <td>{renderActions(c)}</td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
