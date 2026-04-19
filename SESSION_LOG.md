@@ -2,6 +2,43 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — Frontend catch-up + KW12 customs/invoice/guarantee seed
+
+**Trigger:** user screenshot review — „фронтендот не е мрднат", KW12 data only partially reflected.
+
+**Patches (commits `f2eeeed`, `f318f92`):**
+
+1. **FG master data (SQL)** — every TEKSPORT `Item` of type FinishedGood now has:
+   - `BaseUoMId` = STK (was M)
+   - `CountryOfOrigin` = 'MK'
+   - `IsBatchTracked` = 1, `IsMRNTracked` = 1
+   - `ProductionOrders.UoMId` re-pointed to STK
+2. **KW12 customs/invoice/guarantee data** (`scripts/kw12_seed_v2.py`) — per-MRN: 1 CustomsDeclaration (Registered) + N CustomsDeclarationLines (134 total) + MRNRegistry (active, +180d) + GuaranteeLedgerEntry debit (5% placeholder duty) + Receipt + ReceiptLines + InventoryBalance/Movement per row. Totals across 3 MRNs: 134 lines, 113 850.12 + 10 162.94 + 1 559.38 = 125 572.44 EUR; guarantee debit 6 278.62 EUR; 134 inventory balances on RCV-222.
+3. **Production Orders UI** — table now renders as expandable parent/child tree. Parent rows show "(N variants)" + are collapsed by default; children are indented with ↳ and carry colour/size badges (🎨 542, 📏 2XL-3). Actions (Release/Issue/Bulk issue/Receive) stay per row.
+4. **Items list UI** — new "Color / Size" column with chips per variant + "Base" column. `ItemDto` grew `BaseCode`/`ColorCode`/`SizeCode`/`ParentItemId`; OpenAPI+TS regenerated.
+
+**Live:** bundle `main.15d1e708.js`. Admin can now verify on VPS:
+- `/production` — tree view of 6 parent PAs (PA2602006/007/012/013/067/068) each expanding to 15–21 variants with color/size badges.
+- `/customs` — 3 declarations (IMP-D7B3/D938/D920).
+- `/guarantees` — 6 278.62 EUR debited across 3 entries.
+- `/inventory` — 134 positive rows at RCV-222; each row's `🔀 Move` button triggers the P5.2.2 move-batch-across-stages flow.
+- `/master-data/items` — variant rows now show color/size + base badges.
+
+**Not yet on frontend (explicit backlog for next sweep):**
+
+| Area | Status |
+|---|---|
+| Import wizard preset for KW12 (Faktura + Transport + Matriks together) | Backlog — wizard requires 3 manual runs today |
+| BOM master-data import (separate from PO materials) | Deferred — POMaterials already cover the consumption chain |
+| Per-import material attributes report (AT/TR/US + pref/no-pref) | Backlog — data lives on `CustomsDeclarationLine`, report missing |
+| Waste slots UI (P4.6) in production flow | Already shipped, needs contextual entry points |
+| Calculations + duty breakdowns | Backlog — rule engine produces them server-side |
+| UoM POST bug P6.13 (locationType drops to 0) | Backlog P6.13 |
+| Legacy color/size backfill | Backlog P6.30 |
+| Filtered unique indexes (WHERE IsDeleted=0) | Backlog P6.32 |
+
+---
+
 ## 2026-04-19 — P5.2.2 move-batch-across-stages (backend + UI)
 
 **Status:** [x] done. Commits `a7a4ffb` (backend) + `b6699ae` (UI).
