@@ -75,21 +75,35 @@ public class ItemsImportExecutor : IImportTargetExecutor
                 return (false, created, $"Row {row.RowIndex}: invalid item type '{typeName}'.");
 
             // Structured fields — explicit override if present, otherwise parse.
+            // Bugfix 2026-04-19: when color/size were supplied but base wasn't,
+            // the previous code fell back to `baseCode = code`, which left
+            // every material-with-column-R-color row with BaseCode == Code
+            // (e.g. `5000051401` kept its full code as base instead of the
+            // 7-char `5000051`). Now we always parse first and let explicit
+            // values override each field independently; if only color/size
+            // are explicit, base is derived by stripping the known suffix.
             var explicitBase = row.GetOrDefault<string>("baseCode");
             var explicitColor = row.GetOrDefault<string>("colorCode");
             var explicitSize = row.GetOrDefault<string>("sizeCode");
-            string? baseCode, colorCode, sizeCode;
-            if (!string.IsNullOrWhiteSpace(explicitBase)
-                || !string.IsNullOrWhiteSpace(explicitColor)
-                || !string.IsNullOrWhiteSpace(explicitSize))
+            var (parsedBase, parsedColor, parsedSize) = DecomposeCode(code, type);
+            var colorCode = NullIfEmpty(explicitColor) ?? parsedColor;
+            var sizeCode = NullIfEmpty(explicitSize) ?? parsedSize;
+            string? baseCode;
+            if (!string.IsNullOrWhiteSpace(explicitBase))
             {
-                baseCode = explicitBase ?? code;
-                colorCode = NullIfEmpty(explicitColor);
-                sizeCode = NullIfEmpty(explicitSize);
+                baseCode = explicitBase;
+            }
+            else if (!string.IsNullOrWhiteSpace(explicitColor) || !string.IsNullOrWhiteSpace(explicitSize))
+            {
+                // Explicit color/size from the source (e.g. Matriks columns
+                // R/S). Derive base by stripping those character counts from
+                // the END of the full code.
+                var suffixLen = (colorCode?.Length ?? 0) + (sizeCode?.Length ?? 0);
+                baseCode = code.Length > suffixLen ? code.Substring(0, code.Length - suffixLen) : code;
             }
             else
             {
-                (baseCode, colorCode, sizeCode) = DecomposeCode(code, type);
+                baseCode = parsedBase;
             }
             var isVariant = !string.Equals(baseCode, code, StringComparison.OrdinalIgnoreCase)
                             && (!string.IsNullOrWhiteSpace(colorCode) || !string.IsNullOrWhiteSpace(sizeCode));
