@@ -194,6 +194,14 @@ public class CustomsDeclarationLine : BaseEntity, ITenantScoped
     
     // ===== Box 34 - Код на земја на потекло =====
     public string? CountryOfOrigin { get; set; }
+
+    /// <summary>
+    /// G2 — preferential-origin flag. Partner invoices may encode this as a
+    /// suffix on the country code (e.g. "BG" vs "BG no pref." — the former
+    /// qualifies for preferential duty treatment, the latter does not).
+    /// Null = unknown / not captured (legacy rows before P5.1 KW12 work).
+    /// </summary>
+    public bool? IsPreferentialOrigin { get; set; }
     
     // ===== Box 35 - Бруто маса =====
     public decimal? GrossWeight { get; set; }

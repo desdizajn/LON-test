@@ -3311,7 +3311,7 @@ export interface components {
       code?: string | null;
       name?: string | null;
       description?: string | null;
-      isActive?: boolean;
+      isActive?: boolean | null;
     };
     UpdateCustomsDeclarationCommand: {
       /** Format: uuid */

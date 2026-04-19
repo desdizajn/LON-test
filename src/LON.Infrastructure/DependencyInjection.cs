@@ -99,15 +99,16 @@ public static class DependencyInjection
         services.AddSingleton<IImportTargetSchema, PartnersTargetSchema>();
         services.AddSingleton<IImportTargetSchema, BOMsTargetSchema>();
         services.AddSingleton<IImportTargetSchema, CustomsDeclarationsTargetSchema>();
+        services.AddSingleton<IImportTargetSchema, ProductionOrdersTargetSchema>();
         services.AddSingleton<IImportTargetRegistry, ImportTargetRegistry>();
 
-        // P5.1.6 — target executors (commit logic per target). BOMs + CustomsDeclarations
-        // are stubbed returning "not implemented" — dry-run still works for those.
+        // P5.1.6 — target executors (commit logic per target). BOMs is still a stub.
         services.AddScoped<IImportTargetExecutor, ItemsImportExecutor>();
         services.AddScoped<IImportTargetExecutor, PartnersImportExecutor>();
         services.AddScoped<IImportTargetExecutor, ReceiptsImportExecutor>();
         services.AddScoped<IImportTargetExecutor, BOMsImportExecutor>();
         services.AddScoped<IImportTargetExecutor, CustomsDeclarationsImportExecutor>();
+        services.AddScoped<IImportTargetExecutor, ProductionOrdersImportExecutor>();
         services.AddScoped<IImportTargetExecutorRegistry, ImportTargetExecutorRegistry>();
 
         return services;

@@ -59,7 +59,12 @@ public sealed class IssueAllMaterialsCommandHandler
                 ItemId = m.ItemId,
                 Quantity = remaining,
                 UoMId = m.UoMId,
-                // BatchNumber/MRN left null → underlying handler runs FEFO auto-pick
+                // G3 — honour the pre-assigned MRN/batch set at import time so
+                // textile imports consume the exact batch that was reserved
+                // by the customer system. Null values fall through to the
+                // existing FEFO auto-pick, preserving legacy behaviour.
+                BatchNumber = m.PreAssignedBatchNumber,
+                MRN = m.PreAssignedMRN,
             });
         }
 

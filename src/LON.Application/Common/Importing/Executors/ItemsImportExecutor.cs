@@ -27,23 +27,47 @@ public class ItemsImportExecutor : IImportTargetExecutor
         }
 
         int created = 0;
+        var tenantId = context.CurrentTenantId ?? Guid.Empty;
         foreach (var row in rows)
         {
             var code = row.GetOrDefault<string>("code")!;
-            var existing = await context.Items.AnyAsync(i => i.Code == code, cancellationToken);
-            if (existing)
+            var baseUoMId = row.GetOrDefault<Guid>("baseUoMCode");
+            if (baseUoMId == Guid.Empty)
+                return (false, created, $"Row {row.RowIndex}: baseUoMCode is required.");
+            var typeName = row.GetOrDefault<string>("type") ?? "RawMaterial";
+            if (!Enum.TryParse<ItemType>(typeName, ignoreCase: true, out var type))
+                return (false, created, $"Row {row.RowIndex}: invalid item type '{typeName}'.");
+
+            // G7 — UPSERT semantics. Look past the global query filter so we
+            // can tell "active duplicate" apart from "soft-deleted ghost".
+            // Only applied when the importer session's tenant is known; when
+            // null (seeders / bg jobs) fall back to create-only.
+            var existing = tenantId == Guid.Empty
+                ? null
+                : await context.Items
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.Code == code, cancellationToken);
+            if (existing is not null && !existing.IsDeleted)
             {
                 row.Errors.Add($"Row {row.RowIndex}: Item with code '{code}' already exists.");
                 return (false, created, $"Row {row.RowIndex}: Item code '{code}' is already taken.");
             }
-
-            var baseUoMId = row.GetOrDefault<Guid>("baseUoMCode");
-            if (baseUoMId == Guid.Empty)
-                return (false, created, $"Row {row.RowIndex}: baseUoMCode is required.");
-
-            var typeName = row.GetOrDefault<string>("type") ?? "RawMaterial";
-            if (!Enum.TryParse<ItemType>(typeName, ignoreCase: true, out var type))
-                return (false, created, $"Row {row.RowIndex}: invalid item type '{typeName}'.");
+            if (existing is not null && existing.IsDeleted)
+            {
+                // Undelete + refresh fields from file.
+                existing.IsDeleted = false;
+                existing.Name = row.GetOrDefault<string>("name") ?? existing.Name;
+                existing.Description = row.GetOrDefault<string>("description") ?? existing.Description;
+                existing.Type = type;
+                existing.BaseUoMId = baseUoMId;
+                existing.HSCode = row.GetOrDefault<string>("hsCode") ?? existing.HSCode;
+                existing.CountryOfOrigin = row.GetOrDefault<string>("countryOfOrigin") ?? existing.CountryOfOrigin;
+                existing.IsBatchTracked = row.GetOrDefault<bool>("isBatchTracked");
+                existing.IsMRNTracked = row.GetOrDefault<bool>("isMRNTracked");
+                existing.StandardCost = row.GetOrDefault<decimal>("standardCost");
+                created++;
+                continue;
+            }
 
             var item = new Item
             {

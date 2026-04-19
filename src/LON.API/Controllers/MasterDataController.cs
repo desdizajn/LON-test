@@ -540,7 +540,7 @@ public class MasterDataController : BaseController
             Code = request.Code,
             Name = request.Name,
             Symbol = request.Description,
-            IsDeleted = !request.IsActive
+            IsDeleted = request.IsActive == false
         };
 
         _context.UnitsOfMeasure.Add(uom);
@@ -559,7 +559,7 @@ public class MasterDataController : BaseController
         uom.Code = request.Code;
         uom.Name = request.Name;
         uom.Symbol = request.Description;
-        uom.IsDeleted = !request.IsActive;
+        uom.IsDeleted = request.IsActive == false;
 
         await _context.SaveChangesAsync();
         return Ok(MapUoM(uom));
@@ -1127,7 +1127,11 @@ public record UoMRequest(
     string Code,
     string Name,
     string? Description,
-    bool IsActive
+    // G8 — default to active when the client omits the field. Previously a
+    // positional `bool` defaulted to false via STJ deserialization and every
+    // POST silently produced a soft-deleted UoM. Nullable + coalesce-to-true
+    // at the call site keeps the body clean.
+    bool? IsActive = true
 );
 
 public record BOMRequest(

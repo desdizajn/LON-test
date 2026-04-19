@@ -115,7 +115,10 @@ public class ProductionOrderMaterialConfiguration : IEntityTypeConfiguration<Pro
         builder.Property(e => e.RequiredQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.IssuedQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.ReservedQuantity).HasColumnType("decimal(18,4)");
-        
+        builder.Property(e => e.PreAssignedMRN).HasMaxLength(100);
+        builder.Property(e => e.PreAssignedBatchNumber).HasMaxLength(100);
+        builder.Property(e => e.EfficiencyFactor).HasColumnType("decimal(18,6)");
+
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         

@@ -64,17 +64,26 @@ public class CustomsDeclarationsImportExecutor : IImportTargetExecutor
         if (declarationDate == default)
             return (false, 0, "declarationDate is required (header).");
 
-        // Dedup against existing declarations (tenant-scoped via global filter).
-        var exists = await context.CustomsDeclarations
-            .AnyAsync(d => d.DeclarationNumber == declarationNumber, cancellationToken);
-        if (exists)
-            return (false, 0, $"Declaration '{declarationNumber}' already exists.");
+        // Separate MRN when supplied (so wizard can push both a local
+        // DeclarationNumber and the partner's MRN); fall back to reusing the
+        // declaration number for drafts.
+        var mrn = head.GetOrDefault<string>("mrn");
+        if (string.IsNullOrWhiteSpace(mrn)) mrn = declarationNumber;
+
+        // G9 — pre-check BOTH uniqueness constraints before SaveChanges.
+        // Dry-run was returning committable=true and then the DB unique index
+        // on (TenantId, MRN) threw at commit. Check both so the executor can
+        // report a readable error.
+        if (await context.CustomsDeclarations.AnyAsync(d => d.DeclarationNumber == declarationNumber, cancellationToken))
+            return (false, 0, $"Declaration '{declarationNumber}' already exists (DeclarationNumber).");
+        if (await context.CustomsDeclarations.AnyAsync(d => d.MRN == mrn, cancellationToken))
+            return (false, 0, $"Declaration with MRN '{mrn}' already exists.");
 
         var declaration = new CustomsDeclaration
         {
             Id = Guid.NewGuid(),
             DeclarationNumber = declarationNumber!,
-            MRN = declarationNumber!, // treat declarationNumber as MRN for draft; user can edit
+            MRN = mrn!,
             DeclarationDate = declarationDate,
             DeclarationType = declarationType,
             CustomsProcedureId = procedure.Id,
@@ -108,6 +117,7 @@ public class CustomsDeclarationsImportExecutor : IImportTargetExecutor
                 Quantity = qty,
                 TariffCode = row.GetOrDefault<string>("tariffCode"),
                 CountryOfOrigin = row.GetOrDefault<string>("originCountry"),
+                IsPreferentialOrigin = row.Fields.TryGetValue("isPreferentialOrigin", out var pref) ? pref as bool? : null,
                 NetWeight = row.GetOrDefault<decimal?>("netWeight"),
                 GrossWeight = row.GetOrDefault<decimal?>("grossWeight"),
                 ItemPrice = row.GetOrDefault<decimal>("invoiceValue"),

@@ -70,6 +70,10 @@ public static class ApplicationDbContextSeed
         // (existing DBs upgraded from earlier versions where the column
         // didn't exist default to false from the migration defaultValue).
         await BackfillTeksportInflateFlagAsync(context);
+
+        // G4+G5 idempotent backfill for textile UoMs (STK, KO) added after
+        // the initial seed + undelete of any stale phantom rows.
+        await BackfillKw12SupportingDataAsync(context);
     }
 
     private static async Task SeedUnitsOfMeasure(ApplicationDbContext context)
@@ -82,9 +86,53 @@ public static class ApplicationDbContextSeed
             new UnitOfMeasure { Id = Guid.NewGuid(), Code = "M", Name = "Meter", Symbol = "m", CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
             new UnitOfMeasure { Id = Guid.NewGuid(), Code = "BOX", Name = "Box", Symbol = "box", CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
             new UnitOfMeasure { Id = Guid.NewGuid(), Code = "PAL", Name = "Pallet", Symbol = "pal", CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
+            // G4 — textile partners (KW12) use German UoMs.
+            new UnitOfMeasure { Id = Guid.NewGuid(), Code = "STK", Name = "Piece (Stueck)", Symbol = "stk", CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
+            new UnitOfMeasure { Id = Guid.NewGuid(), Code = "KO", Name = "Set (Komplet)", Symbol = "ko", CreatedAt = DateTime.UtcNow, CreatedBy = "Seed" },
         };
 
         await context.UnitsOfMeasure.AddRangeAsync(uoms);
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// G4+G5 backfill for DBs seeded before the STK/KO UoMs and Warehouse 222
+    /// existed. Idempotent — runs after the initial seed and adds whatever
+    /// is missing + toggles IsDeleted=false on stale phantom rows.
+    /// </summary>
+    private static async Task BackfillKw12SupportingDataAsync(ApplicationDbContext context)
+    {
+        var existingCodes = await context.UnitsOfMeasure
+            .IgnoreQueryFilters()
+            .Select(u => u.Code)
+            .ToListAsync();
+        var desired = new[]
+        {
+            ("STK", "Piece (Stueck)", "stk"),
+            ("KO", "Set (Komplet)", "ko")
+        };
+        foreach (var (code, name, symbol) in desired)
+        {
+            var existing = await context.UnitsOfMeasure
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Code == code);
+            if (existing is null)
+            {
+                await context.UnitsOfMeasure.AddAsync(new UnitOfMeasure
+                {
+                    Id = Guid.NewGuid(),
+                    Code = code,
+                    Name = name,
+                    Symbol = symbol,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "Seed"
+                });
+            }
+            else if (existing.IsDeleted)
+            {
+                existing.IsDeleted = false;
+            }
+        }
         await context.SaveChangesAsync();
     }
 

@@ -94,5 +94,13 @@ public interface IApplicationDbContext
     DbSet<ImportSession> ImportSessions { get; }
     DbSet<ImportMappingProfile> ImportMappingProfiles { get; }
 
+    /// <summary>
+    /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
+    /// during seeders / background jobs / login flow. Exposed so handlers
+    /// that need to bypass the global query filter (e.g. G7 — "undelete soft
+    /// deleted row in MY tenant") can still scope by tenant manually.
+    /// </summary>
+    Guid? CurrentTenantId { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

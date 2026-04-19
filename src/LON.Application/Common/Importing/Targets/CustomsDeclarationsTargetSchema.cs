@@ -14,7 +14,9 @@ public class CustomsDeclarationsTargetSchema : IImportTargetSchema
 
     public IReadOnlyList<ImportTargetField> Fields { get; } = new List<ImportTargetField>
     {
-        new("declarationNumber", "Declaration number / MRN", ImportTargetFieldType.String, Required: true, Scope: ImportTargetFieldScope.Header),
+        new("declarationNumber", "Declaration number (internal)", ImportTargetFieldType.String, Required: true, Scope: ImportTargetFieldScope.Header),
+        new("mrn", "MRN (from customs)", ImportTargetFieldType.String, Required: false, Scope: ImportTargetFieldScope.Header,
+            Notes: "If omitted, the DeclarationNumber is reused as MRN (draft state)."),
         new("declarationDate", "Declaration date", ImportTargetFieldType.Date, Required: true, Scope: ImportTargetFieldScope.Header),
         new("declarationType", "IM / EX", ImportTargetFieldType.Enum, Required: true, Scope: ImportTargetFieldScope.Header,
             EnumValues: new[] { "IM", "EX" }),
@@ -31,6 +33,9 @@ public class CustomsDeclarationsTargetSchema : IImportTargetSchema
             Scope: ImportTargetFieldScope.Row, LookupEntity: "Items", LookupField: "Code"),
         new("tariffCode", "Tariff code (CN8)", ImportTargetFieldType.String, Required: true, Scope: ImportTargetFieldScope.Row),
         new("originCountry", "Origin country (ISO-2)", ImportTargetFieldType.String, Required: true, Scope: ImportTargetFieldScope.Row),
+        new("isPreferentialOrigin", "Preferential origin?", ImportTargetFieldType.Boolean, Required: false,
+            Scope: ImportTargetFieldScope.Row,
+            Notes: "True = country qualifies for preferential duty; false = 'no pref.' variant."),
         new("quantity", "Quantity", ImportTargetFieldType.Decimal, Required: true, Scope: ImportTargetFieldScope.Row),
         new("uomCode", "UoM code", ImportTargetFieldType.String, Required: true,
             Scope: ImportTargetFieldScope.Row, LookupEntity: "UnitsOfMeasure", LookupField: "Code"),

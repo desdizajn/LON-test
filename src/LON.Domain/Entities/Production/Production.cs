@@ -79,6 +79,18 @@ public class ProductionOrder : BaseEntity, ITenantScoped
     public virtual Routing? Routing { get; set; }
     public string? SalesOrderReference { get; set; }
     public string? Notes { get; set; }
+
+    // G6 — customer-side partner (the client that placed the order). Distinct
+    // from the supplier partner surfaced on Receipt / CustomsDeclaration.
+    // Textile contract manufacturing (e.g. KW12 `Firma=100`) always has this;
+    // internal production can leave it null.
+    public Guid? CustomerPartnerId { get; set; }
+    public virtual MasterData.Partner? CustomerPartner { get; set; }
+
+    // S1, S2 — customer's own reference number + calendar-week grouping for
+    // textile weekly plans. Optional free-form fields.
+    public string? CustomerOrderNumber { get; set; }
+    public int? WeekNumber { get; set; }
     public virtual ICollection<ProductionOrderMaterial> Materials { get; set; } = new List<ProductionOrderMaterial>();
     public virtual ICollection<ProductionOrderOperation> Operations { get; set; } = new List<ProductionOrderOperation>();
     public virtual ICollection<MaterialIssue> MaterialIssues { get; set; } = new List<MaterialIssue>();
@@ -98,6 +110,16 @@ public class ProductionOrderMaterial : BaseEntity, ITenantScoped
     public decimal ReservedQuantity { get; set; }
     public Guid UoMId { get; set; }
     public virtual UnitOfMeasure UoM { get; set; } = null!;
+
+    // G3 — textile partners pre-assign which MRN/batch a WO line consumes;
+    // CreateMaterialIssueCommand honours these values OVER FEFO when set.
+    // Null means "fall through to FEFO auto-pick" (legacy LON behaviour).
+    public string? PreAssignedMRN { get; set; }
+    public string? PreAssignedBatchNumber { get; set; }
+
+    // S5 — KW12 `EFF` field (0.8934 etc). Interpreted as output/input ratio.
+    // Null = no efficiency override; issue quantity equals RequiredQuantity.
+    public decimal? EfficiencyFactor { get; set; }
 }
 
 public class ProductionOrderOperation : BaseEntity, ITenantScoped
