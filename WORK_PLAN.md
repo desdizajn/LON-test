@@ -176,9 +176,9 @@
 - [x] **P3.2** ✅ — tblArtikli → Items. **11,012 rows** written on VPS (2 dupe-codes skipped). ItemType ∈ {Raw=0, Component=1, FG=2, SemiFG=3} derived from legacy ArtKatTip + ArtKatSurovina.
 - [x] **P3.3** ✅ — **Skipped as documented.** Legacy ELON has no firms table; Partner FKs anchored on a synthetic `LEGACY-MIG` Partner seeded per tenant. Real partner reconstruction deferred.
 - [x] **P3.4** ✅ — Odobrenija (4 parent permits) + Zaklucoci (261 decisions) → LONAuthorizations (261). Parent guarantee amount + expiry cascaded to all children whose date window matches.
-- [/] **P3.5** — FakturiU5Z + FakturiU5 → CustomsDeclarations + Lines. In-progress full run (≈ 480/633 headers at commit time). DeclarationNumber composed `{Broj}/{yyMMdd}/{OdobrenieRBr}` because legacy reuses the short broj. Final numbers land in SESSION_LOG.
-- [ ] **P3.6** — LagerMaterijali → InventoryBalance. Query rewritten against legacy `Proces` state (PlusMinus is 100% NULL in legacy). Smoke pending full P3.5 completion. **Agg rule:** Σ Kol[Proces=1] − Σ Kol[Proces ∈ 7,8,9].
-- [ ] **P3.7** — Reconciliation report (`reconcile` subcommand writes `migration_reconciliation.html`). Code complete; run after P3.6 completes.
+- [x] **P3.5** ✅ — FakturiU5Z + FakturiU5 → CustomsDeclarations + Lines. **702 declarations + ~31405 lines** written. 329 had no matching authorization (ZaklucokBroj archived). DeclarationNumber composed `{Broj}/{yyMMdd}/{OdobrenieRBr}` to avoid cross-time collisions.
+- [x] **P3.6** ✅ — LagerMaterijali → InventoryBalance. **804 open balances** written. Join switched to ArtKatBrMat (string code) because legacy ArtRBrMat is 100% NULL. Σ Kol[Proces=1] − Σ Kol[Proces ∈ 7,8,9] aggregation. Legacy PlusMinus column was never populated.
+- [x] **P3.7** ✅ — Reconciliation report (`migration_reconciliation.html`). Side-by-side counts + sample Zaklucok check. **Critical pass: Zaklucok 2827 shows ELON 97,905.26 kg = LON 97,905.26 kg**, 1 declaration in each.
 
 **Фаза 3 DONE = ✅ експертот може визуелно да потврди „LON покажува исто како ELON за оваа Zaklucok"**
 
@@ -189,7 +189,7 @@
 **Цел:** Недостигачките legacy features имплементирани во новата архитектура (без legacy кварц).
 
 - [x] **P4.1** ✅ — Zaverka. `ZaverkaNumber` + `ZaverkaDate` fields on CustomsDeclaration + `POST /api/customs/declarations/{id}/certify`. Draft/Registered/Submitted → Cleared. Tenant-scoped uniqueness guard. VPS verified: one Registered declaration certified, second certify call on same id returns 400 with "Декларацијата веќе е заверена." (commit `8462a2d`).
-- [/] **P4.2** — PEE060 XML. `GET /api/customs/pee/060?authorizationId=...&from=...&to=...`. Envelope constants (C5/9999/111111) match legacy `cmdXML_PEE060_Click`; body aggregates by (TariffCode, Country) into Zadolzuvanje/Razdolzuvanje. VPS verified: 1342-byte XML with 2 TariffCodeSummary blocks (commits `8462a2d`, `4055fba` — XmlWriter flush-race fix).
+- [x] **P4.2** ✅ — PEE060 XML. `GET /api/customs/pee/060?authorizationId=...&from=...&to=...`. Envelope constants (C5/9999/111111) match legacy `cmdXML_PEE060_Click`; body aggregates by (TariffCode, Country) into Zadolzuvanje/Razdolzuvanje. VPS verified: 1342-byte XML with 2 TariffCodeSummary blocks (commits `8462a2d`, `4055fba` — XmlWriter flush-race fix).
 - [x] **P4.3** ✅ — MozniMinusi. `GET /api/wms/inventory/mozni-minusi` returns `{ negativeMovements, negativeBalances, totalChecked }`. VPS verified returning existing negative-movement rows (FG-001 batch FG-VPS-P25-01 showing net=-3 from an over-shipment scenario).
 - [x] **P4.4** ✅ — Traffic-light Guarantees. `GET /api/guarantee/accounts/traffic-light` returns `{ indicator: green/yellow/red/critical, utilisationPercent }`. Thresholds 60/80/95. VPS verified on two accounts (both green: 0.09% and 0%).
 - [ ] **P4.5** — ECD auto-pull — **deferred, no test environment available.**
