@@ -231,5 +231,63 @@
     "slotQuantity": "Количина",
     "slotsHint": "Опционално: поделите отпад у до 4 слота + слот за губитак. Сума мора да буде једнака укупној количини.",
     "slotsSumMismatch": "Сума слотова ({{sum}}) се разликује од укупно ({{total}})"
+  },
+  "import": {
+    "title": "Увоз података",
+    "subtitle": "Универзални визард: Excel/CSV/TSV/JSON/XML → било који ентитет.",
+    "steps": {
+      "upload": "1. Фајл",
+      "mapping": "2. Мапирање",
+      "defaults": "3. Дефолти",
+      "transforms": "4. Трансформације",
+      "run": "5. Dry-run + Commit"
+    },
+    "uploadHint": "Подржани формати: .xlsx, .xls, .csv, .tsv, .json, .xml (до 25 MB).",
+    "pickFile": "Изабери фајл",
+    "reset": "Почни испочетка",
+    "session": "Сесија",
+    "totalRows": "Укупно редова",
+    "previewRows": "Преглед првих {{n}} редова",
+    "target": "Циљни ентитет",
+    "pickTarget": "Изабери ентитет",
+    "partnerContext": "Партнер/Добављач (опционо)",
+    "suggestedProfiles": "Сачувана мапирања",
+    "applyProfile": "Примени",
+    "noProfiles": "Нема сачуваних мапирања за овај контекст.",
+    "mappingTable": {
+      "source": "Колона у фајлу",
+      "target": "Поље у систему",
+      "ignore": "Игнориши"
+    },
+    "requiredField": "(обавезно)",
+    "headerField": "(ниво: header)",
+    "rowField": "(ниво: row)",
+    "eitherField": "(ниво: row/header)",
+    "saveProfileLabel": "Сачувај мапирање као...",
+    "saveProfile": "Сачувај профил",
+    "applyMapping": "Примени мапирање",
+    "defaultsHint": "Header дефолти: важе за сваки ред када колона није мапирана.",
+    "defaultFor": "Дефолт за {{field}}",
+    "saveDefaults": "Сачувај дефолте",
+    "transformsHint": "По колони: ланац TRIM → UPPER → DECIMAL_COMMA_TO_DOT → DATE_PARSE:dd.MM.yyyy → LOOKUP:Items.Code.",
+    "addTransform": "Додај правило",
+    "saveTransforms": "Сачувај правила",
+    "previewTransformed": "Преглед по правилима",
+    "dryRun": "Провери (dry-run)",
+    "commit": "Покрени увоз",
+    "committable": "Спремно за commit",
+    "notCommittable": "Потребне исправке",
+    "rowsWithErrors": "Редова са грешкама: {{n}}",
+    "entitiesCreated": "Креирано записа: {{n}}",
+    "committed": "Увоз успешно завршен",
+    "rowErrors": "Грешке по реду",
+    "rowOk": "Без грешака",
+    "targets": {
+      "Receipts": "Пријемнице",
+      "Items": "Артикли",
+      "Partners": "Партнери",
+      "BOMs": "BOM-ови (рецепти)",
+      "CustomsDeclarations": "Царинске декларације"
+    }
   }
 }

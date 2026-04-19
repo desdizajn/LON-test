@@ -231,5 +231,63 @@
     "slotQuantity": "Количина",
     "slotsHint": "Опционално: поделете го отпадот во до 4 слотови + слот за загуба. Сумата мора да е еднаква со вкупната количина.",
     "slotsSumMismatch": "Сума на слотови ({{sum}}) се разликува од вкупно ({{total}})"
+  },
+  "import": {
+    "title": "Увоз на податоци",
+    "subtitle": "Еден универзален визард: Excel/CSV/TSV/JSON/XML → било кој ентитет.",
+    "steps": {
+      "upload": "1. Фајл",
+      "mapping": "2. Мапирање",
+      "defaults": "3. Дефолти",
+      "transforms": "4. Трансформации",
+      "run": "5. Dry-run + Commit"
+    },
+    "uploadHint": "Поддржани формати: .xlsx, .xls, .csv, .tsv, .json, .xml (до 25 MB).",
+    "pickFile": "Избери фајл",
+    "reset": "Почни одново",
+    "session": "Сесија",
+    "totalRows": "Вкупно редови",
+    "previewRows": "Преглед на првите {{n}} редови",
+    "target": "Целен ентитет",
+    "pickTarget": "Избери ентитет",
+    "partnerContext": "Партнер/Добавувач (опционално)",
+    "suggestedProfiles": "Сочувани мапирања",
+    "applyProfile": "Примени",
+    "noProfiles": "Нема сочувани мапирања за овој контекст.",
+    "mappingTable": {
+      "source": "Колона во фајлот",
+      "target": "Поле во системот",
+      "ignore": "Игнорирај"
+    },
+    "requiredField": "(задолжително)",
+    "headerField": "(ниво: header)",
+    "rowField": "(ниво: row)",
+    "eitherField": "(ниво: row/header)",
+    "saveProfileLabel": "Зачувај мапирање како...",
+    "saveProfile": "Зачувај профил",
+    "applyMapping": "Примени мапирање",
+    "defaultsHint": "Дефолти за заглавие: важат за сите редови кога колоната не е мапирана.",
+    "defaultFor": "Дефолт за {{field}}",
+    "saveDefaults": "Зачувај дефолти",
+    "transformsHint": "По колона: верижно TRIM → UPPER → DECIMAL_COMMA_TO_DOT → DATE_PARSE:dd.MM.yyyy → LOOKUP:Items.Code.",
+    "addTransform": "Додај правило",
+    "saveTransforms": "Зачувај правила",
+    "previewTransformed": "Пример по правилата",
+    "dryRun": "Провери (dry-run)",
+    "commit": "Изврши увоз",
+    "committable": "Спремно за commit",
+    "notCommittable": "Корекции потребни",
+    "rowsWithErrors": "Редови со грешки: {{n}}",
+    "entitiesCreated": "Создадени записи: {{n}}",
+    "committed": "Увозот е успешно завршен",
+    "rowErrors": "Грешки по ред",
+    "rowOk": "Без грешки",
+    "targets": {
+      "Receipts": "Приемници",
+      "Items": "Артикли",
+      "Partners": "Партнери",
+      "BOMs": "BOM-ови (рецепти)",
+      "CustomsDeclarations": "Царински декларации"
+    }
   }
 }

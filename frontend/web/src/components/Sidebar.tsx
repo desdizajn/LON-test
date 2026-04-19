@@ -48,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
     { id: 'mrn-usage-tracking', label: '🛃 MRN Usage Tracking', path: '/advanced/mrn-usage-tracking' },
     { id: 'location-inquiry', label: '📍 Location Inquiry', path: '/advanced/location-inquiry' },
     { id: 'item-inquiry', label: '📦 Item Inquiry', path: '/advanced/item-inquiry' },
+    { id: 'import-wizard', label: '📥 ' + t('import.title'), path: '/tools/import' },
   ];
 
   const masterDataItems = [

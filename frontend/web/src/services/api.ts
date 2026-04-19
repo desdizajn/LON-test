@@ -345,3 +345,45 @@ export const knowledgeBaseApi = {
   getValidationRules: (fieldName?: string) =>
     api.get('/KnowledgeBase/validation-rules', { params: { fieldName } }),
 };
+
+// P5.1 — generic importer wizard API. Every call is tenant-scoped via the
+// usual JWT filter; responses follow the { isSuccess, data, errorMessage }
+// envelope. Multipart upload uses a separate axios config so the global
+// Content-Type: application/json default doesn't override the boundary.
+export const importApi = {
+  uploadSession: (file: File, targetEntity?: string, partnerContextId?: string) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/Import/sessions', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params: { targetEntity, partnerContextId },
+    });
+  },
+  getSession: (id: string) => api.get(`/Import/sessions/${id}`),
+  listSessions: (take: number = 50) => api.get('/Import/sessions', { params: { take } }),
+
+  getTargets: () => api.get('/Import/targets'),
+  getTarget: (name: string) => api.get(`/Import/targets/${encodeURIComponent(name)}`),
+
+  applyMapping: (id: string, payload: {
+    mapping: { columns: Array<{ sourceHeader: string; targetField?: string | null; ignore: boolean }> };
+    targetEntity: string;
+    partnerContextId?: string | null;
+    saveAsProfileLabel?: string | null;
+  }) => api.put(`/Import/sessions/${id}/mapping`, payload),
+
+  suggestProfiles: (targetEntity: string, partnerContextId?: string) =>
+    api.get('/Import/mapping-profiles', { params: { targetEntity, partnerContextId } }),
+  deleteProfile: (id: string) => api.delete(`/Import/mapping-profiles/${id}`),
+
+  setDefaults: (id: string, defaults: { values: Record<string, string | null | undefined> }) =>
+    api.put(`/Import/sessions/${id}/defaults`, { defaults }),
+  setTransforms: (id: string, transforms: { columns: Array<{ sourceHeader: string; rules: string[] }> }) =>
+    api.put(`/Import/sessions/${id}/transforms`, { transforms }),
+  previewTransformed: (id: string, take: number = 20) =>
+    api.get(`/Import/sessions/${id}/preview-transformed`, { params: { take } }),
+
+  dryRun: (id: string) => api.post(`/Import/sessions/${id}/dry-run`),
+  commit: (id: string) => api.post(`/Import/sessions/${id}/commit`),
+};
+

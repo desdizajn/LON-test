@@ -53,6 +53,7 @@ import WMSDashboard from './pages/Reports/WMSDashboard';
 import CycleCountAccuracy from './pages/Reports/CycleCountAccuracy';
 import WarehouseUtilization from './pages/Reports/WarehouseUtilization';
 import MozniMinusi from './pages/MozniMinusi';
+import ImportWizard from './pages/ImportWizard';
 
 // Advanced Features
 import BatchTraceability from './pages/Advanced/BatchTraceability';
@@ -144,6 +145,9 @@ const App: React.FC = () => {
             <Route path="/reports/cycle-count-accuracy" element={<CycleCountAccuracy />} />
             <Route path="/reports/warehouse-utilization" element={<WarehouseUtilization />} />
             <Route path="/reports/mozni-minusi" element={<MozniMinusi />} />
+
+            {/* P5.1 — generic importer wizard */}
+            <Route path="/tools/import" element={<ImportWizard />} />
 
             {/* Advanced Features Routes */}
             <Route path="/advanced/batch-traceability" element={<BatchTraceability />} />

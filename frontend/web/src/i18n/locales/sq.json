@@ -231,5 +231,63 @@
     "slotQuantity": "Sasia",
     "slotsHint": "Opsionale: ndani mbetjet në deri në 4 vende + një slot humbjeje. Shuma duhet të jetë e barabartë me totalin.",
     "slotsSumMismatch": "Shuma e vendeve ({{sum}}) ndryshon nga totali ({{total}})"
+  },
+  "import": {
+    "title": "Importim i të dhënave",
+    "subtitle": "Magjistar universal: Excel/CSV/TSV/JSON/XML → çdo entitet.",
+    "steps": {
+      "upload": "1. Skedari",
+      "mapping": "2. Mapping",
+      "defaults": "3. Vlera paraprake",
+      "transforms": "4. Transformime",
+      "run": "5. Dry-run + Commit"
+    },
+    "uploadHint": "Formatet e mbështetura: .xlsx, .xls, .csv, .tsv, .json, .xml (deri në 25 MB).",
+    "pickFile": "Zgjidh skedarin",
+    "reset": "Fillo nga e para",
+    "session": "Sesioni",
+    "totalRows": "Gjithsej rreshta",
+    "previewRows": "Pamje paraprake e {{n}} rreshtave të parë",
+    "target": "Entiteti i synuar",
+    "pickTarget": "Zgjidh entitetin",
+    "partnerContext": "Partner/Furnizues (opsionale)",
+    "suggestedProfiles": "Mapping-et e ruajtur",
+    "applyProfile": "Apliko",
+    "noProfiles": "Nuk ka mapping-e të ruajtur për këtë kontekst.",
+    "mappingTable": {
+      "source": "Kolona në skedar",
+      "target": "Fusha e sistemit",
+      "ignore": "Injoro"
+    },
+    "requiredField": "(detyrueshëm)",
+    "headerField": "(niveli: header)",
+    "rowField": "(niveli: row)",
+    "eitherField": "(niveli: row/header)",
+    "saveProfileLabel": "Ruaj mapping-un si...",
+    "saveProfile": "Ruaj profilin",
+    "applyMapping": "Apliko mapping-un",
+    "defaultsHint": "Vlera paraprake header: zbatohen për çdo rresht ku kolona s'është maposur.",
+    "defaultFor": "Vlera paraprake për {{field}}",
+    "saveDefaults": "Ruaj vlerat",
+    "transformsHint": "Për kolonë: zinxhir TRIM → UPPER → DECIMAL_COMMA_TO_DOT → DATE_PARSE:dd.MM.yyyy → LOOKUP:Items.Code.",
+    "addTransform": "Shto rregull",
+    "saveTransforms": "Ruaj rregullat",
+    "previewTransformed": "Pamje paraprake pas rregullave",
+    "dryRun": "Kontrollo (dry-run)",
+    "commit": "Kryej importimin",
+    "committable": "Gati për commit",
+    "notCommittable": "Kërkohen rregullime",
+    "rowsWithErrors": "Rreshta me gabime: {{n}}",
+    "entitiesCreated": "Regjistrime të krijuara: {{n}}",
+    "committed": "Importimi u krye me sukses",
+    "rowErrors": "Gabimet për rresht",
+    "rowOk": "Pa gabime",
+    "targets": {
+      "Receipts": "Pranimet",
+      "Items": "Artikujt",
+      "Partners": "Partnerët",
+      "BOMs": "BOM-et (recetat)",
+      "CustomsDeclarations": "Deklaratat doganore"
+    }
   }
 }

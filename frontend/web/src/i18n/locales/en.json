@@ -231,5 +231,63 @@
     "slotQuantity": "Quantity",
     "slotsHint": "Optional: split the waste into up to 4 buckets + a zaguba slot. Sum must equal total quantity.",
     "slotsSumMismatch": "Sum of slots ({{sum}}) differs from total ({{total}})"
+  },
+  "import": {
+    "title": "Data Import",
+    "subtitle": "One universal wizard: Excel/CSV/TSV/JSON/XML → any entity.",
+    "steps": {
+      "upload": "1. File",
+      "mapping": "2. Mapping",
+      "defaults": "3. Defaults",
+      "transforms": "4. Transforms",
+      "run": "5. Dry-run + Commit"
+    },
+    "uploadHint": "Supported formats: .xlsx, .xls, .csv, .tsv, .json, .xml (up to 25 MB).",
+    "pickFile": "Pick file",
+    "reset": "Start over",
+    "session": "Session",
+    "totalRows": "Total rows",
+    "previewRows": "Preview of first {{n}} rows",
+    "target": "Target entity",
+    "pickTarget": "Pick entity",
+    "partnerContext": "Partner/supplier (optional)",
+    "suggestedProfiles": "Saved mappings",
+    "applyProfile": "Apply",
+    "noProfiles": "No saved mappings for this context.",
+    "mappingTable": {
+      "source": "Column in file",
+      "target": "System field",
+      "ignore": "Ignore"
+    },
+    "requiredField": "(required)",
+    "headerField": "(scope: header)",
+    "rowField": "(scope: row)",
+    "eitherField": "(scope: row/header)",
+    "saveProfileLabel": "Save mapping as...",
+    "saveProfile": "Save profile",
+    "applyMapping": "Apply mapping",
+    "defaultsHint": "Header-level defaults: applied to every row where the column isn't mapped.",
+    "defaultFor": "Default for {{field}}",
+    "saveDefaults": "Save defaults",
+    "transformsHint": "Per column: chain TRIM → UPPER → DECIMAL_COMMA_TO_DOT → DATE_PARSE:dd.MM.yyyy → LOOKUP:Items.Code.",
+    "addTransform": "Add rule",
+    "saveTransforms": "Save rules",
+    "previewTransformed": "Preview after rules",
+    "dryRun": "Check (dry-run)",
+    "commit": "Run import",
+    "committable": "Ready to commit",
+    "notCommittable": "Fixes needed",
+    "rowsWithErrors": "Rows with errors: {{n}}",
+    "entitiesCreated": "Entities created: {{n}}",
+    "committed": "Import committed successfully",
+    "rowErrors": "Row errors",
+    "rowOk": "No errors",
+    "targets": {
+      "Receipts": "Receipts",
+      "Items": "Items",
+      "Partners": "Partners",
+      "BOMs": "BOMs (recipes)",
+      "CustomsDeclarations": "Customs declarations"
+    }
   }
 }
