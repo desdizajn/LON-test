@@ -18,6 +18,36 @@ public class Item : BaseEntity, ITenantScoped
     public Guid BaseUoMId { get; set; }
     public virtual UnitOfMeasure BaseUoM { get; set; } = null!;
     public decimal StandardCost { get; set; }
+
+    /// <summary>
+    /// KW12 — the base article code with color/size suffix stripped.
+    /// Finished goods: first 5 digits of <see cref="Code"/> (e.g. "18248").
+    /// Materials: first 7 digits (e.g. "1000010"). Null on already-base items.
+    /// Reports that aggregate by article (no color/size) group on this column.
+    /// </summary>
+    public string? BaseCode { get; set; }
+
+    /// <summary>
+    /// 3-char color code when present (e.g. "542" Gold, "010" Black).
+    /// Null on base items and on materials whose catalog entry has no color.
+    /// </summary>
+    public string? ColorCode { get; set; }
+
+    /// <summary>
+    /// Remaining suffix after base + color, e.g. "2XL-3" on FG or "5" on the
+    /// 5000038530953-style dimensional material. Null when no size suffix.
+    /// </summary>
+    public string? SizeCode { get; set; }
+
+    /// <summary>
+    /// Link from a variant to its base (color/size-less) Item. Null when this
+    /// IS the base. Allows UI to render a collapsible base → variants tree
+    /// and to answer "how many of article 18248 across all colors/sizes".
+    /// </summary>
+    public Guid? ParentItemId { get; set; }
+    public virtual Item? Parent { get; set; }
+    public virtual ICollection<Item> Variants { get; set; } = new List<Item>();
+
     public virtual ICollection<ItemUoMConversion> UoMConversions { get; set; } = new List<ItemUoMConversion>();
     public virtual ICollection<BOM> BOMs { get; set; } = new List<BOM>();
 }

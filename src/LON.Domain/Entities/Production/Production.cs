@@ -91,6 +91,29 @@ public class ProductionOrder : BaseEntity, ITenantScoped
     // textile weekly plans. Optional free-form fields.
     public string? CustomerOrderNumber { get; set; }
     public int? WeekNumber { get; set; }
+
+    /// <summary>
+    /// KW12 main-PA number (e.g. "PA2602067"). One customer order == one
+    /// main PA == one finished good; size/color variants become children
+    /// with <see cref="SubOrderNumber"/> set. For orders without variants,
+    /// this equals <see cref="OrderNumber"/> and <see cref="SubOrderNumber"/>
+    /// is null.
+    /// </summary>
+    public string? MainOrderNumber { get; set; }
+
+    /// <summary>
+    /// Suffix after the main PA (e.g. "0001"). Null on the parent PO.
+    /// </summary>
+    public string? SubOrderNumber { get; set; }
+
+    /// <summary>
+    /// Link from a variant sub-order back to its parent main PA. Null on
+    /// the parent. Reports use this to roll up variant POs into the main
+    /// order for customer-visible summaries.
+    /// </summary>
+    public Guid? ParentOrderId { get; set; }
+    public virtual ProductionOrder? Parent { get; set; }
+    public virtual ICollection<ProductionOrder> Children { get; set; } = new List<ProductionOrder>();
     public virtual ICollection<ProductionOrderMaterial> Materials { get; set; } = new List<ProductionOrderMaterial>();
     public virtual ICollection<ProductionOrderOperation> Operations { get; set; } = new List<ProductionOrderOperation>();
     public virtual ICollection<MaterialIssue> MaterialIssues { get; set; } = new List<MaterialIssue>();

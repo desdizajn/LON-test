@@ -16,6 +16,19 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.Property(e => e.HSCode).HasMaxLength(20);
         builder.Property(e => e.CountryOfOrigin).HasMaxLength(3);
         builder.Property(e => e.StandardCost).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.BaseCode).HasMaxLength(20);
+        builder.Property(e => e.ColorCode).HasMaxLength(10);
+        builder.Property(e => e.SizeCode).HasMaxLength(20);
+
+        // Parent-variant link: variants point at their base via ParentItemId.
+        // SetNull on the parent row so deleting a base doesn't cascade-
+        // orphan variants; the resolver treats orphaned variants as "base".
+        builder.HasOne(e => e.Parent)
+            .WithMany(e => e.Variants)
+            .HasForeignKey(e => e.ParentItemId)
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.HasIndex(e => e.ParentItemId);
+        builder.HasIndex(e => new { e.TenantId, e.BaseCode });
 
         // Composite unique: two tenants can each have their own RM-001, FG-001, etc.
         builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();

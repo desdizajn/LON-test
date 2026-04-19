@@ -16,6 +16,18 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
         builder.Property(e => e.ScrapQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.SalesOrderReference).HasMaxLength(50);
         builder.Property(e => e.Notes).HasMaxLength(500);
+        builder.Property(e => e.MainOrderNumber).HasMaxLength(50);
+        builder.Property(e => e.SubOrderNumber).HasMaxLength(20);
+        builder.Property(e => e.CustomerOrderNumber).HasMaxLength(50);
+
+        // Parent PA → variant children. NoAction so soft-deleting the parent
+        // doesn't break FK validity on children.
+        builder.HasOne(e => e.Parent)
+            .WithMany(e => e.Children)
+            .HasForeignKey(e => e.ParentOrderId)
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.HasIndex(e => e.ParentOrderId);
+        builder.HasIndex(e => new { e.TenantId, e.MainOrderNumber });
         
         // Avoid cascade delete cycles
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
