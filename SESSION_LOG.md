@@ -2,6 +2,37 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.32: filtered unique indexes
+
+Migration `20260419190825_P6_32_FilteredUniqueIndexes` adds `HasFilter("[IsDeleted] = 0")` to every unique index on a BaseEntity-derived table. 20 unique indexes updated: Items, Partners, Warehouses, Locations, WorkCenters, Machines, Employees (EmployeeNumber + Email), UoM, ItemUoMConversions, Routings, RoutingOperations, BOMs, BOMLines, ProductionOrders, ProductionOrderMaterials, ProductionOrderOperations, MaterialIssues, ProductionReceipts, CustomsDeclarations (DeclarationNumber + MRN), CustomsDeclarationLines, MRNRegistries, GuaranteeAccounts, LONAuthorizations, ImportMappingProfiles, CodeListItems, DeclarationRules, TariffCodes, CustomsProcedures.
+
+**Why:** soft-delete is implemented via `BaseEntity.IsDeleted` flag + EF query filter `!e.IsDeleted`. But the unique indexes didn't include the same predicate, so re-inserting `Code=RM-001` after soft-deleting the old `RM-001` row would throw a unique-violation SQL error. Workaround was hard-delete on cleanup which loses audit history.
+
+**Migration shape:** EF regenerates each index by `DropIndex` + `CreateIndex` with `filter: "[IsDeleted] = 0"`. Down() reverts to unfiltered. Applied on VPS via container restart — SQL Server supports filtered indexes natively (no data change needed).
+
+**Files:**
+- `Directory.Build.props` — (from previous P6.18 commit, already live)
+- 9 `*Configuration.cs` files — `.IsUnique()` → `.IsUnique().HasFilter("[IsDeleted] = 0")`
+- 2 new migration files + snapshot update
+
+**Build:** `dotnet build` 0/0; `tests/LON.IntegrationTests` compiles clean.
+
+---
+
+## 2026-04-19 — P6.13 + P6.18: serialization bug triage + UTF-8 build safeguard
+
+**P6.13 (LocationDto serialization)** — investigated and closed as `[~] not-a-bug`. Live API returns `locationType: <int>` correctly populated (verified against `https://elon.elbosoft.click/api/MasterData/locations` as admin); frontend `LocationList`, `LocationInquiry`, `LocationForm` all consume `locationType` consistently. The WORK_PLAN entry referred to a `type: null` symptom that no longer reproduces, likely fixed upstream in a prior rename (Location entity field is `.Type` but DTO was renamed to `LocationType` at some point, and the frontend adapted).
+
+**P6.18 (UTF-8 source encoding)** — shipped root `Directory.Build.props` with `<CodePage>65001</CodePage>`. The C# compiler reads source files WITHOUT a BOM using the system ANSI codepage by default; on this Windows dev box (active codepage **866** per `chcp.com`), Cyrillic literals in `.cs` would be mis-decoded and produce mojibake in the DLL. With `CodePage=65001` the Csc MSBuild task receives an explicit UTF-8 hint and the compiled `LON.Infrastructure.dll` contains the correct UTF-16 LE bytes for `Скопје` (verified via `grep -P` on the raw DLL).
+
+VPS unaffected — Docker build runs on Linux with `C.UTF-8` locale, so production deploys were always correct. Verified `Tenants.Address` for TEKSPORT returns `"Скопје, Република Северна Македонија"`; no backfill needed.
+
+**Files:**
+- `Directory.Build.props` (new, 1 property) — applied to every .csproj under repo root.
+- `WORK_PLAN.md` — P6.13 closed `[~]`, P6.18 closed `[x]`.
+
+---
+
 ## 2026-04-19 — P6.37.14: Legacy sidebar cutover + role top-up seeder
 
 **Trigger:** User flagged „Настройки" како не-македонски збор (бугаризам / русизам). Поправено во сите активни фајлови (`mk.json`, `WORK_PLAN.md`, `docs/design/P6-37-ia.md`) → „Поставки". Останало историска референца во `SESSION_LOG.md` не-допрена (append-only).

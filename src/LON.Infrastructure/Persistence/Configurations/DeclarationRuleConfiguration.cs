@@ -17,7 +17,8 @@ public class DeclarationRuleConfiguration : IEntityTypeConfiguration<Declaration
             .HasMaxLength(50);
         
         builder.HasIndex(x => x.RuleCode)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
         
         builder.Property(x => x.FieldName)
             .IsRequired()

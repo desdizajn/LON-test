@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <!--
+      Force the C# compiler to read source files as UTF-8. Without this, on a
+      Windows developer box with a non-English system locale, the compiler
+      defaults to the system ANSI codepage and mis-decodes Cyrillic literals
+      in seed / error-message strings, producing mojibake in the compiled
+      assembly. Docker builds (Linux, C.UTF-8) were unaffected, so VPS deploys
+      were always correct — but direct `dotnet publish` from Windows could
+      silently corrupt `Tenants.Address`, `Warehouses.Address`, and every
+      hard-coded Macedonian error message. See WORK_PLAN P6.18.
+
+      65001 == UTF-8. This value is consumed by the Csc MSBuild task.
+    -->
+    <CodePage>65001</CodePage>
+  </PropertyGroup>
+
+</Project>

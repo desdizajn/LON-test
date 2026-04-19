@@ -31,7 +31,8 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         builder.HasIndex(e => new { e.TenantId, e.BaseCode });
 
         // Composite unique: two tenants can each have their own RM-001, FG-001, etc.
-        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+        // P6.32: filter on IsDeleted so soft-deleted rows don't block re-insert.
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -45,8 +46,8 @@ public class UnitOfMeasureConfiguration : IEntityTypeConfiguration<UnitOfMeasure
         builder.Property(e => e.Code).IsRequired().HasMaxLength(20);
         builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
         builder.Property(e => e.Symbol).HasMaxLength(10);
-        
-        builder.HasIndex(e => e.Code).IsUnique();
+
+        builder.HasIndex(e => e.Code).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -61,7 +62,7 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Address).HasMaxLength(500);
 
-        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -80,11 +81,11 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
         builder.Property(e => e.Bin).HasMaxLength(20);
         builder.Property(e => e.MaxCapacity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CurrentCapacity).HasColumnType("decimal(18,4)");
-        
+
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Warehouse).WithMany(w => w.Locations).HasForeignKey(e => e.WarehouseId).OnDelete(DeleteBehavior.Restrict);
-        
-        builder.HasIndex(e => new { e.WarehouseId, e.Code }).IsUnique();
+
+        builder.HasIndex(e => new { e.WarehouseId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -104,7 +105,7 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
         builder.Property(e => e.Phone).HasMaxLength(50);
         builder.Property(e => e.Country).HasMaxLength(3);
 
-        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -122,15 +123,15 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.Phone).HasMaxLength(50);
         builder.Property(e => e.Department).HasMaxLength(100);
         builder.Property(e => e.Position).HasMaxLength(100);
-        
-        builder.HasIndex(e => new { e.TenantId, e.EmployeeNumber }).IsUnique();
-        builder.HasIndex(e => new { e.TenantId, e.Email }).IsUnique();
-        
+
+        builder.HasIndex(e => new { e.TenantId, e.EmployeeNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(e => new { e.TenantId, e.Email }).IsUnique().HasFilter("[IsDeleted] = 0");
+
         builder.HasOne(e => e.Shift)
             .WithMany(s => s.Employees)
             .HasForeignKey(e => e.ShiftId)
             .OnDelete(DeleteBehavior.SetNull);
-        
+
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -147,7 +148,7 @@ public class WorkCenterConfiguration : IEntityTypeConfiguration<WorkCenter>
         builder.Property(e => e.StandardCostPerHour).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Capacity).HasColumnType("decimal(18,4)");
 
-        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -162,7 +163,7 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
         builder.Property(e => e.SerialNumber).HasMaxLength(100);
 
-        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -174,13 +175,13 @@ public class ItemUoMConversionConfiguration : IEntityTypeConfiguration<ItemUoMCo
         builder.ToTable("ItemUoMConversions");
         builder.HasKey(e => e.Id);
         builder.Property(e => e.ConversionFactor).HasColumnType("decimal(18,6)");
-        
+
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Item).WithMany(i => i.UoMConversions).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(e => e.FromUoM).WithMany().HasForeignKey(e => e.FromUoMId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.ToUoM).WithMany().HasForeignKey(e => e.ToUoMId).OnDelete(DeleteBehavior.Restrict);
-        
-        builder.HasIndex(e => new { e.ItemId, e.FromUoMId, e.ToUoMId }).IsUnique();
+
+        builder.HasIndex(e => new { e.ItemId, e.FromUoMId, e.ToUoMId }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

@@ -17,7 +17,8 @@ public class TariffCodeConfiguration : IEntityTypeConfiguration<TariffCode>
             .HasMaxLength(10);
         
         builder.HasIndex(x => x.TariffNumber)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
         
         builder.Property(x => x.TARBR)
             .HasMaxLength(4);  // 4 цифри (прва група)

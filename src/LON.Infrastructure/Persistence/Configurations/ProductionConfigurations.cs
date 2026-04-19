@@ -35,7 +35,7 @@ public class ProductionOrderConfiguration : IEntityTypeConfiguration<ProductionO
         builder.HasOne(e => e.BOM).WithMany().HasForeignKey(e => e.BOMId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Routing).WithMany().HasForeignKey(e => e.RoutingId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.TenantId, e.OrderNumber }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.OrderNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.PlannedStartDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
@@ -54,7 +54,7 @@ public class BOMConfiguration : IEntityTypeConfiguration<BOM>
         // Pair explicitly with Item.BOMs inverse to avoid shadow FK 'ItemId1'
         builder.HasOne(e => e.Item).WithMany(i => i.BOMs).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(e => new { e.ItemId, e.Version }).IsUnique();
+        builder.HasIndex(e => new { e.ItemId, e.Version }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -71,7 +71,7 @@ public class BOMLineConfiguration : IEntityTypeConfiguration<BOMLine>
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.BOMId, e.LineNumber }).IsUnique();
+        builder.HasIndex(e => new { e.BOMId, e.LineNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -90,7 +90,7 @@ public class MaterialIssueConfiguration : IEntityTypeConfiguration<MaterialIssue
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.TenantId, e.IssueNumber }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.IssueNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(e => e.ProductionOrderId);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -111,7 +111,7 @@ public class ProductionReceiptConfiguration : IEntityTypeConfiguration<Productio
         builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.TenantId, e.ReceiptNumber }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.ReceiptNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(e => e.ProductionOrderId);
         builder.HasIndex(e => e.BatchNumber);
         builder.HasQueryFilter(e => !e.IsDeleted);
@@ -134,7 +134,7 @@ public class ProductionOrderMaterialConfiguration : IEntityTypeConfiguration<Pro
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.ProductionOrderId, e.LineNumber }).IsUnique();
+        builder.HasIndex(e => new { e.ProductionOrderId, e.LineNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -153,7 +153,7 @@ public class ProductionOrderOperationConfiguration : IEntityTypeConfiguration<Pr
         builder.HasOne(e => e.WorkCenter).WithMany().HasForeignKey(e => e.WorkCenterId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Machine).WithMany().HasForeignKey(e => e.MachineId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.ProductionOrderId, e.SequenceNumber }).IsUnique();
+        builder.HasIndex(e => new { e.ProductionOrderId, e.SequenceNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -168,7 +168,7 @@ public class RoutingConfiguration : IEntityTypeConfiguration<Routing>
         
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.ItemId, e.Version }).IsUnique();
+        builder.HasIndex(e => new { e.ItemId, e.Version }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -186,7 +186,7 @@ public class RoutingOperationConfiguration : IEntityTypeConfiguration<RoutingOpe
         
         builder.HasOne(e => e.WorkCenter).WithMany().HasForeignKey(e => e.WorkCenterId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.RoutingId, e.SequenceNumber }).IsUnique();
+        builder.HasIndex(e => new { e.RoutingId, e.SequenceNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

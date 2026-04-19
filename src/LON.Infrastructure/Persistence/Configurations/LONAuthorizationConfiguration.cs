@@ -49,6 +49,7 @@ public class LONAuthorizationConfiguration : IEntityTypeConfiguration<LONAuthori
         // Индекси
         builder.HasIndex(x => new { x.TenantId, x.AuthorizationNumber })
             .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
             .HasDatabaseName("IX_LONAuthorizations_TenantId_AuthorizationNumber");
         
         builder.HasIndex(x => x.PartnerId)
