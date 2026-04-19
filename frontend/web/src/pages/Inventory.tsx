@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 import { wmsApi } from '../services/api';
 import ReceiptForm from '../components/WMS/ReceiptForm';
 import TransferForm from '../components/WMS/TransferForm';
@@ -6,11 +8,14 @@ import ShipmentForm from '../components/WMS/ShipmentForm';
 import CycleCountForm from '../components/WMS/CycleCountForm';
 import AdjustmentForm from '../components/WMS/AdjustmentForm';
 import QualityStatusChangeForm from '../components/WMS/QualityStatusChangeForm';
+import MoveBatchModal from '../components/WMS/MoveBatchModal';
 
 const Inventory: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeForm, setActiveForm] = useState<string | null>(null);
+  const [moveBatchRow, setMoveBatchRow] = useState<any | null>(null);
 
   useEffect(() => {
     loadInventory();
@@ -96,6 +101,7 @@ const Inventory: React.FC = () => {
               <th>MRN</th>
               <th>Quantity</th>
               <th>Quality Status</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,18 +115,46 @@ const Inventory: React.FC = () => {
                 <td>{inv.quantity.toFixed(2)} {inv.uoM?.code}</td>
                 <td>
                   <span className={`badge badge-${
-                    inv.qualityStatus === 1 ? 'success' : 
+                    inv.qualityStatus === 1 ? 'success' :
                     inv.qualityStatus === 2 ? 'danger' : 'warning'
                   }`}>
-                    {inv.qualityStatus === 1 ? 'OK' : 
+                    {inv.qualityStatus === 1 ? 'OK' :
                      inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine'}
                   </span>
+                </td>
+                <td>
+                  {inv.batchNumber && inv.quantity > 0 && (
+                    <button
+                      onClick={() => setMoveBatchRow(inv)}
+                      style={{ fontSize: 12, padding: '2px 8px' }}
+                    >
+                      🔀 {t('moveBatch.button')}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {moveBatchRow && (
+        <MoveBatchModal
+          defaultBatchNumber={moveBatchRow.batchNumber}
+          defaultWarehouseId={moveBatchRow.location?.warehouseId}
+          onCancel={() => setMoveBatchRow(null)}
+          onSuccess={(summary) => {
+            setMoveBatchRow(null);
+            toast.success(
+              t('moveBatch.success', {
+                count: summary.balancesMoved,
+                qty: summary.totalQty,
+              })
+            );
+            loadInventory();
+          }}
+        />
+      )}
     </div>
   );
 };

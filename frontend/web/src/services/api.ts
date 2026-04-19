@@ -47,6 +47,15 @@ export const wmsApi = {
 
   // P4.3 — MozniMinusi (negative-stock reconciliation)
   getMozniMinusi: () => api.get('/WMS/inventory/mozni-minusi'),
+
+  // P5.2.2 — one-click move of every balance for a batch to a target stage
+  moveBatch: (payload: {
+    batchNumber: string;
+    targetStage: number;
+    warehouseId?: string | null;
+    targetLocationId?: string | null;
+    reason?: string | null;
+  }) => api.post('/WMS/inventory/move-batch', payload),
   
   // Receipts
   getReceipts: (page: number = 1, pageSize: number = 20) => 

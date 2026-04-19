@@ -232,6 +232,25 @@
     "slotsHint": "Optional: split the waste into up to 4 buckets + a zaguba slot. Sum must equal total quantity.",
     "slotsSumMismatch": "Sum of slots ({{sum}}) differs from total ({{total}})"
   },
+  "moveBatch": {
+    "button": "Move",
+    "title": "Move batch across stages",
+    "hint": "All balances carrying this batch in the given warehouse will be transferred to a location of the selected type (Production / Shipping / Quarantine / …).",
+    "batchNumber": "Batch number",
+    "targetStage": "Target stage",
+    "reason": "Reason",
+    "submit": "Move all",
+    "success": "Moved {{count}} balance(s), total {{qty}} units."
+  },
+  "locationType": {
+    "Receiving": "Receiving",
+    "Storage": "Storage",
+    "Picking": "Picking",
+    "Production": "Production",
+    "Shipping": "Shipping",
+    "Quarantine": "Quarantine",
+    "Blocked": "Blocked"
+  },
   "import": {
     "title": "Data Import",
     "subtitle": "One universal wizard: Excel/CSV/TSV/JSON/XML → any entity.",

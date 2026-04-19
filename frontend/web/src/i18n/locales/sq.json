@@ -232,6 +232,25 @@
     "slotsHint": "Opsionale: ndani mbetjet në deri në 4 vende + një slot humbjeje. Shuma duhet të jetë e barabartë me totalin.",
     "slotsSumMismatch": "Shuma e vendeve ({{sum}}) ndryshon nga totali ({{total}})"
   },
+  "moveBatch": {
+    "button": "Zhvendos",
+    "title": "Zhvendos grupin (batch) nëpër faza",
+    "hint": "Të gjitha bilancet me këtë batch në depon e zgjedhur do të transferohen në një vendndodhje të tipit të zgjedhur (Prodhim / Dërgesa / Karantinë / …).",
+    "batchNumber": "Numri i batch-it",
+    "targetStage": "Faza e synuar",
+    "reason": "Arsyeja",
+    "submit": "Zhvendos të gjitha",
+    "success": "U zhvendosën {{count}} bilance, gjithsej {{qty}} njësi."
+  },
+  "locationType": {
+    "Receiving": "Pranim",
+    "Storage": "Magazinë",
+    "Picking": "Komisionim",
+    "Production": "Prodhim",
+    "Shipping": "Dërgesa",
+    "Quarantine": "Karantinë",
+    "Blocked": "Bllokuar"
+  },
   "import": {
     "title": "Importim i të dhënave",
     "subtitle": "Magjistar universal: Excel/CSV/TSV/JSON/XML → çdo entitet.",
