@@ -1,4 +1,5 @@
 using LON.Application.WMS.Commands.CreateReceipt;
+using LON.Application.WMS.Commands.MoveBatchAcrossStages;
 using LON.Application.WMS.Queries.MozniMinusi;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
@@ -82,6 +83,18 @@ public class WMSController : BaseController
     public async Task<IActionResult> GetMozniMinusi()
     {
         var result = await Mediator.Send(new MozniMinusiQuery());
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// P5.2.2 — one-click move of every InventoryBalance carrying the given
+    /// batch number to a target stage (LocationType). See command docs.
+    /// </summary>
+    [HttpPost("inventory/move-batch")]
+    public async Task<IActionResult> MoveBatchAcrossStages([FromBody] MoveBatchAcrossStagesCommand command)
+    {
+        var result = await Mediator.Send(command);
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }

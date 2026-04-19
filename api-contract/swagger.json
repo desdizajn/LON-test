@@ -4384,6 +4384,37 @@
         }
       }
     },
+    "/api/WMS/inventory/move-batch": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveBatchAcrossStagesCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveBatchAcrossStagesCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveBatchAcrossStagesCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/WMS/shipments": {
       "get": {
         "tags": [
@@ -5992,6 +6023,38 @@
           "locationId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MoveBatchAcrossStagesCommand": {
+        "type": "object",
+        "properties": {
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetStage": {
+            "$ref": "#/components/schemas/LocationType"
+          },
+          "warehouseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "targetLocationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
             "nullable": true
           }
         },

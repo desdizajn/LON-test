@@ -2490,6 +2490,23 @@ export interface paths {
       };
     };
   };
+  "/api/WMS/inventory/move-batch": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["MoveBatchAcrossStagesCommand"];
+          "text/json": components["schemas"]["MoveBatchAcrossStagesCommand"];
+          "application/*+json": components["schemas"]["MoveBatchAcrossStagesCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/WMS/shipments": {
     get: {
       parameters: {
@@ -3090,6 +3107,17 @@ export interface components {
       mrn?: string | null;
       /** Format: uuid */
       locationId?: string | null;
+    };
+    MoveBatchAcrossStagesCommand: {
+      batchNumber?: string | null;
+      targetStage?: components["schemas"]["LocationType"];
+      /** Format: uuid */
+      warehouseId?: string | null;
+      /** Format: uuid */
+      targetLocationId?: string | null;
+      /** Format: date-time */
+      movementDate?: string | null;
+      reason?: string | null;
     };
     PartnerRequest: {
       code?: string | null;
