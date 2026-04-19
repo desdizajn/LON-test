@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { guaranteeApi, masterDataApi } from '../services/api';
+import TrafficLightGuarantees from '../components/common/TrafficLightGuarantees';
 
 interface GuaranteeAccount {
   id: string;
@@ -144,6 +145,8 @@ const Guarantees: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <TrafficLightGuarantees />
 
       <h3 style={{ marginBottom: '15px' }}>Guarantee Accounts</h3>
       <div className="card-grid" style={{ marginBottom: '30px' }}>

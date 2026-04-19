@@ -42,8 +42,11 @@ export const analyticsApi = {
 
 export const wmsApi = {
   // Inventory
-  getInventory: (itemId?: string, locationId?: string) => 
+  getInventory: (itemId?: string, locationId?: string) =>
     api.get('/WMS/inventory', { params: { itemId, locationId } }),
+
+  // P4.3 — MozniMinusi (negative-stock reconciliation)
+  getMozniMinusi: () => api.get('/WMS/inventory/mozni-minusi'),
   
   // Receipts
   getReceipts: (page: number = 1, pageSize: number = 20) => 
@@ -126,12 +129,20 @@ export const productionApi = {
     api.post('/Production/scrap', data),
   
   // BOMs
-  getBOMs: (itemId?: string) => 
+  getBOMs: (itemId?: string) =>
     api.get('/Production/boms', { params: { itemId } }),
-  
+
   // Operations
-  updateOperation: (id: string, data: any) => 
+  updateOperation: (id: string, data: any) =>
     api.put(`/Production/operations/${id}`, data),
+
+  // P5.2.6 — Release PO (Draft → Released; expands BOM + Routing)
+  releaseOrder: (id: string) =>
+    api.post(`/Production/orders/${id}/release`),
+
+  // P5.2.1 — Bulk issue all remaining materials (FEFO auto-pick)
+  issueAllMaterials: (id: string, issueDate: string, issuedByEmployeeId?: string) =>
+    api.post(`/Production/orders/${id}/issues/bulk`, { issueDate, issuedByEmployeeId }),
 };
 
 export const customsApi = {
@@ -160,10 +171,25 @@ export const customsApi = {
     api.get(`/Customs/mrn-registry/${mrn}`),
   
   // Documents
-  uploadDocument: (formData: FormData) => 
+  uploadDocument: (formData: FormData) =>
     api.post('/Customs/documents', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
+
+  // P4.1 — Zaverka (customs certification)
+  certifyDeclaration: (id: string, zaverkaNumber: string, zaverkaDate: string) =>
+    api.post(`/Customs/declarations/${id}/certify`, { zaverkaNumber, zaverkaDate }),
+
+  // P4.2 — PEE060 monthly Zadolzuvanje/Razdolzuvanje XML download
+  generatePee060: (authorizationId: string, from: string, to: string) =>
+    api.get('/Customs/pee/060', {
+      params: { authorizationId, from, to },
+      responseType: 'blob',
+    }),
+
+  // P2.6c + P4.6 — Waste declaration with optional 4 slots + Zaguba
+  createWasteDeclaration: (data: any) =>
+    api.post('/Customs/declarations/waste', data),
 };
 
 export const guaranteeApi = {
@@ -188,6 +214,9 @@ export const guaranteeApi = {
   
   // Active Guarantees
   getActiveGuarantees: () => api.get('/Guarantee/active-guarantees'),
+
+  // P4.4 — Traffic-light indicator per guarantee account
+  getTrafficLights: () => api.get('/Guarantee/accounts/traffic-light'),
 };
 
 export const traceabilityApi = {

@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
     { id: 'movement-reports', label: '📈 Movement Reports', path: '/reports/movement-reports' },
     { id: 'cycle-count-accuracy', label: '🎯 Cycle Count Accuracy', path: '/reports/cycle-count-accuracy' },
     { id: 'warehouse-utilization', label: '🏭 Warehouse Utilization', path: '/reports/warehouse-utilization' },
+    { id: 'mozni-minusi', label: '⚠️ ' + t('mozniMinusi.title'), path: '/reports/mozni-minusi' },
   ];
 
   const advancedSubItems = [

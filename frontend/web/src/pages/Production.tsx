@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { productionApi } from '../services/api';
 import ProductionOrderForm from '../components/Production/ProductionOrderForm';
 import MaterialIssueForm from '../components/Production/MaterialIssueForm';
 import ProductionReceiptForm from '../components/Production/ProductionReceiptForm';
 
 const Production: React.FC = () => {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [showReceiptForm, setShowReceiptForm] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -51,6 +54,34 @@ const Production: React.FC = () => {
   const handleReceipt = (orderId: string) => {
     setSelectedOrderId(orderId);
     setShowReceiptForm(true);
+  };
+
+  // P5.2.6 — one-click Release (Draft → Released; expands BOM + Routing).
+  const handleRelease = async (orderId: string) => {
+    if (!window.confirm(t('production.releaseConfirm'))) return;
+    setBusyOrderId(orderId);
+    try {
+      await productionApi.releaseOrder(orderId);
+      await loadOrders();
+    } catch (e: any) {
+      alert(e?.response?.data?.errorMessage || t('production.releaseFailed'));
+    } finally {
+      setBusyOrderId(null);
+    }
+  };
+
+  // P5.2.1 — one-click bulk issue of all remaining materials (FEFO auto-pick).
+  const handleBulkIssue = async (orderId: string) => {
+    if (!window.confirm(t('production.bulkIssueConfirm'))) return;
+    setBusyOrderId(orderId);
+    try {
+      await productionApi.issueAllMaterials(orderId, new Date().toISOString());
+      await loadOrders();
+    } catch (e: any) {
+      alert(e?.response?.data?.errorMessage || t('production.bulkIssueFailed'));
+    } finally {
+      setBusyOrderId(null);
+    }
   };
 
   if (showOrderForm) {
@@ -116,24 +147,44 @@ const Production: React.FC = () => {
                 <td>{new Date(order.plannedStartDate).toLocaleDateString()}</td>
                 <td>{new Date(order.plannedEndDate).toLocaleDateString()}</td>
                 <td>
-                  {(order.status === 2 || order.status === 3) && (
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button 
-                        className="btn btn-sm btn-primary" 
-                        onClick={() => handleIssue(order.id)}
-                        title="Issue Materials"
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                    {order.status === 0 && (
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => handleRelease(order.id)}
+                        disabled={busyOrderId === order.id}
+                        title={t('production.release')}
                       >
-                        Issue
+                        {t('production.release')}
                       </button>
-                      <button 
-                        className="btn btn-sm btn-success" 
-                        onClick={() => handleReceipt(order.id)}
-                        title="Receive Finished Goods"
-                      >
-                        Receive
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {(order.status === 2 || order.status === 3) && (
+                      <>
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleIssue(order.id)}
+                          title="Issue Materials"
+                        >
+                          Issue
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => handleBulkIssue(order.id)}
+                          disabled={busyOrderId === order.id}
+                          title={t('production.bulkIssue')}
+                        >
+                          {t('production.bulkIssue')}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => handleReceipt(order.id)}
+                          title="Receive Finished Goods"
+                        >
+                          Receive
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
