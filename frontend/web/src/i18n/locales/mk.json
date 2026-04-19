@@ -4,6 +4,26 @@
     "tagline": "Производство + WMS + Царина",
     "welcome": "Добредојдовте, {{name}}!"
   },
+  "topBar": {
+    "search": "Пребарај",
+    "searchPlaceholder": "Декларација, MRN, lot, налог, shipment, PO, вработен...",
+    "searchComingSoonBody": "Универзалното пребарување ќе пребарува преку декларации, MRN, lots, производни налози, shipments, PO и вработени (scope по улога). Backend е во TODO — ќе биде активирано во P2.X.",
+    "aiAssistant": "AI асистент",
+    "import": "Импорт"
+  },
+  "placeholder": {
+    "comingSoon": "🚧 Во изработка",
+    "comingSoonSubtitle": "Овој приказ сè уште не е имплементиран. Следи го work plan-от за статус.",
+    "plannedBehavior": "Планирано однесување",
+    "existingData": "Поврзани постоечки податоци",
+    "workPlanRef": "Work plan референца",
+    "backToDashboard": "Назад на контролна табла",
+    "status": {
+      "missing": "❌ Placeholder — backend не постои",
+      "partial": "⚠️ Партичен — backend делумно, views недостигаат",
+      "exists": "✅ Backend постои — алтернативен view"
+    }
+  },
   "common": {
     "save": "Зачувај",
     "cancel": "Откажи",
@@ -66,7 +86,127 @@
     "routings": "Технолошки процес",
     "workCenters": "Работни центри",
     "machines": "Машини",
-    "codeLists": "Шифрарници"
+    "codeLists": "Шифрарници",
+    "legacySectionLabel": "⚠️ Во миграција (P6.37)",
+    "groupEmpty": "Ставките сè уште не се пополнети",
+    "groupEmptyHint": "Групата чека item-wire-up во следен P6.37 подтаск",
+    "groups": {
+      "warehouse": "Магацин",
+      "customs": "Царински оддел",
+      "production": "Производство",
+      "finishedGoods": "Готов производ",
+      "hr": "Човечки ресурси",
+      "machines": "Машини, оддели и ефикасност",
+      "finance": "Финансии",
+      "management": "Менаџмент",
+      "settings": "Настройки"
+    },
+    "settings": {
+      "partners": "Клиенти / Партнери",
+      "items": "Артикли",
+      "boms": "Нормативи (BOM)",
+      "routings": "Технолошки процеси",
+      "warehouses": "Магацини",
+      "locations": "Локации",
+      "uom": "Мерни единици",
+      "codeLists": "Шифрарници",
+      "workCenters": "Работни центри",
+      "machines": "Машини",
+      "users": "Корисници",
+      "roles": "Улоги",
+      "tenants": "Тенанти"
+    },
+    "warehouse": {
+      "receipts": "Прием",
+      "incoming": "Чека прием",
+      "qcHold": "Блокирано од QC",
+      "issuesToday": "Издавање денес",
+      "transfers": "Трансфери",
+      "stockByCustomer": "Состојба по клиентски материјал",
+      "variance": "Недостиг / Вишок / Разлика",
+      "readyToShip": "Готово за shipment",
+      "search": "Пребарување"
+    },
+    "customs": {
+      "authorizations": "Царински предмети",
+      "importDocs": "Увозни документи",
+      "exportDocs": "Извозни документи",
+      "traceability": "Материјал ↔ налог ↔ shipment",
+      "deadlines": "Статуси и рокови",
+      "openItems": "Нераздолжени ставки",
+      "guarantees": "Царинска гаранција",
+      "search": "Пребарување"
+    },
+    "production": {
+      "today": "Денешен план",
+      "cuttingQueue": "Queue за кроење",
+      "sewingQueue": "Queue за шиење",
+      "wip": "WIP по налог",
+      "atRisk": "Налози во ризик",
+      "shortage": "Shortage за денес",
+      "minutesVariance": "Минути план vs стварно",
+      "rework": "Rework / waste",
+      "completed": "Завршени налози",
+      "search": "Пребарување"
+    },
+    "finishedGoods": {
+      "awaitingPack": "Чекаат пакување",
+      "packing": "Во тек на пакување",
+      "readyToShip": "Спремно за shipment",
+      "shipped": "Испратено",
+      "packLists": "Pack lists / етикети",
+      "packagingStock": "Паковни материјали",
+      "returns": "Враќања / рекламации",
+      "historyByCustomer": "Историја по клиент",
+      "traceability": "Следливост (парче → декларација)"
+    },
+    "hr": {
+      "employees": "Вработени",
+      "attendanceToday": "Присуство денес",
+      "shifts": "Смени",
+      "absences": "Изостаноци",
+      "overtime": "Overtime",
+      "performance": "Учин по оператор",
+      "assignment": "Assignment (оператор ↔ машина)",
+      "training": "Тренинзи / сертификати",
+      "payrollExport": "Часови за плата"
+    },
+    "machines": {
+      "status": "Машини (live status)",
+      "workCenters": "Work centers / Линии",
+      "downtime": "Downtime",
+      "oee": "OEE по машина / линија",
+      "maintenancePlan": "Maintenance план",
+      "maintenanceHistory": "Maintenance историја",
+      "capacity": "Искористеност на капацитет",
+      "setupTime": "Setup time анализа",
+      "bottleneck": "Bottleneck за денес"
+    },
+    "finance": {
+      "invoicing": "Фактурирање",
+      "contracts": "Договори + rates",
+      "guarantees": "Царинска гаранција",
+      "costAccounting": "Cost accounting",
+      "margin": "Маржа по клиент / налог",
+      "ap": "Добавувач invoices",
+      "payroll": "Плати (aggregate)",
+      "pnl": "P&L preview",
+      "cashFlow": "Cash flow forecast",
+      "reports": "Финансиски извештаи"
+    },
+    "management": {
+      "dashboard": "KPI Dashboard",
+      "onTime": "On-time delivery",
+      "capacity": "Capacity utilization",
+      "byCustomer": "Производство по клиент",
+      "margin": "Маржа по клиент",
+      "alerts": "Exception alerts",
+      "risks": "Open risks",
+      "trends": "Трендови",
+      "escalations": "Escalations (доцнење)",
+      "clientScorecard": "Client scorecard",
+      "monthlyPack": "Monthly review pack"
+    }
   },
   "login": {
     "title": "LON Систем",

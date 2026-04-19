@@ -2,6 +2,86 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.37.0–P6.37.12: Sidebar IA redesign, role + process driven
+
+**Trigger:** User feedback that `Dashboard / Inventory / Production / Customs / Guarantees / Traceability / KB / Reports / Advanced / Admin / MasterData` flat sidebar is **organized by architectural modules, not by how work actually happens**. Factory sells **stitching service** (minutes, capacity, on-time delivery) not finished goods — nav must reflect **job roles + daily tasks + process flow + critical decisions**.
+
+**Scope (13 subtasks P6.37.0 → P6.37.12):**
+
+**P6.37.0 — Design + breakdown**
+- `docs/design/P6-37-ia.md` created as single source of truth
+- 9 groups mapped: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Настройки
+- 11-role × 9-group visibility matrix defined
+- ~80 nav items with honest backend status (missing / partial / exists)
+- Route migration table from old → new paths
+- WORK_PLAN P6.37 broken into P6.37.0–P6.37.15
+
+**P6.37.1 — Role infrastructure verified**
+- Backend `AuthService.cs` already adds `ClaimTypes.Role` + `Permission` claims to JWT ✓
+- Frontend `authService.getCurrentUser()` already exposes `user.roles: string[]` + `.hasRole()` helper ✓
+- VPS query: 4 seeded roles (Administrator, Warehouse Manager, Production Manager, Viewer) — 7 more (Customs Officer, Production Operator, QC, HR Manager, Maintenance Tech, Finance Clerk, Warehouse Operator) deferred to P6.37.14
+
+**P6.37.2 — `PlaceholderPage` component**
+- `frontend/web/src/components/common/PlaceholderPage.tsx` — breadcrumb + title + status pill (missing/partial/exists) + planned behavior + existing data hint + WORK_PLAN ref + back-to-dashboard
+- i18n keys `placeholder.*` in all 4 languages
+
+**P6.37.3 — Sidebar refactor**
+- `frontend/web/src/nav/types.ts` — TypeScript types (`NavGroup`, `NavItem`, `BackendStatus`)
+- `frontend/web/src/nav/navGroups.ts` — 9 groups + Settings group with per-group `allowedRoles`
+- `frontend/web/src/nav/useNavForRoles.ts` — hook returns visible groups per current user's roles (Administrator sees everything including Settings)
+- `frontend/web/src/components/Sidebar.tsx` — renders role-aware groups at top + legacy flat sidebar preserved as "⚠️ Во миграција" section beneath (both work simultaneously; legacy removed in P6.37.14)
+- Group expand/collapse state persisted in `localStorage['lon.nav.expandedGroups']`
+
+**P6.37.4 — TopBar cross-cutting tools**
+- `frontend/web/src/components/TopBar.tsx` — sticky 56px bar rendered in `ProtectedLayout` above `<Outlet>`
+- 🔍 Universal Search (modal stub — backend TODO)
+- 🧠 AI assistant (→ existing `/knowledge-base`)
+- 📥 Import (admin-only → existing `/tools/import`)
+- User identity (name + primary role) + 🚪 Logout
+- All cross-cutting tools now **shared across roles** (out of role-specific nav groups)
+
+**P6.37.5–P6.37.12 — All 8 nav groups wired**
+- 🏭 Warehouse (9 items): receipts, incoming, qc-hold, issues-today, transfers, stock-by-customer, variance, ready-to-ship, search
+- 🛃 Customs (8 items): authorizations, import-docs, export-docs, traceability, deadlines, open-items, guarantees, search
+- ✂️ Production (10 items): today, cutting-queue, sewing-queue, wip, at-risk, shortage, minutes-variance, rework, completed, search
+- 📦 Finished Goods (9 items): awaiting-pack, packing, ready-to-ship, shipped, pack-lists, packaging-stock, returns, history-by-customer, traceability
+- 👥 HR (9 items): employees, attendance-today, shifts, absences, overtime, performance, assignment, training, payroll-export
+- ⚙️ Machines (9 items): status, work-centers, downtime, oee, maintenance-plan, maintenance-history, capacity, setup-time, bottleneck
+- 💵 Finance (10 items): invoicing, contracts, guarantees, cost-accounting, margin, ap, payroll, pnl, cash-flow, reports
+- 🎯 Management (11 items): dashboard, on-time, capacity, by-customer, margin, alerts, risks, trends, escalations, client-scorecard, monthly-pack
+- 🧰 Settings (13 items, admin-only): master data + user/role/tenant mgmt
+
+For each item:
+- Nav config entry in `navGroups.ts` with backend status + work plan ref + planned behavior + existing data hint
+- i18n label key added to all 4 locales (mk primary; sr/sq/en with local translations)
+- Route registration in `App.tsx`: existing pages reused where backend ready (Receipt → `<Inventory>`, issues-today → `<PickTaskList>`, stock-by-customer → `<InventoryByMRN>`, customs import-docs → `<Customs>`, traceability → `<Traceability>`, customs guarantees → `<Guarantees>`, hr/employees → `<EmployeeManagement>`, hr/shifts → `<ShiftManagement>`, machines/work-centers → `<WorkCenterList>`, management/dashboard → `<Dashboard>`, finance/guarantees → `<Guarantees>`, production/today → `<Production>`); remaining ~55 items → `<PlaceholderPage>` with honest TODO reference
+
+**Bundle impact (gzipped):**
+- Before: 284.72 kB
+- After: 309.34 kB (+24.62 kB for IA config + PlaceholderPage + TopBar + ~55 placeholder routes + i18n keys in 4 languages)
+
+**Honest scope limits (known, deferred):**
+- Legacy flat sidebar section NOT removed yet — kept beneath new role-aware groups for stability. Cutover + `<Navigate>` redirects = P6.37.14.
+- 7 roles (Customs Officer, Production Operator, QC, HR Manager, Maintenance Tech, Finance Clerk, Warehouse Operator) not yet seeded. Without them, role-based filtering can't be UI-smoked for those personas. Seed + test users = P6.37.14.
+- `design:accessibility-review` audit across full app = P6.37.15 (deferred to avoid scope creep).
+- Real Macedonian translations are authoritative; sr/sq have first-pass copy; en has first-pass copy. Professional translation pass belongs to P2.5.4 retrofit.
+
+**Files touched:**
+- NEW: `docs/design/P6-37-ia.md`
+- NEW: `frontend/web/src/nav/{types,navGroups,useNavForRoles}.ts`
+- NEW: `frontend/web/src/components/{TopBar,common/PlaceholderPage}.tsx`
+- Modified: `frontend/web/src/components/Sidebar.tsx` (legacy code preserved)
+- Modified: `frontend/web/src/App.tsx` (TopBar wired + ~55 new routes)
+- Modified: `frontend/web/src/i18n/locales/{mk,sr,sq,en}.json`
+- Modified: `WORK_PLAN.md` (P6.37 broken into 16 subtasks)
+
+**Verification done:**
+- 8 successful `npm run build` runs as each group was wired (no TypeScript errors, no JSON syntax errors)
+- Role filtering verified at code level (hook returns correct groups for Administrator vs Warehouse Manager vs Manager)
+- VPS deploy + live per-role smoke = P6.37.14 (next)
+
+---
+
 ## 2026-04-19 — Frontend catch-up + KW12 customs/invoice/guarantee seed
 
 **Trigger:** user screenshot review — „фронтендот не е мрднат", KW12 data only partially reflected.

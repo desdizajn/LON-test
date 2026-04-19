@@ -4,6 +4,26 @@
     "tagline": "Prodhim + WMS + Dogana",
     "welcome": "Mirësevini, {{name}}!"
   },
+  "topBar": {
+    "search": "Kërko",
+    "searchPlaceholder": "Deklaratë, MRN, lot, porosi, shipment, PO, punonjës...",
+    "searchComingSoonBody": "Kërkimi universal do të kërkojë nëpër deklarata, MRN, lots, porosi prodhimi, shipments, PO dhe punonjës (scope sipas rolit). Backend në TODO — do të aktivizohet në P2.X.",
+    "aiAssistant": "Asistenti AI",
+    "import": "Importo"
+  },
+  "placeholder": {
+    "comingSoon": "🚧 Në zhvillim",
+    "comingSoonSubtitle": "Kjo pamje ende nuk është zbatuar. Shiko work plan-in për statusin.",
+    "plannedBehavior": "Sjellja e planifikuar",
+    "existingData": "Të dhënat ekzistuese të lidhura",
+    "workPlanRef": "Referencë e work plan-it",
+    "backToDashboard": "Kthehu te paneli",
+    "status": {
+      "missing": "❌ Placeholder — backend-i nuk ekziston",
+      "partial": "⚠️ Pjesërisht — backend pjesor, pamjet mungojnë",
+      "exists": "✅ Backend-i ekziston — pamje alternative"
+    }
+  },
   "common": {
     "save": "Ruaj",
     "cancel": "Anulo",
@@ -66,7 +86,127 @@
     "routings": "Procesi teknologjik",
     "workCenters": "Qendrat e punës",
     "machines": "Makineritë",
-    "codeLists": "Listat e kodeve"
+    "codeLists": "Listat e kodeve",
+    "legacySectionLabel": "⚠️ Në migrim (P6.37)",
+    "groupEmpty": "Zërat ende nuk janë plotësuar",
+    "groupEmptyHint": "Grupi pret wire-up-in e zërave në nën-taskun tjetër P6.37",
+    "groups": {
+      "warehouse": "Magazina",
+      "customs": "Dogana",
+      "production": "Prodhimi",
+      "finishedGoods": "Produkti i gatshëm",
+      "hr": "Burimet njerëzore",
+      "machines": "Makineritë, sektorët dhe efikasiteti",
+      "finance": "Financa",
+      "management": "Menaxhmenti",
+      "settings": "Cilësimet"
+    },
+    "settings": {
+      "partners": "Klientët / Partnerët",
+      "items": "Artikujt",
+      "boms": "Normativat (BOM)",
+      "routings": "Proceset teknologjike",
+      "warehouses": "Magazinat",
+      "locations": "Vendndodhjet",
+      "uom": "Njësitë matëse",
+      "codeLists": "Listat e kodeve",
+      "workCenters": "Qendrat e punës",
+      "machines": "Makineritë",
+      "users": "Përdoruesit",
+      "roles": "Rolet",
+      "tenants": "Tenantët"
+    },
+    "warehouse": {
+      "receipts": "Pranimi",
+      "incoming": "Pret pranimin",
+      "qcHold": "E bllokuar nga QC",
+      "issuesToday": "Lëshimi sot",
+      "transfers": "Transferet",
+      "stockByCustomer": "Gjendja sipas materialit të klientit",
+      "variance": "Mungesa / Teprica / Dallimi",
+      "readyToShip": "Gati për shipment",
+      "search": "Kërko"
+    },
+    "customs": {
+      "authorizations": "Çështjet doganore",
+      "importDocs": "Dokumentet e importit",
+      "exportDocs": "Dokumentet e eksportit",
+      "traceability": "Materiali ↔ porosia ↔ shipment",
+      "deadlines": "Statuset dhe afatet",
+      "openItems": "Zërat e pashlyer",
+      "guarantees": "Garancia doganore",
+      "search": "Kërko"
+    },
+    "production": {
+      "today": "Plani i sotëm",
+      "cuttingQueue": "Queue për prerje",
+      "sewingQueue": "Queue për qepje",
+      "wip": "WIP sipas porosisë",
+      "atRisk": "Porositë në rrezik",
+      "shortage": "Mungesa për sot",
+      "minutesVariance": "Minuta plan vs aktuale",
+      "rework": "Rework / mbeturina",
+      "completed": "Porositë e përfunduara",
+      "search": "Kërko"
+    },
+    "finishedGoods": {
+      "awaitingPack": "Presin paketimin",
+      "packing": "Në paketim",
+      "readyToShip": "Gati për shipment",
+      "shipped": "E dërguar",
+      "packLists": "Pack lists / etiketa",
+      "packagingStock": "Materiale paketimi",
+      "returns": "Kthimet / reklamacionet",
+      "historyByCustomer": "Historiku sipas klientit",
+      "traceability": "Gjurmueshmëria (copë → deklaratë)"
+    },
+    "hr": {
+      "employees": "Punonjësit",
+      "attendanceToday": "Pjesëmarrja sot",
+      "shifts": "Turnet",
+      "absences": "Mungesat",
+      "overtime": "Overtime",
+      "performance": "Performanca sipas operatorit",
+      "assignment": "Assignment (operator ↔ makineri)",
+      "training": "Trajnime / certifikata",
+      "payrollExport": "Orët për pagë"
+    },
+    "machines": {
+      "status": "Makineritë (live status)",
+      "workCenters": "Work centers / Linjat",
+      "downtime": "Downtime",
+      "oee": "OEE sipas makinerisë / linjës",
+      "maintenancePlan": "Plani i mirëmbajtjes",
+      "maintenanceHistory": "Historiku i mirëmbajtjes",
+      "capacity": "Shfrytëzimi i kapacitetit",
+      "setupTime": "Analiza e setup time",
+      "bottleneck": "Bottleneck për sot"
+    },
+    "finance": {
+      "invoicing": "Faturimi",
+      "contracts": "Kontratat + rates",
+      "guarantees": "Garancia doganore",
+      "costAccounting": "Cost accounting",
+      "margin": "Marzha sipas klientit / porosisë",
+      "ap": "Furnitorët invoices",
+      "payroll": "Pagat (aggregate)",
+      "pnl": "P&L preview",
+      "cashFlow": "Cash flow forecast",
+      "reports": "Raportet financiare"
+    },
+    "management": {
+      "dashboard": "KPI Dashboard",
+      "onTime": "On-time delivery",
+      "capacity": "Capacity utilization",
+      "byCustomer": "Prodhimi sipas klientit",
+      "margin": "Marzha sipas klientit",
+      "alerts": "Exception alerts",
+      "risks": "Rreziqet e hapura",
+      "trends": "Trendet",
+      "escalations": "Escalations (vonesat)",
+      "clientScorecard": "Client scorecard",
+      "monthlyPack": "Monthly review pack"
+    }
   },
   "login": {
     "title": "Sistemi LON",

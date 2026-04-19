@@ -4,6 +4,26 @@
     "tagline": "Production + WMS + Customs",
     "welcome": "Welcome, {{name}}!"
   },
+  "topBar": {
+    "search": "Search",
+    "searchPlaceholder": "Declaration, MRN, lot, order, shipment, PO, employee...",
+    "searchComingSoonBody": "Universal search will span declarations, MRN, lots, production orders, shipments, POs and employees (scoped by role). Backend TODO — activating in P2.X.",
+    "aiAssistant": "AI assistant",
+    "import": "Import"
+  },
+  "placeholder": {
+    "comingSoon": "🚧 Under construction",
+    "comingSoonSubtitle": "This view is not implemented yet. Follow the work plan for status.",
+    "plannedBehavior": "Planned behavior",
+    "existingData": "Related existing data",
+    "workPlanRef": "Work plan reference",
+    "backToDashboard": "Back to dashboard",
+    "status": {
+      "missing": "❌ Placeholder — no backend yet",
+      "partial": "⚠️ Partial — backend exists but views missing",
+      "exists": "✅ Backend exists — alternative view"
+    }
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -66,7 +86,127 @@
     "routings": "Routings",
     "workCenters": "Work Centers",
     "machines": "Machines",
-    "codeLists": "Code Lists"
+    "codeLists": "Code Lists",
+    "legacySectionLabel": "⚠️ Being migrated (P6.37)",
+    "groupEmpty": "Items not wired up yet",
+    "groupEmptyHint": "Group awaits item wire-up in an upcoming P6.37 subtask",
+    "groups": {
+      "warehouse": "Warehouse",
+      "customs": "Customs",
+      "production": "Production",
+      "finishedGoods": "Finished Goods",
+      "hr": "Human Resources",
+      "machines": "Machines, Work Centers & Efficiency",
+      "finance": "Finance",
+      "management": "Management",
+      "settings": "Settings"
+    },
+    "settings": {
+      "partners": "Customers / Partners",
+      "items": "Items",
+      "boms": "BOMs",
+      "routings": "Routings",
+      "warehouses": "Warehouses",
+      "locations": "Locations",
+      "uom": "Units of Measure",
+      "codeLists": "Code Lists",
+      "workCenters": "Work Centers",
+      "machines": "Machines",
+      "users": "Users",
+      "roles": "Roles",
+      "tenants": "Tenants"
+    },
+    "warehouse": {
+      "receipts": "Receipts",
+      "incoming": "Awaiting receipt",
+      "qcHold": "On QC hold",
+      "issuesToday": "Issues today",
+      "transfers": "Transfers",
+      "stockByCustomer": "Stock by customer material",
+      "variance": "Shortage / Surplus / Variance",
+      "readyToShip": "Ready to ship",
+      "search": "Search"
+    },
+    "customs": {
+      "authorizations": "Customs authorizations",
+      "importDocs": "Import documents",
+      "exportDocs": "Export documents",
+      "traceability": "Material ↔ order ↔ shipment",
+      "deadlines": "Statuses & deadlines",
+      "openItems": "Open (unsettled) items",
+      "guarantees": "Customs guarantee",
+      "search": "Search"
+    },
+    "production": {
+      "today": "Today's plan",
+      "cuttingQueue": "Cutting queue",
+      "sewingQueue": "Sewing queue",
+      "wip": "WIP by order",
+      "atRisk": "Orders at risk",
+      "shortage": "Shortage for today",
+      "minutesVariance": "Minutes plan vs actual",
+      "rework": "Rework / waste",
+      "completed": "Completed orders",
+      "search": "Search"
+    },
+    "finishedGoods": {
+      "awaitingPack": "Awaiting pack",
+      "packing": "Packing in progress",
+      "readyToShip": "Ready to ship",
+      "shipped": "Shipped",
+      "packLists": "Pack lists / labels",
+      "packagingStock": "Packaging materials",
+      "returns": "Returns / RMA",
+      "historyByCustomer": "History by customer",
+      "traceability": "Traceability (piece → declaration)"
+    },
+    "hr": {
+      "employees": "Employees",
+      "attendanceToday": "Attendance today",
+      "shifts": "Shifts",
+      "absences": "Absences",
+      "overtime": "Overtime",
+      "performance": "Performance by operator",
+      "assignment": "Assignment (operator ↔ machine)",
+      "training": "Training / certifications",
+      "payrollExport": "Hours for payroll"
+    },
+    "machines": {
+      "status": "Machines (live status)",
+      "workCenters": "Work centers / Lines",
+      "downtime": "Downtime",
+      "oee": "OEE by machine / line",
+      "maintenancePlan": "Maintenance plan",
+      "maintenanceHistory": "Maintenance history",
+      "capacity": "Capacity utilization",
+      "setupTime": "Setup time analysis",
+      "bottleneck": "Bottleneck for today"
+    },
+    "finance": {
+      "invoicing": "Invoicing",
+      "contracts": "Contracts + rates",
+      "guarantees": "Customs guarantee",
+      "costAccounting": "Cost accounting",
+      "margin": "Margin by customer / order",
+      "ap": "Vendor invoices (AP)",
+      "payroll": "Payroll (aggregate)",
+      "pnl": "P&L preview",
+      "cashFlow": "Cash flow forecast",
+      "reports": "Financial reports"
+    },
+    "management": {
+      "dashboard": "KPI Dashboard",
+      "onTime": "On-time delivery",
+      "capacity": "Capacity utilization",
+      "byCustomer": "Production by customer",
+      "margin": "Margin by customer",
+      "alerts": "Exception alerts",
+      "risks": "Open risks",
+      "trends": "Trends",
+      "escalations": "Escalations (delays)",
+      "clientScorecard": "Client scorecard",
+      "monthlyPack": "Monthly review pack"
+    }
   },
   "login": {
     "title": "LON System",

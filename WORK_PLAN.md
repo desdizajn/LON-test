@@ -74,7 +74,23 @@
 - [ ] **P6.34** — **KW12 import wizard preset / multi-sheet upload.** User should drag `KW12.xlsx` in one go; wizard detects the 3 sheets (Matriks / Faktura / Transport) and runs them in the right order (Items → Customs declaration from Transport+Faktura → Matriks → Receipts) with defaults pre-filled (warehouseCode=222, partnerCode=TEXPORT-AT, procedureCode=4200, lonAuthorizationId=26/TEKSPORT/0001). Current: 3 manual CSV slices + 3 separate imports.
 - [ ] **P6.35** — **BOMs import target with working commit path.** Schema exists, executor still a stub. Needed so Matriks-style files can produce reusable `BOM + BOMLine` records (not just per-PO `ProductionOrderMaterial`). Blocks "template auto-apply" (P5.3.1).
 - [ ] **P6.36** — **Waste / calculations / controls UI wiring.** Backend (P2.3 MRN consume, P2.2 guarantee auto-debit, P4.6 waste slots, I2 landing-costs, I3 duty-rate warnings, I5 SAD advisories, P2.7 rule engine) is live but the Customs/Production/Guarantees pages don't surface them: no per-line duty breakdown, no MRN consumption meter, no waste-slot preview, no advisory panel. Needs a design pass per page (tie to P6.37).
-- [ ] **P6.37** — **Sidebar + information architecture redesign (UX/UI).** Current sidebar is ordered by build sequence, not by workflow. Use `design:design-critique` + `design:design-system` skills to: (a) group by the 5 user-facing domains (Daily Ops / Master Data / Customs Compliance / Admin / Reports), (b) move frequently-used actions (Issue / Release / Receipt) up the nav, (c) collapse "build-phase remnants" like `📥 Увоз на податоци` under a proper "Tools" section, (d) check whole app against the [design:accessibility-review] skill.
+- [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Настройки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
+  - [x] **P6.37.0** — IA design doc (`docs/design/P6-37-ia.md`) + WORK_PLAN breakdown + TodoWrite — *2026-04-19*
+  - [ ] **P6.37.1** — Verify seeded roles + audit frontend AuthService / JWT role claim exposure
+  - [ ] **P6.37.2** — `PlaceholderPage` component + route convention (title + WORK_PLAN link + "Coming soon")
+  - [ ] **P6.37.3** — Sidebar refactor: role-aware filtering (`useNavForRoles`) + collapsible groups + localStorage persist
+  - [ ] **P6.37.4** — Cross-cutting bar (Search modal stub / AI / Import admin-only / Language)
+  - [ ] **P6.37.5** — 🏭 Warehouse group (**pilot**): 9 items (3 existing, 1 partial, 5 placeholders)
+  - [ ] **P6.37.6** — 🛃 Customs group: 8 items
+  - [ ] **P6.37.7** — ✂️ Production group: 10 items
+  - [ ] **P6.37.8** — 📦 Finished Goods group: 9 items
+  - [ ] **P6.37.9** — 👥 HR group: 9 items
+  - [ ] **P6.37.10** — ⚙️ Machines / Work Centers / Efficiency group: 9 items
+  - [ ] **P6.37.11** — 💵 Finance group: 10 items
+  - [ ] **P6.37.12** — 🎯 Management (KPI) group: 11 items
+  - [ ] **P6.37.13** — i18n keys `nav.<group>.<item>` × 4 languages (mk primary, sr/sq/en mk-fallback; proper translation → P2.5.4)
+  - [ ] **P6.37.14** — VPS deploy + per-role smoke (seed Customs Officer / Production Manager / HR / Finance users) + SESSION_LOG + commit
+  - [ ] **P6.37.15** — (follow-up, deferred) `design:accessibility-review` audit across full app
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
 - [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)

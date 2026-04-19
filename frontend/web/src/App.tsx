@@ -9,6 +9,7 @@ import Customs from './pages/Customs';
 import Guarantees from './pages/Guarantees';
 import Traceability from './pages/Traceability';
 import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 
 // User Management
 import Login from './pages/Login';
@@ -61,6 +62,9 @@ import MRNUsageTracking from './pages/Advanced/MRNUsageTracking';
 import LocationInquiry from './pages/Advanced/LocationInquiry';
 import ItemInquiry from './pages/Advanced/ItemInquiry';
 
+// P6.37 IA — placeholder component for unbuilt views
+import PlaceholderPage from './components/common/PlaceholderPage';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -99,8 +103,11 @@ const ProtectedLayout: React.FC<{
   return (
     <>
       <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
-      <div className="main-content">
-        <Outlet />
+      <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <TopBar />
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <Outlet />
+        </div>
       </div>
     </>
   );
@@ -154,6 +161,795 @@ const App: React.FC = () => {
             <Route path="/advanced/mrn-usage-tracking" element={<MRNUsageTracking />} />
             <Route path="/advanced/location-inquiry" element={<LocationInquiry />} />
             <Route path="/advanced/item-inquiry" element={<ItemInquiry />} />
+
+            {/* ───────── P6.37.5 — 🏭 Warehouse group (pilot) ───────── */}
+            <Route path="/warehouse/receipts" element={<Inventory />} />
+            <Route
+              path="/warehouse/incoming"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.incoming"
+                  workPlanRef="P2.X — ASN (advance shipment notice) backend"
+                  backendStatus="missing"
+                  plannedBehavior="Листа на најавени пратки: клиент, очекуван датум, shipment #, MRN (ако е познат), очекувана qty. Кога физички материјал пристигне, магационер го конвертира во Receipt."
+                />
+              }
+            />
+            <Route
+              path="/warehouse/qc-hold"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.qcHold"
+                  workPlanRef="P6.36 — QC hold view"
+                  backendStatus="partial"
+                  plannedBehavior="Листа на ставки со QualityStatus = QC hold / rejected. Actions: release, escalate, reject definitivno."
+                  existingDataHint="Blocked Inventory извештај под /reports/blocked-inventory прикажува дел од ова. Ќе се преработи како работен view."
+                />
+              }
+            />
+            <Route path="/warehouse/issues-today" element={<PickTaskList />} />
+            <Route
+              path="/warehouse/transfers"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.transfers"
+                  workPlanRef="P1.X — inter-location transfers UI"
+                  backendStatus="missing"
+                  plannedBehavior="Создавање и следење на трансфери помеѓу локации внатре во ист магацин или помеѓу магацини (Скопје ↔ Виница). InventoryMovement.Type=Transfer."
+                />
+              }
+            />
+            <Route path="/warehouse/stock-by-customer" element={<InventoryByMRN />} />
+            <Route
+              path="/warehouse/variance"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.variance"
+                  workPlanRef="P4.X — cycle count + variance"
+                  backendStatus="missing"
+                  plannedBehavior="Разлики помеѓу очекувано и реално: (a) cycle count наспроти систем, (b) shortage спрема денешен план, (c) вишок без документ. Со експлицитни actions за поправка."
+                />
+              }
+            />
+            <Route
+              path="/warehouse/ready-to-ship"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.readyToShip"
+                  workPlanRef="P4.X — shipment staging"
+                  backendStatus="missing"
+                  plannedBehavior="Спакувани налози кои чекаат извозна декларација или transport. Статус + рок за pickup + pending документи."
+                />
+              }
+            />
+            <Route
+              path="/warehouse/search"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.warehouse"
+                  titleKey="nav.warehouse.search"
+                  workPlanRef="P2.X — warehouse-scoped search"
+                  backendStatus="partial"
+                  plannedBehavior="Scoped search само во магацински контекст (lot, MRN, receipt #, batch, location). Без cross-domain шум."
+                  existingDataHint="Cross-cutting Search во top bar постои како stub; овде ќе биде warehouse-scoped варијанта."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.6 — 🛃 Customs group ───────── */}
+            <Route
+              path="/customs/authorizations"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.customs"
+                  titleKey="nav.customs.authorizations"
+                  workPlanRef="P2.3.X — inward processing authorizations"
+                  backendStatus="missing"
+                  plannedBehavior="Активни царински дозволи за облагородување (LON authorizations) по тенант: број, важност, procedure code, преостаната количина."
+                />
+              }
+            />
+            <Route path="/customs/import-docs" element={<Customs />} />
+            <Route
+              path="/customs/export-docs"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.customs"
+                  titleKey="nav.customs.exportDocs"
+                  workPlanRef="P2.4.X — export declarations flow"
+                  backendStatus="missing"
+                  plannedBehavior="Листа на извозни декларации со статус, linkirани shipments и раздолжени увозни MRN позиции."
+                />
+              }
+            />
+            <Route path="/customs/traceability" element={<Traceability />} />
+            <Route
+              path="/customs/deadlines"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.customs"
+                  titleKey="nav.customs.deadlines"
+                  workPlanRef="P2.3.X — deadline watcher"
+                  backendStatus="missing"
+                  plannedBehavior="Deadline-driven листа: MRN и authorizations што истекуваат за N дена. Filter „истекува за: <7, <30, <90 дена“."
+                />
+              }
+            />
+            <Route
+              path="/customs/open-items"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.customs"
+                  titleKey="nav.customs.openItems"
+                  workPlanRef="P2.3.X — open-items reconciliation"
+                  backendStatus="missing"
+                  plannedBehavior="Нераздолжени ставки: MRN позиции каде consumed qty < imported qty и не е поврзано со извозна декларација. Критично за царински ризик."
+                />
+              }
+            />
+            <Route path="/customs/guarantees" element={<Guarantees />} />
+            <Route
+              path="/customs/search"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.customs"
+                  titleKey="nav.customs.search"
+                  workPlanRef="P2.X — customs-scoped search"
+                  backendStatus="partial"
+                  plannedBehavior="Scoped search по MRN, декларација #, client PO, shipment #. Директен deep-link во релевантниот документ."
+                  existingDataHint="Global Search во top bar е stub; овде ќе биде customs-scoped."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.7 — ✂️ Production group ───────── */}
+            <Route path="/production/today" element={<Production />} />
+            <Route
+              path="/production/cutting-queue"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.cuttingQueue"
+                  workPlanRef="P3.X — cutting queue"
+                  backendStatus="missing"
+                  plannedBehavior="Queue на налози чекаат кроење: приоритет, required material (со shortage flags), estimated minutes, allotted machine. Drag-to-reorder приоритизација."
+                />
+              }
+            />
+            <Route
+              path="/production/sewing-queue"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.sewingQueue"
+                  workPlanRef="P3.X — sewing queue"
+                  backendStatus="missing"
+                  plannedBehavior="Queue на налози во шиење: по линија / оператор / машина. WIP visibility, required operations per route, capacity check."
+                />
+              }
+            />
+            <Route
+              path="/production/wip"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.wip"
+                  workPlanRef="P3.X — WIP tracking"
+                  backendStatus="missing"
+                  plannedBehavior="WIP по налог: визуелен tree прикажувајќи каде е секое парче/lot низ routing фазите (cut → sew → QC → pack)."
+                />
+              }
+            />
+            <Route
+              path="/production/at-risk"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.atRisk"
+                  workPlanRef="P3.X — at-risk detection"
+                  backendStatus="missing"
+                  plannedBehavior="Налози во ризик за доцнење: planned_end > promisedBy или незадоволен capacity. Predicted delay + корективни actions."
+                />
+              }
+            />
+            <Route
+              path="/production/shortage"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.shortage"
+                  workPlanRef="P3.X — material shortage calc"
+                  backendStatus="missing"
+                  plannedBehavior="Material shortage за денешниот план: BOM требе vs InventoryBalance available, групирано по material. Actions: expedite receipt, swap MRN, re-schedule."
+                />
+              }
+            />
+            <Route
+              path="/production/minutes-variance"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.minutesVariance"
+                  workPlanRef="P3.X — standard vs actual minutes"
+                  backendStatus="missing"
+                  plannedBehavior="Routing standard минути vs actual time log: отклони по налог / оператор / линија. Критично за billing (фабриката продава минути)."
+                />
+              }
+            />
+            <Route
+              path="/production/rework"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.rework"
+                  workPlanRef="P4.6 — waste slots (backend exists, UI missing)"
+                  backendStatus="partial"
+                  plannedBehavior="Rework и waste парчиња: причина, cost impact, responsible operator/machine. P4.6 backend постои; UI недостасува."
+                />
+              }
+            />
+            <Route
+              path="/production/completed"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.completed"
+                  workPlanRef="P3.X — completed orders list"
+                  backendStatus="missing"
+                  plannedBehavior="Завршени налози денес / оваа недела: actual pieces, actual minutes, margin vs planned. Hand-off кон Готов производ."
+                />
+              }
+            />
+            <Route
+              path="/production/search"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.production"
+                  titleKey="nav.production.search"
+                  workPlanRef="P2.X — production-scoped search"
+                  backendStatus="partial"
+                  plannedBehavior="Scoped search по работен налог #, client PO, item code, оператор. Директен deep-link во WIP view."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.8 — 📦 Finished Goods group ───────── */}
+            <Route
+              path="/finished/awaiting-pack"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.awaitingPack"
+                  workPlanRef="P4.X — packing queue"
+                  backendStatus="missing"
+                  plannedBehavior="Завршени налози кои чекаат пакување: налог, кол., стандарди за пакување, клиентски барања (box size, етикети)."
+                />
+              }
+            />
+            <Route
+              path="/finished/packing"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.packing"
+                  workPlanRef="P4.X — packing in progress"
+                  backendStatus="missing"
+                  plannedBehavior="Налози во тек на пакување: % complete, pack station, оператор. Real-time update како парчињата се пакуваат."
+                />
+              }
+            />
+            <Route
+              path="/finished/ready-to-ship"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.readyToShip"
+                  workPlanRef="P4.X — shipment staging"
+                  backendStatus="missing"
+                  plannedBehavior="Спакувани налози кои чекаат извозна декларација или transport. Pending документи + рок за pickup."
+                />
+              }
+            />
+            <Route
+              path="/finished/shipped"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.shipped"
+                  workPlanRef="P4.X — shipment log"
+                  backendStatus="missing"
+                  plannedBehavior="Испратени shipments: датум, клиент, AWB, извозна декларација, линк до раздолжени MRN позиции."
+                />
+              }
+            />
+            <Route
+              path="/finished/pack-lists"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.packLists"
+                  workPlanRef="P4.X — pack list / label generation"
+                  backendStatus="missing"
+                  plannedBehavior="Генерирање на pack lists + етикети во клиентски формат. Templates per клиент."
+                />
+              }
+            />
+            <Route
+              path="/finished/packaging-stock"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.packagingStock"
+                  workPlanRef="P1.X — packaging inventory view"
+                  backendStatus="missing"
+                  plannedBehavior="Состојба на паковни материјали (картони, етикети, најлон): alert кога паѓа под reorder point."
+                />
+              }
+            />
+            <Route
+              path="/finished/returns"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.returns"
+                  workPlanRef="P4.X — RMA flow"
+                  backendStatus="missing"
+                  plannedBehavior="Враќања и рекламации од клиент: причина, qty, action (rework / replace / credit note). Со царински импликации."
+                />
+              }
+            />
+            <Route
+              path="/finished/history-by-customer"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.historyByCustomer"
+                  workPlanRef="P5.X — shipment history aggregation"
+                  backendStatus="missing"
+                  plannedBehavior="Aggregated view: shipments по клиент за избран период. Metrics: qty, on-time %, рекорд per месец."
+                />
+              }
+            />
+            <Route
+              path="/finished/traceability"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finishedGoods"
+                  titleKey="nav.finishedGoods.traceability"
+                  workPlanRef="P2.X — reverse traceability"
+                  backendStatus="partial"
+                  plannedBehavior="Од конечно парче низ налог низ материјал до увозна декларација. Reverse на постоечкиот traceability tree."
+                  existingDataHint="/customs/traceability (forward) го покрива 70% на логиката."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.9 — 👥 HR group ───────── */}
+            <Route path="/hr/employees" element={<EmployeeManagement />} />
+            <Route
+              path="/hr/attendance-today"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.attendanceToday"
+                  workPlanRef="P3.X — attendance tracking"
+                  backendStatus="missing"
+                  plannedBehavior="Денешен roster: кој е на работа, кој не е, доцнење, рано појавување. Quick actions: mark late, clock-out."
+                />
+              }
+            />
+            <Route path="/hr/shifts" element={<ShiftManagement />} />
+            <Route
+              path="/hr/absences"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.absences"
+                  workPlanRef="P3.X — absences (sick / vacation / other)"
+                  backendStatus="missing"
+                  plannedBehavior="Изостаноци по тип: болни, годишни, слободни денови, родителски отсутства. Approve/reject workflow."
+                />
+              }
+            />
+            <Route
+              path="/hr/overtime"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.overtime"
+                  workPlanRef="P3.X — overtime tracking"
+                  backendStatus="missing"
+                  plannedBehavior="Overtime по оператор: колку, причина, approved / pending. Кумулативно за месецот за плата."
+                />
+              }
+            />
+            <Route
+              path="/hr/performance"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.performance"
+                  workPlanRef="P3.X — operator performance metrics"
+                  backendStatus="missing"
+                  plannedBehavior="Учин по оператор: минути искористени vs стандардни, парчиња произведени, quality score. Ranking и тренд низ време."
+                />
+              }
+            />
+            <Route
+              path="/hr/assignment"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.assignment"
+                  workPlanRef="P3.X — operator-machine assignment"
+                  backendStatus="missing"
+                  plannedBehavior="Матрица: оператор × машина/линија × смена. Со certification check (дали операторот има право да ракува со машината)."
+                />
+              }
+            />
+            <Route
+              path="/hr/training"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.training"
+                  workPlanRef="P3.X — training & certifications"
+                  backendStatus="missing"
+                  plannedBehavior="Сертификати на вработени per machine type / operation. Рок на важност, предупредувања пред истек."
+                />
+              }
+            />
+            <Route
+              path="/hr/payroll-export"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.hr"
+                  titleKey="nav.hr.payrollExport"
+                  workPlanRef="P3.X — payroll hours aggregation"
+                  backendStatus="missing"
+                  plannedBehavior="Export на вкупни часови за плата: регуларни + overtime + bonus. Export формат компатибилен со надворешен payroll систем."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.10 — ⚙️ Machines / Work Centers / Efficiency ───────── */}
+            <Route
+              path="/machines/status"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.status"
+                  workPlanRef="P3.X — live machine status dashboard"
+                  backendStatus="partial"
+                  plannedBehavior="Live статус на сите машини: running / idle / down / maintenance. Со current operator, current order, utilization %."
+                  existingDataHint="Master регистар (/master-data/machines) постои; live status бара telemetry integration."
+                />
+              }
+            />
+            <Route path="/machines/work-centers" element={<WorkCenterList />} />
+            <Route
+              path="/machines/downtime"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.downtime"
+                  workPlanRef="P3.X — downtime event log"
+                  backendStatus="missing"
+                  plannedBehavior="Downtime events: машина, start/end time, причина (breakdown / setup / missing material / missing operator), cost impact."
+                />
+              }
+            />
+            <Route
+              path="/machines/oee"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.oee"
+                  workPlanRef="P3.X — OEE calculation"
+                  backendStatus="missing"
+                  plannedBehavior="OEE (Availability × Performance × Quality) по машина / линија / смена. Benchmark vs target + тренд низ време."
+                />
+              }
+            />
+            <Route
+              path="/machines/maintenance-plan"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.maintenancePlan"
+                  workPlanRef="P3.X — preventive maintenance schedule"
+                  backendStatus="missing"
+                  plannedBehavior="PM план по машина: секое N часа / денови / парчиња. Alerts за наредни превентивни сервиси."
+                />
+              }
+            />
+            <Route
+              path="/machines/maintenance-history"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.maintenanceHistory"
+                  workPlanRef="P3.X — maintenance work orders"
+                  backendStatus="missing"
+                  plannedBehavior="Историја на интервенции: work orders, parts used, cost, MTBF / MTTR metrics."
+                />
+              }
+            />
+            <Route
+              path="/machines/capacity"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.capacity"
+                  workPlanRef="P3.X — capacity utilization"
+                  backendStatus="missing"
+                  plannedBehavior="Искористеност: планиран vs actual часови per машина / линија / смена. Daily / weekly / monthly rollup."
+                />
+              }
+            />
+            <Route
+              path="/machines/setup-time"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.setupTime"
+                  workPlanRef="P3.X — setup time analysis"
+                  backendStatus="missing"
+                  plannedBehavior="Changeover минути per машина: колку време се троши на setup/switchover. Идентификација на bottleneck setup-и."
+                />
+              }
+            />
+            <Route
+              path="/machines/bottleneck"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.machines"
+                  titleKey="nav.machines.bottleneck"
+                  workPlanRef="P3.X — bottleneck analysis"
+                  backendStatus="missing"
+                  plannedBehavior="Constraint view за денешниот план: која машина е bottleneck? Што чекаат нејзе? Предложени corrective actions."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.11 — 💵 Finance group ───────── */}
+            <Route
+              path="/finance/invoicing"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.invoicing"
+                  workPlanRef="P5.X — invoicing flow"
+                  backendStatus="missing"
+                  plannedBehavior="AR tracking: за фактурирање (завршени shipments), фактурирано, платено, overdue. Со aging buckets 0-30-60-90."
+                />
+              }
+            />
+            <Route
+              path="/finance/contracts"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.contracts"
+                  workPlanRef="P5.X — customer contracts + rates"
+                  backendStatus="missing"
+                  plannedBehavior="Клиентски договори: per-минута / per-парче rates, срок на важност, specijalni conditions. Authoritative source за invoicing."
+                />
+              }
+            />
+            <Route path="/finance/guarantees" element={<Guarantees />} />
+            <Route
+              path="/finance/cost-accounting"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.costAccounting"
+                  workPlanRef="P5.X — cost per minute"
+                  backendStatus="missing"
+                  plannedBehavior="Cost accounting: чинење на минута на машина × оператор × shift. Support за pricing decisions."
+                />
+              }
+            />
+            <Route
+              path="/finance/margin"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.margin"
+                  workPlanRef="P5.X — margin analysis"
+                  backendStatus="missing"
+                  plannedBehavior="Маржа по клиент / налог: revenue (invoiced rate × qty) минус cost (actual minutes × cost rate). Preview пред endgame."
+                />
+              }
+            />
+            <Route
+              path="/finance/ap"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.ap"
+                  workPlanRef="P5.X — accounts payable"
+                  backendStatus="missing"
+                  plannedBehavior="Добавувач invoices: packaging, energy, spare parts. Отворени / платени, due dates."
+                />
+              }
+            />
+            <Route
+              path="/finance/payroll"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.payroll"
+                  workPlanRef="P3.X — payroll aggregate from HR"
+                  backendStatus="missing"
+                  plannedBehavior="Aggregate плати за месецот: вкупно часови регуларни + overtime + bonus × шифри. Feed од /hr/payroll-export."
+                />
+              }
+            />
+            <Route
+              path="/finance/pnl"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.pnl"
+                  workPlanRef="P5.X — P&L preview"
+                  backendStatus="missing"
+                  plannedBehavior="Месечен P&L preview: revenue, direct cost, overhead, margin. Со compare to target."
+                />
+              }
+            />
+            <Route
+              path="/finance/cash-flow"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.cashFlow"
+                  workPlanRef="P5.X — cash flow forecast"
+                  backendStatus="missing"
+                  plannedBehavior="30 / 60 / 90 day forecast: expected AR inflow, AP outflow, пресек. Risk flags."
+                />
+              }
+            />
+            <Route
+              path="/finance/reports"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.finance"
+                  titleKey="nav.finance.reports"
+                  workPlanRef="P5.X — financial reports"
+                  backendStatus="missing"
+                  plannedBehavior="Сметководствени извештаи за управа, ревизор, финансиско: BS, IS, CF, статутарни формати."
+                />
+              }
+            />
+
+            {/* ───────── P6.37.12 — 🎯 Management (KPI) group ───────── */}
+            <Route path="/management/dashboard" element={<Dashboard />} />
+            <Route
+              path="/management/on-time"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.onTime"
+                  workPlanRef="P5.X — on-time delivery metric"
+                  backendStatus="missing"
+                  plannedBehavior="On-time delivery % по клиент / период. Distribution: on-time / late by <7d / late by >7d."
+                />
+              }
+            />
+            <Route
+              path="/management/capacity"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.capacity"
+                  workPlanRef="P3.X — capacity rollup"
+                  backendStatus="missing"
+                  plannedBehavior="Capacity utilization: машини + оператори. Planned hours vs actual hours. Weekly / monthly."
+                />
+              }
+            />
+            <Route
+              path="/management/by-customer"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.byCustomer"
+                  workPlanRef="P5.X — production by customer"
+                  backendStatus="missing"
+                  plannedBehavior="Aggregated: парчиња, минути, маржа по клиент за период. Ranked list + тренд."
+                />
+              }
+            />
+            <Route
+              path="/management/margin"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.margin"
+                  workPlanRef="P5.X — margin per customer (mgr lens)"
+                  backendStatus="missing"
+                  plannedBehavior="Management lens на margin: не detailed financial но trend + alerts за клиенти со падната маржа."
+                />
+              }
+            />
+            <Route
+              path="/management/alerts"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.alerts"
+                  workPlanRef="P6.X — exception alerts"
+                  backendStatus="missing"
+                  plannedBehavior="Активни exceptions кои бараат управување: shortage, overdue налог, истекуван MRN, gaps во capacity."
+                />
+              }
+            />
+            <Route
+              path="/management/risks"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.risks"
+                  workPlanRef="P6.X — open risks register"
+                  backendStatus="missing"
+                  plannedBehavior="Отворени ризици: царински (деадлине), operational (машина, кадар), финансиски (клиент overdue), legal."
+                />
+              }
+            />
+            <Route
+              path="/management/trends"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.trends"
+                  workPlanRef="P6.X — 3M / 6M / 12M trends"
+                  backendStatus="missing"
+                  plannedBehavior="Тренд analysis на ключни metrics: production volume, margin, on-time, headcount. Compare year-over-year."
+                />
+              }
+            />
+            <Route
+              path="/management/escalations"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.escalations"
+                  workPlanRef="P6.X — escalations"
+                  backendStatus="missing"
+                  plannedBehavior="Налози што бараат управувачка одлука: доцнат, клиент тражи extension, legal issue, budget override."
+                />
+              }
+            />
+            <Route
+              path="/management/client-scorecard"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.clientScorecard"
+                  workPlanRef="P5.X — per-client scorecard"
+                  backendStatus="missing"
+                  plannedBehavior="Client scorecard: volume, margin, on-time, payment behavior, риск rating. Помага за renewal / expansion одлуки."
+                />
+              }
+            />
+            <Route
+              path="/management/monthly-pack"
+              element={
+                <PlaceholderPage
+                  groupKey="nav.groups.management"
+                  titleKey="nav.management.monthlyPack"
+                  workPlanRef="P6.X — monthly review pack"
+                  backendStatus="missing"
+                  plannedBehavior="Printable / exportable pack: exec summary, key metrics, wins/losses, next month focus. За board meetings."
+                />
+              }
+            />
 
             {/* User Management Routes */}
             <Route path="/admin/users" element={<UserManagement />} />
