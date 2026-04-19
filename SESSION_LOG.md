@@ -2,6 +2,38 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — KW12 gaps G1–G9 closed; Matriks end-to-end on VPS
+
+**Status:** [x] done. Commit `69471b2`. KW12 weekly textile file can be auto-imported.
+
+### Changes
+
+- **Migration `KW12_GapsG2_G3_G6`** — `CustomsDeclarationLine.IsPreferentialOrigin` (G2), `ProductionOrderMaterial.PreAssignedMRN/PreAssignedBatchNumber/EfficiencyFactor` (G3 + S5), `ProductionOrder.CustomerPartnerId` FK + `CustomerOrderNumber` + `WeekNumber` (G6 + S1 + S2).
+- **G8** — `MasterDataController.UoMRequest.IsActive` is now `bool? = true`; missing property no longer creates soft-deleted UoMs.
+- **G9** — `CustomsDeclarationsImportExecutor` takes a separate `mrn` header field and pre-checks both `(Tenant,DeclarationNumber)` and `(Tenant,MRN)` uniqueness.
+- **G7** — `ItemsImportExecutor` upserts: soft-deleted rows in the current tenant with the same `Code` are undeleted + refreshed instead of aborting the batch. `IApplicationDbContext.CurrentTenantId` exposed to support this.
+- **G4+G5** — STK + KO UoMs added to initial seed + `BackfillKw12SupportingDataAsync` idempotent backfill; Warehouse 222 seeded manually on VPS earlier.
+- **G1** — new `ProductionOrdersTargetSchema` + `ProductionOrdersImportExecutor`. 16-field schema covers Matriks header identity (workOrderNumber, productCode, orderQuantity, plannedStart, customerOrderNumber, customerPartnerCode, weekNumber), material line (materialItemCode, materialQuantity, materialUomCode, materialPreAssignedMRN, materialPreAssignedBatch, efficiencyFactor), and header defaults (warehouseCode, productUomCode, status). Executor groups rows by `workOrderNumber` and creates 1 PO + N materials atomically.
+- **G3 runtime** — `IssueAllMaterialsCommand` now passes `PreAssignedBatchNumber`/`PreAssignedMRN` to `CreateMaterialIssueCommand`; null → legacy FEFO path preserved.
+
+### VPS smoke (`https://elon.elbosoft.click`) — full Matriks pipeline
+
+1. Upload `kw12_matriks_slice.csv` (3 WOs × 70 rows = 210 rows) → session created.
+2. PUT mapping: 11 source columns → 11 target fields, target `ProductionOrders`.
+3. PUT transforms: `LOOKUP:Items.Code` on Product + Ingredient, `LOOKUP:UnitsOfMeasure.Code` on Unit.
+4. PUT defaults: `warehouseCode=222`, `productUomCode=STK`, `status=Draft`, `customerPartnerCode=FIRMA-100`.
+5. Dry-run → `committable=true, rowsWithErrors=0`.
+6. Commit → `entitiesCreated=213, wasCommitted=true`.
+7. DB check: 3 ProductionOrders (PA2602067-0001/0002/0003) with OrderQuantity + CustomerOrderNumber `222-2026/10` + WeekNumber `12`; ProductionOrderMaterials with populated PreAssignedMRN `26MKIM10150003D7B3` and EfficiencyFactor (`0.8934`, `0.8999`, `0.9339`, `0.9854`).
+
+### Not touched this session
+
+- S3 — `CustomsDeclaration.CMRNumber / ClosingNumber / CommercialInvoiceNumber`: bundle when Transport-sheet import lands.
+- S7 — Gross/Net totals on declaration header: derived from lines, low ROI.
+- Frontend wizard already handles the new target (`/tools/import` lists it via `GET /api/import/targets`); no UI code change needed for this sprint.
+
+---
+
 ## 2026-04-19 — P5.1 COMPLETE: generic importer backend + React wizard UI
 
 **Status:** [x] done. Seven sub-tasks + UI landed in one session. All VPS-verified.
