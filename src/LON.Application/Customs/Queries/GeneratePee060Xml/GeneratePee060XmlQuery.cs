@@ -167,13 +167,15 @@ public sealed class GeneratePee060XmlQueryHandler
                             new XElement("Davacki", r.ExDuty.ToString(ci))))))));
 
         var sb = new StringBuilder();
-        using var w = System.Xml.XmlWriter.Create(sb, new System.Xml.XmlWriterSettings
+        using (var w = System.Xml.XmlWriter.Create(sb, new System.Xml.XmlWriterSettings
         {
             Indent = true,
             Encoding = Encoding.UTF8,
             OmitXmlDeclaration = false,
-        });
-        doc.Save(w);
+        }))
+        {
+            doc.Save(w);
+        } // writer must flush+dispose before we read the StringBuilder
         return sb.ToString();
     }
 }
