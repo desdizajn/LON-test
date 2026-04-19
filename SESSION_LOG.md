@@ -13,6 +13,14 @@
 
 **P6.16 (DataProtection)** — Startup used to log "No XML encryptor configured. Key {id} may be persisted to storage in unencrypted form." Added explicit `builder.Services.AddDataProtection().SetApplicationName("LON-API").PersistKeysToFileSystem(...)` pointing at the pre-existing `/root/.aspnet/DataProtection-Keys` volume. Decisions documented in code comment: certificate-based encryption deferred until cert-management lands on VPS. Keys persist to an encrypted Docker volume on the firewalled VPS — acceptable risk posture for single-tenant prod.
 
+**Deploy verification:**
+- `GET https://elon.elbosoft.click/api/health/live` → `200 {"status":"healthy",…}`
+- `GET https://elon.elbosoft.click/api/health/ready` → `200 {"status":"ready","database":"connected",…}`
+- `GET https://elon.elbosoft.click/health` (legacy) → `200 {"status":"healthy",…}`
+- DataProtection startup warning gone from `docker logs lon-api`.
+
+**Ops follow-up:** VPS Caddyfile currently only whitelists exact `/health` under `@api path`. To activate the canonical `/health/live` + `/health/ready` paths directly (without the `/api/` prefix), change the matcher to `@api path /api* /swagger* /health /health/*`. Safe single-domain change; sandbox denied the direct `sed -i`, so left as an op task.
+
 ---
 
 ## 2026-04-19 — P6.20: Return + Waste InventoryBalance consolidation
