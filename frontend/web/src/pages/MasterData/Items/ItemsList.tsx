@@ -101,6 +101,31 @@ const ItemsList: React.FC = () => {
     { id: 'code', label: 'Code', minWidth: 120 },
     { id: 'name', label: 'Name', minWidth: 200 },
     {
+      // KW12 color/size — rendered as colored chips next to the code
+      // so the variant is visible at a glance. Falls back to "-" for
+      // base items that have no decomposition.
+      id: 'colorCode' as any,
+      label: 'Color / Size',
+      minWidth: 140,
+      format: (_value: any, row: any) => (
+        <Box display="flex" gap={0.5} alignItems="center">
+          {row?.colorCode && (
+            <Chip label={`🎨 ${row.colorCode}`} size="small" sx={{ bgcolor: '#fef3c7', color: '#92400e' }} />
+          )}
+          {row?.sizeCode && (
+            <Chip label={`📏 ${row.sizeCode}`} size="small" sx={{ bgcolor: '#dbeafe', color: '#1e40af' }} />
+          )}
+          {!row?.colorCode && !row?.sizeCode && <span style={{ color: '#9ca3af' }}>—</span>}
+        </Box>
+      ),
+    },
+    {
+      id: 'baseCode' as any,
+      label: 'Base',
+      minWidth: 90,
+      format: (value: any) => value || '-',
+    },
+    {
       id: 'itemType',
       label: 'Type',
       minWidth: 150,

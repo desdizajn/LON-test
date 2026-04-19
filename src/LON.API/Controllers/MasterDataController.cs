@@ -884,7 +884,11 @@ public class MasterDataController : BaseController
             item.CreatedAt,
             item.CreatedBy,
             item.ModifiedAt,
-            item.ModifiedBy
+            item.ModifiedBy,
+            item.BaseCode,
+            item.ColorCode,
+            item.SizeCode,
+            item.ParentItemId
         );
     }
 
@@ -1187,7 +1191,12 @@ public record ItemDto(
     DateTime CreatedAt,
     string CreatedBy,
     DateTime? UpdatedAt,
-    string? UpdatedBy
+    string? UpdatedBy,
+    // KW12 color/size decomposition + parent link (null on base items).
+    string? BaseCode,
+    string? ColorCode,
+    string? SizeCode,
+    Guid? ParentItemId
 );
 
 public record PartnerDto(
