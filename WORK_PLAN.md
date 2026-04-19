@@ -74,7 +74,7 @@
 - [ ] **P6.34** — **KW12 import wizard preset / multi-sheet upload.** User should drag `KW12.xlsx` in one go; wizard detects the 3 sheets (Matriks / Faktura / Transport) and runs them in the right order (Items → Customs declaration from Transport+Faktura → Matriks → Receipts) with defaults pre-filled (warehouseCode=222, partnerCode=TEXPORT-AT, procedureCode=4200, lonAuthorizationId=26/TEKSPORT/0001). Current: 3 manual CSV slices + 3 separate imports.
 - [ ] **P6.35** — **BOMs import target with working commit path.** Schema exists, executor still a stub. Needed so Matriks-style files can produce reusable `BOM + BOMLine` records (not just per-PO `ProductionOrderMaterial`). Blocks "template auto-apply" (P5.3.1).
 - [ ] **P6.36** — **Waste / calculations / controls UI wiring.** Backend (P2.3 MRN consume, P2.2 guarantee auto-debit, P4.6 waste slots, I2 landing-costs, I3 duty-rate warnings, I5 SAD advisories, P2.7 rule engine) is live but the Customs/Production/Guarantees pages don't surface them: no per-line duty breakdown, no MRN consumption meter, no waste-slot preview, no advisory panel. Needs a design pass per page (tie to P6.37).
-- [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Настройки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
+- [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Поставки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
   - [x] **P6.37.0** — IA design doc (`docs/design/P6-37-ia.md`) + WORK_PLAN breakdown + TodoWrite — *2026-04-19*
   - [x] **P6.37.1** — Verified seeded roles + frontend AuthService role exposure — *2026-04-19*
   - [x] **P6.37.2** — `PlaceholderPage` component + i18n `placeholder.*` in 4 langs — *2026-04-19*
@@ -88,8 +88,8 @@
   - [x] **P6.37.10** — ⚙️ Machines / Work Centers / Efficiency group: 9 items (1 reuse WorkCenters, 8 placeholders) — *2026-04-19*
   - [x] **P6.37.11** — 💵 Finance group: 10 items (1 reuse Guarantees, 9 placeholders) — *2026-04-19*
   - [x] **P6.37.12** — 🎯 Management (KPI) group: 11 items (1 reuse Dashboard, 10 placeholders) — *2026-04-19*
-  - [/] **P6.37.13** — VPS deploy done (commit `3f78c6f`), HTTP 200 + tekuser login OK with `Warehouse Manager` role. **Visual per-role smoke pending user check.** 7 additional roles (Customs Officer, Production Operator, QC, HR Manager, Maintenance Tech, Finance Clerk, Warehouse Operator) not yet seeded — deferred to P6.37.14.
-  - [ ] **P6.37.14** — Legacy sidebar cutover: remove legacy flat section, add `<Navigate>` redirects from old → new routes (`/inventory` → `/warehouse/receipts`, `/customs` → `/customs/import-docs`, etc.), seed 7 missing roles + test users, per-role UI verification
+  - [/] **P6.37.13** — VPS deploy done (commit `3f78c6f`), HTTP 200 + tekuser login OK with `Warehouse Manager` role. **Visual per-role smoke pending user check.** 7 additional roles seeded in P6.37.14.
+  - [/] **P6.37.14** — Code-complete 2026-04-19: legacy flat section removed from `Sidebar.tsx`; `<Navigate>` redirects added for `/dashboard`, `/inventory`, `/production`, `/customs`, `/guarantees`, `/traceability`; `resolveActiveModule` rewritten per new IA. Idempotent `RoleTopUpSeed` creates 8 missing roles + 8 TEKSPORT test users (Customs Officer `tek-customs`, Warehouse Operator `tek-wh-op`, Production Operator `tek-operator`, QC `tek-qc`, HR Manager `tek-hr`, Maintenance Tech `tek-maint`, Finance Clerk `tek-finance`, Manager `tek-mgr`; password `Test123!`). **Pending:** VPS deploy + per-role login smoke.
   - [ ] **P6.37.15** — (follow-up, deferred) `design:accessibility-review` audit across full app
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
@@ -334,11 +334,11 @@
 
 ## Current Active Task
 
-> **>>>** **2026-04-19 session wrap — P6.37.0–P6.37.12 shipped (commit `3f78c6f`). Sidebar IA redesigned to role + process driven (9 groups × ~80 items) with honest placeholder system.**
+> **>>>** **2026-04-19 — P6.37.14 code-complete.** Legacy flat sidebar removed; `<Navigate>` redirects for all old top-level routes; idempotent `RoleTopUpSeed` with 8 new roles + 8 TEKSPORT test users. Pending VPS deploy + per-role smoke.
 >
 > **Next session pick one:**
-> 1. **P6.37.14** — Legacy sidebar cutover + 7 additional role seeds + per-role UI smoke. Finishes the IA redesign cycle.
-> 2. **P6.37 consumer verification** — user logs in to VPS (`admin` / `tekuser`) and spot-checks the new sidebar groups, reports back any item wording / grouping that's wrong before it ossifies.
+> 1. **P6.37.14 finish** — deploy to VPS, login as each of the 8 new test users, verify sidebar shows only the expected groups for each role, confirm redirects resolve.
+> 2. **P6.37 consumer verification** — user spot-checks sidebar wording / grouping before it ossifies.
 > 3. **Return to Phase 3/6 backlog** (below).
 
 > **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**

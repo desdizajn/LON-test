@@ -2,6 +2,44 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-19 — P6.37.14: Legacy sidebar cutover + role top-up seeder
+
+**Trigger:** User flagged „Настройки" како не-македонски збор (бугаризам / русизам). Поправено во сите активни фајлови (`mk.json`, `WORK_PLAN.md`, `docs/design/P6-37-ia.md`) → „Поставки". Останало историска референца во `SESSION_LOG.md` не-допрена (append-only).
+
+**Scope:**
+1. Remove legacy flat section from `Sidebar.tsx` — ~140 LoC of duplicated top-level items, Reports / Advanced / Administration / Master Data submenus deleted (pages остануваат реачливи преку нови routes / direct URL).
+2. Add `<Navigate>` redirects во `App.tsx`: `/` → `/management/dashboard`; `/dashboard`, `/inventory`, `/production`, `/customs`, `/guarantees`, `/traceability` редиректирани кон канонски IA routes.
+3. `resolveActiveModule` re-written to map every new route to its `NavItem.key` so sidebar highlights работи.
+4. Нов `RoleTopUpSeed.cs` (idempotent, повикан после `UserManagementSeed`) seeds 8 missing roles (Customs Officer, Warehouse Operator, Production Operator, Quality Controller, HR Manager, Maintenance Tech, Finance Clerk, Manager) + 8 TEKSPORT test users, View-only permissions. Safe to re-run.
+
+**Test users (TEKSPORT, password `Test123!`):**
+| Username | Role |
+|---|---|
+| `tek-customs` | Customs Officer |
+| `tek-wh-op` | Warehouse Operator |
+| `tek-operator` | Production Operator |
+| `tek-qc` | Quality Controller |
+| `tek-hr` | HR Manager |
+| `tek-maint` | Maintenance Tech |
+| `tek-finance` | Finance Clerk |
+| `tek-mgr` | Manager |
+
+**Verification:**
+- ✅ `dotnet build src/LON.API/LON.API.csproj` — 0 warnings / 0 errors
+- ✅ `npm run build` во `frontend/web` — само pre-existing ESLint warnings (не-мои); build succeeded
+- [ ] VPS deploy + per-role login smoke — следен чекор по овој commit
+
+**Files touched:**
+- `frontend/web/src/components/Sidebar.tsx` (rewritten, 145 LoC)
+- `frontend/web/src/App.tsx` (redirects + rewritten `resolveActiveModule`)
+- `frontend/web/src/i18n/locales/mk.json` (Настройки → Поставки)
+- `docs/design/P6-37-ia.md` (Настройки → Поставки)
+- `WORK_PLAN.md` (Настройки → Поставки + P6.37.14 status)
+- `src/LON.API/Program.cs` (one-line wire-up)
+- `src/LON.Infrastructure/Initialization/RoleTopUpSeed.cs` (new, 160 LoC)
+
+---
+
 ## 2026-04-19 — P6.37.0–P6.37.12: Sidebar IA redesign, role + process driven
 
 **Trigger:** User feedback that `Dashboard / Inventory / Production / Customs / Guarantees / Traceability / KB / Reports / Advanced / Admin / MasterData` flat sidebar is **organized by architectural modules, not by how work actually happens**. Factory sells **stitching service** (minutes, capacity, on-time delivery) not finished goods — nav must reflect **job roles + daily tasks + process flow + critical decisions**.

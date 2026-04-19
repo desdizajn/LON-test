@@ -134,6 +134,10 @@ using (var scope = app.Services.CreateScope())
             var authService = services.GetRequiredService<LON.Infrastructure.Services.IAuthService>();
             await UserManagementSeed.SeedAsync(context, authService, logger);
 
+            // P6.37.14: top up roles + test users that weren't in the original
+            // bootstrap seed. Idempotent — safe on existing DBs.
+            await RoleTopUpSeed.SeedAsync(context, authService, logger);
+
             // Seed master data (without Knowledge Base - that runs in background)
             logger.LogInformation("Seeding master data...");
             await ApplicationDbContextSeed.SeedAsync(context, skipKnowledgeBase: true);
