@@ -24,8 +24,8 @@ public class CustomsDeclarationsTargetSchema : IImportTargetSchema
             Scope: ImportTargetFieldScope.Header, LookupEntity: "Partners", LookupField: "Code"),
         new("currencyCode", "Currency (ISO-3)", ImportTargetFieldType.String, Required: true, Scope: ImportTargetFieldScope.Header),
         new("exchangeRate", "Exchange rate", ImportTargetFieldType.Decimal, Required: false, Scope: ImportTargetFieldScope.Header),
-        new("lonAuthorizationCode", "LON authorization code", ImportTargetFieldType.String, Required: false,
-            Scope: ImportTargetFieldScope.Header, LookupEntity: "LONAuthorizations", LookupField: "Code"),
+        new("lonAuthorizationCode", "LON authorization #", ImportTargetFieldType.String, Required: false,
+            Scope: ImportTargetFieldScope.Header, LookupEntity: "LONAuthorizations", LookupField: "AuthorizationNumber"),
 
         new("itemCode", "Item code", ImportTargetFieldType.String, Required: true,
             Scope: ImportTargetFieldScope.Row, LookupEntity: "Items", LookupField: "Code"),

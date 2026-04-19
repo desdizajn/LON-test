@@ -1,5 +1,6 @@
 using LON.Application.Importing.Commands.ApplyImportMapping;
 using LON.Application.Importing.Commands.DeleteMappingProfile;
+using LON.Application.Importing.Commands.RunImport;
 using LON.Application.Importing.Commands.SetImportDefaults;
 using LON.Application.Importing.Commands.SetImportTransforms;
 using LON.Application.Importing.Commands.UploadImportFile;
@@ -129,6 +130,24 @@ public class ImportController : BaseController
     {
         var result = await Mediator.Send(new PreviewTransformedRowsQuery(id, take));
         if (!result.IsSuccess) return NotFound(result);
+        return Ok(result);
+    }
+
+    // ---------- P5.1.6 — dry-run / commit ----------
+
+    [HttpPost("sessions/{id}/dry-run")]
+    public async Task<IActionResult> DryRun(Guid id)
+    {
+        var result = await Mediator.Send(new RunImportCommand(id, Commit: false));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPost("sessions/{id}/commit")]
+    public async Task<IActionResult> Commit(Guid id)
+    {
+        var result = await Mediator.Send(new RunImportCommand(id, Commit: true));
+        if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }
 

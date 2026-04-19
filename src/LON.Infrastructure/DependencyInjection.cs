@@ -1,4 +1,5 @@
 using LON.Application.Common.Importing;
+using LON.Application.Common.Importing.Executors;
 using LON.Application.Common.Importing.Targets;
 using LON.Application.Common.Interfaces;
 using LON.Application.Customs.Validation;
@@ -99,6 +100,15 @@ public static class DependencyInjection
         services.AddSingleton<IImportTargetSchema, BOMsTargetSchema>();
         services.AddSingleton<IImportTargetSchema, CustomsDeclarationsTargetSchema>();
         services.AddSingleton<IImportTargetRegistry, ImportTargetRegistry>();
+
+        // P5.1.6 — target executors (commit logic per target). BOMs + CustomsDeclarations
+        // are stubbed returning "not implemented" — dry-run still works for those.
+        services.AddScoped<IImportTargetExecutor, ItemsImportExecutor>();
+        services.AddScoped<IImportTargetExecutor, PartnersImportExecutor>();
+        services.AddScoped<IImportTargetExecutor, ReceiptsImportExecutor>();
+        services.AddScoped<IImportTargetExecutor, BOMsImportExecutor>();
+        services.AddScoped<IImportTargetExecutor, CustomsDeclarationsImportExecutor>();
+        services.AddScoped<IImportTargetExecutorRegistry, ImportTargetExecutorRegistry>();
 
         return services;
     }

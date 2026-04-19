@@ -835,6 +835,36 @@ export interface paths {
       };
     };
   };
+  "/api/import/sessions/{id}/dry-run": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/sessions/{id}/commit": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/import/targets": {
     get: {
       responses: {
