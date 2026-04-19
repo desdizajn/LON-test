@@ -169,3 +169,22 @@ public enum LonProcessState
     FinalImport = 8,
     Waste = 9
 }
+
+/// <summary>P5.1 — generic importer source format.</summary>
+public enum ImportSourceFormat
+{
+    Xlsx = 1,
+    Csv = 2,
+    Tsv = 3,
+    Json = 4,
+    Xml = 5
+}
+
+/// <summary>P5.1 — generic importer session lifecycle.</summary>
+public enum ImportSessionStatus
+{
+    Uploaded = 1,
+    Mapped = 2,
+    Committed = 3,
+    Failed = 4
+}

@@ -548,6 +548,86 @@
         }
       }
     },
+    "/api/Customs/declarations/{id}/certify": {
+      "post": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertifyDeclarationBody"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertifyDeclarationBody"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertifyDeclarationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/pee/060": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "authorizationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations/validate": {
       "post": {
         "tags": [
@@ -1055,6 +1135,18 @@
         }
       }
     },
+    "/api/Guarantee/accounts/traffic-light": {
+      "get": {
+        "tags": [
+          "Guarantee"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Guarantee/active-guarantees": {
       "get": {
         "tags": [
@@ -1071,6 +1163,99 @@
       "put": {
         "tags": [
           "Guarantee"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/sessions": {
+      "post": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "targetEntity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "partnerContextId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/import/sessions/{id}": {
+      "get": {
+        "tags": [
+          "Import"
         ],
         "parameters": [
           {
@@ -2892,6 +3077,71 @@
         }
       }
     },
+    "/api/Production/orders/{id}/release": {
+      "post": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Production/orders/{id}/issues/bulk": {
+      "post": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAllMaterialsBody"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAllMaterialsBody"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAllMaterialsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Production/orders/{id}/material-issues": {
       "get": {
         "tags": [
@@ -3832,6 +4082,18 @@
         }
       }
     },
+    "/api/WMS/inventory/mozni-minusi": {
+      "get": {
+        "tags": [
+          "WMS"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/WMS/shipments": {
       "get": {
         "tags": [
@@ -4096,6 +4358,20 @@
               "$ref": "#/components/schemas/BOMLineRequest"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CertifyDeclarationBody": {
+        "type": "object",
+        "properties": {
+          "zaverkaNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "zaverkaDate": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -4725,6 +5001,13 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WasteSlot"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5073,6 +5356,21 @@
             "type": "string",
             "format": "uuid",
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IssueAllMaterialsBody": {
+        "type": "object",
+        "properties": {
+          "issueDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedByEmployeeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6174,6 +6472,24 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WasteSlot": {
+        "type": "object",
+        "properties": {
+          "slotIndex": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

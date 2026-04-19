@@ -1,3 +1,4 @@
+using LON.Application.Common.Importing;
 using LON.Application.Common.Interfaces;
 using LON.Application.Customs.Validation;
 using LON.Application.Customs.Validation.Rules;
@@ -5,6 +6,7 @@ using LON.Application.KnowledgeBase.Services;
 using LON.Infrastructure.Initialization;
 using LON.Infrastructure.Persistence;
 using LON.Infrastructure.Services;
+using LON.Infrastructure.Services.Importing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,6 +82,14 @@ public static class DependencyInjection
 
         // Vector Store Background Service
         services.AddHostedService<VectorStoreBackgroundService>();
+
+        // P5.1 — generic importer: one parser per format + registry dispatcher.
+        services.AddScoped<IImportFileParser, XlsxImportParser>();
+        services.AddScoped<IImportFileParser, CsvImportParser>();
+        services.AddScoped<IImportFileParser, TsvImportParser>();
+        services.AddScoped<IImportFileParser, JsonImportParser>();
+        services.AddScoped<IImportFileParser, XmlImportParser>();
+        services.AddScoped<IImportFileParserRegistry, ImportFileParserRegistry>();
 
         return services;
     }

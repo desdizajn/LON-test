@@ -5,6 +5,7 @@ using LON.Domain.Common;
 using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Guarantee;
+using LON.Domain.Entities.Importing;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Domain.Entities.Traceability;
@@ -92,6 +93,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     // Audit (I8)
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+
+    // Importing (P5.1)
+    public DbSet<ImportSession> ImportSessions => Set<ImportSession>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

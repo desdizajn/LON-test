@@ -295,6 +295,45 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/{id}/certify": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CertifyDeclarationBody"];
+          "text/json": components["schemas"]["CertifyDeclarationBody"];
+          "application/*+json": components["schemas"]["CertifyDeclarationBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/pee/060": {
+    get: {
+      parameters: {
+        query?: {
+          authorizationId?: string;
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/validate": {
     post: {
       requestBody?: {
@@ -594,6 +633,16 @@ export interface paths {
       };
     };
   };
+  "/api/Guarantee/accounts/traffic-light": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Guarantee/active-guarantees": {
     get: {
       responses: {
@@ -606,6 +655,58 @@ export interface paths {
   };
   "/api/Guarantee/ledger/{id}/release": {
     put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/sessions": {
+    get: {
+      parameters: {
+        query?: {
+          take?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      parameters: {
+        query?: {
+          targetEntity?: string;
+          partnerContextId?: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "multipart/form-data": {
+            /** Format: binary */
+            file?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/import/sessions/{id}": {
+    get: {
       parameters: {
         path: {
           id: string;
@@ -1653,6 +1754,43 @@ export interface paths {
       };
     };
   };
+  "/api/Production/orders/{id}/release": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Production/orders/{id}/issues/bulk": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["IssueAllMaterialsBody"];
+          "text/json": components["schemas"]["IssueAllMaterialsBody"];
+          "application/*+json": components["schemas"]["IssueAllMaterialsBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Production/orders/{id}/material-issues": {
     get: {
       parameters: {
@@ -2172,6 +2310,16 @@ export interface paths {
       };
     };
   };
+  "/api/WMS/inventory/mozni-minusi": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/WMS/shipments": {
     get: {
       parameters: {
@@ -2312,6 +2460,11 @@ export interface components {
       notes?: string | null;
       isActive?: boolean;
       lines?: components["schemas"]["BOMLineRequest"][] | null;
+    };
+    CertifyDeclarationBody: {
+      zaverkaNumber?: string | null;
+      /** Format: date-time */
+      zaverkaDate?: string;
     };
     ChangePasswordRequest: {
       currentPassword?: string | null;
@@ -2519,6 +2672,7 @@ export interface components {
       batchNumber?: string | null;
       /** Format: uuid */
       locationId?: string | null;
+      slots?: components["schemas"]["WasteSlot"][] | null;
     };
     CreditGuaranteeCommand: {
       /** Format: uuid */
@@ -2650,6 +2804,12 @@ export interface components {
       occurredOn?: string;
       /** Format: uuid */
       eventId?: string;
+    };
+    IssueAllMaterialsBody: {
+      /** Format: date-time */
+      issueDate?: string;
+      /** Format: uuid */
+      issuedByEmployeeId?: string | null;
     };
     ItemRequest: {
       code?: string | null;
@@ -3007,6 +3167,13 @@ export interface components {
       description?: string | null;
       address?: string | null;
       isActive?: boolean;
+    };
+    WasteSlot: {
+      /** Format: int32 */
+      slotIndex?: number;
+      /** Format: double */
+      quantity?: number;
+      category?: string | null;
     };
     WorkCenterRequest: {
       code?: string | null;

@@ -1,6 +1,7 @@
 using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Guarantee;
+using LON.Domain.Entities.Importing;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Domain.Entities.Traceability;
@@ -88,6 +89,9 @@ public interface IApplicationDbContext
 
     // Audit (I8)
     DbSet<AuditLogEntry> AuditLogEntries { get; }
+
+    // Importing (P5.1)
+    DbSet<ImportSession> ImportSessions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
