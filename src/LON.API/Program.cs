@@ -6,9 +6,23 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Formatting.Compact;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// P6.15b — structured logging. CompactJsonFormatter emits one JSON object per
+// log event on stdout so Docker/Loki parse it directly. Enriched with the
+// scope-local properties (RequestId, UserName, TenantId) that a middleware
+// below pushes into LogContext for every request. MinimumLevel is
+// configurable via appsettings.
+builder.Host.UseSerilog((ctx, services, cfg) => cfg
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "LON-API")
+    .WriteTo.Console(new CompactJsonFormatter()));
 
 // Add services to the container
 builder.Services.AddControllers()
@@ -200,6 +214,24 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// P6.15b — per-request log enrichment. Pushed BEFORE UseSerilogRequestLogging
+// so the access-log event carries tenant/user identity. Authentication has
+// already run, so ClaimsPrincipal is populated on authenticated endpoints.
+app.Use(async (ctx, next) =>
+{
+    var requestId = ctx.TraceIdentifier;
+    var userName = ctx.User?.Identity?.IsAuthenticated == true ? ctx.User.Identity.Name : null;
+    var tenantClaim = ctx.User?.FindFirst("tenant_id")?.Value;
+    using (Serilog.Context.LogContext.PushProperty("RequestId", requestId))
+    using (Serilog.Context.LogContext.PushProperty("UserName", userName ?? "-"))
+    using (Serilog.Context.LogContext.PushProperty("TenantId", tenantClaim ?? "-"))
+    {
+        await next();
+    }
+});
+app.UseSerilogRequestLogging();
+
 app.MapControllers();
 
 // ──────────────── Health checks (P6.15) ────────────────
