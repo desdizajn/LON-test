@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi, masterDataApi } from '../../services/api';
 
 const WarehouseUtilization: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
@@ -156,7 +158,7 @@ const WarehouseUtilization: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>🏭 Warehouse Utilization Report</h2>
+        <h2>🏭 {t('reports.warehouseUtilization.title')}</h2>
         <button className="btn btn-primary" onClick={exportToExcel}>
           📊 Export to Excel
         </button>

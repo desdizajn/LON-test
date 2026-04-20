@@ -1,28 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { wmsApi, masterDataApi } from '../../services/api';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { wmsApi } from '../../services/api';
 
 const MovementReports: React.FC = () => {
+  const { t } = useTranslation();
   const [receipts, setReceipts] = useState<any[]>([]);
   const [shipments, setShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'receipts' | 'shipments' | 'transfers'>('receipts');
+  const [activeTab, setActiveTab] = useState<'receipts' | 'shipments'>('receipts');
   const [fromDate, setFromDate] = useState(() => {
     const date = new Date();
-    date.setDate(date.getDate() - 30); // Last 30 days
+    date.setDate(date.getDate() - 30);
     return date.toISOString().split('T')[0];
   });
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [receiptsRes, shipmentsRes] = await Promise.all([
         wmsApi.getReceipts(),
-        wmsApi.getShipments()
+        wmsApi.getShipments(),
       ]);
       setReceipts(receiptsRes.data);
       setShipments(shipmentsRes.data);
@@ -31,274 +29,227 @@ const MovementReports: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Filter by date range
-  const filterByDate = (items: any[], dateField: string) => {
-    return items.filter((item: any) => {
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const filterByDate = (items: any[], dateField: string) =>
+    items.filter((item: any) => {
       const itemDate = new Date(item[dateField]).toISOString().split('T')[0];
       return itemDate >= fromDate && itemDate <= toDate;
     });
-  };
 
   const filteredReceipts = filterByDate(receipts, 'receiptDate');
   const filteredShipments = filterByDate(shipments, 'shipmentDate');
 
-  // Calculate metrics
   const totalReceipts = filteredReceipts.length;
-  const totalReceiptQty = filteredReceipts.reduce((sum, r) => 
-    sum + (r.lines?.reduce((lineSum: number, l: any) => lineSum + l.quantity, 0) || 0), 0
-  );
-
+  const totalReceiptQty = filteredReceipts.reduce((sum, r) =>
+    sum + (r.lines?.reduce((ls: number, l: any) => ls + l.quantity, 0) || 0), 0);
   const totalShipments = filteredShipments.length;
-  const totalShipmentQty = filteredShipments.reduce((sum, s) => 
-    sum + (s.lines?.reduce((lineSum: number, l: any) => lineSum + l.quantity, 0) || 0), 0
-  );
+  const totalShipmentQty = filteredShipments.reduce((sum, s) =>
+    sum + (s.lines?.reduce((ls: number, l: any) => ls + l.quantity, 0) || 0), 0);
 
-  const exportToExcel = () => {
+  const shipmentStatusLabel = (status: number) => {
+    const map: Record<number, string> = {
+      1: t('shipmentStatus.draft'),
+      2: t('shipmentStatus.planned'),
+      3: t('shipmentStatus.picked'),
+      4: t('shipmentStatus.packed'),
+      5: t('shipmentStatus.shipped'),
+      6: t('shipmentStatus.delivered'),
+      7: t('shipmentStatus.cancelled'),
+    };
+    return map[status] || '—';
+  };
+
+  const exportToCsv = () => {
     let headers: string[] = [];
     let rows: any[][] = [];
 
     if (activeTab === 'receipts') {
-      headers = ['Receipt #', 'Date', 'Supplier', 'Warehouse', 'Items', 'Total Lines', 'Reference'];
+      headers = [
+        t('movements.receiptNumber'), t('reports.common.period').replace(/Период.*/, t('reports.common.from')),
+        t('movements.supplier'), t('reports.common.warehouse'),
+        t('movements.lines'), t('reports.common.totalQty'), t('movements.reference'),
+      ];
       rows = filteredReceipts.map((r: any) => [
         r.receiptNumber,
         new Date(r.receiptDate).toLocaleDateString(),
         r.supplier?.name || '-',
         r.warehouse?.name || '-',
         r.lines?.length || 0,
-        r.lines?.reduce((sum: number, l: any) => sum + l.quantity, 0).toFixed(2) || 0,
+        r.lines?.reduce((s: number, l: any) => s + l.quantity, 0).toFixed(2) || 0,
         r.referenceNumber || '-',
       ]);
-    } else if (activeTab === 'shipments') {
-      headers = ['Shipment #', 'Date', 'Customer', 'Carrier', 'Items', 'Total Lines', 'Tracking #'];
+    } else {
+      headers = [
+        t('movements.shipmentNumber'), t('reports.common.from'),
+        t('movements.customer'), t('movements.carrier'),
+        t('movements.lines'), t('reports.common.totalQty'), t('movements.tracking'), t('movements.statusHeader'),
+      ];
       rows = filteredShipments.map((s: any) => [
         s.shipmentNumber,
         new Date(s.shipmentDate).toLocaleDateString(),
         s.customer?.name || '-',
         s.carrier?.name || '-',
         s.lines?.length || 0,
-        s.lines?.reduce((sum: number, l: any) => sum + l.quantity, 0).toFixed(2) || 0,
+        s.lines?.reduce((ss: number, l: any) => ss + l.quantity, 0).toFixed(2) || 0,
         s.trackingNumber || '-',
+        shipmentStatusLabel(s.status),
       ]);
     }
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${activeTab}_report_${fromDate}_to_${toDate}.csv`;
+    a.download = `${activeTab}_${fromDate}_${toDate}.csv`;
     a.click();
   };
 
   return (
     <div>
       <div className="header">
-        <h2>📈 Movement Reports</h2>
-        <button className="btn btn-success" onClick={exportToExcel}>
-          📥 Export to Excel
+        <h2>📈 {t('reports.movements.title')}</h2>
+        <button onClick={exportToCsv} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+          📥 {t('reports.common.exportCsv')}
         </button>
       </div>
 
-      {/* Date Range Filter */}
-      <div className="filters" style={{ 
-        background: '#f8f9fa', 
-        padding: '15px', 
-        borderRadius: '8px', 
-        marginBottom: '20px' 
-      }}>
-        <div className="form-row">
-          <div className="form-group col-md-4">
-            <label>From Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'end' }}>
+          <div>
+            <label>{t('reports.common.from')}</label>
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </div>
-          <div className="form-group col-md-4">
-            <label>To Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
+          <div>
+            <label>{t('reports.common.to')}</label>
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>
-          <div className="form-group col-md-4" style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={loadData}>
-              Apply Filter
-            </button>
+          <div>
+            <button className="btn-primary" onClick={loadData}>{t('reports.common.apply')}</button>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
         <button
-          className={`btn ${activeTab === 'receipts' ? 'btn-primary' : 'btn-outline-primary'}`}
           onClick={() => setActiveTab('receipts')}
-          style={{ marginRight: '10px' }}
+          className={activeTab === 'receipts' ? 'btn-primary' : ''}
         >
-          📥 Receipts ({totalReceipts})
+          📥 {t('movements.tabs.receipts')} ({totalReceipts})
         </button>
         <button
-          className={`btn ${activeTab === 'shipments' ? 'btn-primary' : 'btn-outline-primary'}`}
           onClick={() => setActiveTab('shipments')}
+          className={activeTab === 'shipments' ? 'btn-primary' : ''}
         >
-          📤 Shipments ({totalShipments})
+          📤 {t('movements.tabs.shipments')} ({totalShipments})
         </button>
       </div>
 
       {loading ? (
-        <div className="loading">Loading reports...</div>
+        <div className="loading">{t('reports.common.loading')}</div>
+      ) : activeTab === 'receipts' ? (
+        <>
+          <div className="card-grid">
+            <div className="card success">
+              <h3>{t('movements.totalReceipts')}</h3>
+              <div className="value">{totalReceipts}</div>
+            </div>
+            <div className="card info">
+              <h3>{t('movements.totalQtyReceived')}</h3>
+              <div className="value">{totalReceiptQty.toFixed(0)}</div>
+            </div>
+            <div className="card warning">
+              <h3>{t('movements.avgQtyPerReceipt')}</h3>
+              <div className="value">{totalReceipts > 0 ? (totalReceiptQty / totalReceipts).toFixed(1) : 0}</div>
+            </div>
+          </div>
+
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('movements.receiptNumber')}</th>
+                  <th>{t('reports.common.period').replace(/Период.*/, t('common.date'))}</th>
+                  <th>{t('movements.supplier')}</th>
+                  <th>{t('reports.common.warehouse')}</th>
+                  <th>{t('movements.lines')}</th>
+                  <th>{t('reports.common.totalQty')}</th>
+                  <th>{t('movements.reference')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReceipts.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>{t('movements.noReceipts')}</td></tr>
+                ) : (
+                  filteredReceipts.map((r: any) => (
+                    <tr key={r.id}>
+                      <td><strong>{r.receiptNumber}</strong></td>
+                      <td>{new Date(r.receiptDate).toLocaleDateString()}</td>
+                      <td>{r.supplier?.name || '-'}</td>
+                      <td>{r.warehouse?.name || '-'}</td>
+                      <td>{r.lines?.length || 0}</td>
+                      <td><strong>{r.lines?.reduce((s: number, l: any) => s + l.quantity, 0).toFixed(2) || 0}</strong></td>
+                      <td>{r.referenceNumber || '-'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <>
-          {/* Receipts Tab */}
-          {activeTab === 'receipts' && (
-            <>
-              <div className="summary-cards" style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gap: '15px', 
-                marginBottom: '20px' 
-              }}>
-                <div className="card" style={{ padding: '15px', background: '#e8f5e9' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalReceipts}</div>
-                  <div style={{ fontSize: '12px', color: '#155724' }}>Total Receipts</div>
-                </div>
-                <div className="card" style={{ padding: '15px', background: '#e3f2fd' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalReceiptQty.toFixed(0)}</div>
-                  <div style={{ fontSize: '12px', color: '#0d47a1' }}>Total Quantity Received</div>
-                </div>
-                <div className="card" style={{ padding: '15px', background: '#fff3e0' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                    {totalReceipts > 0 ? (totalReceiptQty / totalReceipts).toFixed(1) : 0}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#856404' }}>Avg Qty per Receipt</div>
-                </div>
-              </div>
+          <div className="card-grid">
+            <div className="card info">
+              <h3>{t('movements.totalShipments')}</h3>
+              <div className="value">{totalShipments}</div>
+            </div>
+            <div className="card warning">
+              <h3>{t('movements.totalQtyShipped')}</h3>
+              <div className="value">{totalShipmentQty.toFixed(0)}</div>
+            </div>
+            <div className="card">
+              <h3>{t('movements.avgQtyPerShipment')}</h3>
+              <div className="value">{totalShipments > 0 ? (totalShipmentQty / totalShipments).toFixed(1) : 0}</div>
+            </div>
+          </div>
 
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Receipt #</th>
-                      <th>Date</th>
-                      <th>Supplier</th>
-                      <th>Warehouse</th>
-                      <th>Lines</th>
-                      <th>Total Qty</th>
-                      <th>Reference</th>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('movements.shipmentNumber')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('movements.customer')}</th>
+                  <th>{t('movements.carrier')}</th>
+                  <th>{t('movements.lines')}</th>
+                  <th>{t('reports.common.totalQty')}</th>
+                  <th>{t('movements.tracking')}</th>
+                  <th>{t('movements.statusHeader')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredShipments.length === 0 ? (
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20 }}>{t('movements.noShipments')}</td></tr>
+                ) : (
+                  filteredShipments.map((s: any) => (
+                    <tr key={s.id}>
+                      <td><strong>{s.shipmentNumber}</strong></td>
+                      <td>{new Date(s.shipmentDate).toLocaleDateString()}</td>
+                      <td>{s.customer?.name || '-'}</td>
+                      <td>{s.carrier?.name || '-'}</td>
+                      <td>{s.lines?.length || 0}</td>
+                      <td><strong>{s.lines?.reduce((ss: number, l: any) => ss + l.quantity, 0).toFixed(2) || 0}</strong></td>
+                      <td>{s.trackingNumber || '-'}</td>
+                      <td><span className="badge badge-info">{shipmentStatusLabel(s.status)}</span></td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredReceipts.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
-                          No receipts found in selected date range.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredReceipts.map((receipt: any) => (
-                        <tr key={receipt.id}>
-                          <td><strong>{receipt.receiptNumber}</strong></td>
-                          <td>{new Date(receipt.receiptDate).toLocaleDateString()}</td>
-                          <td>{receipt.supplier?.name || '-'}</td>
-                          <td>{receipt.warehouse?.name || '-'}</td>
-                          <td>{receipt.lines?.length || 0}</td>
-                          <td>
-                            <strong>
-                              {receipt.lines?.reduce((sum: number, l: any) => sum + l.quantity, 0).toFixed(2) || 0}
-                            </strong>
-                          </td>
-                          <td>{receipt.referenceNumber || '-'}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-
-          {/* Shipments Tab */}
-          {activeTab === 'shipments' && (
-            <>
-              <div className="summary-cards" style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gap: '15px', 
-                marginBottom: '20px' 
-              }}>
-                <div className="card" style={{ padding: '15px', background: '#e3f2fd' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalShipments}</div>
-                  <div style={{ fontSize: '12px', color: '#0d47a1' }}>Total Shipments</div>
-                </div>
-                <div className="card" style={{ padding: '15px', background: '#fff3e0' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalShipmentQty.toFixed(0)}</div>
-                  <div style={{ fontSize: '12px', color: '#856404' }}>Total Quantity Shipped</div>
-                </div>
-                <div className="card" style={{ padding: '15px', background: '#f3e5f5' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                    {totalShipments > 0 ? (totalShipmentQty / totalShipments).toFixed(1) : 0}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#4a148c' }}>Avg Qty per Shipment</div>
-                </div>
-              </div>
-
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Shipment #</th>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Carrier</th>
-                      <th>Lines</th>
-                      <th>Total Qty</th>
-                      <th>Tracking #</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredShipments.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} style={{ textAlign: 'center', padding: '20px' }}>
-                          No shipments found in selected date range.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredShipments.map((shipment: any) => (
-                        <tr key={shipment.id}>
-                          <td><strong>{shipment.shipmentNumber}</strong></td>
-                          <td>{new Date(shipment.shipmentDate).toLocaleDateString()}</td>
-                          <td>{shipment.customer?.name || '-'}</td>
-                          <td>{shipment.carrier?.name || '-'}</td>
-                          <td>{shipment.lines?.length || 0}</td>
-                          <td>
-                            <strong>
-                              {shipment.lines?.reduce((sum: number, l: any) => sum + l.quantity, 0).toFixed(2) || 0}
-                            </strong>
-                          </td>
-                          <td>{shipment.trackingNumber || '-'}</td>
-                          <td>
-                            <span className="badge badge-success">
-                              {shipment.status === 1 ? 'Planned' : 
-                               shipment.status === 2 ? 'Picked' :
-                               shipment.status === 3 ? 'Packed' : 'Shipped'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

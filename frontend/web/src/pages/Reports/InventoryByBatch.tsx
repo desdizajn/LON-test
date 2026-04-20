@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi } from '../../services/api';
 
 const InventoryByBatch: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchBatch, setSearchBatch] = useState('');
 
-  useEffect(() => {
-    loadInventory();
-  }, []);
+  useEffect(() => { loadInventory(); }, []);
 
   const loadInventory = async () => {
     try {
@@ -22,9 +22,8 @@ const InventoryByBatch: React.FC = () => {
     }
   };
 
-  // Group by batch
   const inventoryByBatch = inventory
-    .filter((inv: any) => inv.batchNumber) // Only items with batch
+    .filter((inv: any) => inv.batchNumber)
     .reduce((acc: any, inv: any) => {
       const batch = inv.batchNumber;
       if (!acc[batch]) {
@@ -32,48 +31,50 @@ const InventoryByBatch: React.FC = () => {
           batchNumber: batch,
           items: [],
           totalQuantity: 0,
-          locations: new Set(),
-          mrns: new Set(),
-          itemCodes: new Set(),
+          locations: new Set<string>(),
+          mrns: new Set<string>(),
+          itemCodes: new Set<string>(),
         };
       }
       acc[batch].items.push(inv);
       acc[batch].totalQuantity += inv.quantity;
-      acc[batch].locations.add(inv.location?.name);
+      if (inv.location?.name) acc[batch].locations.add(inv.location.name);
       if (inv.mrn) acc[batch].mrns.add(inv.mrn);
-      acc[batch].itemCodes.add(inv.item?.code);
+      if (inv.item?.code) acc[batch].itemCodes.add(inv.item.code);
       return acc;
     }, {});
 
-  // Convert to array and sort by batch number
-  const batchList = Object.values(inventoryByBatch).sort((a: any, b: any) => 
+  const batchList = Object.values(inventoryByBatch).sort((a: any, b: any) =>
     b.batchNumber.localeCompare(a.batchNumber)
   );
 
-  // Apply search filter
   const filteredBatchList = searchBatch
-    ? batchList.filter((batch: any) => 
-        batch.batchNumber.toLowerCase().includes(searchBatch.toLowerCase())
-      )
+    ? batchList.filter((batch: any) => batch.batchNumber.toLowerCase().includes(searchBatch.toLowerCase()))
     : batchList;
 
   const totalBatches = filteredBatchList.length;
-  const totalQuantity = filteredBatchList.reduce((sum: number, batch: any) => sum + batch.totalQuantity, 0);
-  const activeBatches = filteredBatchList.filter((batch: any) => batch.totalQuantity > 0).length;
+  const totalQuantity = filteredBatchList.reduce((sum: number, b: any) => sum + b.totalQuantity, 0);
+  const activeBatches = filteredBatchList.filter((b: any) => b.totalQuantity > 0).length;
 
-  const exportToExcel = () => {
-    const headers = ['Batch Number', 'Total Quantity', 'Locations', 'MRNs', 'Items', 'Item Codes'];
+  const exportToCsv = () => {
+    const headers = [
+      t('reports.common.batch'),
+      t('reports.common.totalQty'),
+      t('reports.common.location'),
+      t('reports.common.mrn'),
+      t('inventoryByBatch.lines'),
+      t('reports.common.itemCode'),
+    ];
     const rows = filteredBatchList.map((batch: any) => [
       batch.batchNumber,
       batch.totalQuantity.toFixed(2),
-      Array.from(batch.locations).join('; '),
-      Array.from(batch.mrns).join('; '),
+      Array.from(batch.locations as Set<string>).join('; '),
+      Array.from(batch.mrns as Set<string>).join('; '),
       batch.items.length,
-      Array.from(batch.itemCodes).join('; '),
+      Array.from(batch.itemCodes as Set<string>).join('; '),
     ]);
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -84,77 +85,63 @@ const InventoryByBatch: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>🏷️ Inventory by Batch</h2>
-        <button className="btn btn-success" onClick={exportToExcel}>
-          📥 Export to Excel
+        <h2>🏷️ {t('reports.inventoryByBatch.title')}</h2>
+        <button onClick={exportToCsv} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+          📥 {t('reports.common.exportCsv')}
         </button>
       </div>
 
-      <div className="alert alert-info">
-        <strong>ℹ️ Batch Traceability</strong><br />
-        This report shows inventory grouped by batch number. 
-        Use this for batch recalls, expiry management, and quality tracking.
+      <div style={{ background: 'var(--info-bg)', border: '1px solid var(--taris-blue-100)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+        <strong>ℹ️ {t('inventoryByBatch.subtitle')}</strong><br />
+        {t('inventoryByBatch.description')}
       </div>
 
-      {/* Search */}
-      <div className="filters" style={{ marginBottom: '20px' }}>
-        <label style={{ marginRight: '10px' }}>Search Batch:</label>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ marginRight: 10 }}>{t('inventoryByBatch.searchLabel')}:</label>
         <input
           type="text"
-          className="form-control"
-          style={{ width: '300px', display: 'inline-block' }}
-          placeholder="Enter batch number..."
+          style={{ width: 320, display: 'inline-block' }}
+          placeholder={t('inventoryByBatch.searchPlaceholder') ?? ''}
           value={searchBatch}
           onChange={(e) => setSearchBatch(e.target.value)}
         />
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: '15px', 
-        marginBottom: '20px' 
-      }}>
-        <div className="card" style={{ padding: '15px', background: '#e3f2fd' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalBatches}</div>
-          <div style={{ fontSize: '12px', color: '#0d47a1' }}>Total Batches</div>
+      <div className="card-grid">
+        <div className="card info">
+          <h3>{t('inventoryByBatch.totalBatches')}</h3>
+          <div className="value">{totalBatches}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#e8f5e9' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{activeBatches}</div>
-          <div style={{ fontSize: '12px', color: '#155724' }}>Active Batches</div>
+        <div className="card success">
+          <h3>{t('inventoryByBatch.activeBatches')}</h3>
+          <div className="value">{activeBatches}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#fff3e0' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalQuantity.toFixed(0)}</div>
-          <div style={{ fontSize: '12px', color: '#856404' }}>Total Quantity</div>
+        <div className="card warning">
+          <h3>{t('reports.common.totalQuantity')}</h3>
+          <div className="value">{totalQuantity.toFixed(0)}</div>
         </div>
       </div>
 
       {loading ? (
-        <div className="loading">Loading inventory...</div>
+        <div className="loading">{t('reports.common.loading')}</div>
       ) : (
         <>
           {filteredBatchList.map((batchData: any) => (
-            <div key={batchData.batchNumber} style={{ marginBottom: '30px' }}>
-              <div style={{ 
-                background: '#e8f5e9',
-                padding: '15px', 
-                borderRadius: '4px',
-                marginBottom: '10px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={batchData.batchNumber} style={{ marginBottom: 20 }}>
+              <div style={{ background: 'var(--success-bg)', padding: 14, borderRadius: 8, marginBottom: 10, border: '1px solid rgba(22,163,74,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                   <div>
-                    <strong style={{ fontSize: '18px' }}>🏷️ Batch: {batchData.batchNumber}</strong>
+                    <strong style={{ fontSize: 16 }}>🏷️ {t('reports.common.batch')}: {batchData.batchNumber}</strong>
                     {batchData.mrns.size > 0 && (
-                      <span style={{ marginLeft: '10px', color: '#666' }}>
-                        MRN: {Array.from(batchData.mrns).join(', ')}
+                      <span style={{ marginLeft: 10, color: 'var(--ink-600)' }}>
+                        {t('reports.common.mrn')}: {Array.from(batchData.mrns).join(', ')}
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: '14px' }}>
-                    <strong>Total Qty:</strong> {batchData.totalQuantity.toFixed(2)} | 
-                    <strong style={{ marginLeft: '10px' }}>Locations:</strong> {batchData.locations.size} | 
-                    <strong style={{ marginLeft: '10px' }}>Lines:</strong> {batchData.items.length}
+                  <div style={{ fontSize: 13, color: 'var(--ink-700)' }}>
+                    <strong>{t('reports.common.totalQty')}:</strong> {batchData.totalQuantity.toFixed(2)}
+                    <span style={{ marginLeft: 10 }}><strong>{t('reports.common.allLocations').replace(/ .*/, '')}:</strong> {batchData.locations.size}</span>
+                    <span style={{ marginLeft: 10 }}><strong>{t('inventoryByBatch.lines')}:</strong> {batchData.items.length}</span>
                   </div>
                 </div>
               </div>
@@ -163,13 +150,13 @@ const InventoryByBatch: React.FC = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Item Code</th>
-                      <th>Item Name</th>
-                      <th>Location</th>
-                      <th>MRN</th>
-                      <th>Quantity</th>
-                      <th>Quality Status</th>
-                      <th>Last Movement</th>
+                      <th>{t('reports.common.itemCode')}</th>
+                      <th>{t('reports.common.itemName')}</th>
+                      <th>{t('reports.common.location')}</th>
+                      <th>{t('reports.common.mrn')}</th>
+                      <th>{t('reports.common.quantity')}</th>
+                      <th>{t('reports.common.qualityStatus')}</th>
+                      <th>{t('reports.common.lastMovement')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -179,23 +166,13 @@ const InventoryByBatch: React.FC = () => {
                         <td>{inv.item?.name}</td>
                         <td>{inv.location?.name}</td>
                         <td>{inv.mrn || '-'}</td>
+                        <td><strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}</td>
                         <td>
-                          <strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}
-                        </td>
-                        <td>
-                          <span className={`badge badge-${
-                            inv.qualityStatus === 1 ? 'success' : 
-                            inv.qualityStatus === 2 ? 'danger' : 'warning'
-                          }`}>
-                            {inv.qualityStatus === 1 ? 'OK' : 
-                             inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine'}
+                          <span className={`badge badge-${inv.qualityStatus === 1 ? 'success' : inv.qualityStatus === 2 ? 'danger' : 'warning'}`}>
+                            {inv.qualityStatus === 1 ? t('qualityStatus.ok') : inv.qualityStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine')}
                           </span>
                         </td>
-                        <td>
-                          {inv.lastMovementDate 
-                            ? new Date(inv.lastMovementDate).toLocaleDateString()
-                            : '-'}
-                        </td>
+                        <td>{inv.lastMovementDate ? new Date(inv.lastMovementDate).toLocaleDateString() : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -205,8 +182,8 @@ const InventoryByBatch: React.FC = () => {
           ))}
 
           {filteredBatchList.length === 0 && (
-            <div className="alert alert-warning">
-              No batches found. {searchBatch && 'Try a different search term.'}
+            <div className="card" style={{ textAlign: 'center', color: 'var(--ink-500)' }}>
+              {t('inventoryByBatch.noResults')} {searchBatch && t('inventoryByBatch.tryDifferent')}
             </div>
           )}
         </>

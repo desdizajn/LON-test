@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { wmsApi, analyticsApi } from '../../services/api';
+import { useTranslation } from 'react-i18next';
+import { wmsApi } from '../../services/api';
 
 const WMSDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [receipts, setReceipts] = useState<any[]>([]);
   const [shipments, setShipments] = useState<any[]>([]);
@@ -106,7 +108,7 @@ const WMSDashboard: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>📊 WMS Dashboard</h2>
+        <h2>📊 {t('reports.wmsDashboard.title')}</h2>
         <button className="btn btn-primary" onClick={loadData}>
           🔄 Refresh
         </button>

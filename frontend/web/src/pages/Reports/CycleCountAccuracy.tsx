@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi, masterDataApi } from '../../services/api';
 
 const CycleCountAccuracy: React.FC = () => {
+  const { t } = useTranslation();
   const [cycleCounts, setCycleCounts] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
@@ -189,7 +191,7 @@ const CycleCountAccuracy: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>🎯 Cycle Count Accuracy Report</h2>
+        <h2>🎯 {t('reports.cycleCountAccuracy.title')}</h2>
         <button className="btn btn-primary" onClick={exportToExcel}>
           📊 Export to Excel
         </button>

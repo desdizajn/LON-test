@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi } from '../../services/api';
 
 const InventoryByMRN: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'depleted'>('active');
 
-  useEffect(() => {
-    loadInventory();
-  }, []);
+  useEffect(() => { loadInventory(); }, []);
 
   const loadInventory = async () => {
     try {
@@ -22,33 +22,22 @@ const InventoryByMRN: React.FC = () => {
     }
   };
 
-  // Group by MRN
   const inventoryByMRN = inventory
-    .filter((inv: any) => inv.mrn) // Only items with MRN
+    .filter((inv: any) => inv.mrn)
     .reduce((acc: any, inv: any) => {
       const mrn = inv.mrn;
       if (!acc[mrn]) {
-        acc[mrn] = {
-          mrn: mrn,
-          items: [],
-          totalQuantity: 0,
-          locations: new Set(),
-          batches: new Set(),
-        };
+        acc[mrn] = { mrn, items: [], totalQuantity: 0, locations: new Set<string>(), batches: new Set<string>() };
       }
       acc[mrn].items.push(inv);
       acc[mrn].totalQuantity += inv.quantity;
-      acc[mrn].locations.add(inv.location?.name);
-      acc[mrn].batches.add(inv.batchNumber);
+      if (inv.location?.name) acc[mrn].locations.add(inv.location.name);
+      if (inv.batchNumber) acc[mrn].batches.add(inv.batchNumber);
       return acc;
     }, {});
 
-  // Convert to array and sort
-  const mrnList = Object.values(inventoryByMRN).sort((a: any, b: any) => 
-    b.totalQuantity - a.totalQuantity
-  );
+  const mrnList = Object.values(inventoryByMRN).sort((a: any, b: any) => b.totalQuantity - a.totalQuantity);
 
-  // Apply filter
   const filteredMRNList = mrnList.filter((mrn: any) => {
     if (filterStatus === 'active') return mrn.totalQuantity > 0;
     if (filterStatus === 'depleted') return mrn.totalQuantity === 0;
@@ -60,19 +49,22 @@ const InventoryByMRN: React.FC = () => {
   const activeMRNs = mrnList.filter((mrn: any) => mrn.totalQuantity > 0).length;
   const depletedMRNs = mrnList.filter((mrn: any) => mrn.totalQuantity === 0).length;
 
-  const exportToExcel = () => {
-    const headers = ['MRN', 'Total Quantity', 'Locations', 'Batches', 'Item Count', 'Status'];
+  const exportToCsv = () => {
+    const headers = [
+      t('reports.common.mrn'), t('reports.common.totalQty'),
+      t('reports.common.location'), t('reports.common.batch'),
+      t('inventoryByMrn.itemCount'), t('reports.common.qualityStatus'),
+    ];
     const rows = filteredMRNList.map((mrn: any) => [
       mrn.mrn,
       mrn.totalQuantity.toFixed(2),
-      Array.from(mrn.locations).join('; '),
-      Array.from(mrn.batches).join('; '),
+      Array.from(mrn.locations as Set<string>).join('; '),
+      Array.from(mrn.batches as Set<string>).join('; '),
       mrn.items.length,
-      mrn.totalQuantity > 0 ? 'Active' : 'Depleted',
+      mrn.totalQuantity > 0 ? t('inventoryByMrn.active') : t('inventoryByMrn.depleted'),
     ]);
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -83,129 +75,99 @@ const InventoryByMRN: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>🛃 Inventory by MRN (Customs)</h2>
-        <button className="btn btn-success" onClick={exportToExcel}>
-          📥 Export to Excel
+        <h2>🛃 {t('reports.inventoryByMrn.title')}</h2>
+        <button onClick={exportToCsv} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+          📥 {t('reports.common.exportCsv')}
         </button>
       </div>
 
-      <div className="alert alert-info">
-        <strong>ℹ️ Critical for Customs Compliance!</strong><br />
-        This report shows inventory grouped by MRN (Master Reference Number). 
-        Use this to track imported materials usage for customs declarations.
+      <div style={{ background: 'var(--info-bg)', border: '1px solid var(--taris-blue-100)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+        <strong>ℹ️ {t('inventoryByMrn.criticalHeader')}</strong><br />
+        {t('inventoryByMrn.description')}
       </div>
 
-      {/* Filter */}
-      <div className="filters" style={{ marginBottom: '20px' }}>
-        <label style={{ marginRight: '10px' }}>Filter:</label>
-        <select
-          className="form-control"
-          style={{ width: '200px', display: 'inline-block' }}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as any)}
-        >
-          <option value="all">All MRNs</option>
-          <option value="active">Active (Qty {'>'} 0)</option>
-          <option value="depleted">Depleted (Qty = 0)</option>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ marginRight: 10 }}>{t('reports.common.filters')}:</label>
+        <select style={{ width: 220, display: 'inline-block' }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
+          <option value="all">{t('inventoryByMrn.allMrns')}</option>
+          <option value="active">{t('inventoryByMrn.activeOnly')}</option>
+          <option value="depleted">{t('inventoryByMrn.depletedOnly')}</option>
         </select>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '15px', 
-        marginBottom: '20px' 
-      }}>
-        <div className="card" style={{ padding: '15px', background: '#e3f2fd' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalMRNs}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Total MRNs</div>
-        </div>
-        <div className="card" style={{ padding: '15px', background: '#e8f5e9' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{activeMRNs}</div>
-          <div style={{ fontSize: '12px', color: '#155724' }}>Active MRNs</div>
-        </div>
-        <div className="card" style={{ padding: '15px', background: '#f8d7da' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{depletedMRNs}</div>
-          <div style={{ fontSize: '12px', color: '#721c24' }}>Depleted MRNs</div>
-        </div>
-        <div className="card" style={{ padding: '15px', background: '#fff3e0' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalQuantity.toFixed(0)}</div>
-          <div style={{ fontSize: '12px', color: '#856404' }}>Total Quantity</div>
-        </div>
+      <div className="card-grid">
+        <div className="card info"><h3>{t('inventoryByMrn.totalMrns')}</h3><div className="value">{totalMRNs}</div></div>
+        <div className="card success"><h3>{t('inventoryByMrn.activeMrns')}</h3><div className="value">{activeMRNs}</div></div>
+        <div className="card danger"><h3>{t('inventoryByMrn.depletedMrns')}</h3><div className="value">{depletedMRNs}</div></div>
+        <div className="card warning"><h3>{t('reports.common.totalQuantity')}</h3><div className="value">{totalQuantity.toFixed(0)}</div></div>
       </div>
 
       {loading ? (
-        <div className="loading">Loading inventory...</div>
+        <div className="loading">{t('reports.common.loading')}</div>
       ) : (
         <>
-          {filteredMRNList.map((mrnData: any) => (
-            <div key={mrnData.mrn} style={{ marginBottom: '30px' }}>
-              <div style={{ 
-                background: mrnData.totalQuantity > 0 ? '#e8f5e9' : '#f8d7da',
-                padding: '15px', 
-                borderRadius: '4px',
-                marginBottom: '10px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <strong style={{ fontSize: '18px' }}>🛃 MRN: {mrnData.mrn}</strong>
-                    <span className={`badge ${mrnData.totalQuantity > 0 ? 'badge-success' : 'badge-danger'}`}
-                      style={{ marginLeft: '10px' }}>
-                      {mrnData.totalQuantity > 0 ? 'Active' : 'Depleted'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '14px' }}>
-                    <strong>Total Qty:</strong> {mrnData.totalQuantity.toFixed(2)} | 
-                    <strong style={{ marginLeft: '10px' }}>Locations:</strong> {mrnData.locations.size} | 
-                    <strong style={{ marginLeft: '10px' }}>Batches:</strong> {mrnData.batches.size} |
-                    <strong style={{ marginLeft: '10px' }}>Items:</strong> {mrnData.items.length}
+          {filteredMRNList.map((mrnData: any) => {
+            const active = mrnData.totalQuantity > 0;
+            return (
+              <div key={mrnData.mrn} style={{ marginBottom: 20 }}>
+                <div style={{
+                  background: active ? 'var(--success-bg)' : 'var(--danger-bg)',
+                  padding: 14, borderRadius: 8, marginBottom: 10,
+                  border: `1px solid ${active ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <strong style={{ fontSize: 16 }}>🛃 MRN: {mrnData.mrn}</strong>
+                      <span className={`badge ${active ? 'badge-success' : 'badge-danger'}`} style={{ marginLeft: 10 }}>
+                        {active ? t('inventoryByMrn.active') : t('inventoryByMrn.depleted')}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--ink-700)' }}>
+                      <strong>{t('reports.common.totalQty')}:</strong> {mrnData.totalQuantity.toFixed(2)}
+                      <span style={{ marginLeft: 10 }}><strong>{t('reports.common.location')}:</strong> {mrnData.locations.size}</span>
+                      <span style={{ marginLeft: 10 }}><strong>{t('reports.common.batch')}:</strong> {mrnData.batches.size}</span>
+                      <span style={{ marginLeft: 10 }}><strong>{t('inventoryByMrn.items')}:</strong> {mrnData.items.length}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Item Code</th>
-                      <th>Item Name</th>
-                      <th>Location</th>
-                      <th>Batch</th>
-                      <th>Quantity</th>
-                      <th>Quality Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mrnData.items.map((inv: any, idx: number) => (
-                      <tr key={idx}>
-                        <td><strong>{inv.item?.code}</strong></td>
-                        <td>{inv.item?.name}</td>
-                        <td>{inv.location?.name}</td>
-                        <td>{inv.batchNumber || '-'}</td>
-                        <td>
-                          <strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}
-                        </td>
-                        <td>
-                          <span className={`badge badge-${
-                            inv.qualityStatus === 1 ? 'success' : 
-                            inv.qualityStatus === 2 ? 'danger' : 'warning'
-                          }`}>
-                            {inv.qualityStatus === 1 ? 'OK' : 
-                             inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine'}
-                          </span>
-                        </td>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{t('reports.common.itemCode')}</th>
+                        <th>{t('reports.common.itemName')}</th>
+                        <th>{t('reports.common.location')}</th>
+                        <th>{t('reports.common.batch')}</th>
+                        <th>{t('reports.common.quantity')}</th>
+                        <th>{t('reports.common.qualityStatus')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {mrnData.items.map((inv: any, idx: number) => (
+                        <tr key={idx}>
+                          <td><strong>{inv.item?.code}</strong></td>
+                          <td>{inv.item?.name}</td>
+                          <td>{inv.location?.name}</td>
+                          <td>{inv.batchNumber || '-'}</td>
+                          <td><strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}</td>
+                          <td>
+                            <span className={`badge badge-${inv.qualityStatus === 1 ? 'success' : inv.qualityStatus === 2 ? 'danger' : 'warning'}`}>
+                              {inv.qualityStatus === 1 ? t('qualityStatus.ok') : inv.qualityStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine')}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredMRNList.length === 0 && (
-            <div className="alert alert-warning">
-              No MRN inventory found. Import materials with MRN tracking to see data here.
+            <div className="card" style={{ textAlign: 'center', color: 'var(--ink-500)' }}>
+              {t('inventoryByMrn.noResults')}
             </div>
           )}
         </>

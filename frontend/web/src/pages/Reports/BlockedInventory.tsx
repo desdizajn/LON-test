@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi } from '../../services/api';
 
 const BlockedInventory: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<number>(2); // Default to Blocked
+  const [filterStatus, setFilterStatus] = useState<number>(2);
 
-  useEffect(() => {
-    loadInventory();
-  }, []);
+  useEffect(() => { loadInventory(); }, []);
 
   const loadInventory = async () => {
     try {
@@ -23,29 +23,24 @@ const BlockedInventory: React.FC = () => {
   };
 
   const handleReleaseClick = async (inventoryId: string) => {
-    const confirm = window.confirm('Release this inventory to OK status?');
+    const confirm = window.confirm(t('blockedInventory.confirmRelease'));
     if (!confirm) return;
 
     try {
       await wmsApi.updateQualityStatus({
         inventoryBalanceId: inventoryId,
-        newQualityStatus: 1, // OK
-        reason: 'Released from quality hold',
-        notes: 'Released via Blocked Inventory Report',
+        newQualityStatus: 1,
+        reason: t('blockedInventory.releasedReason'),
+        notes: t('blockedInventory.releasedNotes'),
       });
-      alert('Inventory released successfully!');
       loadInventory();
     } catch (err: any) {
-      alert('Failed to release inventory: ' + (err.response?.data?.error || err.message));
+      alert('Failed to release: ' + (err.response?.data?.error || err.message));
     }
   };
 
-  // Filter by quality status
-  const filteredInventory = inventory.filter((inv: any) => 
-    inv.qualityStatus === filterStatus
-  );
+  const filteredInventory = inventory.filter((inv: any) => inv.qualityStatus === filterStatus);
 
-  // Calculate aging (days since last movement or created)
   const calculateAging = (lastMovementDate?: string, createdAt?: string) => {
     const date = lastMovementDate || createdAt;
     if (!date) return 0;
@@ -53,13 +48,10 @@ const BlockedInventory: React.FC = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // Add aging to inventory
   const inventoryWithAging = filteredInventory.map((inv: any) => ({
     ...inv,
     agingDays: calculateAging(inv.lastMovementDate, inv.createdAt),
   }));
-
-  // Sort by aging (oldest first)
   const sortedInventory = inventoryWithAging.sort((a, b) => b.agingDays - a.agingDays);
 
   const totalQuantity = sortedInventory.reduce((sum, inv) => sum + inv.quantity, 0);
@@ -68,28 +60,26 @@ const BlockedInventory: React.FC = () => {
   const criticalItems = sortedInventory.filter((inv) => inv.agingDays > 90).length;
 
   const getAgingBadge = (days: number) => {
-    if (days > 90) return <span className="badge badge-danger">Critical ({days}d)</span>;
-    if (days > 30) return <span className="badge badge-warning">Old ({days}d)</span>;
-    return <span className="badge badge-info">{days} days</span>;
+    if (days > 90) return <span className="badge badge-danger">{t('blockedInventory.aging.critical', { days })}</span>;
+    if (days > 30) return <span className="badge badge-warning">{t('blockedInventory.aging.old', { days })}</span>;
+    return <span className="badge badge-info">{t('blockedInventory.aging.days', { days })}</span>;
   };
 
-  const exportToExcel = () => {
-    const headers = ['Item Code', 'Item Name', 'Location', 'Batch', 'MRN', 'Quantity', 'UoM', 'Status', 'Aging (days)', 'Last Movement'];
+  const exportToCsv = () => {
+    const headers = [
+      t('reports.common.itemCode'), t('reports.common.itemName'), t('reports.common.location'),
+      t('reports.common.batch'), t('reports.common.mrn'), t('reports.common.quantity'), 'UoM',
+      t('reports.common.qualityStatus'), t('blockedInventory.agingDays'), t('reports.common.lastMovement'),
+    ];
     const rows = sortedInventory.map((inv: any) => [
-      inv.item?.code || '',
-      inv.item?.name || '',
-      inv.location?.name || '',
-      inv.batchNumber || '',
-      inv.mrn || '',
-      inv.quantity.toFixed(2),
-      inv.uoM?.code || '',
-      inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine',
+      inv.item?.code || '', inv.item?.name || '', inv.location?.name || '',
+      inv.batchNumber || '', inv.mrn || '', inv.quantity.toFixed(2), inv.uoM?.code || '',
+      inv.qualityStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine'),
       inv.agingDays,
       inv.lastMovementDate ? new Date(inv.lastMovementDate).toLocaleDateString() : '',
     ]);
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -100,113 +90,97 @@ const BlockedInventory: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>🔒 Blocked & Quarantine Inventory</h2>
-        <button className="btn btn-success" onClick={exportToExcel}>
-          📥 Export to Excel
+        <h2>🔒 {t('reports.blockedInventory.title')}</h2>
+        <button onClick={exportToCsv} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+          📥 {t('reports.common.exportCsv')}
         </button>
       </div>
 
-      <div className="alert alert-warning">
-        <strong>⚠️ Quality Hold Inventory</strong><br />
-        This inventory is on hold and cannot be issued for production or shipment.
-        Review and release when quality issues are resolved.
+      <div style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+        <strong>⚠️ {t('blockedInventory.warningTitle')}</strong><br />
+        {t('blockedInventory.warningBody')}
       </div>
 
-      {/* Filter */}
-      <div className="filters" style={{ marginBottom: '20px' }}>
-        <label style={{ marginRight: '10px' }}>Status:</label>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ marginRight: 10 }}>{t('reports.common.qualityStatus')}:</label>
         <select
-          className="form-control"
-          style={{ width: '200px', display: 'inline-block' }}
+          style={{ width: 220, display: 'inline-block' }}
           value={filterStatus}
           onChange={(e) => setFilterStatus(parseInt(e.target.value))}
         >
-          <option value="2">Blocked</option>
-          <option value="3">Quarantine</option>
+          <option value="2">{t('qualityStatus.blocked')}</option>
+          <option value="3">{t('qualityStatus.quarantine')}</option>
         </select>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '15px', 
-        marginBottom: '20px' 
-      }}>
-        <div className="card" style={{ padding: '15px', background: '#f8d7da' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalItems}</div>
-          <div style={{ fontSize: '12px', color: '#721c24' }}>Total Items on Hold</div>
+      <div className="card-grid">
+        <div className="card danger">
+          <h3>{t('blockedInventory.summary.onHold')}</h3>
+          <div className="value">{totalItems}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#fff3cd' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{oldItems}</div>
-          <div style={{ fontSize: '12px', color: '#856404' }}>Aging {'>'}30 days</div>
+        <div className="card warning">
+          <h3>{t('blockedInventory.summary.over30')}</h3>
+          <div className="value">{oldItems}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#f8d7da' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{criticalItems}</div>
-          <div style={{ fontSize: '12px', color: '#721c24' }}>Critical {'>'}90 days</div>
+        <div className="card danger">
+          <h3>{t('blockedInventory.summary.critical90')}</h3>
+          <div className="value">{criticalItems}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#e7f3ff' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalQuantity.toFixed(0)}</div>
-          <div style={{ fontSize: '12px', color: '#004085' }}>Total Quantity</div>
+        <div className="card info">
+          <h3>{t('reports.common.totalQuantity')}</h3>
+          <div className="value">{totalQuantity.toFixed(0)}</div>
         </div>
       </div>
 
       {loading ? (
-        <div className="loading">Loading inventory...</div>
+        <div className="loading">{t('reports.common.loading')}</div>
       ) : (
         <>
           <div className="table-container">
             <table>
               <thead>
                 <tr>
-                  <th>Item Code</th>
-                  <th>Item Name</th>
-                  <th>Location</th>
-                  <th>Batch</th>
-                  <th>MRN</th>
-                  <th>Quantity</th>
-                  <th>Status</th>
-                  <th>Aging</th>
-                  <th>Last Movement</th>
-                  <th>Actions</th>
+                  <th>{t('reports.common.itemCode')}</th>
+                  <th>{t('reports.common.itemName')}</th>
+                  <th>{t('reports.common.location')}</th>
+                  <th>{t('reports.common.batch')}</th>
+                  <th>{t('reports.common.mrn')}</th>
+                  <th>{t('reports.common.quantity')}</th>
+                  <th>{t('reports.common.qualityStatus')}</th>
+                  <th>{t('blockedInventory.aging.label')}</th>
+                  <th>{t('reports.common.lastMovement')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedInventory.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ textAlign: 'center', padding: '20px' }}>
-                      ✅ No {filterStatus === 2 ? 'blocked' : 'quarantine'} inventory found. Great!
+                    <td colSpan={10} style={{ textAlign: 'center', padding: 20 }}>
+                      ✅ {t('blockedInventory.none', { status: filterStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine') })}
                     </td>
                   </tr>
                 ) : (
                   sortedInventory.map((inv: any, idx: number) => (
-                    <tr key={idx} className={inv.agingDays > 90 ? 'table-danger' : inv.agingDays > 30 ? 'table-warning' : ''}>
+                    <tr key={idx}>
                       <td><strong>{inv.item?.code}</strong></td>
                       <td>{inv.item?.name}</td>
                       <td>{inv.location?.name}</td>
                       <td>{inv.batchNumber || '-'}</td>
                       <td>{inv.mrn || '-'}</td>
-                      <td>
-                        <strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}
-                      </td>
+                      <td><strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}</td>
                       <td>
                         <span className={`badge badge-${inv.qualityStatus === 2 ? 'danger' : 'warning'}`}>
-                          {inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine'}
+                          {inv.qualityStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine')}
                         </span>
                       </td>
                       <td>{getAgingBadge(inv.agingDays)}</td>
-                      <td>
-                        {inv.lastMovementDate 
-                          ? new Date(inv.lastMovementDate).toLocaleDateString()
-                          : '-'}
-                      </td>
+                      <td>{inv.lastMovementDate ? new Date(inv.lastMovementDate).toLocaleDateString() : '-'}</td>
                       <td>
                         <button
-                          className="btn btn-xs btn-success"
                           onClick={() => handleReleaseClick(inv.id)}
-                          title="Release to OK status"
+                          style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}
                         >
-                          ✅ Release
+                          ✅ {t('blockedInventory.release')}
                         </button>
                       </td>
                     </tr>
@@ -217,9 +191,8 @@ const BlockedInventory: React.FC = () => {
           </div>
 
           {sortedInventory.length > 0 && (
-            <div className="alert alert-info" style={{ marginTop: '20px' }}>
-              <strong>💡 Tip:</strong> Items aging {'>'}30 days should be reviewed. 
-              Items aging {'>'}90 days may need to be scrapped or written off.
+            <div style={{ background: 'var(--info-bg)', border: '1px solid var(--taris-blue-100)', borderRadius: 8, padding: 12, marginTop: 16 }}>
+              <strong>💡 {t('blockedInventory.tip')}</strong> {t('blockedInventory.tipBody')}
             </div>
           )}
         </>

@@ -1,53 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { wmsApi, masterDataApi } from '../../services/api';
 
 const InventoryByLocation: React.FC = () => {
+  const { t } = useTranslation();
   const [inventory, setInventory] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  
-  // Filters
+
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [selectedQuality, setSelectedQuality] = useState<string>('');
 
-  useEffect(() => {
-    loadMasterData();
-    loadInventory();
-  }, []);
-
-  useEffect(() => {
-    if (selectedWarehouse) {
-      loadLocationsForWarehouse(selectedWarehouse);
-    }
-  }, [selectedWarehouse]);
-
-  const loadMasterData = async () => {
-    try {
-      const [warehousesRes, itemsRes] = await Promise.all([
-        masterDataApi.getWarehouses(),
-        masterDataApi.getItems()
-      ]);
-      setWarehouses(warehousesRes.data);
-      setItems(itemsRes.data);
-    } catch (err) {
-      console.error('Failed to load master data', err);
-    }
-  };
-
-  const loadLocationsForWarehouse = async (warehouseId: string) => {
-    try {
-      const response = await masterDataApi.getLocations(warehouseId);
-      setLocations(response.data);
-    } catch (err) {
-      console.error('Failed to load locations', err);
-    }
-  };
-
-  const loadInventory = async () => {
+  const loadInventory = useCallback(async () => {
     try {
       setLoading(true);
       const response = await wmsApi.getInventory(
@@ -60,48 +28,58 @@ const InventoryByLocation: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedItem, selectedLocation]);
 
-  const handleFilterChange = () => {
+  useEffect(() => {
+    const loadMasterData = async () => {
+      try {
+        const [warehousesRes, itemsRes] = await Promise.all([
+          masterDataApi.getWarehouses(),
+          masterDataApi.getItems()
+        ]);
+        setWarehouses(warehousesRes.data);
+        setItems(itemsRes.data);
+      } catch (err) {
+        console.error('Failed to load master data', err);
+      }
+    };
+    loadMasterData();
     loadInventory();
-  };
+  }, [loadInventory]);
+
+  useEffect(() => {
+    if (selectedWarehouse) {
+      masterDataApi.getLocations(selectedWarehouse)
+        .then((r) => setLocations(r.data))
+        .catch((e) => console.error('Failed to load locations', e));
+    } else {
+      setLocations([]);
+    }
+  }, [selectedWarehouse]);
 
   const handleReset = () => {
     setSelectedWarehouse('');
     setSelectedLocation('');
     setSelectedItem('');
     setSelectedQuality('');
-    loadInventory();
   };
 
   const getQualityStatusLabel = (status: number) => {
-    const labels: { [key: number]: string } = {
-      1: 'OK',
-      2: 'Blocked',
-      3: 'Quarantine',
-    };
-    return labels[status] || 'Unknown';
+    if (status === 1) return t('qualityStatus.ok');
+    if (status === 2) return t('qualityStatus.blocked');
+    if (status === 3) return t('qualityStatus.quarantine');
+    return '—';
   };
 
   const getQualityStatusBadge = (status: number) => {
-    const badges: { [key: number]: string } = {
-      1: 'badge-success',
-      2: 'badge-danger',
-      3: 'badge-warning',
-    };
-    return `badge ${badges[status] || 'badge-secondary'}`;
+    const map: Record<number, string> = { 1: 'badge-success', 2: 'badge-danger', 3: 'badge-warning' };
+    return `badge ${map[status] || ''}`;
   };
 
-  // Group by location
   const inventoryByLocation = inventory.reduce((acc: any, inv: any) => {
-    const locationKey = inv.location?.name || 'Unknown Location';
+    const locationKey = inv.location?.name || '—';
     if (!acc[locationKey]) {
-      acc[locationKey] = {
-        location: inv.location,
-        items: [],
-        totalItems: 0,
-        totalQuantity: 0,
-      };
+      acc[locationKey] = { location: inv.location, items: [], totalItems: 0, totalQuantity: 0 };
     }
     acc[locationKey].items.push(inv);
     acc[locationKey].totalItems++;
@@ -117,9 +95,19 @@ const InventoryByLocation: React.FC = () => {
   const totalItems = filteredInventory.length;
   const uniqueItems = new Set(filteredInventory.map((inv: any) => inv.itemId)).size;
 
-  const exportToExcel = () => {
-    // Simple CSV export
-    const headers = ['Location', 'Warehouse', 'Item Code', 'Item Name', 'Batch', 'MRN', 'Quantity', 'UoM', 'Quality Status', 'Last Movement'];
+  const exportToCsv = () => {
+    const headers = [
+      t('reports.common.location'),
+      t('reports.common.warehouse'),
+      t('reports.common.itemCode'),
+      t('reports.common.itemName'),
+      t('reports.common.batch'),
+      t('reports.common.mrn'),
+      t('reports.common.quantity'),
+      'UoM',
+      t('reports.common.qualityStatus'),
+      t('reports.common.lastMovement'),
+    ];
     const rows = filteredInventory.map((inv: any) => [
       inv.location?.name || '',
       inv.location?.warehouse?.name || '',
@@ -132,9 +120,8 @@ const InventoryByLocation: React.FC = () => {
       getQualityStatusLabel(inv.qualityStatus),
       inv.lastMovementDate ? new Date(inv.lastMovementDate).toLocaleDateString() : '',
     ]);
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = '\uFEFF' + [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -145,193 +132,127 @@ const InventoryByLocation: React.FC = () => {
   return (
     <div>
       <div className="header">
-        <h2>📍 Inventory by Location</h2>
-        <button className="btn btn-success" onClick={exportToExcel}>
-          📥 Export to Excel
+        <h2>📍 {t('reports.inventoryByLocation.title')}</h2>
+        <button onClick={exportToCsv} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+          📥 {t('reports.common.exportCsv')}
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="filters" style={{ 
-        background: '#f8f9fa', 
-        padding: '20px', 
-        borderRadius: '8px', 
-        marginBottom: '20px' 
-      }}>
-        <h4>Filters</h4>
-        <div className="form-row">
-          <div className="form-group col-md-3">
-            <label>Warehouse</label>
-            <select
-              className="form-control"
-              value={selectedWarehouse}
-              onChange={(e) => setSelectedWarehouse(e.target.value)}
-            >
-              <option value="">-- All Warehouses --</option>
-              {warehouses.map((wh) => (
-                <option key={wh.id} value={wh.id}>
-                  {wh.name}
-                </option>
-              ))}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h4 style={{ marginBottom: 10 }}>{t('reports.common.filters')}</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 10 }}>
+          <div>
+            <label>{t('reports.common.warehouse')}</label>
+            <select value={selectedWarehouse} onChange={(e) => setSelectedWarehouse(e.target.value)}>
+              <option value="">— {t('reports.common.allWarehouses')} —</option>
+              {warehouses.map((wh) => <option key={wh.id} value={wh.id}>{wh.name}</option>)}
             </select>
           </div>
-
-          <div className="form-group col-md-3">
-            <label>Location</label>
-            <select
-              className="form-control"
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              disabled={!selectedWarehouse}
-            >
-              <option value="">-- All Locations --</option>
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>
-                  {loc.name}
-                </option>
-              ))}
+          <div>
+            <label>{t('reports.common.location')}</label>
+            <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} disabled={!selectedWarehouse}>
+              <option value="">— {t('reports.common.allLocations')} —</option>
+              {locations.map((loc) => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
             </select>
           </div>
-
-          <div className="form-group col-md-3">
-            <label>Item</label>
-            <select
-              className="form-control"
-              value={selectedItem}
-              onChange={(e) => setSelectedItem(e.target.value)}
-            >
-              <option value="">-- All Items --</option>
-              {items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.code} - {item.name}
-                </option>
-              ))}
+          <div>
+            <label>{t('reports.common.item')}</label>
+            <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
+              <option value="">— {t('reports.common.allItems')} —</option>
+              {items.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}
             </select>
           </div>
-
-          <div className="form-group col-md-3">
-            <label>Quality Status</label>
-            <select
-              className="form-control"
-              value={selectedQuality}
-              onChange={(e) => setSelectedQuality(e.target.value)}
-            >
-              <option value="">-- All Statuses --</option>
-              <option value="1">OK</option>
-              <option value="2">Blocked</option>
-              <option value="3">Quarantine</option>
+          <div>
+            <label>{t('reports.common.qualityStatus')}</label>
+            <select value={selectedQuality} onChange={(e) => setSelectedQuality(e.target.value)}>
+              <option value="">— {t('reports.common.allStatuses')} —</option>
+              <option value="1">{t('qualityStatus.ok')}</option>
+              <option value="2">{t('qualityStatus.blocked')}</option>
+              <option value="3">{t('qualityStatus.quarantine')}</option>
             </select>
           </div>
         </div>
-
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-primary" onClick={handleFilterChange}>
-            Apply Filters
-          </button>
-          <button className="btn btn-secondary" onClick={handleReset}>
-            Reset
-          </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-primary" onClick={loadInventory}>{t('reports.common.apply')}</button>
+          <button onClick={handleReset}>{t('reports.common.reset')}</button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '15px', 
-        marginBottom: '20px' 
-      }}>
-        <div className="card" style={{ padding: '15px', background: '#e3f2fd' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalItems}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Total Balances</div>
+      <div className="card-grid">
+        <div className="card info">
+          <h3>{t('reports.common.totalBalances')}</h3>
+          <div className="value">{totalItems}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#e8f5e9' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{uniqueItems}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Unique Items</div>
+        <div className="card success">
+          <h3>{t('reports.common.uniqueItems')}</h3>
+          <div className="value">{uniqueItems}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#fff3e0' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{Object.keys(inventoryByLocation).length}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Locations with Inventory</div>
+        <div className="card warning">
+          <h3>{t('reports.common.locationsWithInventory')}</h3>
+          <div className="value">{Object.keys(inventoryByLocation).length}</div>
         </div>
-        <div className="card" style={{ padding: '15px', background: '#f3e5f5' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{totalQuantity.toFixed(0)}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Total Quantity (all UoM)</div>
+        <div className="card">
+          <h3>{t('reports.common.totalQuantity')}</h3>
+          <div className="value">{totalQuantity.toFixed(0)}</div>
         </div>
       </div>
 
       {loading ? (
-        <div className="loading">Loading inventory...</div>
+        <div className="loading">{t('reports.common.loading')}</div>
       ) : (
         <>
-          {/* Grouped View */}
-          <div className="location-groups">
-            {Object.entries(inventoryByLocation).map(([locationName, data]: [string, any]) => (
-              <div key={locationName} style={{ marginBottom: '30px' }}>
-                <div style={{ 
-                  background: '#e3f2fd', 
-                  padding: '10px 15px', 
-                  borderRadius: '4px',
-                  marginBottom: '10px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <strong>📍 {locationName}</strong>
-                    <span style={{ marginLeft: '15px', color: '#666' }}>
-                      ({data.location?.warehouse?.name})
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#666' }}>
-                    {data.totalItems} items | Total Qty: {data.totalQuantity.toFixed(2)}
-                  </div>
+          {Object.entries(inventoryByLocation).map(([locationName, data]: [string, any]) => (
+            <div key={locationName} style={{ marginBottom: 20 }}>
+              <div style={{
+                background: 'var(--taris-blue-50)', padding: '10px 14px', borderRadius: 8, marginBottom: 10,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                border: '1px solid var(--taris-blue-100)',
+              }}>
+                <div>
+                  <strong>📍 {locationName}</strong>
+                  {data.location?.warehouse?.name && (
+                    <span style={{ marginLeft: 12, color: 'var(--ink-500)' }}>({data.location.warehouse.name})</span>
+                  )}
                 </div>
-
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Item Code</th>
-                        <th>Item Name</th>
-                        <th>Batch</th>
-                        <th>MRN</th>
-                        <th>Quantity</th>
-                        <th>Quality Status</th>
-                        <th>Last Movement</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.items.map((inv: any, idx: number) => (
-                        <tr key={idx}>
-                          <td><strong>{inv.item?.code}</strong></td>
-                          <td>{inv.item?.name}</td>
-                          <td>{inv.batchNumber || '-'}</td>
-                          <td>{inv.mrn || '-'}</td>
-                          <td>
-                            <strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}
-                          </td>
-                          <td>
-                            <span className={getQualityStatusBadge(inv.qualityStatus)}>
-                              {getQualityStatusLabel(inv.qualityStatus)}
-                            </span>
-                          </td>
-                          <td>
-                            {inv.lastMovementDate 
-                              ? new Date(inv.lastMovementDate).toLocaleDateString()
-                              : '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ fontSize: 13, color: 'var(--ink-600)' }}>
+                  {data.totalItems} · {t('reports.common.totalQty')}: {data.totalQuantity.toFixed(2)}
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t('reports.common.itemCode')}</th>
+                      <th>{t('reports.common.itemName')}</th>
+                      <th>{t('reports.common.batch')}</th>
+                      <th>{t('reports.common.mrn')}</th>
+                      <th>{t('reports.common.quantity')}</th>
+                      <th>{t('reports.common.qualityStatus')}</th>
+                      <th>{t('reports.common.lastMovement')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.items.map((inv: any, idx: number) => (
+                      <tr key={idx}>
+                        <td><strong>{inv.item?.code}</strong></td>
+                        <td>{inv.item?.name}</td>
+                        <td>{inv.batchNumber || '-'}</td>
+                        <td>{inv.mrn || '-'}</td>
+                        <td><strong>{inv.quantity.toFixed(2)}</strong> {inv.uoM?.code}</td>
+                        <td><span className={getQualityStatusBadge(inv.qualityStatus)}>{getQualityStatusLabel(inv.qualityStatus)}</span></td>
+                        <td>{inv.lastMovementDate ? new Date(inv.lastMovementDate).toLocaleDateString() : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
 
           {Object.keys(inventoryByLocation).length === 0 && (
-            <div className="alert alert-info">
-              No inventory found with the selected filters.
+            <div className="card" style={{ textAlign: 'center', color: 'var(--ink-500)' }}>
+              {t('reports.common.noResults')}
             </div>
           )}
         </>
