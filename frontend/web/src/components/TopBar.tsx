@@ -2,20 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authService } from '../services/authService';
+import { useLayout } from './layout/LayoutContext';
 
 /**
  * Global top bar — rendered above the main content area for every authenticated route.
- * Hosts cross-cutting tools (search, AI, import, logout) that every role uses.
- *
- * Design rationale (P6.37):
- *  - Knowledge Base (AI) is a tool, not a domain — moved out of role-specific nav.
- *  - Universal search spans everything the role can see (declarations, MRN, lots,
- *    orders, shipments). Backend is a stub for now; wired up in a follow-up.
- *  - Import Wizard stays admin-only. Non-admins don't see the button.
+ * Hosts cross-cutting tools (search, AI, import, logout) that every role uses
+ * plus the mobile drawer toggle (hamburger), which is hidden ≥ 900px.
  */
 const TopBar: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { toggleMobileNav } = useLayout();
   const [user] = useState(() => authService.getCurrentUser());
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,131 +26,75 @@ const TopBar: React.FC = () => {
     navigate('/login');
   };
 
-  const btnStyle: React.CSSProperties = {
-    background: 'transparent',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    padding: '6px 12px',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#2d3748',
-    whiteSpace: 'nowrap',
-  };
-
   return (
     <>
-      <div
-        style={{
-          height: '56px',
-          background: 'white',
-          borderBottom: '1px solid #e2e8f0',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: '8px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-        role="banner"
-      >
-        {/* Universal search trigger */}
+      <header className="topbar" role="banner">
         <button
-          onClick={() => setSearchOpen(true)}
-          style={btnStyle}
-          aria-label={t('topBar.search')}
-          title={t('topBar.search')}
+          className="topbar__hamburger"
+          onClick={toggleMobileNav}
+          aria-label={t('topBar.openMenu')}
+          title={t('topBar.openMenu')}
         >
-          <span>🔍</span>
-          <span>{t('topBar.search')}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
         </button>
 
-        {/* AI / Knowledge Base */}
-        <button
-          onClick={() => navigate('/knowledge-base')}
-          style={btnStyle}
-          aria-label={t('topBar.aiAssistant')}
-          title={t('topBar.aiAssistant')}
-        >
-          <span>🧠</span>
-          <span>{t('topBar.aiAssistant')}</span>
+        <div style={{ flex: 1 }} />
+
+        <button onClick={() => setSearchOpen(true)} title={t('topBar.search')} aria-label={t('topBar.search')}>
+          <span aria-hidden="true">🔍</span>
+          <span className="topbar__btn-label" style={{ marginLeft: 6 }}>{t('topBar.search')}</span>
         </button>
 
-        {/* KB semantic search (P6.38) */}
-        <button
-          onClick={() => navigate('/knowledge-base/search')}
-          style={btnStyle}
-          aria-label={t('kbSearch.title')}
-          title={t('kbSearch.title')}
-        >
-          <span>🔍</span>
-          <span>KB</span>
+        <button onClick={() => navigate('/knowledge-base')} title={t('topBar.aiAssistant')} aria-label={t('topBar.aiAssistant')}>
+          <span aria-hidden="true">🧠</span>
+          <span className="topbar__btn-label" style={{ marginLeft: 6 }}>{t('topBar.aiAssistant')}</span>
         </button>
 
-        {/* Import Wizard — admin only */}
+        <button onClick={() => navigate('/knowledge-base/search')} title={t('kbSearch.title')}>
+          <span aria-hidden="true">📚</span>
+          <span className="topbar__btn-label" style={{ marginLeft: 6 }}>KB</span>
+        </button>
+
         {isAdmin && (
           <>
-            <button
-              onClick={() => navigate('/tools/import')}
-              style={btnStyle}
-              aria-label={t('topBar.import')}
-              title={t('topBar.import')}
-            >
-              <span>📥</span>
-              <span>{t('topBar.import')}</span>
+            <button onClick={() => navigate('/tools/import')} title={t('topBar.import')}>
+              <span aria-hidden="true">📥</span>
+              <span className="topbar__btn-label" style={{ marginLeft: 6 }}>{t('topBar.import')}</span>
             </button>
-            <button
-              onClick={() => navigate('/tools/import/kw12')}
-              style={btnStyle}
-              aria-label={t('kw12Wizard.title')}
-              title={t('kw12Wizard.title')}
-            >
-              <span>📦</span>
-              <span>KW12</span>
+            <button onClick={() => navigate('/tools/import/kw12')} title={t('kw12Wizard.title')}>
+              <span aria-hidden="true">📦</span>
+              <span className="topbar__btn-label" style={{ marginLeft: 6 }}>KW12</span>
             </button>
           </>
         )}
 
-        {/* User identity */}
+        {/* User identity pill */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            marginLeft: '12px',
+            marginLeft: 12,
             lineHeight: 1.2,
           }}
         >
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#2d3748' }}>
-            {displayName}
-          </span>
-          {primaryRole && (
-            <span style={{ fontSize: '11px', color: '#718096' }}>{primaryRole}</span>
-          )}
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-900)' }}>{displayName}</span>
+          {primaryRole && <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>{primaryRole}</span>}
         </div>
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
-          style={{
-            ...btnStyle,
-            background: '#fc8181',
-            color: 'white',
-            border: 'none',
-            marginLeft: '8px',
-          }}
+          className="btn-danger"
+          style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)', marginLeft: 4 }}
           aria-label={t('nav.logout')}
         >
-          <span>🚪</span>
-          <span>{t('nav.logout')}</span>
+          <span aria-hidden="true">🚪</span>
+          <span className="topbar__btn-label" style={{ marginLeft: 6 }}>{t('nav.logout')}</span>
         </button>
-      </div>
+      </header>
 
-      {/* Search modal — stub until universal search backend lands */}
       {searchOpen && (
         <div
           role="dialog"
@@ -162,84 +103,66 @@ const TopBar: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(15, 23, 42, 0.55)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            paddingTop: '15vh',
+            paddingTop: '14vh',
             zIndex: 1000,
+            backdropFilter: 'blur(2px)',
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
-              borderRadius: '12px',
-              width: '90%',
-              maxWidth: '640px',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              borderRadius: 12,
+              width: '92%',
+              maxWidth: 640,
+              padding: 24,
+              boxShadow: 'var(--shadow-lg)',
             }}
           >
-            <div style={{ marginBottom: '16px', fontSize: '18px', fontWeight: 600 }}>
-              🔍 {t('topBar.search')}
+            <div style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>🔍</span> {t('topBar.search')}
             </div>
             <input
               autoFocus
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('topBar.searchPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                fontSize: '15px',
-                border: '1px solid #cbd5e0',
-                borderRadius: '8px',
-                marginBottom: '16px',
-                boxSizing: 'border-box',
-              }}
+              placeholder={t('topBar.searchPlaceholder') ?? ''}
+              style={{ marginBottom: 14 }}
             />
             <div
               style={{
-                background: '#fff5f5',
-                border: '1px dashed #fc8181',
-                borderRadius: '8px',
-                padding: '16px',
-                fontSize: '13px',
-                color: '#742a2a',
+                background: 'var(--warning-bg)',
+                border: '1px dashed var(--warning)',
+                borderRadius: 8,
+                padding: 14,
+                fontSize: 13,
+                color: 'var(--ink-800)',
               }}
             >
               <strong>🚧 {t('placeholder.comingSoon')}</strong>
-              <div style={{ marginTop: '6px', lineHeight: 1.6 }}>
+              <div style={{ marginTop: 6, lineHeight: 1.6 }}>
                 {t('topBar.searchComingSoonBody')}
               </div>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: '16px',
-              }}
-            >
-              <button
-                onClick={() => setSearchOpen(false)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#4299e1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
-              >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <button onClick={() => setSearchOpen(false)} className="btn-primary">
                 {t('common.close')}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 640px) {
+          .topbar__btn-label { display: none; }
+        }
+      `}</style>
     </>
   );
 };

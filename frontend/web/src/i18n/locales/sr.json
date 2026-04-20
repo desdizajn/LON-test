@@ -9,7 +9,8 @@
     "searchPlaceholder": "Декларација, MRN, lot, налог, shipment, PO, запослени...",
     "searchComingSoonBody": "Универзална претрага ће претраживати преко декларација, MRN, lots, производних налога, shipments, PO и запослених (scope по улози). Backend у TODO — биће активирано у P2.X.",
     "aiAssistant": "AI асистент",
-    "import": "Импорт"
+    "import": "Импорт",
+    "openMenu": "Отвори мени"
   },
   "placeholder": {
     "comingSoon": "🚧 У изради",
@@ -735,14 +736,23 @@
     }
   },
   "login": {
-    "title": "LON Систем",
+    "title": "Добродошли",
     "subtitle": "Пријавите се за наставак",
     "username": "Корисничко име",
     "password": "Лозинка",
     "submit": "Пријави се",
-    "footer": "LON - Магацин и Обрада",
+    "footer": "Taris LON management",
     "invalidCredentials": "Неправилно корисничко име или лозинка",
-    "serverError": "Грешка на серверу. Покушајте поново."
+    "serverError": "Грешка на серверу. Покушајте поново.",
+    "heroTitle": "Производња, магацин и царина — на једном месту.",
+    "heroSubtitle": "Јединствена платформа за inward processing, залихе, радне налоге и финансије — са свим извештајима и алертима потребним за свакодневне одлуке.",
+    "pillars": {
+      "production": "Производња",
+      "wms": "Магацин",
+      "customs": "Царина",
+      "finance": "Финансије",
+      "kpis": "KPI"
+    }
   },
   "dashboard": {
     "title": "Контролна табла",
@@ -809,6 +819,92 @@
     "ok": "ОК",
     "blocked": "Блокирано",
     "quarantine": "Карантин"
+  },
+  "inventory": {
+    "title": "Магацин и залихе",
+    "loading": "Учитавање залиха...",
+    "actions": {
+      "receipt": "Пријем",
+      "transfer": "Трансфер",
+      "shipment": "Отпремница",
+      "cycleCount": "Попис",
+      "adjustment": "Корекција",
+      "qualityStatus": "Статус квалитета"
+    },
+    "columns": {
+      "itemCode": "Шифра",
+      "itemName": "Назив артикла",
+      "location": "Локација",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "quantity": "Количина",
+      "qualityStatus": "Статус квалитета"
+    }
+  },
+  "pickTasks": {
+    "title": "Управљање pick задацима",
+    "newTask": "Нови pick задатак",
+    "filterByStatus": "Филтер по статусу",
+    "allStatuses": "Сви статуси",
+    "loading": "Учитавање pick задатака...",
+    "empty": "Нема pick задатака. Креирај први!",
+    "picked": "Узето",
+    "unassigned": "Недодељено",
+    "done": "Готово",
+    "summary": "Резиме",
+    "summaryCount": "pick задатака",
+    "filteredByStatus": "филтрирано по статусу",
+    "columns": {
+      "taskNumber": "Задатак #",
+      "status": "Статус",
+      "priority": "Приоритет",
+      "item": "Артикл",
+      "location": "Локација",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "qtyToPick": "Количина за узимање",
+      "assignedTo": "Додељено",
+      "created": "Креирано",
+      "actions": "Акције"
+    },
+    "status": {
+      "pending": "На чекању",
+      "assigned": "Додељено",
+      "inProgress": "У току",
+      "completed": "Завршено",
+      "cancelled": "Отказано",
+      "unknown": "Непознато"
+    },
+    "priority": {
+      "high": "Висок",
+      "normal": "Нормалан",
+      "low": "Низак"
+    },
+    "actions": {
+      "assign": "Додели",
+      "complete": "Заврши"
+    }
+  },
+  "traceability": {
+    "title": "Следљивост и генеалогија",
+    "search": "Претрага",
+    "batchNumber": "Број batch-а",
+    "mrn": "MRN",
+    "forwardTrace": "Напред (forward)",
+    "backwardTrace": "Назад (backward)",
+    "enterBatch": "Унеси број batch-а...",
+    "enterMrn": "Унеси MRN...",
+    "trace": "Прати",
+    "searching": "Претражује...",
+    "sourceType": "Извор (тип)",
+    "sourceBatch": "Извор batch",
+    "sourceMrn": "Извор MRN",
+    "targetType": "Циљ (тип)",
+    "targetBatch": "Циљ batch",
+    "targetMrn": "Циљ MRN",
+    "item": "Артикл",
+    "quantity": "Количина",
+    "noResults": "Нема пронађених веза за {{type}}: {{value}}"
   },
   "errors": {
     "generic": "Дошло је до грешке",

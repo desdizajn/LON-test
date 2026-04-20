@@ -62,30 +62,30 @@ const Inventory: React.FC = () => {
     return <QualityStatusChangeForm onSuccess={handleFormSuccess} onCancel={handleFormCancel} />;
   }
 
-  if (loading) return <div className="loading">Loading inventory...</div>;
+  if (loading) return <div className="loading">{t('inventory.loading')}</div>;
 
   return (
     <div>
       <div className="header">
-        <h2>📦 WMS & Inventory</h2>
+        <h2>📦 {t('inventory.title')}</h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn btn-success" onClick={() => setActiveForm('receipt')}>
-            ➕ Receipt
+          <button onClick={() => setActiveForm('receipt')} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
+            ➕ {t('inventory.actions.receipt')}
           </button>
-          <button className="btn btn-primary" onClick={() => setActiveForm('transfer')}>
-            🔄 Transfer
+          <button className="btn-primary" onClick={() => setActiveForm('transfer')}>
+            🔄 {t('inventory.actions.transfer')}
           </button>
-          <button className="btn btn-info" onClick={() => setActiveForm('shipment')}>
-            📤 Shipment
+          <button onClick={() => setActiveForm('shipment')} style={{ background: 'var(--info)', color: 'white', borderColor: 'var(--info)' }}>
+            📤 {t('inventory.actions.shipment')}
           </button>
-          <button className="btn btn-warning" onClick={() => setActiveForm('cyclecount')}>
-            📊 Cycle Count
+          <button onClick={() => setActiveForm('cyclecount')} style={{ background: 'var(--warning)', color: 'white', borderColor: 'var(--warning)' }}>
+            📊 {t('inventory.actions.cycleCount')}
           </button>
-          <button className="btn btn-secondary" onClick={() => setActiveForm('adjustment')}>
-            ⚙️ Adjustment
+          <button onClick={() => setActiveForm('adjustment')}>
+            ⚙️ {t('inventory.actions.adjustment')}
           </button>
-          <button className="btn btn-danger" onClick={() => setActiveForm('qualitychange')}>
-            🔒 Quality Status
+          <button onClick={() => setActiveForm('qualitychange')} style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' }}>
+            🔒 {t('inventory.actions.qualityStatus')}
           </button>
         </div>
       </div>
@@ -94,13 +94,13 @@ const Inventory: React.FC = () => {
         <table>
           <thead>
             <tr>
-              <th>Item Code</th>
-              <th>Item Name</th>
-              <th>Location</th>
-              <th>Batch</th>
-              <th>MRN</th>
-              <th>Quantity</th>
-              <th>Quality Status</th>
+              <th>{t('inventory.columns.itemCode')}</th>
+              <th>{t('inventory.columns.itemName')}</th>
+              <th>{t('inventory.columns.location')}</th>
+              <th>{t('inventory.columns.batch')}</th>
+              <th>{t('inventory.columns.mrn')}</th>
+              <th>{t('inventory.columns.quantity')}</th>
+              <th>{t('inventory.columns.qualityStatus')}</th>
               <th>{t('common.actions')}</th>
             </tr>
           </thead>
@@ -118,8 +118,8 @@ const Inventory: React.FC = () => {
                     inv.qualityStatus === 1 ? 'success' :
                     inv.qualityStatus === 2 ? 'danger' : 'warning'
                   }`}>
-                    {inv.qualityStatus === 1 ? 'OK' :
-                     inv.qualityStatus === 2 ? 'Blocked' : 'Quarantine'}
+                    {inv.qualityStatus === 1 ? t('qualityStatus.ok') :
+                     inv.qualityStatus === 2 ? t('qualityStatus.blocked') : t('qualityStatus.quarantine')}
                   </span>
                 </td>
                 <td>

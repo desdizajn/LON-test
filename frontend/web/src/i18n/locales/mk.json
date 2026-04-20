@@ -9,7 +9,8 @@
     "searchPlaceholder": "Декларација, MRN, lot, налог, shipment, PO, вработен...",
     "searchComingSoonBody": "Универзалното пребарување ќе пребарува преку декларации, MRN, lots, производни налози, shipments, PO и вработени (scope по улога). Backend е во TODO — ќе биде активирано во P2.X.",
     "aiAssistant": "AI асистент",
-    "import": "Импорт"
+    "import": "Импорт",
+    "openMenu": "Отвори мени"
   },
   "placeholder": {
     "comingSoon": "🚧 Во изработка",
@@ -735,14 +736,23 @@
     }
   },
   "login": {
-    "title": "LON Систем",
-    "subtitle": "Логирајте се за да продолжите",
+    "title": "Добредојде",
+    "subtitle": "Најави се за да продолжиш",
     "username": "Корисничко име",
     "password": "Лозинка",
     "submit": "Најави се",
-    "footer": "LON - Склад и Обработка на Намирници",
+    "footer": "Taris LON management",
     "invalidCredentials": "Неправилно корисничко име или лозинка",
-    "serverError": "Грешка на серверот. Обидете се повторно."
+    "serverError": "Грешка на серверот. Обидете се повторно.",
+    "heroTitle": "Производство, магацин и царина — на едно место.",
+    "heroSubtitle": "Обединета платформа за управување со inward processing, залихи, производни налози и финансии — со сите извештаи и алерти потребни за секојдневни одлуки.",
+    "pillars": {
+      "production": "Производство",
+      "wms": "Магацин",
+      "customs": "Царина",
+      "finance": "Финансии",
+      "kpis": "KPI"
+    }
   },
   "dashboard": {
     "title": "Контролна табла",
@@ -809,6 +819,92 @@
     "ok": "ОК",
     "blocked": "Блокирано",
     "quarantine": "Карантин"
+  },
+  "inventory": {
+    "title": "Магацин и залихи",
+    "loading": "Вчитување на залихи...",
+    "actions": {
+      "receipt": "Прием",
+      "transfer": "Трансфер",
+      "shipment": "Испратница",
+      "cycleCount": "Попис",
+      "adjustment": "Корекција",
+      "qualityStatus": "Статус на квалитет"
+    },
+    "columns": {
+      "itemCode": "Шифра",
+      "itemName": "Име на артикл",
+      "location": "Локација",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "quantity": "Количина",
+      "qualityStatus": "Статус на квалитет"
+    }
+  },
+  "pickTasks": {
+    "title": "Управување со pick задачи",
+    "newTask": "Нова pick задача",
+    "filterByStatus": "Филтер по статус",
+    "allStatuses": "Сите статуси",
+    "loading": "Вчитување на pick задачи...",
+    "empty": "Нема pick задачи. Креирај ја првата!",
+    "picked": "Земено",
+    "unassigned": "Неадделено",
+    "done": "Готово",
+    "summary": "Резиме",
+    "summaryCount": "pick задачи",
+    "filteredByStatus": "филтрирано по статус",
+    "columns": {
+      "taskNumber": "Задача #",
+      "status": "Статус",
+      "priority": "Приоритет",
+      "item": "Артикл",
+      "location": "Локација",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "qtyToPick": "Количина за земање",
+      "assignedTo": "Доделено на",
+      "created": "Креирано",
+      "actions": "Акции"
+    },
+    "status": {
+      "pending": "На чекање",
+      "assigned": "Доделено",
+      "inProgress": "Во тек",
+      "completed": "Завршено",
+      "cancelled": "Откажано",
+      "unknown": "Непознато"
+    },
+    "priority": {
+      "high": "Висок",
+      "normal": "Нормален",
+      "low": "Низок"
+    },
+    "actions": {
+      "assign": "Додели",
+      "complete": "Заврши"
+    }
+  },
+  "traceability": {
+    "title": "Следливост и генеалогија",
+    "search": "Пребарување",
+    "batchNumber": "Број на batch",
+    "mrn": "MRN",
+    "forwardTrace": "Нанапред (forward)",
+    "backwardTrace": "Наназад (backward)",
+    "enterBatch": "Внеси број на batch...",
+    "enterMrn": "Внеси MRN...",
+    "trace": "Следи",
+    "searching": "Пребарува...",
+    "sourceType": "Извор (тип)",
+    "sourceBatch": "Извор batch",
+    "sourceMrn": "Извор MRN",
+    "targetType": "Цел (тип)",
+    "targetBatch": "Цел batch",
+    "targetMrn": "Цел MRN",
+    "item": "Артикл",
+    "quantity": "Количина",
+    "noResults": "Нема пронајдени врски за {{type}}: {{value}}"
   },
   "errors": {
     "generic": "Настана грешка",

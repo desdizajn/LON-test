@@ -9,7 +9,8 @@
     "searchPlaceholder": "Deklaratë, MRN, lot, porosi, shipment, PO, punonjës...",
     "searchComingSoonBody": "Kërkimi universal do të kërkojë nëpër deklarata, MRN, lots, porosi prodhimi, shipments, PO dhe punonjës (scope sipas rolit). Backend në TODO — do të aktivizohet në P2.X.",
     "aiAssistant": "Asistenti AI",
-    "import": "Importo"
+    "import": "Importo",
+    "openMenu": "Hap menunë"
   },
   "placeholder": {
     "comingSoon": "🚧 Në zhvillim",
@@ -735,14 +736,23 @@
     }
   },
   "login": {
-    "title": "Sistemi LON",
+    "title": "Mirë se vini",
     "subtitle": "Hyni për të vazhduar",
     "username": "Emri i përdoruesit",
     "password": "Fjalëkalimi",
     "submit": "Hyr",
-    "footer": "LON - Magazinë dhe Përpunim",
+    "footer": "Taris LON management",
     "invalidCredentials": "Emër përdoruesi ose fjalëkalim i pavlefshëm",
-    "serverError": "Gabim në server. Provoni përsëri."
+    "serverError": "Gabim në server. Provoni përsëri.",
+    "heroTitle": "Prodhimi, magazina dhe dogana — në një vend.",
+    "heroSubtitle": "Platformë e unifikuar për inward processing, stoqe, urdhra prodhimi dhe financa — me të gjithë raportet dhe alerts e nevojshme për vendimet ditore.",
+    "pillars": {
+      "production": "Prodhimi",
+      "wms": "Magazina",
+      "customs": "Dogana",
+      "finance": "Financa",
+      "kpis": "KPI"
+    }
   },
   "dashboard": {
     "title": "Paneli kryesor",
@@ -809,6 +819,92 @@
     "ok": "OK",
     "blocked": "I bllokuar",
     "quarantine": "Karantinë"
+  },
+  "inventory": {
+    "title": "Magazina dhe stoqet",
+    "loading": "Duke ngarkuar stoqet...",
+    "actions": {
+      "receipt": "Pranimi",
+      "transfer": "Transferi",
+      "shipment": "Dërgesa",
+      "cycleCount": "Inventarizim",
+      "adjustment": "Korrigjim",
+      "qualityStatus": "Statusi i cilësisë"
+    },
+    "columns": {
+      "itemCode": "Kodi",
+      "itemName": "Emri i artikullit",
+      "location": "Vendndodhja",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "quantity": "Sasia",
+      "qualityStatus": "Statusi i cilësisë"
+    }
+  },
+  "pickTasks": {
+    "title": "Menaxhimi i pick detyrave",
+    "newTask": "Pick detyrë e re",
+    "filterByStatus": "Filtro sipas statusit",
+    "allStatuses": "Të gjitha statuset",
+    "loading": "Duke ngarkuar pick detyrat...",
+    "empty": "Nuk ka pick detyra. Krijo të parën!",
+    "picked": "Marrë",
+    "unassigned": "E paparacaktuar",
+    "done": "Përfunduar",
+    "summary": "Përmbledhje",
+    "summaryCount": "pick detyra",
+    "filteredByStatus": "filtruar sipas statusit",
+    "columns": {
+      "taskNumber": "Detyra #",
+      "status": "Statusi",
+      "priority": "Prioriteti",
+      "item": "Artikulli",
+      "location": "Vendndodhja",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "qtyToPick": "Sasia për të marrë",
+      "assignedTo": "I caktuar",
+      "created": "Krijuar",
+      "actions": "Veprime"
+    },
+    "status": {
+      "pending": "Në pritje",
+      "assigned": "Caktuar",
+      "inProgress": "Në proces",
+      "completed": "Përfunduar",
+      "cancelled": "Anuluar",
+      "unknown": "E panjohur"
+    },
+    "priority": {
+      "high": "I lartë",
+      "normal": "Normal",
+      "low": "I ulët"
+    },
+    "actions": {
+      "assign": "Cakto",
+      "complete": "Përfundo"
+    }
+  },
+  "traceability": {
+    "title": "Gjurmueshmëri dhe gjenealogji",
+    "search": "Kërkim",
+    "batchNumber": "Numri i batch",
+    "mrn": "MRN",
+    "forwardTrace": "Përpara (forward)",
+    "backwardTrace": "Prapa (backward)",
+    "enterBatch": "Fut numrin e batch...",
+    "enterMrn": "Fut MRN...",
+    "trace": "Gjurmo",
+    "searching": "Duke kërkuar...",
+    "sourceType": "Burimi (tipi)",
+    "sourceBatch": "Burimi batch",
+    "sourceMrn": "Burimi MRN",
+    "targetType": "Objektivi (tipi)",
+    "targetBatch": "Objektivi batch",
+    "targetMrn": "Objektivi MRN",
+    "item": "Artikulli",
+    "quantity": "Sasia",
+    "noResults": "Nuk u gjetën lidhje për {{type}}: {{value}}"
   },
   "errors": {
     "generic": "Ndodhi një gabim",

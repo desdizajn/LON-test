@@ -121,6 +121,8 @@ import OnTimeDelivery from './pages/Management/OnTimeDelivery';
 import ByCustomer from './pages/Management/ByCustomer';
 import Alerts from './pages/Management/Alerts';
 
+import { LayoutProvider } from './components/layout/LayoutContext';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -218,15 +220,15 @@ const ProtectedLayout: React.FC<{
   }, [location.pathname, setActiveModule]);
 
   return (
-    <>
+    <LayoutProvider>
       <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
-      <div className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="main-content">
         <TopBar />
         <div style={{ flex: 1, overflow: 'auto' }}>
           <Outlet />
         </div>
       </div>
-    </>
+    </LayoutProvider>
   );
 };
 

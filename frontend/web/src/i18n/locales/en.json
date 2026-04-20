@@ -9,7 +9,8 @@
     "searchPlaceholder": "Declaration, MRN, lot, order, shipment, PO, employee...",
     "searchComingSoonBody": "Universal search will span declarations, MRN, lots, production orders, shipments, POs and employees (scoped by role). Backend TODO — activating in P2.X.",
     "aiAssistant": "AI assistant",
-    "import": "Import"
+    "import": "Import",
+    "openMenu": "Open menu"
   },
   "placeholder": {
     "comingSoon": "🚧 Under construction",
@@ -735,14 +736,23 @@
     }
   },
   "login": {
-    "title": "LON System",
+    "title": "Welcome",
     "subtitle": "Sign in to continue",
     "username": "Username",
     "password": "Password",
     "submit": "Sign In",
-    "footer": "LON - Warehouse & Processing Management",
+    "footer": "Taris LON management",
     "invalidCredentials": "Invalid username or password",
-    "serverError": "Server error. Please try again."
+    "serverError": "Server error. Please try again.",
+    "heroTitle": "Production, warehouse and customs — in one place.",
+    "heroSubtitle": "Unified platform for inward processing, inventory, production orders and finance — with every report and alert you need for day-to-day decisions.",
+    "pillars": {
+      "production": "Production",
+      "wms": "Warehouse",
+      "customs": "Customs",
+      "finance": "Finance",
+      "kpis": "KPIs"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -809,6 +819,92 @@
     "ok": "OK",
     "blocked": "Blocked",
     "quarantine": "Quarantine"
+  },
+  "inventory": {
+    "title": "Warehouse & Inventory",
+    "loading": "Loading inventory...",
+    "actions": {
+      "receipt": "Receipt",
+      "transfer": "Transfer",
+      "shipment": "Shipment",
+      "cycleCount": "Cycle Count",
+      "adjustment": "Adjustment",
+      "qualityStatus": "Quality Status"
+    },
+    "columns": {
+      "itemCode": "Item Code",
+      "itemName": "Item Name",
+      "location": "Location",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "quantity": "Quantity",
+      "qualityStatus": "Quality Status"
+    }
+  },
+  "pickTasks": {
+    "title": "Pick Task Management",
+    "newTask": "New Pick Task",
+    "filterByStatus": "Filter by Status",
+    "allStatuses": "All Statuses",
+    "loading": "Loading pick tasks...",
+    "empty": "No pick tasks found. Create your first one!",
+    "picked": "Picked",
+    "unassigned": "Unassigned",
+    "done": "Done",
+    "summary": "Summary",
+    "summaryCount": "pick task(s) found",
+    "filteredByStatus": "filtered by status",
+    "columns": {
+      "taskNumber": "Task #",
+      "status": "Status",
+      "priority": "Priority",
+      "item": "Item",
+      "location": "Location",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "qtyToPick": "Qty to Pick",
+      "assignedTo": "Assigned To",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending",
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "priority": {
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "actions": {
+      "assign": "Assign",
+      "complete": "Complete"
+    }
+  },
+  "traceability": {
+    "title": "Traceability & Genealogy",
+    "search": "Search",
+    "batchNumber": "Batch Number",
+    "mrn": "MRN",
+    "forwardTrace": "Forward Trace",
+    "backwardTrace": "Backward Trace",
+    "enterBatch": "Enter batch number...",
+    "enterMrn": "Enter MRN...",
+    "trace": "Trace",
+    "searching": "Searching...",
+    "sourceType": "Source Type",
+    "sourceBatch": "Source Batch",
+    "sourceMrn": "Source MRN",
+    "targetType": "Target Type",
+    "targetBatch": "Target Batch",
+    "targetMrn": "Target MRN",
+    "item": "Item",
+    "quantity": "Quantity",
+    "noResults": "No traceability links found for {{type}}: {{value}}"
   },
   "errors": {
     "generic": "An error occurred",

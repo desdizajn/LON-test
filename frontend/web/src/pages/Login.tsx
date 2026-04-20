@@ -32,52 +32,86 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-container">
-      <div className="login-box">
-        <div className="login-header">
-          <h1>{t('login.title')}</h1>
-          <p>{t('login.subtitle')}</p>
+      <div className="login-hero">
+        <img
+          src={`${process.env.PUBLIC_URL}/taris-favicon.png`}
+          alt=""
+          aria-hidden="true"
+          className="login-hero__bgmark"
+        />
+        <div className="login-hero__top">
+          <div className="login-hero__mark">
+            <img src={`${process.env.PUBLIC_URL}/taris-favicon.png`} alt="Taris" />
+          </div>
+          <div className="login-hero__wordmark">
+            <strong>TARIS</strong>
+            <span>LON management</span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && (
-            <div className="error-message">
-              {error}
+        <div className="login-hero__body">
+          <h2>{t('login.heroTitle')}</h2>
+          <p>{t('login.heroSubtitle')}</p>
+          <div className="login-hero__pillars">
+            <span className="login-hero__pillar">🏭 {t('login.pillars.production')}</span>
+            <span className="login-hero__pillar">📦 {t('login.pillars.wms')}</span>
+            <span className="login-hero__pillar">🛃 {t('login.pillars.customs')}</span>
+            <span className="login-hero__pillar">💵 {t('login.pillars.finance')}</span>
+            <span className="login-hero__pillar">📊 {t('login.pillars.kpis')}</span>
+          </div>
+        </div>
+
+        <div className="login-hero__footer">
+          © {new Date().getFullYear()} Elbosoft Consulting DOOEL
+        </div>
+      </div>
+
+      <div className="login-form-side">
+        <div className="login-box">
+          <div className="login-header">
+            <h1>{t('login.title')}</h1>
+            <p>{t('login.subtitle')}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form">
+            {error && (
+              <div className="error-message">{error}</div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="username">{t('login.username')}</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+                disabled={loading}
+              />
             </div>
-          )}
 
-          <div className="form-group">
-            <label htmlFor="username">{t('login.username')}</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-              disabled={loading}
-            />
+            <div className="form-group">
+              <label htmlFor="password">{t('login.password')}</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <button type="submit" className="login-button" disabled={loading}>
+              {loading ? t('common.loading') : t('login.submit')}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <LanguageSwitcher />
+            <p>{t('login.footer')}</p>
           </div>
-
-          <div className="form-group">
-            <label htmlFor="password">{t('login.password')}</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading ? t('common.loading') : t('login.submit')}
-          </button>
-        </form>
-
-        <div className="login-footer">
-          <p>{t('login.footer')}</p>
-          <LanguageSwitcher />
         </div>
       </div>
     </div>
