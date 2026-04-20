@@ -94,7 +94,8 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 | Локација | Што оди тука | Животен век |
 |---|---|---|
 | [`memory/`](memory/) (persistent Claude memory) | Durable факти: архитектурни одлуки, user preferences, credentials pointers | Преку сесии |
-| [`WORK_PLAN.md`](WORK_PLAN.md) | Фази + таскови + verification criteria + status checkboxes | Активен до крајот на проектот |
+| [`WORK_PLAN.md`](WORK_PLAN.md) | Активни фази + таскови + verification criteria + status checkboxes | Активен до крајот на проектот |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | **Roadmap за P7–P13** — детални табели за секоја placeholder страница: ефорт, приоритет, зависности. Single source of traceability за преостанатите ~65 screens. | Активен до крајот на Phase 13 |
 | [`SESSION_LOG.md`](SESSION_LOG.md) | Хронолошки лог: датум, таск, што е направено, како е верификувано, наод | Append-only, никогаш не се брише |
 | Commit messages | Специфично за промените во code base | git history |
 
@@ -111,7 +112,8 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 1. `MEMORY.md` (автоматски loaded) — 14 pointer записи, следи ги сите што се релевантни.
 2. Овој `CLAUDE.md` — правила + environments + защо defaults.
 3. `WORK_PLAN.md` — најмалку прво 40 линии (состојба на фази) + **Current Active Task** на дното.
-4. Последни 3–5 записи во `SESSION_LOG.md` — последен контекст + докази + discoveries.
+4. **`docs/ROADMAP.md`** — single source за преостанатите фази P7–P13; секоја placeholder-to-real конверзија има стабилен ID (`P7.1`, `P10.3`, ...), ефорт, приоритет, зависности. Провери што е следно на Sprint редоследот.
+5. Последни 3–5 записи во `SESSION_LOG.md` — последен контекст + докази + discoveries.
 
 Ако корисникот даде нешто специфично, тоа се надополнува врз оваа база. Ако нема, тргни од **Current Active Task** во WORK_PLAN.
 

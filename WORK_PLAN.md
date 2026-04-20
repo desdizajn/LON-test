@@ -1,6 +1,8 @@
 # LON — Work Plan
 
 > **Правила на работа:** види [`CLAUDE.md`](CLAUDE.md). Verification Protocol е задолжителен за секој таск.
+>
+> **Roadmap за преостанатите фази (P7–P13):** [`docs/ROADMAP.md`](docs/ROADMAP.md) — detailed traceability на секој placeholder screen со ефорт, приоритет, зависности и препорачан sprint редослед.
 
 ---
 
@@ -531,16 +533,18 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 ## Phase Order (finalized 2026-04-18, user approved refined hybrid)
 
 1. ✅ Phase 0 — VPS stabilization (DONE)
-2. ⬅️ **Phase 6 Priority-A** (active): P6.1 `.gitignore` → P6.3-4 OpenAPI→TS → P6.5-7 test harness + 2-3 tests → P6.9 CI gate → P6.17 CLAUDE.md update
-3. Phase 2.5 — i18n infrastructure (пред Phase 1 — Tenant CRUD UI е веднаш преведен)
-4. Phase 1 — Multi-tenant foundation
-5. Phase 2 — First end-to-end flow (TEKSPORT IM 42 00)
-6. Phase 6 Priority-B (паралелно со Phase 2+): P6.10 split MasterDataController (combined with TenantId add), P6.11 MediatR migration per-module, P6.13-16 quick bug fixes кога природно ги допираме
-7. Phase 3 — Data migration од ELON
-8. Phase 4 — Legacy gap coverage
-9. Phase 5 — Productivity parity
-10. Phase 7 — Flutter mobile
+2. ✅ Phase 6 Priority-A — foundational testing + contract hygiene (DONE)
+3. ✅ Phase 2.5 — i18n infrastructure (P2.5.1–P2.5.6 done; P2.5.7 partial + opportunistic retrofit)
+4. ✅ Phase 1 — Multi-tenant foundation (DONE)
+5. ✅ Phase 2 — First end-to-end flow incl. P2.6a/b/c + P2.7 (DONE)
+6. ✅ Phase 6 Priority-B (paralелно со Phase 2+) — огромна листа, shipped
+7. ✅ Phase 3 — Data migration од ELON (DONE)
+8. ✅ Phase 4 — Legacy gap coverage (P4.1–P4.7; P4.5 deferred) (DONE)
+9. ✅ Phase 5 — Productivity parity (P5.1–P5.3 закрилени; P5.2.3+4 shipped 2026-04-20)
+10. ⬅️ **Phase 6.37 placeholder-to-real conversion** (active) — 9 customs screens down, ~65 други остануваат
+11. 🆕 **Phase 7–13** — види [`docs/ROADMAP.md`](docs/ROADMAP.md) **(single source of traceability)** за сите преостанати placeholder screens распоредени во фази P7–P13 со ефорт/приоритет/зависности. Препорачан sprint редослед + DoD per phase.
+12. Flutter mobile (ex-Phase 7) — bumped to a later track bundled со stabilized desktop UI.
 
-**Phase 6 Priority-A = само ~5 таскови, 1 продуктивен ден. Не е full Phase 6.**
+**Следен sprint (по sprint план во ROADMAP.md):** Phase 7 — 9 quick wins (view-only aggregations).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
