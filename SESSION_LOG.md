@@ -2,6 +2,54 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 7: Phase 13.1 on-time + 13.3 by-customer + 13.5 alerts
+
+**Status:** [x] done — HEAD `951eaa1`, VPS green.
+
+**Scope:** 3 aggregate queries over existing data. Zero new entities, zero migrations, zero schema changes.
+
+*P13.1 — On-time delivery*
+- `GET /api/Management/on-time?from&to` (period defaults to last 90d).
+- Joins `ShipmentLine.BatchNumber → ProductionReceipt.BatchNumber → PO.PlannedEndDate`. Shipment is on-time if `ShipmentDate ≤ max(linked PO.PlannedEndDate)`.
+- Buckets: OnTime (1), Late1To7 (2), LateOver7 (3), Unknown (99). Unknown is excluded from the %-denominator so the % doesn't drift because of unlinked shipments.
+- Returns per-shipment rows + per-customer rollup + overall rollup.
+
+*P13.3 — By-customer*
+- `GET /api/Management/by-customer?from&to` (period defaults to last 180d).
+- One row per customer partner combining: Open POs + Completed POs + ProducedQty (all CustomerPartnerId-scoped), Shipment count + qty (Shipped/Delivered), Invoices issued + Outstanding + Paid (Cancelled excluded).
+
+*P13.5 — Exception alerts feed*
+- `GET /api/Management/alerts` (no period — always "now").
+- 5 sources aggregated: MRN expiring (≤30d; Critical if ≤7d or already past), overdue Issued invoices (Critical >30d, Warning >7d, Info otherwise), material shortage on active POs (Required−Issued minus OK/None Imported InventoryBalance, Warning), at-risk POs (mirror of P8.4 heuristic: schedule_used − progress ≥25% + ≤7d = Critical; ≥10% + ≤14d = Warning), LON auth expiring (Active/Approved + ExpiryDate ≤30d).
+- Sorted Critical → Warning → Info, then by nearest date.
+
+*FE + API + tests*
+- `ManagementController` at `/api/Management` — 3 GET endpoints.
+- `managementApi` service layer.
+- `/management/on-time` — 3-panel: overall KPI card (color-coded по 90%/75% thresholds) + per-customer rollup table + per-shipment detail list with bucket badges.
+- `/management/by-customer` — filterable ranked table + CSV export + totals strip.
+- `/management/alerts` — dashboard cards with severity-band (Critical=red, Warning=orange, Info=blue) + category filter + deep-link buttons.
+- 3 integration tests: on-time bucket distribution (seeded 2 shipments — one on-time, one 10d late); by-customer aggregate joins PO + invoice into one row; alerts feed surfaces MRN expiring + overdue invoice entries with correct severity.
+- i18n × 4 locales (mk/sr/sq/en): `management.onTime.*`, `management.byCustomer.*`, `management.alerts.*`.
+- Nav `backendStatus` flipped missing → exists for on-time + by-customer + alerts.
+- OpenAPI + TS types regenerated.
+
+**VPS smoke (2026-04-20 18:42 UTC) — real TEKSPORT data:**
+- `/on-time` → empty shipment window, zero-count rollup (correct — no Shipped/Delivered in DB yet).
+- `/by-customer` → Firma-100 (KW12) = 132 open POs, Italian Customer SRL = 1 invoice (SMOKE-CT-1 from Sprint 6).
+- `/alerts` → LON auth 2691 **expired 110d ago** (Critical), 5600013460 Конец Арамид 70 **short 429,764.00 M across 126 POs** (Warning), plus other shortages. Real operational insights surfaced from the very first request.
+
+**Commit:** `951eaa1` on main.
+
+**Gotchas:**
+1. `LONAuthorization.Status` is a free-form string (legacy parity), not the `LONAuthorizationStatus` enum that exists elsewhere. Build failed with `Operator '==' cannot be applied to operands of type 'string' and 'LONAuthorizationStatus'`. Fixed by using string comparison against ["Active", "Approved"].
+2. The ROADMAP originally specified `ClientContract.PromiseDate` for P13.1, but that field doesn't exist on the contract entity we shipped in Sprint 6. Pragmatic pivot: use `PO.PlannedEndDate` as the promise surrogate, joined via batch traceability. Viable because textile contract manufacturing = the PO *is* the commitment to the customer.
+3. Batch traceability gap = shown as an explicit `Unknown` bucket instead of silently biasing the %. Visible to the user as a coverage indicator rather than a hidden assumption.
+
+**Next:** Demo-gate with TEKSPORT expert per ROADMAP recommendation (all hot-path screens now exist end-to-end). After that, Sprint 8+ long-tail: P8.6+, P9.2/5/7, P10.3–7, P11.3/7/8, P12.4–10, P13.2/4/6–10.
+
+---
+
 ## 2026-04-20 — Sprint 6: Phase 12.3 ClientContracts + Phase 12.2 Invoicing MVP
 
 **Status:** [x] done — HEAD `7e2cd40`, VPS green.

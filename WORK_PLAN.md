@@ -339,6 +339,52 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-20 (latest) — Sprint 7: Phase 13.1 on-time + 13.3 by-customer + 13.5 exception alerts — HEAD `951eaa1`, VPS green**
+>
+> ### 🎯 Handoff за следна сесија
+>
+> **Shipped во оваа сесија (1 commit):**
+> - **P13.1 On-time delivery** (`GET /api/Management/on-time?from&to`): batch-join `ShipmentLine.BatchNumber → ProductionReceipt.BatchNumber → PO.PlannedEndDate`. Shipment се смета on-time ако ShipmentDate ≤ max(linked PO.PlannedEndDate). 4 buckets: OnTime / Late1To7 / LateOver7 / Unknown (Unknown excluded од denominator за %). Returns per-shipment rows + per-customer rollup + overall rollup. FE `/management/on-time` — 3-panel: overall KPI (color-coded по 90%/75% прагови) + per-customer rollup table + per-shipment detail table.
+> - **P13.3 By-customer** (`GET /api/Management/by-customer?from&to`): one row per customer partner = open + completed POs (CustomerPartnerId-scoped) + producedQty, shipment count + qty (Shipped/Delivered), invoices issued + outstanding + paid (Cancelled excluded). FE `/management/by-customer` — sortable ranked table + CSV export + summary totals strip.
+> - **P13.5 Alerts feed** (`GET /api/Management/alerts`): 5 sources aggregated — MRN expiring (≤30d, Critical if ≤7d or expired), overdue invoices (severity by days overdue), material shortage (Required−Issued vs OK/None Imported inventory), at-risk POs (schedule_used − progress heuristic mirrored од P8.4), LON auth expiring. Sorted Critical → Warning → Info. FE `/management/alerts` — dashboard cards со severity-band + category filter + deep-link buttons.
+> - 3 integration tests (`ManagementTests.cs`): on-time bucket distribution, by-customer rollup включает инвојс, alerts feed includes MRN expiring + overdue invoice entries со correct severity.
+>
+> **VPS smoke (2026-04-20 18:42 UTC) — real TEKSPORT insights returned:**
+> - `/api/Management/on-time` — empty result for empty shipment window (correct zero-count rollup).
+> - `/api/Management/by-customer` — Firma-100 (KW12 client) = 132 open POs, Italian Customer SRL = 1 invoice from Sprint 6 (SMOKE-CT-1).
+> - `/api/Management/alerts` — LON auth 2691 expired 110d ago (Critical), 5600013460 Конец Арамид 70 short 429,764.00 M across 126 POs (Warning), plus other material shortages. Real production data surfaced.
+>
+> **No migrations** — pure aggregation over existing data. No new DbSets.
+>
+> ### 🧭 Остануваат (long-tail per ROADMAP Sprint 8+)
+>
+> - **P8.6/7** — Cutting + sewing queues (requires `ProductionOrderOperation.Status` enum + OperationType tag; не се во schema).
+> - **P8.8** — Rework view.
+> - **P8.9** — Minutes variance (requires new `OperationTimeLog` entity).
+> - **P9.2/5/7** — FG returns, quality log, exports by customer.
+> - **P10.3–7** — HR overtime, performance, payroll export.
+> - **P11.3/7/8** — Machine OEE, setup time, bottleneck.
+> - **P12.4–10** — Cost accounting, margin, AP, P&L, cash-flow, reports index.
+> - **P13.2** — Capacity utilization (needs machine time rollup — after P8.9).
+> - **P13.4** — Margin per customer (needs P12.4 + P12.5).
+> - **P13.6** — Risks (new `RiskRegisterItem` entity).
+> - **P13.7** — Trends (time-series).
+> - **P13.8** — Escalations (workflow entity).
+> - **P13.9** — Client scorecard (composite of P13.1 + P13.3 + P13.4).
+> - **P13.10** — Monthly review pack (PDF).
+> - **Cross-cutting:** P2.5.4 i18n retrofit (~30 страници), P6.12 response envelope refactor, P6.36 MRN meter + waste slot preview, P6.37.15 a11y audit, Flutter mobile (whole app).
+>
+> **Demo-gate пред long-tail:** ROADMAP recommends a retro демо со TEKSPORT експертот сега — сите hot-path screens требa да се поклапуваат со неговите дневни операции. Оди на TEKSPORT pre-prod session пред да навлегуваме во P8.6+ / P13.6+ кои имаат low priority од нивниот аспект.
+>
+> ### 🧰 Quick facts
+>
+> - HEAD: `951eaa1` (main). Всички смени деплојирани.
+> - Management endpoints под `/api/Management/` со `GET` методи — без POST, без mutate semantics.
+> - Batch-joining в P13.1 се потпира на ProductionReceipt.BatchNumber == ShipmentLine.BatchNumber exact match. Ако textile flow ги префаксира batch-овите во различен начин (што постои ризик), Unknown bucket ќе биде значителен и индицира coverage gap — видливо на UI.
+> - Alerts feed е пресметан fresh на секој request (нема cache) — прифатливо за експертски dashboard, а не background push. Ако evolve-ира на push notifications, ќе треба cache + polling.
+>
+> ---
+
 > **>>>** **2026-04-20 (later) — Sprint 6: Phase 12.3 ClientContracts + Phase 12.2 Invoicing MVP — HEAD `7e2cd40`, VPS green**
 >
 > ### 🎯 Handoff за следна сесија
@@ -598,6 +644,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 11. 🆕 **Phase 7–13** — види [`docs/ROADMAP.md`](docs/ROADMAP.md) **(single source of traceability)** за сите преостанати placeholder screens распоредени во фази P7–P13 со ефорт/приоритет/зависности. Препорачан sprint редослед + DoD per phase.
 12. Flutter mobile (ex-Phase 7) — bumped to a later track bundled со stabilized desktop UI.
 
-**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ · ~~Sprint 6 Phase 12.3 + 12.2~~ ✅ (2026-04-20; migration `P12_Finance`, VPS smoke green: SMOKE-CT-1 contract + `INV-2026-0001` Draft→Issued→Paid lifecycle end-to-end). Sprint 7 → Phase 13.1 + 13.3 + 13.5 (Management alerts + on-time + by-customer; data sources now exist from Sprints 1–6).
+**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ · ~~Sprint 6 Phase 12.3 + 12.2~~ ✅ · ~~Sprint 7 Phase 13.1 + 13.3 + 13.5~~ ✅ (2026-04-20; zero new entities, aggregates only. VPS шоу real TEKSPORT insights: LON auth 2691 expired, Конец Арамид short 429,764 M across 126 POs, Firma-100 132 open KW12 POs). Sprint 8+ → long-tail per ROADMAP: P8.6–P8.9, P9.2/5/7, P10.3–P10.7, P11.3/7/8, P12.4–P12.10, P13.2/4/6–10.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

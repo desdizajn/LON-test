@@ -224,11 +224,11 @@ TEKSPORT job; margin показател таков што експертот г�
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P13.1** | `/management/on-time` | aggregate: Shipment.ShipmentDate vs ClientContract.PromiseDate | M | P0 | P12.3 | Топ метрика за менаџмент. |
+| **P13.1** | `/management/on-time` | aggregate: Shipment.ShipmentDate vs PO.PlannedEndDate | M | P0 | P12.3 | **✅ 2026-04-20** — батч-join преку `ShipmentLine.BatchNumber → ProductionReceipt → PO.PlannedEndDate`. Buckets: OnTime / Late1To7 / LateOver7 / Unknown (Unknown excluded од %). Overall + per-customer rollup. VPS: empty seed data — returns zero-count rollup cleanly. |
 | **P13.2** | `/management/capacity` | aggregate: Machine.capacity − booked | M | P2 | P11 | Capacity rollup. |
-| **P13.3** | `/management/by-customer` | aggregate: Production + shipment by customer | S | P1 | P7.8 | Shares logic со P7.8. |
+| **P13.3** | `/management/by-customer` | aggregate: Production + shipment by customer | S | P1 | P7.8 | **✅ 2026-04-20** — per-customer rollup: open + completed POs, produced qty, shipments + qty, invoices (issued + outstanding + paid). VPS: Firma-100 = 132 open KW12 POs + existing SMOKE-CT-1 invoice surfaced. |
 | **P13.4** | `/management/margin` | aggregate: margin by customer | M | P2 | P12.5 | — |
-| **P13.5** | `/management/alerts` | aggregate: multi-source (MRN expiring, low stock, at-risk PO) | M | P0 | P7–P8 | Единствен alert feed — high value. |
+| **P13.5** | `/management/alerts` | aggregate: multi-source (MRN expiring, overdue invoices, shortage, at-risk PO, LON auth) | M | P0 | P7–P8 | **✅ 2026-04-20** — 5 sources + severity-sort. VPS шоу: LON auth 2691 expired 110d ago (Critical) + Конец Арамид 70 short 429,764.00 M across 126 POs (Warning). Sev = Critical > Warning > Info. |
 | **P13.6** | `/management/risks` | new-entity: RiskRegisterItem | M | P2 | — | Manual register. |
 | **P13.7** | `/management/trends` | aggregate: 3M/6M/12M rollups | M | P3 | P13.* | Time-series chart. |
 | **P13.8** | `/management/escalations` | new-entity: EscalationCase + workflow | M | P3 | — | Trigger + route + SLA. |
