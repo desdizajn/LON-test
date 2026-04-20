@@ -124,10 +124,11 @@ public class ItemsMediatrTests : IClassFixture<LonApiFactory>
         var list = await client.GetFromJsonAsync<List<ItemRow>>("/api/MasterData/items");
         list!.Should().NotContain(r => r.Id == created.Id);
 
-        // Get-by-id still returns (the query-by-id does not filter by IsDeleted),
-        // but IsActive should now be false.
-        var detail = await client.GetFromJsonAsync<ItemRow>($"/api/MasterData/items/{created.Id}");
-        detail!.IsActive.Should().BeFalse();
+        // Global query filter `!IsDeleted` in ApplicationDbContext hides the
+        // soft-deleted row from every tenant-scoped query, including GetById.
+        // Controller surfaces that as 404 (handler returned null).
+        var byId = await client.GetAsync($"/api/MasterData/items/{created.Id}");
+        byId.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
