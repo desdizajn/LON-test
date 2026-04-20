@@ -397,7 +397,33 @@ public class KnowledgeBaseController : ControllerBase
 }
 
 // Request DTOs
-public record QuestionRequest(string Question, int MaxContextChunks = 3);
-public record ConceptRequest(string Concept);
-public record SearchRequest(string Query, int TopK = 5, double MinSimilarity = 0.7, string? DocumentType = null);
-public record CodeListItemRequest(string ListType, string Code, string DescriptionMK, string? DescriptionEN = null, int SortOrder = 0);
+// NOTE: init-only properties (not positional records) so System.Text.Json can
+// bind bodies like {"query":"..."} without tripping the primary-constructor
+// "request field is required" path for records with default values. See P6.42.
+public record QuestionRequest
+{
+    public string Question { get; init; } = string.Empty;
+    public int MaxContextChunks { get; init; } = 3;
+}
+
+public record ConceptRequest
+{
+    public string Concept { get; init; } = string.Empty;
+}
+
+public record SearchRequest
+{
+    public string Query { get; init; } = string.Empty;
+    public int TopK { get; init; } = 5;
+    public double MinSimilarity { get; init; } = 0.7;
+    public string? DocumentType { get; init; }
+}
+
+public record CodeListItemRequest
+{
+    public string ListType { get; init; } = string.Empty;
+    public string Code { get; init; } = string.Empty;
+    public string DescriptionMK { get; init; } = string.Empty;
+    public string? DescriptionEN { get; init; }
+    public int SortOrder { get; init; }
+}

@@ -705,6 +705,24 @@ export interface paths {
       };
     };
   };
+  "/api/import/presets/kw12": {
+    post: {
+      requestBody?: {
+        content: {
+          "multipart/form-data": {
+            /** Format: binary */
+            file?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/import/sessions/{id}": {
     get: {
       parameters: {
@@ -1090,26 +1108,6 @@ export interface paths {
       };
     };
   };
-  "/health": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/health/db": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
   "/api/MasterData/items": {
     get: {
       parameters: {
@@ -1175,6 +1173,36 @@ export interface paths {
       };
     };
     delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/items/backfill-base-variants": {
+    post: {
+      parameters: {
+        query?: {
+          dryRun?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/items/{id}/import-attributes": {
+    get: {
       parameters: {
         path: {
           id: string;
@@ -2018,6 +2046,66 @@ export interface paths {
           itemId?: string;
         };
       };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/health/live": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/health/ready": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/health/live": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/health/ready": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/health": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/health/db": {
+    get: {
       responses: {
         /** @description OK */
         200: {
@@ -3161,7 +3249,7 @@ export interface components {
      * Format: int32
      * @enum {integer}
      */
-    QualityStatus: 1 | 2 | 3;
+    QualityStatus: 0 | 1 | 2 | 3;
     QuestionRequest: {
       question?: string | null;
       /** Format: int32 */

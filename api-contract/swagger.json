@@ -1252,6 +1252,38 @@
         }
       }
     },
+    "/api/import/presets/kw12": {
+      "post": {
+        "tags": [
+          "Import"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/import/sessions/{id}": {
       "get": {
         "tags": [
@@ -1963,30 +1995,6 @@
         }
       }
     },
-    "/health": {
-      "get": {
-        "tags": [
-          "LON.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/health/db": {
-      "get": {
-        "tags": [
-          "LON.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/MasterData/items": {
       "get": {
         "tags": [
@@ -2100,6 +2108,51 @@
         }
       },
       "delete": {
+        "tags": [
+          "MasterData"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/MasterData/items/backfill-base-variants": {
+      "post": {
+        "tags": [
+          "MasterData"
+        ],
+        "parameters": [
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/MasterData/items/{id}/import-attributes": {
+      "get": {
         "tags": [
           "MasterData"
         ],
@@ -3532,6 +3585,78 @@
               "format": "uuid"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Program"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/health/db": {
+      "get": {
+        "tags": [
+          "Program"
         ],
         "responses": {
           "200": {
@@ -6177,6 +6302,7 @@
       },
       "QualityStatus": {
         "enum": [
+          0,
           1,
           2,
           3
