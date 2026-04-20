@@ -2,6 +2,33 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P5.2.8 + P5.3.1: quick-entry bar + BOM template auto-apply
+
+**P5.2.8 quick-entry bar.**
+
+The "power-user single-line command" from the Phase 5 plan. Parser is deliberately narrow: whitespace-split, first token = verb, rest = positional args, no quoting. Implemented in `src/LON.Application/QuickEntry/QuickEntryCommand.cs` as a MediatR command that dispatches to existing handlers:
+
+- `issue <po-number>` → looks up PO by `OrderNumber`, sends `IssueAllMaterialsCommand` (P5.2.1) → bulk issues every remaining material for the PO.
+- `release <po-number>` → sends `ReleaseProductionOrderCommand` (P5.2.6).
+- `move <batch> <stage>` → sends `MoveBatchAcrossStagesCommand` (P5.2.2). `stage` accepts either enum name ("production") or integer value (4).
+- `help` → returns the catalogue inline.
+
+Controller `QuickEntryController.Execute` posts at `POST /api/QuickEntry/execute` with `{command}`. Frontend page `/tools/quick-entry` has a monospace input with `↑/↓` history navigation, each executed command lands as a row in the log with green/red border + optional JSON payload (for the move command's movement list).
+
+Tests (`QuickEntryTests.cs`): help returns catalogue, empty is 400, unknown verb is 400 with "Unknown verb", `move <batch> fizz` is 400 with "Unknown stage".
+
+**P5.3.1 BOMTemplate auto-apply.**
+
+`CreateProductionOrderCommand` now fills `BOMId` + `RoutingId` when the caller leaves them null — picks the latest `Version` ACTIVE BOM for the Item whose `ValidFrom ≤ UtcNow` and `(ValidTo == null || ValidTo > UtcNow)`. Same logic for Routing (no ValidTo column — just Version + IsActive). Repeat products end up zero-BOM-keystroke: the PO form can fall back to "just give me ItemId + qty" and the handler does the rest.
+
+Test `BomTemplateAutoApplyTests` seeds two BOMs for a fresh item — v1 expired (ValidTo yesterday), v2 current-valid, both IsActive — then POSTs a PO without BOMId and asserts the persisted PO has BOMId = v2. Expired v1 isn't picked.
+
+**Build / contract**: 0/0 everywhere. `./scripts/gen-api-types.sh` adds `/api/QuickEntry/execute` to swagger.json + schema.d.ts; `CreateProductionOrderCommand`'s change is behavioural-only, no schema impact.
+
+Deploy batch 2 follows in the next commit.
+
+---
+
 ## 2026-04-20 — P5.3.5: per-user recent-values cache
 
 The "полињата памтат последните 10 внесени вредности per user" requirement from the original Phase 5 plan. Server-side (not localStorage) because the spec is explicit about cross-device persistence and we already have per-user auth — same rationale as every other per-user pref in the app.

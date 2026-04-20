@@ -440,6 +440,11 @@
     "submit": "Zhvendos të gjitha",
     "success": "U zhvendosën {{count}} bilance, gjithsej {{qty}} njësi."
   },
+  "quickEntry": {
+    "title": "Shiriti i komandave të shpejta",
+    "hint": "Komandë një-rreshtore për përdoruesit e avancuar. Veprime: issue, release, move, help. ↑/↓ për historinë.",
+    "run": "Ekzekuto"
+  },
   "massTransfer": {
     "title": "Ndryshim masiv i vendndodhjes",
     "hint": "Filtro inventarin sipas çdo kriteri dhe transfero çdo rresht që përputhet në një vendndodhje të vetme objektivi me një thirrje atomike.",

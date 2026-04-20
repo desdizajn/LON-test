@@ -440,6 +440,11 @@
     "submit": "Move all",
     "success": "Moved {{count}} balance(s), total {{qty}} units."
   },
+  "quickEntry": {
+    "title": "Quick-entry bar",
+    "hint": "Single-line command for power users. Verbs: issue, release, move, help. ↑/↓ for history.",
+    "run": "Run"
+  },
   "massTransfer": {
     "title": "Mass location change",
     "hint": "Filter inventory by any criterion and transfer every matching balance to a single target location in one atomic call.",

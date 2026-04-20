@@ -1792,6 +1792,23 @@ export interface paths {
       };
     };
   };
+  "/api/QuickEntry/execute": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["QuickEntryRequest"];
+          "text/json": components["schemas"]["QuickEntryRequest"];
+          "application/*+json": components["schemas"]["QuickEntryRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Roles": {
     get: {
       responses: {
@@ -3439,6 +3456,9 @@ export interface components {
       question?: string | null;
       /** Format: int32 */
       maxContextChunks?: number;
+    };
+    QuickEntryRequest: {
+      command?: string | null;
     };
     RAGResponse: {
       answer?: string | null;

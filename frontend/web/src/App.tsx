@@ -71,6 +71,9 @@ import PlaceholderPage from './components/common/PlaceholderPage';
 // P5.2.7 — mass location change
 import MassTransfer from './pages/Warehouse/MassTransfer';
 
+// P5.2.8 — quick-entry command bar
+import QuickEntry from './pages/QuickEntry';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -226,6 +229,7 @@ const App: React.FC = () => {
 
             {/* P5.1 — generic importer wizard */}
             <Route path="/tools/import" element={<ImportWizard />} />
+            <Route path="/tools/quick-entry" element={<QuickEntry />} />
 
             {/* Advanced Features Routes */}
             <Route path="/advanced/batch-traceability" element={<BatchTraceability />} />

@@ -4,6 +4,7 @@ using LON.Application.Common.Models;
 using LON.Domain.Entities.Production;
 using LON.Domain.Enums;
 using LON.Domain.Events;
+using Microsoft.EntityFrameworkCore;
 
 namespace LON.Application.Production.Commands.CreateProductionOrder;
 
@@ -31,6 +32,36 @@ public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProduct
 
     public async Task<Result<Guid>> Handle(CreateProductionOrderCommand request, CancellationToken cancellationToken)
     {
+        // P5.3.1 BOMTemplate auto-apply: when the caller didn't pin a specific
+        // BOM / Routing, resolve the default template for the Item. Picks the
+        // latest-Version ACTIVE template that's currently valid (ValidFrom ≤ now
+        // and (ValidTo is null or ValidTo > now)). Repeat products become
+        // zero-keystroke: pass ItemId + qty, everything else is inferred.
+        var resolvedBomId = request.BOMId;
+        var resolvedRoutingId = request.RoutingId;
+        var now = DateTime.UtcNow;
+
+        if (!resolvedBomId.HasValue)
+        {
+            var bom = await _context.BOMs
+                .Where(b => b.ItemId == request.ItemId
+                            && b.IsActive
+                            && b.ValidFrom <= now
+                            && (b.ValidTo == null || b.ValidTo > now))
+                .OrderByDescending(b => b.Version)
+                .FirstOrDefaultAsync(cancellationToken);
+            resolvedBomId = bom?.Id;
+        }
+
+        if (!resolvedRoutingId.HasValue)
+        {
+            var routing = await _context.Routings
+                .Where(r => r.ItemId == request.ItemId && r.IsActive)
+                .OrderByDescending(r => r.Version)
+                .FirstOrDefaultAsync(cancellationToken);
+            resolvedRoutingId = routing?.Id;
+        }
+
         var order = new ProductionOrder
         {
             Id = Guid.NewGuid(),
@@ -43,8 +74,8 @@ public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProduct
             Status = ProductionOrderStatus.Draft,
             PlannedStartDate = request.PlannedStartDate,
             PlannedEndDate = request.PlannedEndDate,
-            BOMId = request.BOMId,
-            RoutingId = request.RoutingId,
+            BOMId = resolvedBomId,
+            RoutingId = resolvedRoutingId,
             SalesOrderReference = request.SalesOrderReference,
             Notes = request.Notes,
             CreatedAt = DateTime.UtcNow,
