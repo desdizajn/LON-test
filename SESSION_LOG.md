@@ -91,7 +91,43 @@ cron.
 - P11.6 capacity roll-up, P11.7 setup matrix, P11.8 bottleneck analysis — P3
   priority, nice-to-have.
 
-VPS deploy next.
+**VPS deploy (commit `9777112`):** `git pull` + `docker compose build api
+frontend` + `up -d`. Migration `P11_MachineOperations` applied on startup.
+Two follow-up fixes surfaced during post-deploy smoke:
+
+1. **Positional-record body binding** — every controller body DTO
+   (LogStateBody, LogDowntimeBody, CloseDowntimeBody, CreateScheduleBody,
+   UpdateScheduleBody, CreateWorkOrderBody, CompleteWorkOrderBody) was
+   originally a positional record. System.Text.Json can't bind those from
+   JSON (same bug як P6.42 KnowledgeBase). Every POST returned 400 с
+   `"title":"One or more validation errors occurred","errors":{"body":[…]}`
+   from the model-validation gate. Fixed by converting all 7 body records to
+   `record { public X Prop { get; init; } }` form. Commit `99bfde6`.
+2. **Pareto LINQ translation** — `GroupBy(Category).Select(g => new
+   DowntimeParetoBucket(g.Key, g.Count(), g.Sum(e => e.DurationMinutes ??
+   0m)))` couldn't be translated by EF Core 8 (positional-record ctor in the
+   projection). Rewrote as anonymous-project → client-side map. Commit
+   `9777112`.
+
+Post-fix smoke (admin/Admin123!), all green:
+- Created P11-SMOKE machine → `POST /Machines/{id}/state-events` with
+  `state=1,notes="VPS smoke"` → 200.
+- `GET /Machines/current-states` → 1 row with `currentState=1,
+  machineCode=P11-SMOKE, notes="VPS smoke"`.
+- `POST /Machines/downtime` with whitespace reason → 400 +
+  `errorCode=downtime.reason_required`.
+- `POST /Machines/downtime` real event (Motor test, cat=Breakdown,
+  start=10:00Z) → 200, id returned; `POST …/close` with end=10:18Z →
+  DurationMinutes=18.0.
+- `GET /Machines/downtime/pareto` → `[{category:1, count:1,
+  totalMinutes:18.00}]`.
+- `POST /Machines/maintenance-schedules` (IntervalDays=30, NextDue=
+  2026-05-20) → 200; `POST /maintenance-work-orders` linked → 200; `POST
+  …/complete` at 2026-04-20 → schedule `LastDone=2026-04-20,
+  NextDue=2026-05-20` (exact +30d roll-forward as designed).
+
+> **🎯 Sprint 3 closed.** Sprint 4 (per ROADMAP) → Phase 10 HR basics
+> (P10.1 attendance + P10.2 absences + P10.5 operator-machine assignment).
 
 ---
 
