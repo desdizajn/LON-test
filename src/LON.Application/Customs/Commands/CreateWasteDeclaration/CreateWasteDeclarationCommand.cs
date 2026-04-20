@@ -154,7 +154,7 @@ public class CreateWasteDeclarationCommandHandler
                 var take = Math.Min(src.Quantity, remaining);
                 src.SubtractQuantity(take);
 
-                UpsertWasteBalance(src, take);
+                await UpsertWasteBalanceAsync(src, take, cancellationToken);
 
                 movements.Add(new InventoryMovement
                 {
@@ -204,11 +204,10 @@ public class CreateWasteDeclarationCommandHandler
         return Result<Guid>.Success(movements.First().Id);
     }
 
-    private void UpsertWasteBalance(InventoryBalance source, decimal qty)
+    private async Task UpsertWasteBalanceAsync(InventoryBalance source, decimal qty, CancellationToken ct)
     {
-        // Same DbSet.Local-first probe used in the EX handler: a single waste
-        // command that drains multiple source rows must merge into one Waste
-        // sibling, not accumulate duplicates within one SaveChanges cycle.
+        // 1) Fast path — already tracked in this DbContext (covers multi-line
+        //    same-command consolidation).
         var tracked = _context.InventoryBalances.Local.FirstOrDefault(b =>
             b.ItemId == source.ItemId
             && b.LocationId == source.LocationId
@@ -217,6 +216,20 @@ public class CreateWasteDeclarationCommandHandler
             && b.UoMId == source.UoMId
             && b.QualityStatus == source.QualityStatus
             && b.LonProcessState == LonProcessState.Waste);
+
+        // 2) DB probe (P6.20) — consolidate with a pre-existing Waste sibling
+        //    that isn't in the tracking cache yet; otherwise subsequent waste
+        //    declarations for the same (Item, Location, Batch, MRN) append a
+        //    fresh row each time and bloat InventoryBalances.
+        tracked ??= await _context.InventoryBalances.FirstOrDefaultAsync(b =>
+            b.ItemId == source.ItemId
+            && b.LocationId == source.LocationId
+            && b.BatchNumber == source.BatchNumber
+            && b.MRN == source.MRN
+            && b.UoMId == source.UoMId
+            && b.QualityStatus == source.QualityStatus
+            && b.LonProcessState == LonProcessState.Waste, ct);
+
         if (tracked is not null)
         {
             tracked.AddQuantity(qty);

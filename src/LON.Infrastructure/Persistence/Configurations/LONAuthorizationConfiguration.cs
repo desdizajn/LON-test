@@ -29,6 +29,9 @@ public class LONAuthorizationConfiguration : IEntityTypeConfiguration<LONAuthori
         
         builder.Property(x => x.GuaranteeAmount)
             .HasColumnType("decimal(18,2)");
+
+        builder.Property(x => x.GuaranteePercentageOverride)
+            .HasColumnType("decimal(5,2)");
         
         builder.Property(x => x.Status)
             .IsRequired()
@@ -49,6 +52,7 @@ public class LONAuthorizationConfiguration : IEntityTypeConfiguration<LONAuthori
         // Индекси
         builder.HasIndex(x => new { x.TenantId, x.AuthorizationNumber })
             .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
             .HasDatabaseName("IX_LONAuthorizations_TenantId_AuthorizationNumber");
         
         builder.HasIndex(x => x.PartnerId)
@@ -71,8 +75,10 @@ public class LONAuthorizationItemConfiguration : IEntityTypeConfiguration<LONAut
             .IsRequired()
             .HasMaxLength(20);
         
+        // CLR is `string?` — mirror that in the schema. Previous
+        // `IsRequired()` forced seeds to pass `string.Empty` to dodge NOT NULL.
         builder.Property(x => x.CompensatingTariffCode)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(20);
         
         builder.Property(x => x.YieldRate)

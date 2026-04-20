@@ -42,6 +42,7 @@ public class CodeListItemConfiguration : IEntityTypeConfiguration<CodeListItem>
         // Индекси
         builder.HasIndex(x => new { x.ListType, x.Code })
             .IsUnique()
+            .HasFilter("[IsDeleted] = 0")
             .HasDatabaseName("IX_CodeListItems_ListType_Code");
         
         builder.HasIndex(x => x.BoxNumber)

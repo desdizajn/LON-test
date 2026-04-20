@@ -49,7 +49,7 @@
 > Експлицитно одложени таскови што се лесно заборавливи („паралелно", „follow-up"). Скенирај ја оваа секција на почеток на секоја сесија. Правило: кога природно ја допираш областа во примарен таск, подигни го одложениот наместо да го оставиш.
 
 **Phase 0 cleanup leftover:**
-- [ ] **P0.3.4** — Fix decimal precision warnings (HasPrecision за 8 properties)
+- [x] **P0.3.4** — *2026-04-19*: only 1 warning remained (`LONAuthorization.GuaranteePercentageOverride`); earlier session fixed the other 7. Added `HasColumnType("decimal(5,2)")` + migration `20260419192743_P0_3_4_DecimalPrecision_CompensatingTariffNullable`. Same migration also corrects `LONAuthorizationItem.CompensatingTariffCode` from `IsRequired()` to `IsRequired(false)` so the schema mirrors the `string?` CLR type (eliminates the `string.Empty` seed workaround).
 
 **Phase 2.5 i18n retrofit (паралелно со Phase 2+):**
 - [ ] **P2.5.4** — Retrofit на постоечки страници (Dashboard, WMS, Production, Customs, Guarantees, Reports, Advanced, Master Data, Admin) — кога се допираат
@@ -69,12 +69,12 @@
 - [x] **P6.29** ✅ — **KW12 gap G4+G5: seed STK + KO UoMs** idempotently; `BackfillKw12SupportingDataAsync` runs on every startup, adds missing rows and undeletes phantoms (commit `69471b2`). Warehouse 222 left as manual seed (tenant-specific).
 - [ ] **P6.30** — **Legacy item color/size backfill.** User flagged 2026-04-19: legacy ELON had no color/size; 2 170 legacy items have NULL `BaseCode`/`ColorCode`/`SizeCode`. Run `ItemsImportExecutor.DecomposeCode` over the legacy catalog once (one-shot admin endpoint or EF core migration data script) + auto-create missing base items for newly-discovered variants.
 - [ ] **P6.31** — **Per-import material attributes report.** Same material code (e.g. one cotton thread) can be imported from AT/TR/US with different tariff + preferential flag + duty rate. Data already per-line on `CustomsDeclarationLine`, but report surface is missing. Add: "for material X, what are the distinct (tariff, origin, pref, supplier) tuples across active MRN batches + aggregate qty per combo?"
-- [ ] **P6.32** — **Filtered unique indexes.** Change `IX_Items_TenantId_Code`, `IX_ProductionOrders_TenantId_OrderNumber`, `IX_CustomsDeclarations_TenantId_MRN` (etc.) to include `WHERE IsDeleted = 0` so soft-deleted rows don't block re-insert of the same value. Current workaround: hard-delete on cleanup. Probably 1 migration touching ~10 indexes.
+- [x] **P6.32** — *2026-04-19*: shipped migration `20260419190825_P6_32_FilteredUniqueIndexes` — adds `WHERE [IsDeleted] = 0` SQL Server filtered-index predicate to 20 unique indexes spanning Items, Partners, Warehouses, Locations, WorkCenters, Machines, Employees (both), UoM, ItemUoMConversions, Routings, RoutingOperations, BOMs, BOMLines, ProductionOrders, ProductionOrderMaterials, ProductionOrderOperations, MaterialIssues, ProductionReceipts, CustomsDeclarations (both), CustomsDeclarationLines, MRNRegistries, GuaranteeAccounts, LONAuthorizations, ImportMappingProfiles, CodeListItems, DeclarationRules, TariffCodes, CustomsProcedures. Soft-deleted rows no longer block re-insert of the same value.
 - [~] **P6.33** — **UI for parent-variant rollups** (KW12). Production orders list: collapsible main PA → variant children **✓ shipped 2026-04-19 (`f2eeeed`)**. Items list: color/size badges + Base column **✓ shipped (`f318f92`)**. Still TODO: toggle "show variants" at list level + aggregate by BaseCode; Inventory filters for base-article rollup; reports at both levels per user requirement.
 - [ ] **P6.34** — **KW12 import wizard preset / multi-sheet upload.** User should drag `KW12.xlsx` in one go; wizard detects the 3 sheets (Matriks / Faktura / Transport) and runs them in the right order (Items → Customs declaration from Transport+Faktura → Matriks → Receipts) with defaults pre-filled (warehouseCode=222, partnerCode=TEXPORT-AT, procedureCode=4200, lonAuthorizationId=26/TEKSPORT/0001). Current: 3 manual CSV slices + 3 separate imports.
 - [ ] **P6.35** — **BOMs import target with working commit path.** Schema exists, executor still a stub. Needed so Matriks-style files can produce reusable `BOM + BOMLine` records (not just per-PO `ProductionOrderMaterial`). Blocks "template auto-apply" (P5.3.1).
 - [ ] **P6.36** — **Waste / calculations / controls UI wiring.** Backend (P2.3 MRN consume, P2.2 guarantee auto-debit, P4.6 waste slots, I2 landing-costs, I3 duty-rate warnings, I5 SAD advisories, P2.7 rule engine) is live but the Customs/Production/Guarantees pages don't surface them: no per-line duty breakdown, no MRN consumption meter, no waste-slot preview, no advisory panel. Needs a design pass per page (tie to P6.37).
-- [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Настройки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
+- [/] **P6.37** — **Sidebar + IA redesign — role + process driven (NOT architectural modules).** Factory sells stitching service (minutes, capacity, on-time delivery) не finished goods. Nav organized by **job role + daily tasks + process flow + critical decisions**. See [`docs/design/P6-37-ia.md`](docs/design/P6-37-ia.md) — single source of truth. Groups: 🏭 Магацин · 🛃 Царина · ✂️ Производство · 📦 Готов производ · 👥 HR · ⚙️ Машини · 💵 Финансии · 🎯 Менаџмент · 🧰 Поставки (admin) + cross-cutting (Search / AI / Import / Language). Role-based filtering: магационер не гледа финансии/HR.
   - [x] **P6.37.0** — IA design doc (`docs/design/P6-37-ia.md`) + WORK_PLAN breakdown + TodoWrite — *2026-04-19*
   - [x] **P6.37.1** — Verified seeded roles + frontend AuthService role exposure — *2026-04-19*
   - [x] **P6.37.2** — `PlaceholderPage` component + i18n `placeholder.*` in 4 langs — *2026-04-19*
@@ -88,18 +88,19 @@
   - [x] **P6.37.10** — ⚙️ Machines / Work Centers / Efficiency group: 9 items (1 reuse WorkCenters, 8 placeholders) — *2026-04-19*
   - [x] **P6.37.11** — 💵 Finance group: 10 items (1 reuse Guarantees, 9 placeholders) — *2026-04-19*
   - [x] **P6.37.12** — 🎯 Management (KPI) group: 11 items (1 reuse Dashboard, 10 placeholders) — *2026-04-19*
-  - [/] **P6.37.13** — VPS deploy done (commit `3f78c6f`), HTTP 200 + tekuser login OK with `Warehouse Manager` role. **Visual per-role smoke pending user check.** 7 additional roles (Customs Officer, Production Operator, QC, HR Manager, Maintenance Tech, Finance Clerk, Warehouse Operator) not yet seeded — deferred to P6.37.14.
-  - [ ] **P6.37.14** — Legacy sidebar cutover: remove legacy flat section, add `<Navigate>` redirects from old → new routes (`/inventory` → `/warehouse/receipts`, `/customs` → `/customs/import-docs`, etc.), seed 7 missing roles + test users, per-role UI verification
+  - [/] **P6.37.13** — VPS deploy done (commit `3f78c6f`), HTTP 200 + tekuser login OK with `Warehouse Manager` role. **Visual per-role smoke pending user check.** 7 additional roles seeded in P6.37.14.
+  - [x] **P6.37.14** — *2026-04-19 (commit `dd78b32`, VPS fast-forwarded via SSH)*. Legacy flat Sidebar section removed; `<Navigate>` redirects added for `/dashboard`, `/inventory`, `/production`, `/customs`, `/guarantees`, `/traceability`; `resolveActiveModule` rewritten per new IA. Idempotent `RoleTopUpSeed` creates 8 missing roles + 8 TEKSPORT test users (Customs Officer `tek-customs`, Warehouse Operator `tek-wh-op`, Production Operator `tek-operator`, QC `tek-qc`, HR Manager `tek-hr`, Maintenance Tech `tek-maint`, Finance Clerk `tek-finance`, Manager `tek-mgr`; password `Test123!`). API log confirmed `RoleTopUpSeed: added 8 missing roles + created 8 test users`. All 8 logins verified — JWT carries correct role. Bundle check: new nav keys present; `Поставки` (not `Настройки`) in mk.json live. **Per-role visual smoke = user-driven (P6.37 consumer verification).**
   - [ ] **P6.37.15** — (follow-up, deferred) `design:accessibility-review` audit across full app
+- [ ] **P6.41** — **OpenAI API key missing on VPS** — surfaced 2026-04-19 after P6.14 fix. `OpenAIEmbeddingService.GenerateEmbeddingAsync` returns 401 Unauthorized, blocking Pravilnik seeding and RAG queries. Infra: set `OpenAI__ApiKey` (or whatever env var Program.cs binds) on the VPS `.env` + `docker compose up -d api`. **Requires user** — cannot extract keys from sandbox. Low priority: `VectorStoreBackgroundService` already degrades gracefully (logs 'The system will continue to function without RAG capabilities').
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
 - [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)
 - [ ] **P6.12** — Consistent API response shape `{ data, errorMessage?, errors[]? }`
-- [ ] **P6.13** — `LocationDto.Type` drops value during serialization (bug)
-- [ ] **P6.14** — Vector Store OOM root cause (startup crash и покрај 3GB memory)
-- [ ] **P6.15** — Structured logging (Serilog JSON) + real health checks (`/health/ready`, `/health/live`)
-- [ ] **P6.16** — DataProtection XML encryptor warning (cert-based или DPAPI-like)
-- [ ] **P6.18** — UTF-8 source encoding bug (Cyrillic literals → CP1251 mojibake в DB; affects Tenants.Address од P1.1)
+- [~] **P6.13** — investigated 2026-04-19: API correctly returns `locationType` field populated with enum value (e.g. `locationType: 1` for Receiving); frontend `LocationList` + `LocationInquiry` consume it correctly. Original description referenced a `type: null` bug that no longer reproduces. Likely fixed upstream; closing as not-a-bug.
+- [x] **P6.14** — *2026-04-19 (commit `6cdb949` + VPS verified)*: root cause found — `DocumentChunkingService.ChunkDocument` had an infinite loop when `endIndex` clamped to `content.Length` but `startIndex = endIndex - overlap` didn't advance (same tail chunk re-emitted forever → OOM via `List<string>.set_Capacity`). Fixed by (a) breaking when `endIndex >= content.Length` after emitting the final chunk, (b) guarding forward progress with `Math.Max(endIndex - overlap, startIndex + 1)`. Added 4 unit tests in `DocumentChunkingUnitTests` as regression guard. VPS confirms: chunking now completes; next error is a **clean 401 Unauthorized from OpenAI embedding call** (not an OOM) — see new task P6.41 below.
+- [/] **P6.15** — *2026-04-19*: `/health/live` + `/health/ready` (DB probe, 503 on failure) shipped; legacy `/health` and `/health/db` kept as aliases. Structured logging (Serilog JSON) **deferred** to P6.15b — heavier rework (assembly-wide switch from Microsoft.Extensions.Logging), not part of this session.
+- [x] **P6.16** — *2026-04-19*: added explicit `AddDataProtection().SetApplicationName("LON-API").PersistKeysToFileSystem(...)` so the startup warning ("key may be persisted to storage in unencrypted form") is no longer implicit. Certificate-based encryption deferred until cert-management lands on VPS.
+- [x] **P6.18** — *2026-04-19*: added root `Directory.Build.props` with `<CodePage>65001</CodePage>` to force the C# compiler to read source as UTF-8 regardless of Windows system codepage (dev box is CP866 OEM Cyrillic). Verified assembly contains correct UTF-16 LE bytes for `Скопје` in seed. VPS `Tenants.Address` already correct (`"Скопје, Република Северна Македонија"`) — no backfill needed since VPS builds inside Linux Docker (C.UTF-8). The fix is defense-in-depth against future local `dotnet publish`.
 
 **Verification напомена:** секоја completed сесија проверува дали нешто од оваа секција е природно подигнато. Ако е — означи `[x]` со SESSION_LOG доказ.
 
@@ -117,7 +118,7 @@
   - [x] **P0.3.1** — Recreate `lon-api` (главен блокер): `docker compose rm -f api && docker compose up -d api` ✅
   - [x] **P0.3.2** — Затвори SQL Server public exposure: `127.0.0.1:1433:1433` ✅
   - [x] **P0.3.3** — Persistent volume `lon_dataprotection_keys` за DataProtection keys ✅
-  - [ ] **P0.3.4** — Поправи decimal precision warnings (HasPrecision за 8 properties)
+  - [x] **P0.3.4** — *2026-04-19*: last remaining decimal warning (`LONAuthorization.GuaranteePercentageOverride`) fixed via `HasColumnType("decimal(5,2)")` + migration `P0_3_4_DecimalPrecision_CompensatingTariffNullable`. Also closed the orphan `LONAuthorizationItem.CompensatingTariffCode` `IsRequired()` vs `string?` mismatch.
   - [x] **P0.3.5** — Поправи `BOM.ItemId1` shadow property ✅ (`.WithMany(i => i.BOMs)`)
   - [x] **P0.3.6** — Тргни `version: '3.8'` од compose file (cleanup) ✅
   - [x] **P0.3.7** — Memory/CPU limits на LON контејнери (shared VPS) ✅
@@ -308,13 +309,14 @@
 
 ### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
 
-- [ ] **P6.20** — **Imported/FG restore non-consolidation in Return handler.** `UpsertRestoredBalance` (and `UpsertFgBalance`) in `CreateReturnDeclarationCommand` probe `DbSet.Local` only; an existing DB row that isn't tracked in the current context won't match, so returns append a new sibling instead of consolidating. Aggregate sum queries are correct; storage bloats by one row per restore. Fix options: (a) add async DB lookup fallback keyed on (Item, Location, Batch, MRN, UoM, Quality, State), (b) batch all restores at the end and run one SaveChanges per (key) group. Same pattern present implicitly in `UpsertFgBalance` for return re-intake.
+- [x] **P6.20** — *2026-04-19 (commit pending)*: `UpsertRestoredBalanceAsync` and `UpsertFgBalanceAsync` in `CreateReturnDeclarationCommand` now probe `DbSet.Local` first (fast path for multi-line same-command consolidation) then fall back to `FirstOrDefaultAsync` against the DB (consolidates with pre-existing untracked rows). Same fallback added to `UpsertWasteBalanceAsync` in `CreateWasteDeclarationCommand`. Export handler already had both probes. Storage no longer bloats by a sibling row per return/waste call. `dotnet build` clean.
 - [x] **P6.19** ✅ — `CreateProductionOrderCommandHandler` now calls `Add(order)` before SaveChanges (commit `8462a2d`). Missing integration test `CreateProductionOrder_Persists_VisibleInList` still a follow-up.
 - [ ] **P6.13** — **LocationDto serialization drops Type** — API враќа `type: null` и покрај MapLocation. Или DTO constructor или JSON naming policy. Handler-от го користи code prefix fallback; UI-от не може да филтрира по тип.
-- [ ] **P6.14** — **Vector Store OOM root cause** — `System.OutOfMemoryException` на startup и покрај 3GB container. DocumentSeeder има само 4 hardcoded секции. Истражи `OpenAIEmbeddingService`/`IndexDocumentAsync`; streaming наместо in-memory load.
-- [ ] **P6.15** — Structured logging (Serilog со JSON output) + реал health checks со DB probe (`/health/ready`, `/health/live`).
-- [ ] **P6.16** — DataProtection XML encryptor warning (логови: „Key may be persisted to storage in unencrypted form"). Cert-based или DPAPI-like решение.
-- [ ] **P6.18** — Fix UTF-8 source encoding for Cyrillic string literals. `.cs` files without BOM + compiler codepage guess → Cyrillic strings stored as CP1251→UTF-8 mojibake (confirmed on `Tenants.Address` from P1.1, and would have affected `Warehouses.Address` in P1.2-B3 before we switched to ASCII). Fix options: (a) add `<Features>strict</Features>` or similar MSBuild property forcing UTF-8 source detection, (b) add UTF-8 BOM to source files with Cyrillic, (c) standardize on `\u####` escapes for all non-ASCII literals. Plus one-shot UPDATE backfill for `Tenants.Address` on VPS.
+- [x] **P6.14** — **Vector Store OOM root cause** — fixed 2026-04-19. Not embedding/IO-related at all: `DocumentChunkingService.ChunkDocument` spun an infinite loop when the final chunk clamped to `content.Length` (re-emitted same tail forever → `List<string>.set_Capacity` OOM). Patched the loop-exit + forward-progress guard; added `DocumentChunkingUnitTests` with 4 cases (empty, short, 1 050-char boundary, 120 KB Pravilnik-shape). See commit + SESSION_LOG.
+- [/] **P6.15** — health endpoints shipped; Serilog JSON split to new **P6.15b** (deferred).
+- [x] **P6.16** — explicit `AddDataProtection()` config shipped; cert-based encryption deferred.
+- [ ] **P6.15b** — *deferred*: replace `Microsoft.Extensions.Logging` with Serilog + JSON console sink + enrichers (request-id, user-id, tenant-id). Heavier than health checks — warrants its own session.
+- [x] **P6.18** — *2026-04-19 (commit pending)*: shipped root `Directory.Build.props` with `<CodePage>65001</CodePage>`. Forces csc to decode source as UTF-8 on any OS; avoids CP1251/CP866 guessing on Windows dev boxes. Verified `LON.Infrastructure.dll` contains correct UTF-16 LE bytes for `Скопје`. Confirmed VPS `Tenants.Address` row already correct (Linux docker build was always UTF-8) — no data backfill required.
 
 ### 6F — Claude self-workflow (вградено во CLAUDE.md)
 
@@ -334,11 +336,11 @@
 
 ## Current Active Task
 
-> **>>>** **2026-04-19 session wrap — P6.37.0–P6.37.12 shipped (commit `3f78c6f`). Sidebar IA redesigned to role + process driven (9 groups × ~80 items) with honest placeholder system.**
+> **>>>** **2026-04-19 — P6.37.14 code-complete.** Legacy flat sidebar removed; `<Navigate>` redirects for all old top-level routes; idempotent `RoleTopUpSeed` with 8 new roles + 8 TEKSPORT test users. Pending VPS deploy + per-role smoke.
 >
 > **Next session pick one:**
-> 1. **P6.37.14** — Legacy sidebar cutover + 7 additional role seeds + per-role UI smoke. Finishes the IA redesign cycle.
-> 2. **P6.37 consumer verification** — user logs in to VPS (`admin` / `tekuser`) and spot-checks the new sidebar groups, reports back any item wording / grouping that's wrong before it ossifies.
+> 1. **P6.37.14 finish** — deploy to VPS, login as each of the 8 new test users, verify sidebar shows only the expected groups for each role, confirm redirects resolve.
+> 2. **P6.37 consumer verification** — user spot-checks sidebar wording / grouping before it ossifies.
 > 3. **Return to Phase 3/6 backlog** (below).
 
 > **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**
@@ -372,8 +374,8 @@
 - **P1.7** Multi-tenant login UX (decide username@tenant / subdomain / picker).
 - **P6.18** UTF-8 source encoding in KB JSON (~30 min; unblocks i18n of errorMessageMK).
 - **P6.14** Vector Store OOM root-cause (non-blocking but noisy startup crash).
-- **P0.3.4** decimal precision warnings (~15 min).
-- **LONAuthorizationItem.CompensatingTariffCode** EF config: currently `IsRequired()` despite `string?` CLR; workaround with `string.Empty` in seed. Proper fix = `IsRequired(false)` + migration.
+- ~~P0.3.4 decimal precision warnings~~ **✅ closed 2026-04-19 (commit pending)**.
+- ~~LONAuthorizationItem.CompensatingTariffCode nullable mismatch~~ **✅ closed 2026-04-19** together with P0.3.4 migration.
 
 ### Recent context (2026-04-18):
 

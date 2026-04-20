@@ -71,23 +71,82 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+/**
+ * Maps the active URL to a NavItem.key from `navGroups.ts`. Best-effort — when
+ * there is no exact match, we fall back to a sensible stub so the sidebar can
+ * still highlight *something*. The mapping is intentionally literal: add an
+ * entry here whenever a route is introduced that should show as active.
+ */
 const resolveActiveModule = (path: string) => {
-  if (path.startsWith('/inventory')) return 'inventory';
-  if (path.startsWith('/production')) return 'production';
-  if (path.startsWith('/customs')) return 'customs';
-  if (path.startsWith('/guarantees')) return 'guarantees';
-  if (path.startsWith('/traceability')) return 'traceability';
-  if (path.startsWith('/admin/users')) return 'admin-users';
-  if (path.startsWith('/admin/employees')) return 'admin-employees';
-  if (path.startsWith('/admin/shifts')) return 'admin-shifts';
-  if (path.startsWith('/admin/roles')) return 'admin-roles';
-  if (path.startsWith('/master-data/items')) return 'items';
-  if (path.startsWith('/master-data/partners')) return 'partners';
-  if (path.startsWith('/master-data/warehouses')) return 'warehouses';
-  if (path.startsWith('/master-data/uom')) return 'uom';
-  if (path.startsWith('/master-data/boms')) return 'boms';
-  if (path.startsWith('/master-data/routings')) return 'routings';
-  return 'dashboard';
+  // Warehouse
+  if (path.startsWith('/warehouse/receipts') || path.startsWith('/inventory')) return 'warehouse-receipts';
+  if (path.startsWith('/warehouse/incoming')) return 'warehouse-incoming';
+  if (path.startsWith('/warehouse/qc-hold')) return 'warehouse-qc-hold';
+  if (path.startsWith('/warehouse/issues-today') || path.startsWith('/wms/pick-tasks')) return 'warehouse-issues-today';
+  if (path.startsWith('/warehouse/transfers')) return 'warehouse-transfers';
+  if (path.startsWith('/warehouse/stock-by-customer')) return 'warehouse-stock-by-customer';
+  if (path.startsWith('/warehouse/variance')) return 'warehouse-variance';
+  if (path.startsWith('/warehouse/ready-to-ship')) return 'warehouse-ready-to-ship';
+  if (path.startsWith('/warehouse/search')) return 'warehouse-search';
+
+  // Customs
+  if (path.startsWith('/customs/authorizations')) return 'customs-authorizations';
+  if (path.startsWith('/customs/import-docs') || path === '/customs') return 'customs-import-docs';
+  if (path.startsWith('/customs/export-docs')) return 'customs-export-docs';
+  if (path.startsWith('/customs/traceability') || path.startsWith('/traceability')) return 'customs-traceability';
+  if (path.startsWith('/customs/deadlines')) return 'customs-deadlines';
+  if (path.startsWith('/customs/open-items')) return 'customs-open-items';
+  if (path.startsWith('/customs/guarantees') || path.startsWith('/guarantees')) return 'customs-guarantees';
+  if (path.startsWith('/customs/search')) return 'customs-search';
+
+  // Production
+  if (path.startsWith('/production/today') || path === '/production') return 'production-today';
+  if (path.startsWith('/production/cutting-queue')) return 'production-cutting-queue';
+  if (path.startsWith('/production/sewing-queue')) return 'production-sewing-queue';
+  if (path.startsWith('/production/wip')) return 'production-wip';
+  if (path.startsWith('/production/at-risk')) return 'production-at-risk';
+  if (path.startsWith('/production/shortage')) return 'production-shortage';
+  if (path.startsWith('/production/minutes-variance')) return 'production-minutes-variance';
+  if (path.startsWith('/production/rework')) return 'production-rework';
+  if (path.startsWith('/production/completed')) return 'production-completed';
+  if (path.startsWith('/production/search')) return 'production-search';
+
+  // Finished goods
+  if (path.startsWith('/finished/')) return path.replace('/finished/', 'finished-');
+
+  // HR
+  if (path.startsWith('/hr/employees') || path.startsWith('/admin/employees')) return 'hr-employees';
+  if (path.startsWith('/hr/shifts') || path.startsWith('/admin/shifts')) return 'hr-shifts';
+  if (path.startsWith('/hr/')) return path.replace('/hr/', 'hr-');
+
+  // Machines
+  if (path.startsWith('/machines/work-centers')) return 'machines-work-centers';
+  if (path.startsWith('/machines/')) return path.replace('/machines/', 'machines-');
+
+  // Finance
+  if (path.startsWith('/finance/guarantees')) return 'finance-guarantees';
+  if (path.startsWith('/finance/')) return path.replace('/finance/', 'finance-');
+
+  // Management
+  if (path.startsWith('/management/dashboard') || path === '/dashboard') return 'management-dashboard';
+  if (path.startsWith('/management/')) return path.replace('/management/', 'management-');
+
+  // Settings (admin + master-data)
+  if (path.startsWith('/admin/users')) return 'settings-users';
+  if (path.startsWith('/admin/roles')) return 'settings-roles';
+  if (path.startsWith('/admin/tenants')) return 'settings-tenants';
+  if (path.startsWith('/master-data/partners')) return 'settings-partners';
+  if (path.startsWith('/master-data/items')) return 'settings-items';
+  if (path.startsWith('/master-data/boms')) return 'settings-boms';
+  if (path.startsWith('/master-data/routings')) return 'settings-routings';
+  if (path.startsWith('/master-data/warehouses')) return 'settings-warehouses';
+  if (path.startsWith('/master-data/locations')) return 'settings-locations';
+  if (path.startsWith('/master-data/uom')) return 'settings-uom';
+  if (path.startsWith('/master-data/code-lists')) return 'settings-code-lists';
+  if (path.startsWith('/master-data/workcenters')) return 'settings-workcenters';
+  if (path.startsWith('/master-data/machines')) return 'settings-machines';
+
+  return 'management-dashboard';
 };
 
 const ProtectedLayout: React.FC<{
@@ -131,13 +190,19 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/production" element={<Production />} />
-            <Route path="/customs" element={<Customs />} />
-            <Route path="/guarantees" element={<Guarantees />} />
-            <Route path="/traceability" element={<Traceability />} />
+            <Route path="/" element={<Navigate to="/management/dashboard" replace />} />
+
+            {/* ──────────────── P6.37.14 — legacy-route redirects ────────────────
+             * Old top-level routes kept as `<Navigate>` so bookmarks / external
+             * links resolve to the canonical IA routes. Remove only after we're
+             * sure no external system (docs, emails, OAuth callbacks) depends on
+             * the old paths. */}
+            <Route path="/dashboard" element={<Navigate to="/management/dashboard" replace />} />
+            <Route path="/inventory" element={<Navigate to="/warehouse/receipts" replace />} />
+            <Route path="/production" element={<Navigate to="/production/today" replace />} />
+            <Route path="/customs" element={<Navigate to="/customs/import-docs" replace />} />
+            <Route path="/guarantees" element={<Navigate to="/finance/guarantees" replace />} />
+            <Route path="/traceability" element={<Navigate to="/customs/traceability" replace />} />
 
             {/* WMS Routes */}
             <Route path="/wms/pick-tasks" element={<PickTaskList />} />

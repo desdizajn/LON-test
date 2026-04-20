@@ -15,7 +15,7 @@ public class CustomsProcedureConfiguration : IEntityTypeConfiguration<CustomsPro
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.GuaranteePercentage).HasColumnType("decimal(18,4)");
         
-        builder.HasIndex(e => e.Code).IsUnique();
+        builder.HasIndex(e => e.Code).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -37,8 +37,8 @@ public class CustomsDeclarationConfiguration : IEntityTypeConfiguration<CustomsD
         builder.Property(e => e.TotalOtherCharges).HasColumnType("decimal(18,4)");
         builder.Property(e => e.Notes).HasMaxLength(500);
         
-        builder.HasIndex(e => new { e.TenantId, e.DeclarationNumber }).IsUnique();
-        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.DeclarationNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasIndex(e => e.DeclarationDate);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
@@ -70,7 +70,7 @@ public class CustomsDeclarationLineConfiguration : IEntityTypeConfiguration<Cust
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
         
-        builder.HasIndex(e => new { e.CustomsDeclarationId, e.LineNumber }).IsUnique();
+        builder.HasIndex(e => new { e.CustomsDeclarationId, e.LineNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
@@ -88,7 +88,7 @@ public class MRNRegistryConfiguration : IEntityTypeConfiguration<MRNRegistry>
         builder.Ignore(e => e.UndischargedQuantity);
         builder.Property(e => e.Notes).HasMaxLength(500);
 
-        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.MRN }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

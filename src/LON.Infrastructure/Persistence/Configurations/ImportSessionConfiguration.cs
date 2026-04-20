@@ -16,7 +16,7 @@ public class ImportMappingProfileConfiguration : IEntityTypeConfiguration<Import
         builder.Property(e => e.MappingJson).IsRequired().HasColumnType("nvarchar(max)");
 
         builder.HasIndex(e => new { e.TenantId, e.TargetEntity, e.PartnerContextId });
-        builder.HasIndex(e => new { e.TenantId, e.TargetEntity, e.PartnerContextId, e.Label }).IsUnique();
+        builder.HasIndex(e => new { e.TenantId, e.TargetEntity, e.PartnerContextId, e.Label }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }
