@@ -80,20 +80,21 @@ public class CreateReturnDeclarationCommandHandler
         CancellationToken cancellationToken)
     {
         if (request.Lines.Count == 0)
-            return Result<Guid>.Failure("Return declaration must contain at least one line.");
+            return Result<Guid>.Failure(ErrorCodes.ReturnEmptyLines, "Return declaration must contain at least one line.");
 
         var procedure = await _context.CustomsProcedures
             .FirstOrDefaultAsync(p => p.Id == request.CustomsProcedureId, cancellationToken);
         if (procedure is null)
-            return Result<Guid>.Failure($"Customs procedure '{request.CustomsProcedureId}' does not exist.");
+            return Result<Guid>.Failure(ErrorCodes.ProcedureNotFound, $"Customs procedure '{request.CustomsProcedureId}' does not exist.");
         if (!procedure.IsActive)
-            return Result<Guid>.Failure($"Customs procedure '{procedure.Code}' is not active.");
+            return Result<Guid>.Failure(ErrorCodes.ProcedureInactive, $"Customs procedure '{procedure.Code}' is not active.");
 
         // Only Imported or InProduction are valid restore targets for v1.
         foreach (var l in request.Lines)
         {
             if (l.ReturnTo != LonProcessState.Imported && l.ReturnTo != LonProcessState.InProduction)
                 return Result<Guid>.Failure(
+                    ErrorCodes.ReturnQuantityInvalid,
                     $"ReturnTo must be Imported or InProduction (got {l.ReturnTo}).");
         }
 
@@ -106,7 +107,7 @@ public class CreateReturnDeclarationCommandHandler
         if (distinctMrns.Count != request.Lines.Select(l => l.SourceMRN).Distinct().Count()
             || distinctMrns.Count == 0)
         {
-            return Result<Guid>.Failure("Each return line must specify a non-empty SourceMRN.");
+            return Result<Guid>.Failure(ErrorCodes.ReturnMrnRequired, "Each return line must specify a non-empty SourceMRN.");
         }
 
         var registries = await _context.MRNRegistries
@@ -116,15 +117,16 @@ public class CreateReturnDeclarationCommandHandler
         foreach (var mrn in distinctMrns)
         {
             if (!registries.TryGetValue(mrn, out var reg))
-                return Result<Guid>.Failure($"SourceMRN '{mrn}' is not registered for this tenant.");
+                return Result<Guid>.Failure(ErrorCodes.ReturnMrnNotFound, $"SourceMRN '{mrn}' is not registered for this tenant.");
 
             var demand = request.Lines
                 .Where(l => string.Equals(l.SourceMRN, mrn, StringComparison.OrdinalIgnoreCase))
                 .Sum(l => l.ReturnQuantity);
             if (demand <= 0m)
-                return Result<Guid>.Failure($"SourceMRN '{mrn}': aggregate ReturnQuantity must be positive.");
+                return Result<Guid>.Failure(ErrorCodes.ReturnQuantityInvalid, $"SourceMRN '{mrn}': aggregate ReturnQuantity must be positive.");
             if (demand > reg.DischargedQuantity)
                 return Result<Guid>.Failure(
+                    ErrorCodes.ReturnOver,
                     $"SourceMRN '{mrn}': return qty {demand} exceeds previously discharged qty " +
                     $"{reg.DischargedQuantity}. Only previously exported volume can come back.");
         }
@@ -137,7 +139,7 @@ public class CreateReturnDeclarationCommandHandler
             .IgnoreQueryFilters()
             .AnyAsync(d => d.MRN == returnMrn && !d.IsDeleted, cancellationToken);
         if (mrnCollision)
-            return Result<Guid>.Failure($"MRN '{returnMrn}' is already registered.");
+            return Result<Guid>.Failure(ErrorCodes.MrnDuplicate, $"MRN '{returnMrn}' is already registered.");
 
         var declaration = new CustomsDeclaration
         {

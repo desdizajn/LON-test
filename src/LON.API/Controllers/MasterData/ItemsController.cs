@@ -99,4 +99,18 @@ public class ItemsController : BaseController
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }
+
+    /// <summary>
+    /// P5.3.4 — article picker with "A"-suffix variants. Groups matches by
+    /// normalised base code so the UI can surface base + A-sibling side by
+    /// side for tariff-aware customs line entry.
+    /// </summary>
+    [HttpGet("article-picker")]
+    public async Task<IActionResult> GetArticlePicker(
+        [FromQuery] string? query = null,
+        [FromQuery] int limit = 20)
+    {
+        var result = await Mediator.Send(new ArticlePickerQuery(query, limit));
+        return Ok(result);
+    }
 }

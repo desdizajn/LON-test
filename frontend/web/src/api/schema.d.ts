@@ -1119,6 +1119,22 @@ export interface paths {
       };
     };
   };
+  "/api/MasterData/items/article-picker": {
+    get: {
+      parameters: {
+        query?: {
+          query?: string;
+          limit?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/KnowledgeBase/ask": {
     post: {
       requestBody?: {
@@ -2528,6 +2544,23 @@ export interface paths {
       };
     };
   };
+  "/api/WMS/receipts/bulk-from-declaration": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BulkReceiptFromDeclarationCommand"];
+          "text/json": components["schemas"]["BulkReceiptFromDeclarationCommand"];
+          "application/*+json": components["schemas"]["BulkReceiptFromDeclarationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/WMS/receipts/{id}": {
     get: {
       parameters: {
@@ -2641,6 +2674,23 @@ export interface paths {
           "application/json": components["schemas"]["CreateShipmentRequest"];
           "text/json": components["schemas"]["CreateShipmentRequest"];
           "application/*+json": components["schemas"]["CreateShipmentRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/shipments/bulk-from-fg": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BulkShipmentFromFGCommand"];
+          "text/json": components["schemas"]["BulkShipmentFromFGCommand"];
+          "application/*+json": components["schemas"]["BulkShipmentFromFGCommand"];
         };
       };
       responses: {
@@ -2913,6 +2963,38 @@ export interface components {
       notes?: string | null;
       isActive?: boolean;
       lines?: components["schemas"]["BOMLineRequest"][] | null;
+    };
+    BulkReceiptFromDeclarationCommand: {
+      /** Format: uuid */
+      customsDeclarationId?: string;
+      /** Format: uuid */
+      warehouseId?: string;
+      /** Format: uuid */
+      targetLocationId?: string | null;
+      /** Format: date-time */
+      receiptDate?: string | null;
+      referenceNumber?: string | null;
+    };
+    BulkShipmentFromFGCommand: {
+      /** Format: uuid */
+      itemId?: string | null;
+      batchNumber?: string | null;
+      mrn?: string | null;
+      /** Format: uuid */
+      locationId?: string | null;
+      /** Format: uuid */
+      sourceWarehouseId?: string | null;
+      /** Format: uuid */
+      productionOrderId?: string | null;
+      /** Format: uuid */
+      partnerId?: string | null;
+      /** Format: uuid */
+      customsProcedureId?: string | null;
+      declarationNumber?: string | null;
+      /** Format: date-time */
+      shipmentDate?: string | null;
+      reference?: string | null;
+      createExportDeclaration?: boolean;
     };
     CertifyDeclarationBody: {
       zaverkaNumber?: string | null;

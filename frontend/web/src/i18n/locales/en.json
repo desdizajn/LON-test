@@ -75,6 +75,54 @@
     "reference": "Reference",
     "resultsCount": "{{count}} results"
   },
+  "bulkReceipt": {
+    "title": "Bulk receipt from customs declaration",
+    "subtitle": "Pick an existing IM declaration + target warehouse; the system creates a Receipt with lines exploded from the declaration.",
+    "declaration": "Declaration",
+    "reference": "Internal reference",
+    "warehouse": "Warehouse",
+    "targetLocation": "Target location",
+    "autoLocation": "Auto (first Receiving)",
+    "customsValue": "Customs value",
+    "commit": "Create receipt",
+    "successHeading": "Bulk receipt created.",
+    "linesCreated": "Lines created",
+    "totalQuantity": "Total quantity",
+    "requiredMissing": "Declaration and warehouse are required."
+  },
+  "bulkShipment": {
+    "title": "Bulk shipment from FG selection",
+    "subtitle": "Filter finished goods and create a Shipment + (optionally) an EX declaration in one click.",
+    "filterLegend": "Finished-goods filter",
+    "customerLegend": "Customer / reference",
+    "customsLegend": "Customs",
+    "item": "Article",
+    "batch": "Batch",
+    "mrn": "MRN",
+    "sourceWarehouse": "Source warehouse",
+    "sourceLocation": "Source location",
+    "partner": "Partner",
+    "reference": "Reference",
+    "createEx": "Create EX declaration atomically",
+    "procedure": "Customs procedure",
+    "procedureRequired": "Customs procedure is required when creating EX.",
+    "declarationNumber": "Declaration number",
+    "commit": "Create shipment",
+    "successHeading": "Bulk shipment created.",
+    "shipmentNumber": "Shipment number",
+    "linesCreated": "Lines created",
+    "totalQuantity": "Total quantity",
+    "exportDeclarationId": "EX declaration id"
+  },
+  "articlePicker": {
+    "placeholder": "Search article (code or name)…",
+    "typePrompt": "Type code or name to search.",
+    "noResults": "No results.",
+    "base": "Base code",
+    "tariff": "Tariff",
+    "origin": "Origin",
+    "aSuffixHint": "Alternative tariff variant (A-suffix)"
+  },
   "kw12Wizard": {
     "title": "KW12 preset (one click)",
     "subtitle": "Upload a single KW12.xlsx — the system auto-detects Matriks / Faktura / Transport sheets and spawns 3 preconfigured import sessions.",
@@ -182,6 +230,8 @@
       "qcHold": "On QC hold",
       "issuesToday": "Issues today",
       "transfers": "Transfers",
+      "bulkReceipt": "Bulk receipt",
+      "bulkShipment": "Bulk shipment",
       "stockByCustomer": "Stock by customer material",
       "variance": "Shortage / Surplus / Variance",
       "readyToShip": "Ready to ship",
@@ -349,7 +399,117 @@
     "network": "Network error. Check your connection.",
     "unauthorized": "Unauthorized",
     "notFound": "Not found",
-    "loadFailed": "Failed to load data"
+    "loadFailed": "Failed to load data",
+    "receipt": {
+      "empty_lines": "Receipt must contain at least one line.",
+      "no_location": "Line has no resolved location. Specify LocationId or configure a Receiving location.",
+      "quantity_invalid": "Quantity must be positive.",
+      "scrap_invalid": "Scrap quantity cannot be negative.",
+      "batch_required": "BatchNumber is required.",
+      "po_not_found": "Production order not found."
+    },
+    "mrn": {
+      "not_registered": "MRN is not registered for this tenant. File the customs declaration first.",
+      "deactivated": "MRN is deactivated (already fully consumed or closed).",
+      "expired": "MRN expired on {{date}}.",
+      "overdraw": "MRN overdraw: requested {{demand}}, remaining {{remaining}} of {{total}}.",
+      "duplicate": "MRN is already present in the registry."
+    },
+    "declaration": {
+      "empty_lines": "Declaration must contain at least one line."
+    },
+    "procedure": {
+      "not_found": "Customs procedure not found.",
+      "inactive": "Customs procedure is not active."
+    },
+    "authorization": {
+      "not_found": "LON authorization not found under this tenant.",
+      "inactive": "LON authorization is not active.",
+      "expired": "LON authorization has expired.",
+      "not_issued": "LON authorization has not been issued yet."
+    },
+    "export": {
+      "empty_lines": "Export declaration must contain at least one line.",
+      "mrn_required": "Each export line must specify a SourceMRN.",
+      "mrn_not_found": "SourceMRN is not registered for this tenant.",
+      "discharge_invalid": "DischargeQuantity must be positive.",
+      "over_discharge": "Discharge exceeds outstanding undischarged quantity on the MRN."
+    },
+    "return": {
+      "empty_lines": "Return declaration must contain at least one line.",
+      "mrn_required": "Each return line must specify a SourceMRN.",
+      "mrn_not_found": "SourceMRN is not registered for this tenant.",
+      "quantity_invalid": "Return quantity must be positive and valid.",
+      "over": "Return quantity exceeds previously discharged quantity."
+    },
+    "waste": {
+      "quantity_invalid": "Quantity must be positive.",
+      "reason_required": "Reason is required for a waste declaration.",
+      "mrn_required": "MRN is required.",
+      "mrn_not_registered": "MRN is not registered for this tenant.",
+      "over_pool": "Insufficient LON inventory for the requested MRN under the applied filters.",
+      "slots_max": "Maximum 5 waste slots.",
+      "slot_index_invalid": "SlotIndex must be 0..4 (0 = Zaguba).",
+      "slot_quantity_invalid": "Each waste slot must have positive quantity.",
+      "slot_duplicate_index": "Cannot repeat SlotIndex.",
+      "slot_sum_mismatch": "Slot sum does not equal total quantity."
+    },
+    "certify": {
+      "zaverka_required": "Zaverka number is required.",
+      "declaration_not_found": "Declaration not found.",
+      "already_certified": "Declaration is already certified.",
+      "removed_declaration": "Removed declaration cannot be certified.",
+      "zaverka_duplicate": "Zaverka number already exists on another declaration."
+    },
+    "po": {
+      "not_found": "Production order not found.",
+      "invalid_status": "Invalid status for this operation."
+    },
+    "bom": {
+      "not_found": "BOM not found.",
+      "base_quantity_invalid": "BOM.BaseQuantity must be > 0."
+    },
+    "issue_all": {
+      "invalid_status": "Bulk-issue is not allowed for this PO status.",
+      "no_materials": "PO has no materials. Release the PO first.",
+      "all_issued": "All materials for this PO are already issued."
+    },
+    "material_issue": {
+      "empty_lines": "Material issue must contain at least one line.",
+      "po_not_found": "Production order not found.",
+      "quantity_invalid": "Line quantity must be positive.",
+      "insufficient_inventory": "Insufficient inventory for the requested line.",
+      "lon_missing_batch_mrn": "LON material requires BatchNumber and MRN on the issue line."
+    },
+    "batch": {
+      "not_found": "No positive-quantity inventory found for this batch.",
+      "no_movement_needed": "No balances needed moving — every row already sits at the target location."
+    },
+    "location": {
+      "not_found": "Location not found or inactive."
+    },
+    "transfer": {
+      "no_filter": "At least one filter is required (Item, Batch, MRN, warehouse, location, QualityStatus, or LonProcessState).",
+      "no_match": "No positive-quantity inventory matched the filter."
+    },
+    "fefo": {
+      "disabled": "FEFO auto-pick is disabled for this tenant. Supply Batch, MRN, or Location."
+    },
+    "quick_entry": {
+      "empty_command": "Empty command. Type 'help' to see available verbs.",
+      "invalid_command": "Unknown verb. Type 'help' for supported commands.",
+      "issue_usage": "Usage: issue <po-number>",
+      "release_usage": "Usage: release <po-number>",
+      "move_usage": "Usage: move <batch> <stage>",
+      "po_not_found": "Production order not found.",
+      "unknown_stage": "Unknown stage. Accepted: receiving, storage, picking, production, shipping, quarantine, blocked."
+    },
+    "validation": {
+      "failed": "Validation failed."
+    },
+    "internal": {
+      "error": "Internal error."
+    }
   },
   "zaverka": {
     "title": "Declaration certification",

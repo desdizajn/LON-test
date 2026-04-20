@@ -75,6 +75,54 @@
     "reference": "Referencë",
     "resultsCount": "{{count}} rezultate"
   },
+  "bulkReceipt": {
+    "title": "Pranim bulk nga deklarata doganore",
+    "subtitle": "Zgjidhni një deklaratë IM ekzistuese dhe magazinën; sistemi krijon Receipt me rreshta nga deklarata.",
+    "declaration": "Deklarata",
+    "reference": "Referencë e brendshme",
+    "warehouse": "Magazina",
+    "targetLocation": "Lokacioni i destinuar",
+    "autoLocation": "Automatik (Receiving i parë)",
+    "customsValue": "Vlera doganore",
+    "commit": "Krijo pranim",
+    "successHeading": "Pranimi bulk u krijua.",
+    "linesCreated": "Rreshta të krijuar",
+    "totalQuantity": "Sasia totale",
+    "requiredMissing": "Deklarata dhe magazina janë të detyrueshme."
+  },
+  "bulkShipment": {
+    "title": "Dërgesë bulk nga përzgjedhja FG",
+    "subtitle": "Filtroni mallin e gatshëm dhe me një klik krijoni Shipment + (opsionalisht) deklaratë EX.",
+    "filterLegend": "Filtri i mallit të gatshëm",
+    "customerLegend": "Klient / referencë",
+    "customsLegend": "Dogana",
+    "item": "Artikulli",
+    "batch": "Partia",
+    "mrn": "MRN",
+    "sourceWarehouse": "Magazina burimore",
+    "sourceLocation": "Lokacioni burimor",
+    "partner": "Partneri",
+    "reference": "Referenca",
+    "createEx": "Krijo atomikisht deklaratë EX",
+    "procedure": "Procedura doganore",
+    "procedureRequired": "Procedura doganore kërkohet kur krijohet EX.",
+    "declarationNumber": "Numri i deklaratës",
+    "commit": "Krijo dërgesë",
+    "successHeading": "Dërgesa bulk u krijua.",
+    "shipmentNumber": "Numri i dërgesës",
+    "linesCreated": "Rreshta të krijuar",
+    "totalQuantity": "Sasia totale",
+    "exportDeclarationId": "ID e deklaratës EX"
+  },
+  "articlePicker": {
+    "placeholder": "Kërko artikull (kod ose emër)…",
+    "typePrompt": "Shkruani kod ose emër për kërkim.",
+    "noResults": "Pa rezultate.",
+    "base": "Kod bazë",
+    "tariff": "Tarifa",
+    "origin": "Origjina",
+    "aSuffixHint": "Variant alternativ i tarifës (suffiks „A\")"
+  },
   "kw12Wizard": {
     "title": "KW12 preset (një klik)",
     "subtitle": "Ngarkoni një KW12.xlsx të vetëm — sistemi njeh automatikisht fletët Matriks / Faktura / Transport dhe krijon 3 sesione importi.",
@@ -182,6 +230,8 @@
       "qcHold": "E bllokuar nga QC",
       "issuesToday": "Lëshimi sot",
       "transfers": "Transferet",
+      "bulkReceipt": "Pranim bulk",
+      "bulkShipment": "Dërgesë bulk",
       "stockByCustomer": "Gjendja sipas materialit të klientit",
       "variance": "Mungesa / Teprica / Dallimi",
       "readyToShip": "Gati për shipment",
@@ -349,7 +399,117 @@
     "network": "Gabim rrjeti. Kontrolloni lidhjen tuaj.",
     "unauthorized": "I paautorizuar",
     "notFound": "Nuk u gjet",
-    "loadFailed": "Dështoi ngarkimi i të dhënave"
+    "loadFailed": "Dështoi ngarkimi i të dhënave",
+    "receipt": {
+      "empty_lines": "Pranimi duhet të përmbajë të paktën një rresht.",
+      "no_location": "Rreshti nuk ka lokacion të zgjidhur. Specifikoni LocationId ose konfiguroni lokacion Receiving.",
+      "quantity_invalid": "Sasia duhet të jetë pozitive.",
+      "scrap_invalid": "Sasia scrap nuk mund të jetë negative.",
+      "batch_required": "BatchNumber kërkohet.",
+      "po_not_found": "Urdhri i prodhimit nuk u gjet."
+    },
+    "mrn": {
+      "not_registered": "MRN nuk është i regjistruar për këtë tenant. Krijoni fillimisht deklaratën doganore.",
+      "deactivated": "MRN është i çaktivizuar (i konsumuar plotësisht ose i mbyllur).",
+      "expired": "MRN skadoi më {{date}}.",
+      "overdraw": "MRN tejkalim: kërkuar {{demand}}, mbetur {{remaining}} nga {{total}}.",
+      "duplicate": "MRN ekziston tashmë në regjistër."
+    },
+    "declaration": {
+      "empty_lines": "Deklarata duhet të përmbajë të paktën një rresht."
+    },
+    "procedure": {
+      "not_found": "Procedura doganore nuk u gjet.",
+      "inactive": "Procedura doganore nuk është aktive."
+    },
+    "authorization": {
+      "not_found": "Autorizimi LON nuk u gjet nën këtë tenant.",
+      "inactive": "Autorizimi LON nuk është aktiv.",
+      "expired": "Autorizimi LON ka skaduar.",
+      "not_issued": "Autorizimi LON nuk është lëshuar ende."
+    },
+    "export": {
+      "empty_lines": "Deklarata e eksportit duhet të përmbajë të paktën një rresht.",
+      "mrn_required": "Çdo rresht i eksportit duhet të specifikojë një SourceMRN.",
+      "mrn_not_found": "SourceMRN nuk është i regjistruar për këtë tenant.",
+      "discharge_invalid": "DischargeQuantity duhet të jetë pozitive.",
+      "over_discharge": "Discharge tejkalon sasinë e pashkarkuar të mbetur në MRN."
+    },
+    "return": {
+      "empty_lines": "Deklarata e kthimit duhet të përmbajë të paktën një rresht.",
+      "mrn_required": "Çdo rresht duhet të specifikojë një SourceMRN.",
+      "mrn_not_found": "SourceMRN nuk është i regjistruar për këtë tenant.",
+      "quantity_invalid": "Sasia e kthimit duhet të jetë pozitive dhe e vlefshme.",
+      "over": "Sasia e kthimit tejkalon sasinë e shkarkuar më parë."
+    },
+    "waste": {
+      "quantity_invalid": "Sasia duhet të jetë pozitive.",
+      "reason_required": "Arsyeja kërkohet për deklaratë të humbjes.",
+      "mrn_required": "MRN kërkohet.",
+      "mrn_not_registered": "MRN nuk është i regjistruar për këtë tenant.",
+      "over_pool": "Inventar LON i pamjaftueshëm për MRN-në e kërkuar nën filtra.",
+      "slots_max": "Maksimumi 5 sllote waste.",
+      "slot_index_invalid": "SlotIndex duhet të jetë 0..4 (0 = Zaguba).",
+      "slot_quantity_invalid": "Secili sllot waste duhet të ketë sasi pozitive.",
+      "slot_duplicate_index": "SlotIndex nuk mund të përsëritet.",
+      "slot_sum_mismatch": "Shuma e sllotave nuk është e barabartë me sasinë totale."
+    },
+    "certify": {
+      "zaverka_required": "Numri i certifikimit kërkohet.",
+      "declaration_not_found": "Deklarata nuk u gjet.",
+      "already_certified": "Deklarata është certifikuar tashmë.",
+      "removed_declaration": "Deklarata e fshirë nuk mund të certifikohet.",
+      "zaverka_duplicate": "Numri i certifikimit ekziston tashmë në deklaratë tjetër."
+    },
+    "po": {
+      "not_found": "Urdhri i prodhimit nuk u gjet.",
+      "invalid_status": "Status i pavlefshëm për këtë operacion."
+    },
+    "bom": {
+      "not_found": "BOM nuk u gjet.",
+      "base_quantity_invalid": "BOM.BaseQuantity duhet të jetë > 0."
+    },
+    "issue_all": {
+      "invalid_status": "Bulk-issue nuk lejohet për këtë status të PO-së.",
+      "no_materials": "PO nuk ka materiale. Release-oni PO-në së pari.",
+      "all_issued": "Të gjitha materialet për këtë PO janë lëshuar tashmë."
+    },
+    "material_issue": {
+      "empty_lines": "Lëshimi i materialit duhet të përmbajë të paktën një rresht.",
+      "po_not_found": "Urdhri i prodhimit nuk u gjet.",
+      "quantity_invalid": "Sasia e rreshtit duhet të jetë pozitive.",
+      "insufficient_inventory": "Inventar i pamjaftueshëm për rreshtin e kërkuar.",
+      "lon_missing_batch_mrn": "Materiali LON kërkon BatchNumber dhe MRN në rreshtin e lëshimit."
+    },
+    "batch": {
+      "not_found": "Nuk u gjet inventar me sasi pozitive për këtë parti.",
+      "no_movement_needed": "Asnjë balancë nuk ka nevojë për lëvizje — të gjitha janë tashmë te lokacioni objektiv."
+    },
+    "location": {
+      "not_found": "Lokacioni nuk u gjet ose është joaktiv."
+    },
+    "transfer": {
+      "no_filter": "Kërkohet të paktën një filtër (Item, Batch, MRN, magazinë, lokacion, QualityStatus ose LonProcessState).",
+      "no_match": "Asnjë inventar me sasi pozitive nuk përputhet me filtrin."
+    },
+    "fefo": {
+      "disabled": "FEFO auto-pick është i çaktivizuar për këtë tenant. Jepni Batch, MRN ose Location."
+    },
+    "quick_entry": {
+      "empty_command": "Komandë bosh. Shkruani 'help' për listën.",
+      "invalid_command": "Verb i panjohur. Shkruani 'help'.",
+      "issue_usage": "Përdorimi: issue <po-number>",
+      "release_usage": "Përdorimi: release <po-number>",
+      "move_usage": "Përdorimi: move <batch> <stage>",
+      "po_not_found": "Urdhri i prodhimit nuk u gjet.",
+      "unknown_stage": "Stage i panjohur. Pranohet: receiving, storage, picking, production, shipping, quarantine, blocked."
+    },
+    "validation": {
+      "failed": "Validimi dështoi."
+    },
+    "internal": {
+      "error": "Gabim i brendshëm."
+    }
   },
   "zaverka": {
     "title": "Certifikimi i deklaratës",

@@ -7,6 +7,7 @@ import Pee060Panel from '../components/Customs/Pee060Panel';
 import WasteDeclarationModal from '../components/Customs/WasteDeclarationModal';
 import ExportDeclarationModal from '../components/Customs/ExportDeclarationModal';
 import ReturnDeclarationModal from '../components/Customs/ReturnDeclarationModal';
+import { formatQuantity, formatDate } from '../utils/format';
 
 const Customs: React.FC = () => {
   const { t } = useTranslation();
@@ -113,16 +114,16 @@ const Customs: React.FC = () => {
                 <td><strong>{decl.declarationNumber}</strong></td>
                 <td>{decl.mrn || '-'}</td>
                 <td>{decl.customsProcedure?.name || '-'}</td>
-                <td>{decl.totalCustomsValue?.toFixed(2) || '0.00'} {decl.currency}</td>
-                <td>{decl.totalDuty?.toFixed(2) || '0.00'}</td>
-                <td>{decl.totalVAT?.toFixed(2) || '0.00'}</td>
+                <td>{formatQuantity(decl.totalCustomsValue ?? 0)} {decl.currency}</td>
+                <td>{formatQuantity(decl.totalDuty ?? 0)}</td>
+                <td>{formatQuantity(decl.totalVAT ?? 0)}</td>
                 <td>
                   <span className={`badge badge-${decl.isCleared ? 'success' : 'warning'}`}>
                     {decl.isCleared ? 'Cleared' : 'Pending'}
                   </span>
                 </td>
                 <td>
-                  {new Date(decl.declarationDate).toLocaleDateString()}
+                  {formatDate(decl.declarationDate)}
                   {decl.zaverkaNumber && (
                     <div style={{ fontSize: 11, color: '#0a7c36', marginTop: 2 }}>
                       ✓ {t('zaverka.certified')}: {decl.zaverkaNumber}

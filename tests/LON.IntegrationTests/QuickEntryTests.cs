@@ -45,7 +45,7 @@ public class QuickEntryTests : IClassFixture<LonApiFactory>
     }
 
     [Fact]
-    public async Task UnknownVerb_Returns400()
+    public async Task UnknownVerb_Returns400_WithErrorCode()
     {
         var client = _factory.CreateClient();
         await Authenticate(client);
@@ -53,10 +53,12 @@ public class QuickEntryTests : IClassFixture<LonApiFactory>
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await resp.Content.ReadFromJsonAsync<ResultResponse>();
         body!.ErrorMessage.Should().Contain("Unknown verb");
+        // P2.5.6 — stable error code flows back for i18n lookup.
+        body.ErrorCode.Should().Be("quick_entry.invalid_command");
     }
 
     [Fact]
-    public async Task Move_UnknownStage_Returns400()
+    public async Task Move_UnknownStage_Returns400_WithErrorCode()
     {
         var client = _factory.CreateClient();
         await Authenticate(client);
@@ -64,6 +66,7 @@ public class QuickEntryTests : IClassFixture<LonApiFactory>
         resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await resp.Content.ReadFromJsonAsync<ResultResponse>();
         body!.ErrorMessage.Should().Contain("Unknown stage");
+        body.ErrorCode.Should().Be("quick_entry.unknown_stage");
     }
 
     private static async Task Authenticate(HttpClient client)
@@ -77,5 +80,5 @@ public class QuickEntryTests : IClassFixture<LonApiFactory>
 
     private sealed record LoginResponse(string AccessToken);
     private sealed record ResultData(string Verb, string Outcome, object? Payload);
-    private sealed record ResultResponse(bool IsSuccess, ResultData? Data, string? ErrorMessage);
+    private sealed record ResultResponse(bool IsSuccess, ResultData? Data, string? ErrorMessage, string? ErrorCode);
 }

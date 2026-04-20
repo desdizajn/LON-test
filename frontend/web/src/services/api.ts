@@ -88,9 +88,39 @@ export const wmsApi = {
     api.get('/WMS/receipts', { params: { page, pageSize } }),
   getReceipt: (id: string) => 
     api.get(`/WMS/receipts/${id}`),
-  createReceipt: (data: any) => 
+  createReceipt: (data: any) =>
     api.post('/WMS/receipts', data),
-  
+  /**
+   * P5.2.3 — bulk receipt from an existing customs declaration. Explodes
+   * every declaration line into a receipt line in one atomic commit.
+   */
+  bulkReceiptFromDeclaration: (data: {
+    customsDeclarationId: string;
+    warehouseId: string;
+    targetLocationId?: string | null;
+    receiptDate?: string | null;
+    referenceNumber?: string | null;
+  }) => api.post('/WMS/receipts/bulk-from-declaration', data),
+  /**
+   * P5.2.4 — bulk shipment from FG selection. Runs the FG predicate, emits a
+   * Shipment, drains the matched balances, and (optionally) creates an EX
+   * declaration against the shared source MRN.
+   */
+  bulkShipmentFromFG: (data: {
+    itemId?: string | null;
+    batchNumber?: string | null;
+    mrn?: string | null;
+    locationId?: string | null;
+    sourceWarehouseId?: string | null;
+    productionOrderId?: string | null;
+    partnerId?: string | null;
+    customsProcedureId?: string | null;
+    declarationNumber?: string | null;
+    shipmentDate?: string | null;
+    reference?: string | null;
+    createExportDeclaration?: boolean;
+  }) => api.post('/WMS/shipments/bulk-from-fg', data),
+
   // Shipments
   getShipments: (page: number = 1, pageSize: number = 20) => 
     api.get('/WMS/shipments', { params: { page, pageSize } }),

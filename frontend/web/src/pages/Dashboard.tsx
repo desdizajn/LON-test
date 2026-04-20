@@ -5,6 +5,7 @@ import { analyticsApi } from '../services/api';
 import { authService } from '../services/authService';
 import './Dashboard.css';
 import TrafficLightGuarantees from '../components/common/TrafficLightGuarantees';
+import { formatQuantity } from '../utils/format';
 
 interface DashboardData {
   inventory: {
@@ -181,11 +182,11 @@ const Dashboard: React.FC = () => {
           <h3 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('dashboard.inventoryStatus')}</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span>{t('dashboard.totalBalance')}:</span>
-            <strong>{data.inventory.totalBalance.toFixed(2)}</strong>
+            <strong>{formatQuantity(data.inventory.totalBalance)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span>{t('dashboard.blockedQuantity')}:</span>
-            <strong style={{ color: '#e74c3c' }}>{data.inventory.blockedQty.toFixed(2)}</strong>
+            <strong style={{ color: '#e74c3c' }}>{formatQuantity(data.inventory.blockedQty)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>{t('dashboard.locations')}:</span>
@@ -205,7 +206,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>{t('dashboard.wip')}:</span>
-            <strong>{data.production.wip.toFixed(2)}</strong>
+            <strong>{formatQuantity(data.production.wip)}</strong>
           </div>
         </div>
 
@@ -237,7 +238,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span>{t('dashboard.totalExposure')}:</span>
-            <strong style={{ color: '#e74c3c' }}>{data.guarantees.totalExposure.toFixed(2)}</strong>
+            <strong style={{ color: '#e74c3c' }}>{formatQuantity(data.guarantees.totalExposure)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>{t('dashboard.expiringSoon')}:</span>

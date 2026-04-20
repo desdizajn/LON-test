@@ -75,6 +75,54 @@
     "reference": "Референца",
     "resultsCount": "{{count}} резултати"
   },
+  "bulkReceipt": {
+    "title": "Bulk прием од царинска декларација",
+    "subtitle": "Изберете постоечка IM декларација и склад; системот автоматски креира Receipt со линии пресликани од декларацијата.",
+    "declaration": "Декларација",
+    "reference": "Интерна референца",
+    "warehouse": "Склад",
+    "targetLocation": "Целна локација",
+    "autoLocation": "Автоматски (прва Receiving)",
+    "customsValue": "Царинска вредност",
+    "commit": "Создај прием",
+    "successHeading": "Bulk приемот е успешно создаден.",
+    "linesCreated": "Создадени линии",
+    "totalQuantity": "Вкупна количина",
+    "requiredMissing": "Декларацијата и складот се задолжителни."
+  },
+  "bulkShipment": {
+    "title": "Bulk испратница од FG селекција",
+    "subtitle": "Филтрирајте финален производ и автоматски креирајте Shipment + (опционално) EX декларација.",
+    "filterLegend": "Филтер за финален производ",
+    "customerLegend": "Купувач / референца",
+    "customsLegend": "Царина",
+    "item": "Артикл",
+    "batch": "Партија",
+    "mrn": "MRN",
+    "sourceWarehouse": "Изворен склад",
+    "sourceLocation": "Изворна локација",
+    "partner": "Партнер",
+    "reference": "Референца",
+    "createEx": "Создај EX декларација атомично",
+    "procedure": "Царинска постапка",
+    "procedureRequired": "Царинска постапка е задолжителна кога се создава EX.",
+    "declarationNumber": "Број на декларација",
+    "commit": "Создај испратница",
+    "successHeading": "Bulk испратницата е успешно создадена.",
+    "shipmentNumber": "Број на испратница",
+    "linesCreated": "Создадени линии",
+    "totalQuantity": "Вкупна количина",
+    "exportDeclarationId": "EX декларација ID"
+  },
+  "articlePicker": {
+    "placeholder": "Пребарај артикл (шифра или име)...",
+    "typePrompt": "Внесете шифра или име за пребарување.",
+    "noResults": "Нема резултати.",
+    "base": "Основна шифра",
+    "tariff": "Тарифа",
+    "origin": "Земја",
+    "aSuffixHint": "Алтернативна тарифна варијанта (суфикс „A\")"
+  },
   "kw12Wizard": {
     "title": "KW12 пресет (еден клик)",
     "subtitle": "Качете еден KW12.xlsx — системот автоматски препознава Matriks / Faktura / Transport листови и создава 3 импорт сесии со предконфигурирани цели.",
@@ -182,6 +230,8 @@
       "qcHold": "Блокирано од QC",
       "issuesToday": "Издавање денес",
       "transfers": "Трансфери",
+      "bulkReceipt": "Bulk прием",
+      "bulkShipment": "Bulk испратница",
       "stockByCustomer": "Состојба по клиентски материјал",
       "variance": "Недостиг / Вишок / Разлика",
       "readyToShip": "Готово за shipment",
@@ -349,7 +399,117 @@
     "network": "Мрежна грешка. Проверете ја конекцијата.",
     "unauthorized": "Немате дозвола",
     "notFound": "Не е пронајдено",
-    "loadFailed": "Неуспех при вчитување на податоци"
+    "loadFailed": "Неуспех при вчитување на податоци",
+    "receipt": {
+      "empty_lines": "Пријавата мора да содржи најмалку една ставка.",
+      "no_location": "Ставка без резолвирана локација. Внесете LocationId или конфигурирајте Receiving локација.",
+      "quantity_invalid": "Количината мора да биде позитивна.",
+      "scrap_invalid": "Scrap количината не може да биде негативна.",
+      "batch_required": "Партија (batch) е задолжителна за оваа пријава.",
+      "po_not_found": "Производниот налог не е пронајден."
+    },
+    "mrn": {
+      "not_registered": "MRN не е регистриран за овој tenant. Прво внесете ја царинската декларација.",
+      "deactivated": "MRN е деактивиран (веќе искористен или затворен).",
+      "expired": "MRN е истечен на {{date}}.",
+      "overdraw": "MRN надминување: барано {{demand}}, преостанато {{remaining}} од {{total}}.",
+      "duplicate": "MRN веќе постои во регистарот."
+    },
+    "declaration": {
+      "empty_lines": "Декларацијата мора да содржи најмалку една ставка."
+    },
+    "procedure": {
+      "not_found": "Царинска постапка не е пронајдена.",
+      "inactive": "Царинската постапка не е активна."
+    },
+    "authorization": {
+      "not_found": "LON одобрението не е пронајдено под овој tenant.",
+      "inactive": "LON одобрението не е активно.",
+      "expired": "LON одобрението е истечено.",
+      "not_issued": "LON одобрението уште не е издадено."
+    },
+    "export": {
+      "empty_lines": "Извозната декларација мора да содржи најмалку една ставка.",
+      "mrn_required": "Секоја извозна ставка мора да има SourceMRN.",
+      "mrn_not_found": "SourceMRN не е регистриран за овој tenant.",
+      "discharge_invalid": "Вкупната DischargeQuantity мора да биде позитивна.",
+      "over_discharge": "Discharge надминува преостаната нераздолжена количина на MRN."
+    },
+    "return": {
+      "empty_lines": "Поврат декларацијата мора да содржи најмалку една ставка.",
+      "mrn_required": "Секоја ставка мора да има SourceMRN.",
+      "mrn_not_found": "SourceMRN не е регистриран за овој tenant.",
+      "quantity_invalid": "Количина за поврат мора да биде позитивна и валидна.",
+      "over": "Количината за поврат надминува претходно раздолжена."
+    },
+    "waste": {
+      "quantity_invalid": "Количината мора да биде позитивна.",
+      "reason_required": "Причина е задолжителна за waste декларација.",
+      "mrn_required": "MRN е задолжителен.",
+      "mrn_not_registered": "MRN не е регистриран за овој tenant.",
+      "over_pool": "Недоволна LON залиха за бараниот MRN под применетите филтри.",
+      "slots_max": "Максимум 5 waste слотови.",
+      "slot_index_invalid": "SlotIndex мора да биде во 0..4 (0 = Zaguba).",
+      "slot_quantity_invalid": "Секој waste слот мора да има позитивно количество.",
+      "slot_duplicate_index": "Не може ист SlotIndex да се повтори.",
+      "slot_sum_mismatch": "Сума на слотови не е еднаква со вкупната количина."
+    },
+    "certify": {
+      "zaverka_required": "Број на заверка е задолжителен.",
+      "declaration_not_found": "Декларација не е пронајдена.",
+      "already_certified": "Декларацијата веќе е заверена.",
+      "removed_declaration": "Отстранета декларација не може да се завери.",
+      "zaverka_duplicate": "Бројот на заверка веќе постои на друга декларација."
+    },
+    "po": {
+      "not_found": "Производниот налог не е пронајден.",
+      "invalid_status": "Невалиден статус за оваа операција."
+    },
+    "bom": {
+      "not_found": "Нормативот (BOM) не е пронајден.",
+      "base_quantity_invalid": "BOM.BaseQuantity мора да е > 0."
+    },
+    "issue_all": {
+      "invalid_status": "Bulk-issue не е дозволен за овој статус на PO.",
+      "no_materials": "PO нема материјали. Прво release-ирајте го налогот.",
+      "all_issued": "Сите материјали за овој PO веќе се издадени."
+    },
+    "material_issue": {
+      "empty_lines": "Издавањето мора да содржи најмалку една ставка.",
+      "po_not_found": "Производниот налог не е пронајден.",
+      "quantity_invalid": "Количината на ставката мора да биде позитивна.",
+      "insufficient_inventory": "Недоволна залиха за бараната ставка.",
+      "lon_missing_batch_mrn": "LON материјал бара Batch и MRN на ставката."
+    },
+    "batch": {
+      "not_found": "Не е пронајдена позитивна залиха за оваа партија.",
+      "no_movement_needed": "Ниту една ставка не треба да се движи — сите веќе се на целната локација."
+    },
+    "location": {
+      "not_found": "Локацијата не е пронајдена или е неактивна."
+    },
+    "transfer": {
+      "no_filter": "Потребен е барем еден филтер (Item, Batch, MRN, магацин, локација, QualityStatus или LonProcessState).",
+      "no_match": "Нема позитивна залиха што одговара на филтерот."
+    },
+    "fefo": {
+      "disabled": "FEFO auto-pick е оневозможен за овој tenant. Внесете Batch, MRN или Location."
+    },
+    "quick_entry": {
+      "empty_command": "Празна команда. Внесете 'help' за список.",
+      "invalid_command": "Непознат verb. Внесете 'help'.",
+      "issue_usage": "Употреба: issue <po-number>",
+      "release_usage": "Употреба: release <po-number>",
+      "move_usage": "Употреба: move <batch> <stage>",
+      "po_not_found": "Производниот налог не е пронајден.",
+      "unknown_stage": "Непознат stage. Прифатливи: receiving, storage, picking, production, shipping, quarantine, blocked."
+    },
+    "validation": {
+      "failed": "Валидацијата не успеа."
+    },
+    "internal": {
+      "error": "Внатрешна грешка."
+    }
   },
   "zaverka": {
     "title": "Заверка на декларација",

@@ -2,6 +2,32 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Phase 2.5 + Phase 5 closing sweep: Intl helpers, error codes, article picker, bulk receipt/shipment, page retrofits
+
+Single batch closing the remainder of Phase 2.5 (i18n) and Phase 5 (productivity parity).
+
+**P2.5.5 — `utils/format.ts` Intl helpers.** One module exposes `formatQuantity`, `formatInteger`, `formatCurrency`, `formatPercent`, `formatDate`, `formatDateTime`, `formatTime`, and `formatRelativeDate`. Locale is resolved from the active `i18next.language` → `{mk → mk-MK, sr → sr-RS, sq → sq-AL, en → en-GB}`. All downstream pages that were using `.toFixed(2)` / `.toLocaleDateString()` get locale-correct decimals + date formats for free when switched.
+
+**P2.5.6 — backend `ErrorCode` envelope.** `Result<T>` and `Result` gained an optional `ErrorCode` property + `Failure(code, message)` overloads. New `LON.Application.Common.Models.ErrorCodes` static class enumerates every user-visible code (`mrn.not_registered`, `fefo.disabled`, `waste.over_pool`, `certify.already_certified`, `quick_entry.invalid_command`, `transfer.no_filter`, etc.). Wired into: `CreateReceiptCommand` (MRN probes), `CertifyDeclarationCommand`, `CreateWasteDeclarationCommand`, `CreateExportDeclarationCommand`, `CreateReturnDeclarationCommand`, `CreateMaterialIssueCommand` (incl. FEFO-disabled), `MassLocationTransferCommand`, `MoveBatchAcrossStagesCommand`, `QuickEntryCommand`. Client side: `utils/translateError.ts` looks up `errors.<code>` in the active locale and falls back to `errorMessage`. `errors` namespace expanded from ~5 keys to ~90 in mk/sr/sq/en. Regression test: `QuickEntryTests.UnknownVerb_Returns400_WithErrorCode` + `Move_UnknownStage_Returns400_WithErrorCode` assert `errorCode` ∈ `{quick_entry.invalid_command, quick_entry.unknown_stage}`.
+
+**P5.3.4 — article picker with A-suffix variants.** New `ArticlePickerQuery` in `LON.Application/MasterData/Items/` + `GET /api/MasterData/items/article-picker?query=&limit=`. Groups results by normalised base (trailing `A` stripped) so a query for `11005` surfaces both `11005` and `11005A` with the A-suffix tariff variant flagged. Frontend component `components/common/ArticlePicker.tsx` renders a debounced dropdown with the A-suffix badge per variant, called from the new BulkShipment page. i18n `articlePicker.*` in 4 locales. Regression test `ArticlePickerTests`: seeds `{basePrefix, basePrefixA}`, queries by base → both grouped; queries by A-suffix → base sibling still pulled in.
+
+**P5.2.3 — bulk receipt from customs declaration.** `BulkReceiptFromDeclarationCommand` at `src/LON.Application/WMS/Commands/BulkReceiptFromDeclaration/`. Picks a declaration + warehouse + (optional) landing location; explodes every `CustomsDeclarationLine` into a `ReceiptLineDto` with the declaration's MRN + partner applied, then delegates to `CreateReceiptCommand` so the MRN registry + inflate-for-waste + LON process-state pipeline stays authoritative. `POST /api/wms/receipts/bulk-from-declaration`. Frontend page `/warehouse/bulk-receipt` (BulkReceiptFromDeclaration.tsx). Regression test `BulkReceiptFromDeclarationTests`: 2-line IM 4200 → single bulk call → 2 receipt lines booked on MRN; unknown declaration id → 400 with `errorCode=declaration.not_found`.
+
+**P5.2.4 — bulk shipment from FG selection.** `BulkShipmentFromFGCommand` at `src/LON.Application/WMS/Commands/BulkShipmentFromFG/`. Filter predicate (Item/Batch/MRN/PO/location/warehouse + partner) → `Shipment` + per-balance `ShipmentLine` + per-balance drain + `InventoryMovement(Type=Shipment)`. When `CreateExportDeclaration=true` and the selection collapses to exactly one source MRN, chains `CreateExportDeclarationCommand` so shipment + EX land in a single atomic commit. `POST /api/wms/shipments/bulk-from-fg`. Frontend page `/warehouse/bulk-shipment` (BulkShipmentFromFG.tsx) reuses the ArticlePicker component. Regression test `BulkShipmentFromFGTests`: seeds 2 FG balances for one item, ItemId filter → Shipment with 2 lines, both sources drained to 0; absent filter → 400 with `errorCode=transfer.no_filter`.
+
+**P2.5.4 partial retrofit.** Dashboard, Customs list, Guarantees page now use `formatQuantity` / `formatDate` helpers instead of ad-hoc `.toFixed(2)` / `.toLocaleDateString()`. Remaining pages are touched-on-change (retrofit stays an opportunistic backlog item — the helpers make the switch a single-line edit whenever the page is next edited).
+
+**Nav wiring.** `navGroups.ts` `warehouse` group gets two new entries (`warehouse-bulk-receipt` 📥 + `warehouse-bulk-shipment` 📤); keys added to mk/sr/sq/en. `App.tsx` registers both routes.
+
+**Contract hygiene.** `./scripts/gen-api-types.sh` re-ran after every backend change; `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` committed in the same batch.
+
+**Build**: `dotnet build` 0/0 across `LON.API`, `LON.Application`, and `LON.IntegrationTests`. `npm run build` bundle `main.bb4dd2e5.js` — only pre-existing lint warnings.
+
+**VPS deploy + smoke** follow in the batch commit.
+
+---
+
 ## 2026-04-20 — P6.38 FE catch-up batch: Export + Return forms + TrafficLight on Dashboard + Tenant policies + Audit viewer
 
 Five FE-only additions closing the "backend shipped, UI missing" gap for a chunk of the customs / admin surface.

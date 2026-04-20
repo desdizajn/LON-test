@@ -75,25 +75,26 @@ public class CreateWasteDeclarationCommandHandler
         CancellationToken cancellationToken)
     {
         if (request.Quantity <= 0m)
-            return Result<Guid>.Failure("Quantity must be positive.");
+            return Result<Guid>.Failure(ErrorCodes.WasteQuantityInvalid, "Quantity must be positive.");
         if (string.IsNullOrWhiteSpace(request.Reason))
-            return Result<Guid>.Failure("Reason is required for a waste declaration (audit trail).");
+            return Result<Guid>.Failure(ErrorCodes.WasteReasonRequired, "Reason is required for a waste declaration (audit trail).");
         if (string.IsNullOrWhiteSpace(request.MRN))
-            return Result<Guid>.Failure("MRN is required.");
+            return Result<Guid>.Failure(ErrorCodes.WasteMrnRequired, "MRN is required.");
 
         if (request.Slots is { Count: > 0 })
         {
             if (request.Slots.Count > 5)
-                return Result<Guid>.Failure("Максимум 5 waste слотови (4 normalни + Zaguba).");
+                return Result<Guid>.Failure(ErrorCodes.WasteSlotsMax, "Максимум 5 waste слотови (4 normalни + Zaguba).");
             if (request.Slots.Any(s => s.SlotIndex is < 0 or > 4))
-                return Result<Guid>.Failure("SlotIndex мора да биде во 0..4 (0 = Zaguba).");
+                return Result<Guid>.Failure(ErrorCodes.WasteSlotIndexInvalid, "SlotIndex мора да биде во 0..4 (0 = Zaguba).");
             if (request.Slots.Any(s => s.Quantity <= 0m))
-                return Result<Guid>.Failure("Секој waste слот мора да има позитивно количество.");
+                return Result<Guid>.Failure(ErrorCodes.WasteSlotQuantityInvalid, "Секој waste слот мора да има позитивно количество.");
             if (request.Slots.GroupBy(s => s.SlotIndex).Any(g => g.Count() > 1))
-                return Result<Guid>.Failure("Не може ист SlotIndex да се појавува два пати.");
+                return Result<Guid>.Failure(ErrorCodes.WasteSlotDuplicateIndex, "Не може ист SlotIndex да се појавува два пати.");
             var slotSum = request.Slots.Sum(s => s.Quantity);
             if (Math.Abs(slotSum - request.Quantity) > 0.0001m)
                 return Result<Guid>.Failure(
+                    ErrorCodes.WasteSlotSumMismatch,
                     $"Сума на слотови ({slotSum}) мора да е еднаква со вкупното количество ({request.Quantity}).");
         }
 
@@ -102,7 +103,7 @@ public class CreateWasteDeclarationCommandHandler
         var registry = await _context.MRNRegistries.FirstOrDefaultAsync(
             r => r.MRN == mrn && !r.IsDeleted, cancellationToken);
         if (registry is null)
-            return Result<Guid>.Failure($"MRN '{mrn}' is not registered for this tenant.");
+            return Result<Guid>.Failure(ErrorCodes.WasteMrnNotRegistered, $"MRN '{mrn}' is not registered for this tenant.");
 
         var query = _context.InventoryBalances
             .Where(b => b.MRN == mrn
@@ -128,6 +129,7 @@ public class CreateWasteDeclarationCommandHandler
         if (poolTotal < request.Quantity)
         {
             return Result<Guid>.Failure(
+                ErrorCodes.WasteOverPool,
                 $"Insufficient LON inventory for MRN '{mrn}' under the applied filters. " +
                 $"Demand {request.Quantity}, available {poolTotal}.");
         }

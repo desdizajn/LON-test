@@ -5,6 +5,7 @@ public class Result<T>
     public bool IsSuccess { get; set; }
     public T? Data { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? ErrorCode { get; set; }
     public List<string> Errors { get; set; } = new();
 
     public static Result<T> Success(T data)
@@ -17,6 +18,11 @@ public class Result<T>
         return new Result<T> { IsSuccess = false, ErrorMessage = errorMessage };
     }
 
+    public static Result<T> Failure(string errorCode, string errorMessage)
+    {
+        return new Result<T> { IsSuccess = false, ErrorCode = errorCode, ErrorMessage = errorMessage };
+    }
+
     public static Result<T> Failure(List<string> errors)
     {
         return new Result<T> { IsSuccess = false, Errors = errors };
@@ -27,6 +33,7 @@ public class Result
 {
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? ErrorCode { get; set; }
     public List<string> Errors { get; set; } = new();
 
     public static Result Success()
@@ -37,6 +44,11 @@ public class Result
     public static Result Failure(string errorMessage)
     {
         return new Result { IsSuccess = false, ErrorMessage = errorMessage };
+    }
+
+    public static Result Failure(string errorCode, string errorMessage)
+    {
+        return new Result { IsSuccess = false, ErrorCode = errorCode, ErrorMessage = errorMessage };
     }
 
     public static Result Failure(List<string> errors)

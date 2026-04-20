@@ -70,6 +70,8 @@ import PlaceholderPage from './components/common/PlaceholderPage';
 
 // P5.2.7 — mass location change
 import MassTransfer from './pages/Warehouse/MassTransfer';
+import BulkReceiptFromDeclaration from './pages/Warehouse/BulkReceiptFromDeclaration';
+import BulkShipmentFromFG from './pages/Warehouse/BulkShipmentFromFG';
 
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
@@ -274,6 +276,8 @@ const App: React.FC = () => {
             />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
             <Route path="/warehouse/transfers" element={<MassTransfer />} />
+            <Route path="/warehouse/bulk-receipt" element={<BulkReceiptFromDeclaration />} />
+            <Route path="/warehouse/bulk-shipment" element={<BulkShipmentFromFG />} />
             <Route path="/warehouse/stock-by-customer" element={<InventoryByMRN />} />
             <Route
               path="/warehouse/variance"

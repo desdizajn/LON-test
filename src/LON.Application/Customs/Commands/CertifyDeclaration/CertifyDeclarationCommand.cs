@@ -38,25 +38,25 @@ public sealed class CertifyDeclarationCommandHandler : IRequestHandler<CertifyDe
     public async Task<Result<Guid>> Handle(CertifyDeclarationCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.ZaverkaNumber))
-            return Result<Guid>.Failure("Број на заверка е задолжителен.");
+            return Result<Guid>.Failure(ErrorCodes.CertifyZaverkaRequired, "Број на заверка е задолжителен.");
 
         var decl = await _context.CustomsDeclarations
             .FirstOrDefaultAsync(d => d.Id == request.DeclarationId, cancellationToken);
 
         if (decl == null)
-            return Result<Guid>.Failure($"Декларација {request.DeclarationId} не е пронајдена.");
+            return Result<Guid>.Failure(ErrorCodes.CertifyDeclarationNotFound, $"Декларација {request.DeclarationId} не е пронајдена.");
 
         if (decl.Status == DeclarationStatus.Cleared)
-            return Result<Guid>.Failure("Декларацијата веќе е заверена.");
+            return Result<Guid>.Failure(ErrorCodes.CertifyAlreadyCertified, "Декларацијата веќе е заверена.");
         if (decl.Status == DeclarationStatus.Cancelled)
-            return Result<Guid>.Failure("Отстранета декларација не може да се завери.");
+            return Result<Guid>.Failure(ErrorCodes.CertifyRemovedDeclaration, "Отстранета декларација не може да се завери.");
 
         // De-dup guard: another declaration on same tenant cannot already carry this
         // zaverka number (tenant-scoped uniqueness via global query filter).
         var zaverkaTaken = await _context.CustomsDeclarations
             .AnyAsync(d => d.Id != decl.Id && d.ZaverkaNumber == request.ZaverkaNumber, cancellationToken);
         if (zaverkaTaken)
-            return Result<Guid>.Failure($"Бројот на заверка '{request.ZaverkaNumber}' веќе постои на друга декларација.");
+            return Result<Guid>.Failure(ErrorCodes.CertifyZaverkaDuplicate, $"Бројот на заверка '{request.ZaverkaNumber}' веќе постои на друга декларација.");
 
         decl.ZaverkaNumber = request.ZaverkaNumber.Trim();
         decl.ZaverkaDate = request.ZaverkaDate;

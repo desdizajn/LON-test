@@ -1,3 +1,5 @@
+using LON.Application.WMS.Commands.BulkReceiptFromDeclaration;
+using LON.Application.WMS.Commands.BulkShipmentFromFG;
 using LON.Application.WMS.Commands.CreateReceipt;
 using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
@@ -26,6 +28,21 @@ public class WMSController : BaseController
         if (result.IsSuccess)
             return Ok(result);
         return BadRequest(result);
+    }
+
+    /// <summary>
+    /// P5.2.3 — bulk receipt from an existing customs declaration. Explodes
+    /// every CustomsDeclarationLine into a ReceiptLine and stamps the shared
+    /// MRN/PartnerId on every line so the standard Receipt pipeline handles
+    /// MRN consumption + inflate-for-waste + LON state.
+    /// </summary>
+    [HttpPost("receipts/bulk-from-declaration")]
+    public async Task<IActionResult> BulkReceiptFromDeclaration(
+        [FromBody] BulkReceiptFromDeclarationCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
     }
 
     [HttpGet("receipts")]
@@ -138,6 +155,19 @@ public class WMSController : BaseController
             .ToListAsync();
 
         return Ok(shipments);
+    }
+
+    /// <summary>
+    /// P5.2.4 — one-click shipment from an FG selection predicate. Creates a
+    /// Shipment + per-balance lines, drains stock, optionally chains an EX
+    /// declaration when the selection collapses to a single source MRN.
+    /// </summary>
+    [HttpPost("shipments/bulk-from-fg")]
+    public async Task<IActionResult> BulkShipmentFromFG([FromBody] BulkShipmentFromFGCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
     }
 
     [HttpPost("shipments")]

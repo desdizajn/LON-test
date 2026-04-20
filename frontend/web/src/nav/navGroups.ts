@@ -86,6 +86,24 @@ export const NAV_GROUPS: NavGroup[] = [
           'P5.2.7 Mass Location Transfer — филтрирај по артикал/batch/MRN/магацин/квалитет/LON и префрли во една таргет локација атомично.',
       },
       {
+        key: 'warehouse-bulk-receipt',
+        labelKey: 'nav.warehouse.bulkReceipt',
+        icon: '📥',
+        path: '/warehouse/bulk-receipt',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P5.2.3 Bulk Receipt — едно кликнување експлоадира декларациски линии во приемни линии.',
+      },
+      {
+        key: 'warehouse-bulk-shipment',
+        labelKey: 'nav.warehouse.bulkShipment',
+        icon: '📤',
+        path: '/warehouse/bulk-shipment',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P5.2.4 Bulk Shipment — филтрирај FG и автоматски креирај Shipment + (опц.) EX.',
+      },
+      {
         key: 'warehouse-stock-by-customer',
         labelKey: 'nav.warehouse.stockByCustomer',
         icon: '📋',

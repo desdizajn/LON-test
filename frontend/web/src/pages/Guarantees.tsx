@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { guaranteeApi, masterDataApi } from '../services/api';
 import TrafficLightGuarantees from '../components/common/TrafficLightGuarantees';
+import { formatQuantity, formatDate } from '../utils/format';
 
 interface GuaranteeAccount {
   id: string;
@@ -157,15 +158,15 @@ const Guarantees: React.FC = () => {
             <div style={{ fontSize: '14px', marginTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                 <span>Total Limit:</span>
-                <strong>{acc.totalLimit.toFixed(2)} {acc.currency}</strong>
+                <strong>{formatQuantity(acc.totalLimit)} {acc.currency}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                 <span>Current Balance:</span>
-                <strong style={{ color: '#e74c3c' }}>{acc.currentBalance.toFixed(2)}</strong>
+                <strong style={{ color: '#e74c3c' }}>{formatQuantity(acc.currentBalance)}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Available:</span>
-                <strong style={{ color: '#27ae60' }}>{acc.availableLimit.toFixed(2)}</strong>
+                <strong style={{ color: '#27ae60' }}>{formatQuantity(acc.availableLimit)}</strong>
               </div>
             </div>
             {acc.bankName && (
@@ -193,12 +194,12 @@ const Guarantees: React.FC = () => {
           <tbody>
             {activeGuarantees.map((g, idx) => (
               <tr key={idx}>
-                <td>{new Date(g.entryDate).toLocaleDateString()}</td>
-                <td><strong>{g.amount.toFixed(2)}</strong></td>
+                <td>{formatDate(g.entryDate)}</td>
+                <td><strong>{formatQuantity(g.amount)}</strong></td>
                 <td>{g.currency}</td>
                 <td>{g.mrn || '-'}</td>
                 <td>{g.description}</td>
-                <td>{g.expectedReleaseDate ? new Date(g.expectedReleaseDate).toLocaleDateString() : '-'}</td>
+                <td>{g.expectedReleaseDate ? formatDate(g.expectedReleaseDate) : '-'}</td>
               </tr>
             ))}
           </tbody>

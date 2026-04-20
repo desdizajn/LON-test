@@ -62,7 +62,9 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         // lets us fail-fast BEFORE any entity is added to the context.
         var mrnContext = await LoadMrnContextAsync(request, cancellationToken);
         if (!mrnContext.IsSuccess)
-            return Result<Guid>.Failure(mrnContext.ErrorMessage!);
+            return mrnContext.ErrorCode is { } code
+                ? Result<Guid>.Failure(code, mrnContext.ErrorMessage!)
+                : Result<Guid>.Failure(mrnContext.ErrorMessage!);
 
         var receipt = new Receipt
         {
@@ -230,6 +232,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
     {
         public bool IsSuccess => ErrorMessage is null;
         public string? ErrorMessage { get; private init; }
+        public string? ErrorCode { get; private init; }
 
         /// <summary>MRN → MRNRegistry row (tenant-scoped via global query filter).</summary>
         private Dictionary<string, MRNRegistry> Registries { get; init; } = new();
@@ -243,6 +246,8 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         private bool InflateEnabled { get; init; }
 
         public static MrnContext Failure(string error) => new() { ErrorMessage = error };
+
+        public static MrnContext Failure(string code, string error) => new() { ErrorCode = code, ErrorMessage = error };
 
         public static MrnContext Ok(
             Dictionary<string, MRNRegistry> registries,
@@ -297,11 +302,14 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
         foreach (var mrn in distinctMrns)
         {
             if (!registries.TryGetValue(mrn, out var reg))
-                return MrnContext.Failure($"MRN '{mrn}' is not registered for this tenant. File the customs declaration first.");
+                return MrnContext.Failure(ErrorCodes.MrnNotRegistered,
+                    $"MRN '{mrn}' is not registered for this tenant. File the customs declaration first.");
             if (!reg.IsActive)
-                return MrnContext.Failure($"MRN '{mrn}' is deactivated (already fully consumed or closed).");
+                return MrnContext.Failure(ErrorCodes.MrnDeactivated,
+                    $"MRN '{mrn}' is deactivated (already fully consumed or closed).");
             if (reg.ExpiryDate.HasValue && reg.ExpiryDate.Value.Date < request.ReceiptDate.Date)
-                return MrnContext.Failure($"MRN '{mrn}' expired on {reg.ExpiryDate:yyyy-MM-dd}; receipt date is {request.ReceiptDate:yyyy-MM-dd}.");
+                return MrnContext.Failure(ErrorCodes.MrnExpired,
+                    $"MRN '{mrn}' expired on {reg.ExpiryDate:yyyy-MM-dd}; receipt date is {request.ReceiptDate:yyyy-MM-dd}.");
 
             // Aggregate over-draw check. If multiple lines of the same receipt
             // consume the same MRN, their sum must still fit in the remaining
@@ -313,6 +321,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
             var remaining = reg.TotalQuantity - reg.UsedQuantity;
             if (demand > remaining)
                 return MrnContext.Failure(
+                    ErrorCodes.MrnOverdraw,
                     $"MRN '{mrn}' overdraw: requested {demand}, remaining {remaining} of {reg.TotalQuantity}. " +
                     "Split the receipt or register an additional declaration.");
         }

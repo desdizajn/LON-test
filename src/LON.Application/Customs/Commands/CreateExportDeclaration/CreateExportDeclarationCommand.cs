@@ -76,16 +76,17 @@ public class CreateExportDeclarationCommandHandler
         CancellationToken cancellationToken)
     {
         if (request.Lines.Count == 0)
-            return Result<Guid>.Failure("Export declaration must contain at least one line.");
+            return Result<Guid>.Failure(ErrorCodes.ExportEmptyLines, "Export declaration must contain at least one line.");
 
         var procedure = await _context.CustomsProcedures
             .FirstOrDefaultAsync(p => p.Id == request.CustomsProcedureId, cancellationToken);
         if (procedure is null)
-            return Result<Guid>.Failure($"Customs procedure '{request.CustomsProcedureId}' does not exist.");
+            return Result<Guid>.Failure(ErrorCodes.ProcedureNotFound, $"Customs procedure '{request.CustomsProcedureId}' does not exist.");
         if (!procedure.IsActive)
-            return Result<Guid>.Failure($"Customs procedure '{procedure.Code}' is not active.");
+            return Result<Guid>.Failure(ErrorCodes.ProcedureInactive, $"Customs procedure '{procedure.Code}' is not active.");
         if (procedure.Type != CustomsProcedureType.Export)
             return Result<Guid>.Failure(
+                ErrorCodes.ProcedureInactive,
                 $"Procedure '{procedure.Code}' is not an export procedure (Type={procedure.Type}).");
 
         // Pre-resolve all source MRNs so we fail fast on bad input before any write.
@@ -97,7 +98,7 @@ public class CreateExportDeclarationCommandHandler
         if (distinctMrns.Count != request.Lines.Select(l => l.SourceMRN).Distinct().Count()
             || distinctMrns.Count == 0)
         {
-            return Result<Guid>.Failure("Each export line must specify a non-empty SourceMRN.");
+            return Result<Guid>.Failure(ErrorCodes.ExportMrnRequired, "Each export line must specify a non-empty SourceMRN.");
         }
 
         var registries = await _context.MRNRegistries
@@ -107,17 +108,18 @@ public class CreateExportDeclarationCommandHandler
         foreach (var mrn in distinctMrns)
         {
             if (!registries.TryGetValue(mrn, out var reg))
-                return Result<Guid>.Failure($"SourceMRN '{mrn}' is not registered for this tenant.");
+                return Result<Guid>.Failure(ErrorCodes.ExportMrnNotFound, $"SourceMRN '{mrn}' is not registered for this tenant.");
 
             var demand = request.Lines
                 .Where(l => string.Equals(l.SourceMRN, mrn, StringComparison.OrdinalIgnoreCase))
                 .Sum(l => l.DischargeQuantity);
             if (demand <= 0m)
-                return Result<Guid>.Failure($"SourceMRN '{mrn}': total DischargeQuantity must be positive.");
+                return Result<Guid>.Failure(ErrorCodes.ExportDischargeInvalid, $"SourceMRN '{mrn}': total DischargeQuantity must be positive.");
 
             var remainingUndischarged = reg.UsedQuantity - reg.DischargedQuantity;
             if (demand > remainingUndischarged)
                 return Result<Guid>.Failure(
+                    ErrorCodes.ExportOverDischarge,
                     $"SourceMRN '{mrn}': discharge {demand} exceeds outstanding undischarged qty " +
                     $"{remainingUndischarged} (Used={reg.UsedQuantity}, already discharged={reg.DischargedQuantity}).");
         }
@@ -130,7 +132,7 @@ public class CreateExportDeclarationCommandHandler
             .IgnoreQueryFilters()
             .AnyAsync(d => d.MRN == exMrn && !d.IsDeleted, cancellationToken);
         if (exMrnCollision)
-            return Result<Guid>.Failure($"MRN '{exMrn}' is already registered.");
+            return Result<Guid>.Failure(ErrorCodes.MrnDuplicate, $"MRN '{exMrn}' is already registered.");
 
         // Build the EX CustomsDeclaration skeleton. Unlike IM, there's no
         // guarantee debit on the EX itself — guarantee activity is CREDITS tied

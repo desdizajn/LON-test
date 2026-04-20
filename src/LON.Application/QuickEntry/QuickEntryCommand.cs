@@ -51,11 +51,11 @@ public class QuickEntryCommandHandler
     public async Task<Result<QuickEntryResult>> Handle(QuickEntryCommand request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Input))
-            return Result<QuickEntryResult>.Failure("Empty command. Type 'help' to see available verbs.");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryEmptyCommand, "Empty command. Type 'help' to see available verbs.");
 
         var tokens = request.Input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (tokens.Length == 0)
-            return Result<QuickEntryResult>.Failure("Empty command.");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryEmptyCommand, "Empty command.");
 
         var verb = tokens[0].ToLowerInvariant();
         var args = tokens.Skip(1).ToArray();
@@ -71,6 +71,7 @@ public class QuickEntryCommandHandler
             "move" => await HandleMove(args, ct),
 
             _ => Result<QuickEntryResult>.Failure(
+                ErrorCodes.QuickEntryInvalidCommand,
                 $"Unknown verb '{verb}'. Type 'help' to see supported commands.")
         };
     }
@@ -78,17 +79,19 @@ public class QuickEntryCommandHandler
     private async Task<Result<QuickEntryResult>> HandleIssue(string[] args, CancellationToken ct)
     {
         if (args.Length < 1)
-            return Result<QuickEntryResult>.Failure("Usage: issue <po-number>");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryIssueUsage, "Usage: issue <po-number>");
 
         var poNumber = args[0];
         var po = await _context.ProductionOrders
             .FirstOrDefaultAsync(p => p.OrderNumber == poNumber, ct);
         if (po is null)
-            return Result<QuickEntryResult>.Failure($"ProductionOrder '{poNumber}' not found.");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryPoNotFound, $"ProductionOrder '{poNumber}' not found.");
 
         var inner = await _mediator.Send(new IssueAllMaterialsCommand(po.Id, DateTime.UtcNow), ct);
         if (!inner.IsSuccess)
-            return Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "issue failed");
+            return inner.ErrorCode is { } code
+                ? Result<QuickEntryResult>.Failure(code, inner.ErrorMessage ?? "issue failed")
+                : Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "issue failed");
 
         return Result<QuickEntryResult>.Success(new QuickEntryResult(
             "issue",
@@ -99,17 +102,19 @@ public class QuickEntryCommandHandler
     private async Task<Result<QuickEntryResult>> HandleRelease(string[] args, CancellationToken ct)
     {
         if (args.Length < 1)
-            return Result<QuickEntryResult>.Failure("Usage: release <po-number>");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryReleaseUsage, "Usage: release <po-number>");
 
         var poNumber = args[0];
         var po = await _context.ProductionOrders
             .FirstOrDefaultAsync(p => p.OrderNumber == poNumber, ct);
         if (po is null)
-            return Result<QuickEntryResult>.Failure($"ProductionOrder '{poNumber}' not found.");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryPoNotFound, $"ProductionOrder '{poNumber}' not found.");
 
         var inner = await _mediator.Send(new ReleaseProductionOrderCommand(po.Id), ct);
         if (!inner.IsSuccess)
-            return Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "release failed");
+            return inner.ErrorCode is { } code
+                ? Result<QuickEntryResult>.Failure(code, inner.ErrorMessage ?? "release failed")
+                : Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "release failed");
 
         return Result<QuickEntryResult>.Success(new QuickEntryResult(
             "release",
@@ -120,20 +125,23 @@ public class QuickEntryCommandHandler
     private async Task<Result<QuickEntryResult>> HandleMove(string[] args, CancellationToken ct)
     {
         if (args.Length < 2)
-            return Result<QuickEntryResult>.Failure("Usage: move <batch> <stage>");
+            return Result<QuickEntryResult>.Failure(ErrorCodes.QuickEntryMoveUsage, "Usage: move <batch> <stage>");
 
         var batch = args[0];
         var stageArg = args[1];
 
         if (!TryParseStage(stageArg, out var stage))
             return Result<QuickEntryResult>.Failure(
+                ErrorCodes.QuickEntryUnknownStage,
                 $"Unknown stage '{stageArg}'. Accepted: receiving, storage, picking, production, shipping, quarantine, blocked (or integer 1-7).");
 
         var inner = await _mediator.Send(
             new MoveBatchAcrossStagesCommand(batch, stage, Reason: "quick-entry"),
             ct);
         if (!inner.IsSuccess)
-            return Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "move failed");
+            return inner.ErrorCode is { } code
+                ? Result<QuickEntryResult>.Failure(code, inner.ErrorMessage ?? "move failed")
+                : Result<QuickEntryResult>.Failure(inner.ErrorMessage ?? "move failed");
 
         return Result<QuickEntryResult>.Success(new QuickEntryResult(
             "move",

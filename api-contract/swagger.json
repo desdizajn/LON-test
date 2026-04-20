@@ -1946,6 +1946,36 @@
         }
       }
     },
+    "/api/MasterData/items/article-picker": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/KnowledgeBase/ask": {
       "post": {
         "tags": [
@@ -4456,6 +4486,37 @@
         }
       }
     },
+    "/api/WMS/receipts/bulk-from-declaration": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReceiptFromDeclarationCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReceiptFromDeclarationCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReceiptFromDeclarationCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/WMS/receipts/{id}": {
       "get": {
         "tags": [
@@ -4664,6 +4725,37 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateShipmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/shipments/bulk-from-fg": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkShipmentFromFGCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkShipmentFromFGCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkShipmentFromFGCommand"
               }
             }
           }
@@ -5150,6 +5242,94 @@
               "$ref": "#/components/schemas/BOMLineRequest"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BulkReceiptFromDeclarationCommand": {
+        "type": "object",
+        "properties": {
+          "customsDeclarationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "warehouseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetLocationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "receiptDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "referenceNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BulkShipmentFromFGCommand": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrn": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceWarehouseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "productionOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "partnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customsProcedureId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "declarationNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "shipmentDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "createExportDeclaration": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

@@ -43,16 +43,17 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
     public async Task<Result<Guid>> Handle(CreateMaterialIssueCommand request, CancellationToken cancellationToken)
     {
         if (request.Lines.Count == 0)
-            return Result<Guid>.Failure("Material issue must contain at least one line.");
+            return Result<Guid>.Failure(ErrorCodes.MaterialIssueEmptyLines, "Material issue must contain at least one line.");
 
         var order = await _context.ProductionOrders
             .FirstOrDefaultAsync(po => po.Id == request.ProductionOrderId, cancellationToken);
         if (order is null)
-            return Result<Guid>.Failure($"ProductionOrder '{request.ProductionOrderId}' not found.");
+            return Result<Guid>.Failure(ErrorCodes.MaterialIssuePoNotFound, $"ProductionOrder '{request.ProductionOrderId}' not found.");
         if (order.Status == ProductionOrderStatus.Cancelled
             || order.Status == ProductionOrderStatus.Completed
             || order.Status == ProductionOrderStatus.Closed)
             return Result<Guid>.Failure(
+                ErrorCodes.PoInvalidStatus,
                 $"Cannot issue material to ProductionOrder in status {order.Status}.");
 
         var issueNumber = $"ISS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}";
@@ -63,16 +64,19 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
         {
             lineIdx++;
             if (line.Quantity <= 0m)
-                return Result<Guid>.Failure($"Line {lineIdx}: quantity must be positive.");
+                return Result<Guid>.Failure(ErrorCodes.MaterialIssueQuantityInvalid, $"Line {lineIdx}: quantity must be positive.");
 
             var resolved = await ResolveBalanceAsync(line, cancellationToken);
             if (!resolved.IsSuccess)
-                return Result<Guid>.Failure($"Line {lineIdx}: {resolved.ErrorMessage}");
+                return resolved.ErrorCode is { } code
+                    ? Result<Guid>.Failure(code, $"Line {lineIdx}: {resolved.ErrorMessage}")
+                    : Result<Guid>.Failure($"Line {lineIdx}: {resolved.ErrorMessage}");
 
             var balance = resolved.Balance!;
 
             if (balance.Quantity < line.Quantity)
                 return Result<Guid>.Failure(
+                    ErrorCodes.MaterialIssueInsufficientInventory,
                     $"Line {lineIdx}: insufficient inventory. Demand {line.Quantity}, " +
                     $"available {balance.Quantity} on batch '{balance.BatchNumber ?? "(none)"}' MRN '{balance.MRN ?? "(none)"}'.");
 
@@ -86,6 +90,7 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
                 && (string.IsNullOrWhiteSpace(resolvedBatch) || string.IsNullOrWhiteSpace(resolvedMrn)))
             {
                 return Result<Guid>.Failure(
+                    ErrorCodes.MaterialIssueLonMissingBatchMrn,
                     $"Line {lineIdx}: LON material requires both BatchNumber and MRN on the issue line.");
             }
 
@@ -172,9 +177,11 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
     {
         public bool IsSuccess => ErrorMessage is null && Balance is not null;
         public string? ErrorMessage { get; init; }
+        public string? ErrorCode { get; init; }
         public InventoryBalance? Balance { get; init; }
         public static BalanceResolution Ok(InventoryBalance b) => new() { Balance = b };
         public static BalanceResolution Fail(string msg) => new() { ErrorMessage = msg };
+        public static BalanceResolution Fail(string code, string msg) => new() { ErrorCode = code, ErrorMessage = msg };
     }
 
     private async Task<BalanceResolution> ResolveBalanceAsync(
@@ -233,6 +240,7 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
             if (tenant is not null && !tenant.AllowFefoAutoPick)
             {
                 return BalanceResolution.Fail(
+                    ErrorCodes.FefoDisabled,
                     "FEFO auto-pick is disabled for this tenant. " +
                     "Supply BatchNumber, MRN, or LocationId on the issue line.");
             }

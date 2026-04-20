@@ -60,7 +60,7 @@ public class MoveBatchAcrossStagesCommandHandler
         MoveBatchAcrossStagesCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.BatchNumber))
-            return Result<MoveBatchResult>.Failure("BatchNumber is required.");
+            return Result<MoveBatchResult>.Failure(ErrorCodes.BatchNotFound, "BatchNumber is required.");
 
         var whenUtc = request.MovementDate ?? DateTime.UtcNow;
         var batch = request.BatchNumber.Trim();
@@ -80,6 +80,7 @@ public class MoveBatchAcrossStagesCommandHandler
 
         if (balances.Count == 0)
             return Result<MoveBatchResult>.Failure(
+                ErrorCodes.BatchNotFound,
                 $"No positive-quantity inventory found for batch '{batch}'" +
                 (request.WarehouseId.HasValue ? " in the supplied warehouse." : "."));
 
@@ -94,7 +95,7 @@ public class MoveBatchAcrossStagesCommandHandler
             var loc = await _context.Locations
                 .FirstOrDefaultAsync(l => l.Id == request.TargetLocationId.Value && l.IsActive, cancellationToken);
             if (loc is null)
-                return Result<MoveBatchResult>.Failure($"Target location '{request.TargetLocationId}' not found or inactive.");
+                return Result<MoveBatchResult>.Failure(ErrorCodes.LocationNotFound, $"Target location '{request.TargetLocationId}' not found or inactive.");
             foreach (var wid in warehouseIds)
                 targetByWarehouse[wid] = loc;
         }
@@ -205,6 +206,7 @@ public class MoveBatchAcrossStagesCommandHandler
 
         if (balancesMoved == 0)
             return Result<MoveBatchResult>.Failure(
+                ErrorCodes.BatchNoMovementNeeded,
                 "No balances needed moving — every row already sits at the target location.");
 
         _context.InventoryMovements.AddRange(movementEntities);

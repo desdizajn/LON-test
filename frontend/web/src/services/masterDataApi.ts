@@ -19,6 +19,20 @@ import type {
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
+export interface ArticlePickerVariant {
+  id: string;
+  code: string;
+  name: string;
+  hsCode?: string | null;
+  countryOfOrigin?: string | null;
+  isASuffix: boolean;
+}
+
+export interface ArticlePickerGroup {
+  baseCode: string;
+  variants: ArticlePickerVariant[];
+}
+
 // Items API
 export const itemsApi = {
   getAll: () => axios.get<Item[]>(`${API_BASE_URL}/MasterData/items`),
@@ -29,6 +43,10 @@ export const itemsApi = {
   delete: (id: string) => axios.delete(`${API_BASE_URL}/MasterData/items/${id}`),
   search: (searchTerm: string) =>
     axios.get<Item[]>(`${API_BASE_URL}/MasterData/items/search?q=${searchTerm}`),
+  articlePicker: (query: string, limit = 20) =>
+    axios.get<ArticlePickerGroup[]>(
+      `${API_BASE_URL}/MasterData/items/article-picker?query=${encodeURIComponent(query)}&limit=${limit}`
+    ),
 };
 
 // Partners API

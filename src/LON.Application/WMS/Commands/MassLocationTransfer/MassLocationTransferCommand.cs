@@ -70,15 +70,17 @@ public class MassLocationTransferCommandHandler
     {
         if (!HasAnyFilter(request))
             return Result<MassTransferResult>.Failure(
+                ErrorCodes.TransferNoFilter,
                 "At least one filter criterion is required (itemId, batchNumber, mrn, sourceWarehouseId, sourceLocationId, qualityStatus, or lonProcessState).");
 
         if (request.TargetLocationId == Guid.Empty)
-            return Result<MassTransferResult>.Failure("TargetLocationId is required.");
+            return Result<MassTransferResult>.Failure(ErrorCodes.LocationNotFound, "TargetLocationId is required.");
 
         var target = await _context.Locations
             .FirstOrDefaultAsync(l => l.Id == request.TargetLocationId && l.IsActive, cancellationToken);
         if (target is null)
             return Result<MassTransferResult>.Failure(
+                ErrorCodes.LocationNotFound,
                 $"Target location '{request.TargetLocationId}' not found or inactive.");
 
         var query = _context.InventoryBalances
@@ -114,6 +116,7 @@ public class MassLocationTransferCommandHandler
 
         if (balances.Count == 0)
             return Result<MassTransferResult>.Failure(
+                ErrorCodes.TransferNoMatch,
                 "No positive-quantity inventory matched the filter (or every match already sits at the target).");
 
         var whenUtc = request.MovementDate ?? DateTime.UtcNow;
