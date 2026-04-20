@@ -65,7 +65,24 @@ zero-only toggle + search.
 - P9.5 PackListTemplate + PDF renderer (QuestPDF).
 - P9.7 ReturnRequest + `CreateReturnDeclarationCommand` hook (P2.6b dep).
 
-VPS deploy next.
+**VPS deploy (commit `14f6226`):** `git pull` + `docker compose build api
+frontend` + `up -d`. Post-deploy smoke (admin/Admin123!):
+
+- `GET /FinishedGoods/awaiting-pack` → 200 + `rows:0` (сите 132 POs на VPS
+  се Status=Draft, ниеден Completed — очекувано empty state).
+- `GET /FinishedGoods/packaging-stock` → 200 + `rows:1`:
+  `PKG-001 Cardboard Box, onHand=0, locations=0` — точно zero-stock
+  highlight case за frontend.
+- `GET /WMS/shipments` филтер-count на `status=4` (Packed) → 0 (seed state
+  без shipment flows извршени).
+- Frontend bundle `main.8ac13781.js` served од Caddy (+1.77kB над Sprint 4).
+
+Empty counts се очекувани: VPS е seed state без извршени end-to-end
+production flows. Endpoints respond correctly; филтрите работат.
+
+> **🎯 Sprint 5 closed.** Sprint 6 (per ROADMAP) → Phase 12.3 Client Contracts
+> + P12.2 Invoicing MVP. Largest finance ROI — unlocks margin analytics + piece-rate
+> payroll базирано на rate cards.
 
 ---
 
