@@ -1,116 +1,76 @@
 using LON.API.MasterData;
 using LON.Application.MasterData.Commands.BackfillItemBaseVariants;
+using LON.Application.MasterData.Items;
 using LON.Application.MasterData.Queries.GetItemImportAttributes;
-using LON.Domain.Entities.MasterData;
-using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LON.API.Controllers.MasterData;
 
 /// <summary>
 /// P6.10 — Items split from the old monolithic MasterDataController.
-/// Routes stay <c>/api/MasterData/items</c> to preserve the public URL contract
-/// (frontend + integration tests are unchanged). The 2 P6.30/P6.31 endpoints
-/// that already went through MediatR remain on MediatR.
+/// P6.11 — CRUD goes through MediatR handlers in LON.Application.MasterData.Items.
+/// URL contract stays identical to the pre-split controller.
 /// </summary>
 [Route("api/MasterData/items")]
 public class ItemsController : BaseController
 {
-    private readonly ApplicationDbContext _context;
-
-    public ItemsController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
     [HttpGet]
     public async Task<IActionResult> GetItems([FromQuery] string? search = null)
     {
-        var query = _context.Items
-            .Include(i => i.BaseUoM)
-            .Where(i => !i.IsDeleted)
-            .AsQueryable();
-
-        if (!string.IsNullOrEmpty(search))
-            query = query.Where(i => i.Code.Contains(search) || i.Name.Contains(search));
-
-        var items = await query.ToListAsync();
-        return Ok(items.Select(MasterDataMappings.MapItem).ToList());
+        var items = await Mediator.Send(new GetItemsQuery(search));
+        return Ok(items);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetItem(Guid id)
     {
-        var item = await _context.Items
-            .Include(i => i.BaseUoM)
-            .Include(i => i.UoMConversions)
-            .FirstOrDefaultAsync(i => i.Id == id);
-
-        if (item == null) return NotFound();
-        return Ok(MasterDataMappings.MapItem(item));
+        var item = await Mediator.Send(new GetItemByIdQuery(id));
+        return item is null ? NotFound() : Ok(item);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateItem([FromBody] ItemRequest request)
     {
-        var item = new Item
-        {
-            Id = Guid.NewGuid(),
-            Code = request.Code,
-            Name = request.Name,
-            Description = request.Description ?? string.Empty,
-            Type = request.ItemType,
-            IsBatchTracked = request.IsBatchRequired,
-            IsMRNTracked = request.IsMRNRequired,
-            HSCode = request.HSCode,
-            CountryOfOrigin = request.CountryOfOrigin,
-            BaseUoMId = request.UoMId,
-            StandardCost = request.StandardCost ?? 0m,
-            IsDeleted = !request.IsActive
-        };
-
-        _context.Items.Add(item);
-        await _context.SaveChangesAsync();
-
-        item = await _context.Items.Include(i => i.BaseUoM).FirstAsync(i => i.Id == item.Id);
-        return Ok(MasterDataMappings.MapItem(item));
+        var item = await Mediator.Send(new CreateItemCommand(
+            request.Code,
+            request.Name,
+            request.Description,
+            request.ItemType,
+            request.UoMId,
+            request.IsBatchRequired,
+            request.IsMRNRequired,
+            request.CountryOfOrigin,
+            request.HSCode,
+            request.IsActive,
+            request.StandardCost));
+        return Ok(item);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateItem(Guid id, [FromBody] ItemRequest request)
     {
-        var item = await _context.Items.FirstOrDefaultAsync(i => i.Id == id);
-        if (item == null) return NotFound();
-
-        item.Code = request.Code;
-        item.Name = request.Name;
-        item.Description = request.Description ?? string.Empty;
-        item.Type = request.ItemType;
-        item.IsBatchTracked = request.IsBatchRequired;
-        item.IsMRNTracked = request.IsMRNRequired;
-        item.HSCode = request.HSCode;
-        item.CountryOfOrigin = request.CountryOfOrigin;
-        item.BaseUoMId = request.UoMId;
-        item.StandardCost = request.StandardCost ?? item.StandardCost;
-        item.IsDeleted = !request.IsActive;
-
-        await _context.SaveChangesAsync();
-
-        item = await _context.Items.Include(i => i.BaseUoM).FirstAsync(i => i.Id == item.Id);
-        return Ok(MasterDataMappings.MapItem(item));
+        var item = await Mediator.Send(new UpdateItemCommand(
+            id,
+            request.Code,
+            request.Name,
+            request.Description,
+            request.ItemType,
+            request.UoMId,
+            request.IsBatchRequired,
+            request.IsMRNRequired,
+            request.CountryOfOrigin,
+            request.HSCode,
+            request.IsActive,
+            request.StandardCost));
+        return item is null ? NotFound() : Ok(item);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteItem(Guid id)
     {
-        var item = await _context.Items.FirstOrDefaultAsync(i => i.Id == id);
-        if (item == null) return NotFound();
-
-        item.IsDeleted = true;
-        await _context.SaveChangesAsync();
-        return NoContent();
+        var deleted = await Mediator.Send(new DeleteItemCommand(id));
+        return deleted ? NoContent() : NotFound();
     }
 
     /// <summary>
