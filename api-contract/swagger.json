@@ -5499,6 +5499,11 @@
           "notes": {
             "type": "string",
             "nullable": true
+          },
+          "partnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false

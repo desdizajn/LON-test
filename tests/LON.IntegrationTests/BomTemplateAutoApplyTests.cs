@@ -23,6 +23,99 @@ public class BomTemplateAutoApplyTests : IClassFixture<LonApiFactory>
     public BomTemplateAutoApplyTests(LonApiFactory factory) => _factory = factory;
 
     [Fact]
+    public async Task CreateOrder_WithPartnerId_PrefersPartnerScopedBOM()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+
+        Guid itemId, uoMId, partnerBomId, globalBomId;
+        Guid partnerId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenant = await ctx.Tenants.FirstAsync(t => t.Code == "TEKSPORT");
+            var uom = await ctx.UnitsOfMeasure.IgnoreQueryFilters().FirstAsync();
+            uoMId = uom.Id;
+
+            var suffix = Guid.NewGuid().ToString("N")[..6];
+            var item = new LON.Domain.Entities.MasterData.Item
+            {
+                Id = Guid.NewGuid(), TenantId = tenant.Id,
+                Code = $"BOM-PTN-{suffix}", Name = "P5.3.2 test",
+                BaseUoMId = uoMId,
+                Type = LON.Domain.Enums.ItemType.FinishedGood,
+                CreatedAt = DateTime.UtcNow, CreatedBy = "test"
+            };
+            ctx.Items.Add(item);
+
+            var partner = await ctx.Partners.IgnoreQueryFilters()
+                .FirstAsync(p => p.TenantId == tenant.Id);
+            partnerId = partner.Id;
+
+            // Global BOM (v5)
+            var global = new BOM
+            {
+                Id = Guid.NewGuid(), TenantId = tenant.Id,
+                Code = $"BOM-{suffix}-G", ItemId = item.Id,
+                Version = 5, ValidFrom = DateTime.UtcNow.AddDays(-1),
+                IsActive = true, BaseQuantity = 1m, PartnerId = null,
+                CreatedAt = DateTime.UtcNow, CreatedBy = "test"
+            };
+            // Partner-scoped BOM (v1 — older version but partner-specific)
+            var partnerSpec = new BOM
+            {
+                Id = Guid.NewGuid(), TenantId = tenant.Id,
+                Code = $"BOM-{suffix}-P", ItemId = item.Id,
+                Version = 1, ValidFrom = DateTime.UtcNow.AddDays(-1),
+                IsActive = true, BaseQuantity = 1m, PartnerId = partner.Id,
+                CreatedAt = DateTime.UtcNow, CreatedBy = "test"
+            };
+            ctx.BOMs.AddRange(global, partnerSpec);
+            await ctx.SaveChangesAsync();
+            itemId = item.Id;
+            globalBomId = global.Id;
+            partnerBomId = partnerSpec.Id;
+        }
+
+        // With partnerId → partner BOM wins even though global has a higher Version
+        var resp = await client.PostAsJsonAsync("/api/production/orders", new
+        {
+            itemId,
+            partnerId,
+            orderQuantity = 2m,
+            uoMId,
+            plannedStartDate = DateTime.UtcNow,
+            plannedEndDate = DateTime.UtcNow.AddDays(1)
+        });
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<ResultResponse>();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var po = await ctx.ProductionOrders.FirstAsync(p => p.Id == body!.Data);
+            po.BOMId.Should().Be(partnerBomId);
+        }
+
+        // Without partnerId → global BOM wins (no partner scope to match)
+        var resp2 = await client.PostAsJsonAsync("/api/production/orders", new
+        {
+            itemId,
+            orderQuantity = 2m,
+            uoMId,
+            plannedStartDate = DateTime.UtcNow,
+            plannedEndDate = DateTime.UtcNow.AddDays(1)
+        });
+        resp2.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body2 = await resp2.Content.ReadFromJsonAsync<ResultResponse>();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var po = await ctx.ProductionOrders.FirstAsync(p => p.Id == body2!.Data);
+            po.BOMId.Should().Be(globalBomId);
+        }
+    }
+
+    [Fact]
     public async Task CreateOrder_NoBOMId_AutoPicksLatestActiveBOMForItem()
     {
         var client = _factory.CreateClient();

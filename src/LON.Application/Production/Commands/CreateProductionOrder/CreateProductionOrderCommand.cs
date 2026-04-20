@@ -19,6 +19,13 @@ public record CreateProductionOrderCommand : ICommand<Result<Guid>>
     public Guid? RoutingId { get; init; }
     public string? SalesOrderReference { get; init; }
     public string? Notes { get; init; }
+
+    /// <summary>
+    /// P5.3.2 — optional Partner (customer) for whom this order is produced.
+    /// When set, BOM auto-apply prefers partner-scoped BOMs (<see cref="BOM.PartnerId"/>)
+    /// before falling back to the global template.
+    /// </summary>
+    public Guid? PartnerId { get; init; }
 }
 
 public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProductionOrderCommand, Result<Guid>>
@@ -43,13 +50,31 @@ public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProduct
 
         if (!resolvedBomId.HasValue)
         {
-            var bom = await _context.BOMs
+            // P5.3.2 — prefer partner-scoped BOM when the caller supplied one,
+            // fall back to the global (PartnerId == null) template. Both are
+            // ordered by Version desc so the latest variant wins within each
+            // scope.
+            BOM? bom = null;
+            if (request.PartnerId.HasValue)
+            {
+                bom = await _context.BOMs
+                    .Where(b => b.ItemId == request.ItemId
+                                && b.IsActive
+                                && b.PartnerId == request.PartnerId.Value
+                                && b.ValidFrom <= now
+                                && (b.ValidTo == null || b.ValidTo > now))
+                    .OrderByDescending(b => b.Version)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+            bom ??= await _context.BOMs
                 .Where(b => b.ItemId == request.ItemId
                             && b.IsActive
+                            && b.PartnerId == null
                             && b.ValidFrom <= now
                             && (b.ValidTo == null || b.ValidTo > now))
                 .OrderByDescending(b => b.Version)
                 .FirstOrDefaultAsync(cancellationToken);
+
             resolvedBomId = bom?.Id;
         }
 

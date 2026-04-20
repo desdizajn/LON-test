@@ -3028,6 +3028,8 @@ export interface components {
       routingId?: string | null;
       salesOrderReference?: string | null;
       notes?: string | null;
+      /** Format: uuid */
+      partnerId?: string | null;
     };
     CreateProductionReceiptCommand: {
       /** Format: uuid */

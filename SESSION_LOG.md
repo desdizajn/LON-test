@@ -2,6 +2,29 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P5.3.2: BOM normative override per partner
+
+The "different BOMs per Uvoznik for the same item" requirement. Previously `BOM` was keyed on `(TenantId, ItemId, Version)` — one recipe per tenant regardless of customer. Added `BOM.PartnerId` nullable column + the corresponding selector logic in `CreateProductionOrderCommand`:
+
+1. If caller supplied `PartnerId` on the PO creation payload, search for a BOM matching that exact PartnerId first (ordered by Version DESC so latest partner-specific variant wins).
+2. If none found (or no PartnerId supplied), fall back to global BOMs (`PartnerId IS NULL`, ordered by Version DESC).
+
+So partner overrides "win by specificity" — even a Version 1 partner-scoped BOM trumps a Version 5 global one, because the partner variant is the explicit override. Version ordering still wins within each scope.
+
+Migration `P5_3_2_BomPartnerOverride`: `AddColumn<Guid>("PartnerId", nullable: true)` + index + FK to `Partners`. No data migration needed — existing rows default to null = global.
+
+Test `CreateOrder_WithPartnerId_PrefersPartnerScopedBOM` at `tests/LON.IntegrationTests/BomTemplateAutoApplyTests.cs` seeds a fresh item with a partner-scoped BOM (v1) + a global BOM (v5) both active and valid-now, then POSTs two production orders:
+- First with `partnerId` → persisted PO's `BOMId` = partner BOM (v1 despite lower version).
+- Second without `partnerId` → `BOMId` = global BOM (v5, no partner match possible).
+
+Both assertions verified against the DB via `ApplicationDbContext` scope.
+
+**Build**: 0/0 API + tests. `./scripts/gen-api-types.sh` regenerated. `CreateProductionOrderCommand.PartnerId` surfaces in the OpenAPI request schema.
+
+VPS deploy follows in the same batch commit with other P5.3.x work.
+
+---
+
 ## 2026-04-20 — P5.2.8 + P5.3.1: quick-entry bar + BOM template auto-apply
 
 **P5.2.8 quick-entry bar.**

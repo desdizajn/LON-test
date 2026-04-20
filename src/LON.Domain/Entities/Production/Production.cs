@@ -15,6 +15,17 @@ public class BOM : BaseEntity, ITenantScoped
     public DateTime? ValidTo { get; set; }
     public bool IsActive { get; set; }
     public decimal BaseQuantity { get; set; }
+
+    /// <summary>
+    /// P5.3.2 — optional partner scope. When set, this BOM is the normative
+    /// override to use when producing the item for the given Partner
+    /// (customer). Null = global/default BOM that applies when no
+    /// partner-specific override exists. Auto-apply prefers partner-scoped,
+    /// falls back to global.
+    /// </summary>
+    public Guid? PartnerId { get; set; }
+    public virtual Partner? Partner { get; set; }
+
     public virtual ICollection<BOMLine> Lines { get; set; } = new List<BOMLine>();
 }
 
