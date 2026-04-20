@@ -75,6 +75,95 @@
     "reference": "Reference",
     "resultsCount": "{{count}} results"
   },
+  "incomingShipments": {
+    "title": "Incoming shipments",
+    "subtitle": "MRN registered in customs with no booked receipt — physical goods expected.",
+    "rowCount": "{{count}} expected",
+    "declaration": "Declaration",
+    "declarationDate": "Declaration date",
+    "expectedQty": "Expected qty",
+    "expiryDate": "MRN expiry"
+  },
+  "qcHold": {
+    "title": "Blocked by QC",
+    "subtitle": "Inventory with QualityStatus ≠ OK. Release returns to OK.",
+    "all": "All",
+    "blocked": "Blocked",
+    "quarantine": "Quarantine",
+    "location": "Location",
+    "release": "Release",
+    "releaseConfirm": "Release this inventory to OK status?"
+  },
+  "variance": {
+    "title": "Variance report",
+    "subtitle": "Cycle-count variance: CountedQuantity − SystemQuantity. Only variance ≠ 0 rows.",
+    "all": "All",
+    "shortage": "Shortage",
+    "surplus": "Surplus",
+    "netQty": "Net qty",
+    "countNumber": "Count #",
+    "scheduledDate": "Date",
+    "location": "Location",
+    "system": "System",
+    "counted": "Counted",
+    "variance": "Variance"
+  },
+  "shipmentsByStatus": {
+    "searchPlaceholder": "Search by number / customer / tracking / SO #…",
+    "rowCount": "{{count}} shipment(s)",
+    "number": "Number",
+    "date": "Date",
+    "customer": "Customer",
+    "carrier": "Carrier",
+    "tracking": "Tracking",
+    "linesCount": "Lines",
+    "totalQty": "Total"
+  },
+  "stockByCustomer": {
+    "title": "Stock by customer",
+    "subtitle": "Grouped by partner (via MRN → declaration → Partner).",
+    "unassigned": "— No customer / domestic —",
+    "groupCount": "{{count}} customer(s)",
+    "customer": "Customer",
+    "itemsLabel": "items"
+  },
+  "shipmentsHistoryByCustomer": {
+    "title": "History by customer",
+    "subtitle": "Shipments aggregated by customer × month.",
+    "monthsBack": "Months back",
+    "customerCount": "{{count}} customer(s)",
+    "customer": "Customer",
+    "totals": "Totals",
+    "unknownCustomer": "— Unknown —"
+  },
+  "scopedSearch": {
+    "customs": {
+      "title": "Customs search",
+      "subtitle": "MRN, declarations, LON authorizations — deep-link to relevant document."
+    },
+    "warehouse": {
+      "title": "Warehouse search",
+      "subtitle": "Receipts, shipments, inventory — lot, MRN, receipt #, batch."
+    },
+    "production": {
+      "title": "Production search",
+      "subtitle": "Work orders, customer PO, items."
+    },
+    "placeholder": "Type at least 2 characters…",
+    "typePrompt": "Type 2+ characters to start.",
+    "noResults": "No results.",
+    "lines": "lines",
+    "mrnActive": "Active",
+    "mrnClosed": "Closed",
+    "kind": {
+      "declaration": "Declaration",
+      "authorization": "LON authorization",
+      "receipt": "Receipt",
+      "shipment": "Shipment",
+      "inventory": "Inventory",
+      "productionOrder": "Production order"
+    }
+  },
   "mrnMeter": {
     "used": "Used",
     "discharged": "Discharged",

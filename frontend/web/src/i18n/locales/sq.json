@@ -75,6 +75,95 @@
     "reference": "Referencë",
     "resultsCount": "{{count}} rezultate"
   },
+  "incomingShipments": {
+    "title": "Pret pranim",
+    "subtitle": "MRN të regjistruar pa pranim të kontabilizuar — mallra fizikisht të pritura.",
+    "rowCount": "{{count}} të pritshme",
+    "declaration": "Deklarata",
+    "declarationDate": "Data e deklaratës",
+    "expectedQty": "Sasia e pritshme",
+    "expiryDate": "Skadim MRN"
+  },
+  "qcHold": {
+    "title": "Bllokuar nga QC",
+    "subtitle": "Inventari me QualityStatus ≠ OK. Release e kthen në OK.",
+    "all": "Të gjitha",
+    "blocked": "Bllokuar",
+    "quarantine": "Karantinë",
+    "location": "Lokacioni",
+    "release": "Liro",
+    "releaseConfirm": "Ta kthej këtë inventar në statusin OK?"
+  },
+  "variance": {
+    "title": "Mungesë / Tepricë / Ndryshim",
+    "subtitle": "Cycle-count ndryshime: CountedQuantity − SystemQuantity.",
+    "all": "Të gjitha",
+    "shortage": "Mungesë",
+    "surplus": "Tepricë",
+    "netQty": "Sasi neto",
+    "countNumber": "Nr. inventarit",
+    "scheduledDate": "Data",
+    "location": "Lokacioni",
+    "system": "Në sistem",
+    "counted": "E numëruar",
+    "variance": "Ndryshimi"
+  },
+  "shipmentsByStatus": {
+    "searchPlaceholder": "Kërko sipas numrit / klientit / tracking / SO #…",
+    "rowCount": "{{count}} dërgesa",
+    "number": "Numri",
+    "date": "Data",
+    "customer": "Klienti",
+    "carrier": "Transportuesi",
+    "tracking": "Tracking",
+    "linesCount": "Rreshta",
+    "totalQty": "Total"
+  },
+  "stockByCustomer": {
+    "title": "Inventari sipas klientit",
+    "subtitle": "Grupuar sipas partnerit (MRN → deklaratë → Partner).",
+    "unassigned": "— Pa klient / vendor —",
+    "groupCount": "{{count}} klient(ë)",
+    "customer": "Klienti",
+    "itemsLabel": "artikuj"
+  },
+  "shipmentsHistoryByCustomer": {
+    "title": "Historiku sipas klientit",
+    "subtitle": "Dërgesat e agreguara sipas klientit × muajit.",
+    "monthsBack": "Muaj prapa",
+    "customerCount": "{{count}} klient(ë)",
+    "customer": "Klienti",
+    "totals": "Totale",
+    "unknownCustomer": "— I panjohur —"
+  },
+  "scopedSearch": {
+    "customs": {
+      "title": "Kërkim doganor",
+      "subtitle": "MRN, deklarata, autorizime LON."
+    },
+    "warehouse": {
+      "title": "Kërkim magazinë",
+      "subtitle": "Pranime, dërgesa, inventar."
+    },
+    "production": {
+      "title": "Kërkim prodhimi",
+      "subtitle": "Urdhrat e punës, PO i klientit, artikujt."
+    },
+    "placeholder": "Shkruani të paktën 2 shkronja…",
+    "typePrompt": "Shkruani 2+ shkronja.",
+    "noResults": "Pa rezultate.",
+    "lines": "rreshta",
+    "mrnActive": "Aktiv",
+    "mrnClosed": "I mbyllur",
+    "kind": {
+      "declaration": "Deklarata",
+      "authorization": "Autorizim LON",
+      "receipt": "Pranim",
+      "shipment": "Dërgesë",
+      "inventory": "Inventar",
+      "productionOrder": "Urdhër"
+    }
+  },
   "mrnMeter": {
     "used": "Konsumuar",
     "discharged": "Shkarkuar",

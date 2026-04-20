@@ -75,6 +75,95 @@
     "reference": "Референца",
     "resultsCount": "{{count}} резултата"
   },
+  "incomingShipments": {
+    "title": "Чека пријем",
+    "subtitle": "MRN регистровани у царини без пријема — очекиване физичке пошиљке.",
+    "rowCount": "{{count}} очекиване",
+    "declaration": "Декларација",
+    "declarationDate": "Датум декларације",
+    "expectedQty": "Очекивана количина",
+    "expiryDate": "Истек MRN"
+  },
+  "qcHold": {
+    "title": "Блокирано од QC",
+    "subtitle": "Залиха са QualityStatus ≠ OK. Release враћа у OK.",
+    "all": "Све",
+    "blocked": "Блокирано",
+    "quarantine": "Карантин",
+    "location": "Локација",
+    "release": "Ослободи",
+    "releaseConfirm": "Да ли да ову ставку вратим у OK статус?"
+  },
+  "variance": {
+    "title": "Мањак / Вишак / Разлика",
+    "subtitle": "Cycle-count разлике: CountedQuantity − SystemQuantity.",
+    "all": "Све",
+    "shortage": "Мањак",
+    "surplus": "Вишак",
+    "netQty": "Нето количина",
+    "countNumber": "Број пописа",
+    "scheduledDate": "Датум",
+    "location": "Локација",
+    "system": "У систему",
+    "counted": "Пребројано",
+    "variance": "Разлика"
+  },
+  "shipmentsByStatus": {
+    "searchPlaceholder": "Претрага по броју / купцу / tracking / SO #…",
+    "rowCount": "{{count}} shipment(а)",
+    "number": "Број",
+    "date": "Датум",
+    "customer": "Купац",
+    "carrier": "Превозник",
+    "tracking": "Tracking",
+    "linesCount": "Ставке",
+    "totalQty": "Укупно"
+  },
+  "stockByCustomer": {
+    "title": "Залиха по клијенту",
+    "subtitle": "Групирано по партнеру (MRN → декларација → Partner).",
+    "unassigned": "— Без клијента / domestic —",
+    "groupCount": "{{count}} клијент(а)",
+    "customer": "Клијент",
+    "itemsLabel": "ставке"
+  },
+  "shipmentsHistoryByCustomer": {
+    "title": "Историја по клијенту",
+    "subtitle": "Shipments агрегирани по купцу × месец.",
+    "monthsBack": "Месеци уназад",
+    "customerCount": "{{count}} клијент(а)",
+    "customer": "Клијент",
+    "totals": "Укупно",
+    "unknownCustomer": "— Непознат —"
+  },
+  "scopedSearch": {
+    "customs": {
+      "title": "Царинска претрага",
+      "subtitle": "MRN, декларације, LON одобрења."
+    },
+    "warehouse": {
+      "title": "Магацинска претрага",
+      "subtitle": "Пријеми, отпреме, инвентар."
+    },
+    "production": {
+      "title": "Производна претрага",
+      "subtitle": "Радни налози, клијентски PO, артикли."
+    },
+    "placeholder": "Унесите минимум 2 знака…",
+    "typePrompt": "Унесите 2+ знака.",
+    "noResults": "Нема резултата.",
+    "lines": "ставке",
+    "mrnActive": "Активан",
+    "mrnClosed": "Затворен",
+    "kind": {
+      "declaration": "Декларација",
+      "authorization": "LON одобрење",
+      "receipt": "Пријем",
+      "shipment": "Отпрема",
+      "inventory": "Инвентар",
+      "productionOrder": "Налог"
+    }
+  },
   "mrnMeter": {
     "used": "Потрошено",
     "discharged": "Раздужено",

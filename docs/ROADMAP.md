@@ -60,17 +60,17 @@
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P7.1** | `/warehouse/incoming` | aggregate: Receipts WHERE status=Draft/Planned | S | P1 | — | Без нов ASN domain; листа на Draft-state примени. ASN само кога се појави потреба. |
-| **P7.2** | `/warehouse/qc-hold` | reuse: BlockedInventory report + `PUT /wms/inventory/{id}/quality-status` | S | P1 | — | Dedicated view со release action. |
-| **P7.3** | `/warehouse/variance` | reuse: CycleCount + CycleCountLine постојат | M | P2 | — | Report over CycleCounts со variance колона и per-row drilldown. |
-| **P7.4** | `/warehouse/ready-to-ship` | aggregate: Shipments WHERE Status=Packed | S | P1 | — | Со CSV export + линкови до shipment detail. |
-| **P7.5** | `/warehouse/stock-by-customer` | reuse: InventoryByMRN + partner join | S | P2 | — | Веќе ~70% покриено од `/reports/inventory-by-mrn`. Grouping по клиент и MRN. |
-| **P7.6** | `/finished/shipped` | aggregate: Shipments WHERE Status=Shipped | S | P1 | — | CSV export; deep-link во declaration. Reuses `/customs/export-docs`. |
-| **P7.7** | `/finished/traceability` | reuse: `/traceability` + reverse walk | S | P2 | — | Redirect или focused view (од FG назад до суровина). |
-| **P7.8** | `/finished/history-by-customer` | aggregate: Shipments GROUPBY CustomerId, Month | S | P2 | P7.6 | CSV export + period selector. |
-| **P7.9** | `/customs/search`, `/warehouse/search`, `/production/search` | aggregate: text-based scoped search | S | P1 | — | Еден parser преку постоечки GETs; unified UI component. |
+| **P7.1** | `/warehouse/incoming` | aggregate: Receipts WHERE status=Draft/Planned | S | P1 | — | **✅ 2026-04-20** — MRN registry WHERE UsedQuantity=0 (pragmatic ASN proxy). `IncomingShipments.tsx`. |
+| **P7.2** | `/warehouse/qc-hold` | reuse: BlockedInventory report + `PUT /wms/inventory/{id}/quality-status` | S | P1 | — | **✅ 2026-04-20** — `QcHold.tsx` со blocked/quarantine toggle + inline release. |
+| **P7.3** | `/warehouse/variance` | reuse: CycleCount + CycleCountLine постојат | M | P2 | — | **✅ 2026-04-20** — `VarianceReport.tsx` со shortage/surplus tabs + CSV. |
+| **P7.4** | `/warehouse/ready-to-ship` | aggregate: Shipments WHERE Status=Packed | S | P1 | — | **✅ 2026-04-20** — `ShipmentsByStatus.tsx` filterStatus=4. |
+| **P7.5** | `/warehouse/stock-by-customer` | reuse: InventoryByMRN + partner join | S | P2 | — | **✅ 2026-04-20** — `StockByCustomer.tsx` со collapsible groups + CSV. |
+| **P7.6** | `/finished/shipped` | aggregate: Shipments WHERE Status=Shipped | S | P1 | — | **✅ 2026-04-20** — `ShipmentsByStatus.tsx` filterStatus=5 (reused component). |
+| **P7.7** | `/finished/traceability` | reuse: `/traceability` + reverse walk | S | P2 | — | **✅ 2026-04-20** — redirect на /customs/traceability. |
+| **P7.8** | `/finished/history-by-customer` | aggregate: Shipments GROUPBY CustomerId, Month | S | P2 | P7.6 | **✅ 2026-04-20** — `ShipmentsHistoryByCustomer.tsx` customer × month matrix. |
+| **P7.9** | `/customs/search`, `/warehouse/search`, `/production/search` | aggregate: text-based scoped search | S | P1 | — | **✅ 2026-04-20** — `ScopedSearch.tsx` reusable со 3 scope variants. |
 
-**Phase 7 DoD:** ~9 `PlaceholderPage` блокови избришани. Секој е CSV-exportable.
+**Phase 7 DoD:** ✅ 2026-04-20 — 9 `PlaceholderPage` блокови избришани. 7 pages со CSV export, 1 redirect, 1 scoped-search component (3 routes).
 
 ---
 

@@ -2,6 +2,37 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Phase 7 complete: 9 placeholder→real conversions (quick wins over existing data)
+
+Single-session sweep of Phase 7 from `docs/ROADMAP.md`. All 9 items shipped as
+aggregation-only views over existing endpoints; zero new migrations.
+
+- **P7.1 `/warehouse/incoming`** — `IncomingShipments.tsx`. Pragmatic ASN proxy: MRNRegistry rows where UsedQuantity=0 (customs filed, no receipt booked).
+- **P7.2 `/warehouse/qc-hold`** — `QcHold.tsx`. QualityStatus ≠ OK with blocked/quarantine toggle + inline "Release" via existing `POST /WMS/inventory/quality-status`.
+- **P7.3 `/warehouse/variance`** — `VarianceReport.tsx`. Flattens CycleCountLine rows where Variance ≠ 0. Shortage / surplus tabs + net qty summary.
+- **P7.4 `/warehouse/ready-to-ship`** — reusable `ShipmentsByStatus` component filterStatus=4 (Packed).
+- **P7.5 `/warehouse/stock-by-customer`** — `StockByCustomer.tsx`. Joins InventoryBalance → MRNRegistry.customsDeclaration.partnerId → Partner; collapsible per-customer groups.
+- **P7.6 `/finished/shipped`** — same `ShipmentsByStatus` component filterStatus=5 (Shipped).
+- **P7.7 `/finished/traceability`** — `<Navigate>` redirect to `/customs/traceability`.
+- **P7.8 `/finished/history-by-customer`** — `ShipmentsHistoryByCustomer.tsx`. Customer × month matrix with count + qty cells, period selector (3/6/12/24 months), CSV export with one (count, qty) pair per month.
+- **P7.9 scoped search** — `ScopedSearch.tsx` reusable with `scope="customs" | "warehouse" | "production"` prop. 300ms debounced, client-side fan-out across existing list endpoints, grouped by entity kind with deep-links.
+
+**Cross-cutting additions:**
+- Every list page uses the new `utils/export.ts` CSV helper (locale-aware formatting).
+- All 7 new pages use `formatDate` / `formatQuantity` from `utils/format.ts`.
+- `navGroups.ts` — 9 entries flipped from missing/partial → exists with real existingDataHint strings; 5 stale plannedBehavior + duplicate-key fields removed (TS1117 fix).
+- i18n: new namespaces `incomingShipments`, `qcHold`, `variance`, `shipmentsByStatus`, `stockByCustomer`, `shipmentsHistoryByCustomer`, `scopedSearch` in mk/sr/sq/en.
+
+**Routing:** 9 `PlaceholderPage` blocks removed from `App.tsx`. Traceability route converted to `<Navigate>`.
+
+**Build:** `npm run build` — bundle `main.39218792.js` (+6.8 kB over previous batch across 7 new pages + scoped search). Pre-existing lint warnings only.
+
+**ROADMAP.md:** Phase 7 section updated — all 9 items flipped to ✅ with implementation pointers.
+
+VPS deploy in the same commit.
+
+---
+
 ## 2026-04-20 — P6.37 customs placeholders → real pages + P6.36 MRN meter + P2.5.7 CSV export
 
 Batch of placeholder-to-real conversions in the customs group plus two cross-cutting utilities.

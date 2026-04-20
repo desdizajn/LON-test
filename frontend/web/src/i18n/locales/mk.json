@@ -75,6 +75,95 @@
     "reference": "Референца",
     "resultsCount": "{{count}} резултати"
   },
+  "incomingShipments": {
+    "title": "Чека прием",
+    "subtitle": "MRN регистрирани во царина без book-нат прием — очекувани физички пратки.",
+    "rowCount": "{{count}} очекувани",
+    "declaration": "Декларација",
+    "declarationDate": "Датум на декларација",
+    "expectedQty": "Очекувана количина",
+    "expiryDate": "Истек на MRN"
+  },
+  "qcHold": {
+    "title": "Блокирано од QC",
+    "subtitle": "Залиха со QualityStatus ≠ OK. Release action враќа во OK.",
+    "all": "Сите",
+    "blocked": "Блокирано",
+    "quarantine": "Карантин",
+    "location": "Локација",
+    "release": "Ослободи",
+    "releaseConfirm": "Да ја вратиш оваа ставка во OK статус?"
+  },
+  "variance": {
+    "title": "Недостиг / Вишок / Разлика",
+    "subtitle": "Cycle-count разлики: CountedQuantity − SystemQuantity. Само редови со variance ≠ 0.",
+    "all": "Сите",
+    "shortage": "Недостиг",
+    "surplus": "Вишок",
+    "netQty": "Нето количина",
+    "countNumber": "Број на попис",
+    "scheduledDate": "Датум",
+    "location": "Локација",
+    "system": "Во систем",
+    "counted": "Пребројано",
+    "variance": "Разлика"
+  },
+  "shipmentsByStatus": {
+    "searchPlaceholder": "Пребарај по број / купец / tracking / SO #...",
+    "rowCount": "{{count}} shipment(s)",
+    "number": "Број",
+    "date": "Датум",
+    "customer": "Купувач",
+    "carrier": "Превозник",
+    "tracking": "Tracking",
+    "linesCount": "Ставки",
+    "totalQty": "Вкупно"
+  },
+  "stockByCustomer": {
+    "title": "Состојба по клиентски материјал",
+    "subtitle": "Групирано по партнер (преку MRN → декларација → Partner).",
+    "unassigned": "— Без клиент / domestic —",
+    "groupCount": "{{count}} клиент(и)",
+    "customer": "Клиент",
+    "itemsLabel": "ставки"
+  },
+  "shipmentsHistoryByCustomer": {
+    "title": "Историја по клиент",
+    "subtitle": "Shipments агрегирани по купувач × месец.",
+    "monthsBack": "Месеци назад",
+    "customerCount": "{{count}} клиент(и)",
+    "customer": "Клиент",
+    "totals": "Вкупно",
+    "unknownCustomer": "— Непознат —"
+  },
+  "scopedSearch": {
+    "customs": {
+      "title": "Царинско пребарување",
+      "subtitle": "MRN, декларации, LON одобренија — deep-link во релевантен документ."
+    },
+    "warehouse": {
+      "title": "Магацинско пребарување",
+      "subtitle": "Приеми, испратници, инвентар — lot, MRN, receipt #, batch."
+    },
+    "production": {
+      "title": "Производно пребарување",
+      "subtitle": "Работни налози, клиентски PO, артикли."
+    },
+    "placeholder": "Внесете најмалку 2 знака...",
+    "typePrompt": "Внесете 2+ знаци за да почнеме.",
+    "noResults": "Нема резултати.",
+    "lines": "ставки",
+    "mrnActive": "Активен",
+    "mrnClosed": "Затворен",
+    "kind": {
+      "declaration": "Декларација",
+      "authorization": "LON одобрение",
+      "receipt": "Прием",
+      "shipment": "Испратница",
+      "inventory": "Инвентар",
+      "productionOrder": "Налог"
+    }
+  },
   "mrnMeter": {
     "used": "Искористено",
     "discharged": "Раздолжено",

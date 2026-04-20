@@ -75,6 +75,13 @@ import BulkShipmentFromFG from './pages/Warehouse/BulkShipmentFromFG';
 import LONAuthorizationsList from './pages/Customs/LONAuthorizationsList';
 import DeclarationsByType from './pages/Customs/DeclarationsByType';
 import MrnDeadlines from './pages/Customs/MrnDeadlines';
+import IncomingShipments from './pages/Warehouse/IncomingShipments';
+import QcHold from './pages/Warehouse/QcHold';
+import VarianceReport from './pages/Warehouse/VarianceReport';
+import ShipmentsByStatus from './pages/Warehouse/ShipmentsByStatus';
+import StockByCustomer from './pages/Warehouse/StockByCustomer';
+import ShipmentsHistoryByCustomer from './pages/Warehouse/ShipmentsHistoryByCustomer';
+import ScopedSearch from './pages/ScopedSearch';
 
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
@@ -252,73 +259,25 @@ const App: React.FC = () => {
 
             {/* ───────── P6.37.5 — 🏭 Warehouse group (pilot) ───────── */}
             <Route path="/warehouse/receipts" element={<Inventory />} />
-            <Route
-              path="/warehouse/incoming"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.incoming"
-                  workPlanRef="P2.X — ASN (advance shipment notice) backend"
-                  backendStatus="missing"
-                  plannedBehavior="Листа на најавени пратки: клиент, очекуван датум, shipment #, MRN (ако е познат), очекувана qty. Кога физички материјал пристигне, магационер го конвертира во Receipt."
-                />
-              }
-            />
-            <Route
-              path="/warehouse/qc-hold"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.qcHold"
-                  workPlanRef="P6.36 — QC hold view"
-                  backendStatus="partial"
-                  plannedBehavior="Листа на ставки со QualityStatus = QC hold / rejected. Actions: release, escalate, reject definitivno."
-                  existingDataHint="Blocked Inventory извештај под /reports/blocked-inventory прикажува дел од ова. Ќе се преработи како работен view."
-                />
-              }
-            />
+            <Route path="/warehouse/incoming" element={<IncomingShipments />} />
+            <Route path="/warehouse/qc-hold" element={<QcHold />} />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
             <Route path="/warehouse/transfers" element={<MassTransfer />} />
             <Route path="/warehouse/bulk-receipt" element={<BulkReceiptFromDeclaration />} />
             <Route path="/warehouse/bulk-shipment" element={<BulkShipmentFromFG />} />
-            <Route path="/warehouse/stock-by-customer" element={<InventoryByMRN />} />
-            <Route
-              path="/warehouse/variance"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.variance"
-                  workPlanRef="P4.X — cycle count + variance"
-                  backendStatus="missing"
-                  plannedBehavior="Разлики помеѓу очекувано и реално: (a) cycle count наспроти систем, (b) shortage спрема денешен план, (c) вишок без документ. Со експлицитни actions за поправка."
-                />
-              }
-            />
+            <Route path="/warehouse/stock-by-customer" element={<StockByCustomer />} />
+            <Route path="/warehouse/variance" element={<VarianceReport />} />
             <Route
               path="/warehouse/ready-to-ship"
               element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.readyToShip"
-                  workPlanRef="P4.X — shipment staging"
-                  backendStatus="missing"
-                  plannedBehavior="Спакувани налози кои чекаат извозна декларација или transport. Статус + рок за pickup + pending документи."
+                <ShipmentsByStatus
+                  title="Готово за shipment"
+                  subtitle="Shipments со Status=Packed — чекаат извозна декларација или transport."
+                  filterStatus={4}
                 />
               }
             />
-            <Route
-              path="/warehouse/search"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.search"
-                  workPlanRef="P2.X — warehouse-scoped search"
-                  backendStatus="partial"
-                  plannedBehavior="Scoped search само во магацински контекст (lot, MRN, receipt #, batch, location). Без cross-domain шум."
-                  existingDataHint="Cross-cutting Search во top bar постои како stub; овде ќе биде warehouse-scoped варијанта."
-                />
-              }
-            />
+            <Route path="/warehouse/search" element={<ScopedSearch scope="warehouse" />} />
 
             {/* ───────── P6.37.6 — 🛃 Customs group ───────── */}
             <Route path="/customs/authorizations" element={<LONAuthorizationsList />} />
@@ -328,19 +287,7 @@ const App: React.FC = () => {
             <Route path="/customs/deadlines" element={<MrnDeadlines />} />
             <Route path="/customs/open-items" element={<MrnDeadlines />} />
             <Route path="/customs/guarantees" element={<Guarantees />} />
-            <Route
-              path="/customs/search"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.customs"
-                  titleKey="nav.customs.search"
-                  workPlanRef="P2.X — customs-scoped search"
-                  backendStatus="partial"
-                  plannedBehavior="Scoped search по MRN, декларација #, client PO, shipment #. Директен deep-link во релевантниот документ."
-                  existingDataHint="Global Search во top bar е stub; овде ќе биде customs-scoped."
-                />
-              }
-            />
+            <Route path="/customs/search" element={<ScopedSearch scope="customs" />} />
 
             {/* ───────── P6.37.7 — ✂️ Production group ───────── */}
             <Route path="/production/today" element={<Production />} />
@@ -440,18 +387,7 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/production/search"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.search"
-                  workPlanRef="P2.X — production-scoped search"
-                  backendStatus="partial"
-                  plannedBehavior="Scoped search по работен налог #, client PO, item code, оператор. Директен deep-link во WIP view."
-                />
-              }
-            />
+            <Route path="/production/search" element={<ScopedSearch scope="production" />} />
 
             {/* ───────── P6.37.8 — 📦 Finished Goods group ───────── */}
             <Route
@@ -493,12 +429,10 @@ const App: React.FC = () => {
             <Route
               path="/finished/shipped"
               element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.shipped"
-                  workPlanRef="P4.X — shipment log"
-                  backendStatus="missing"
-                  plannedBehavior="Испратени shipments: датум, клиент, AWB, извозна декларација, линк до раздолжени MRN позиции."
+                <ShipmentsByStatus
+                  title="Испратени"
+                  subtitle="Shipments со Status=Shipped — журнал на сите испратени пратки."
+                  filterStatus={5}
                 />
               }
             />
@@ -538,30 +472,8 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/finished/history-by-customer"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.historyByCustomer"
-                  workPlanRef="P5.X — shipment history aggregation"
-                  backendStatus="missing"
-                  plannedBehavior="Aggregated view: shipments по клиент за избран период. Metrics: qty, on-time %, рекорд per месец."
-                />
-              }
-            />
-            <Route
-              path="/finished/traceability"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.traceability"
-                  workPlanRef="P2.X — reverse traceability"
-                  backendStatus="partial"
-                  plannedBehavior="Од конечно парче низ налог низ материјал до увозна декларација. Reverse на постоечкиот traceability tree."
-                  existingDataHint="/customs/traceability (forward) го покрива 70% на логиката."
-                />
-              }
+            <Route path="/finished/history-by-customer" element={<ShipmentsHistoryByCustomer />} />
+            <Route path="/finished/traceability" element={<Navigate to="/customs/traceability" replace />}
             />
 
             {/* ───────── P6.37.9 — 👥 HR group ───────── */}
