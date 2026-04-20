@@ -10,16 +10,24 @@ namespace LON.API.Controllers;
 /// (<see cref="MasterData.MachinesController"/>) stays at
 /// <c>/api/MasterData/machines</c>.
 /// </summary>
+/// <remarks>
+/// All request bodies are records with init-only properties, NOT positional
+/// records. System.Text.Json can't bind positional record constructors from a
+/// JSON body (see P6.42 regression) — kept as a hard rule for every body DTO
+/// in this project.
+/// </remarks>
 [Route("api/Machines")]
 public class MachineOperationsController : BaseController
 {
     // P11.1 — state events ─────────────────────────────────────────
 
-    public sealed record LogStateBody(
-        MachineState State,
-        DateTime? ChangedAt,
-        Guid? ChangedByEmployeeId,
-        string? Notes);
+    public sealed record LogStateBody
+    {
+        public MachineState State { get; init; }
+        public DateTime? ChangedAt { get; init; }
+        public Guid? ChangedByEmployeeId { get; init; }
+        public string? Notes { get; init; }
+    }
 
     [HttpPost("{id}/state-events")]
     public async Task<IActionResult> LogState(Guid id, [FromBody] LogStateBody body)
@@ -38,14 +46,16 @@ public class MachineOperationsController : BaseController
 
     // P11.2 — downtime ─────────────────────────────────────────────
 
-    public sealed record LogDowntimeBody(
-        Guid MachineId,
-        DateTime Start,
-        DateTime? End,
-        DowntimeCategory Category,
-        string Reason,
-        decimal? CostImpact,
-        Guid? ReportedByEmployeeId);
+    public sealed record LogDowntimeBody
+    {
+        public Guid MachineId { get; init; }
+        public DateTime Start { get; init; }
+        public DateTime? End { get; init; }
+        public DowntimeCategory Category { get; init; }
+        public string Reason { get; init; } = string.Empty;
+        public decimal? CostImpact { get; init; }
+        public Guid? ReportedByEmployeeId { get; init; }
+    }
 
     [HttpPost("downtime")]
     public async Task<IActionResult> LogDowntime([FromBody] LogDowntimeBody body)
@@ -56,7 +66,10 @@ public class MachineOperationsController : BaseController
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    public sealed record CloseDowntimeBody(DateTime End);
+    public sealed record CloseDowntimeBody
+    {
+        public DateTime End { get; init; }
+    }
 
     [HttpPost("downtime/{id}/close")]
     public async Task<IActionResult> CloseDowntime(Guid id, [FromBody] CloseDowntimeBody body)
@@ -86,12 +99,14 @@ public class MachineOperationsController : BaseController
 
     // P11.4 — maintenance schedules ────────────────────────────────
 
-    public sealed record CreateScheduleBody(
-        Guid MachineId,
-        string TaskDescription,
-        int IntervalDays,
-        DateTime? LastDone,
-        DateTime? NextDue);
+    public sealed record CreateScheduleBody
+    {
+        public Guid MachineId { get; init; }
+        public string TaskDescription { get; init; } = string.Empty;
+        public int IntervalDays { get; init; }
+        public DateTime? LastDone { get; init; }
+        public DateTime? NextDue { get; init; }
+    }
 
     [HttpPost("maintenance-schedules")]
     public async Task<IActionResult> CreateSchedule([FromBody] CreateScheduleBody body)
@@ -102,12 +117,14 @@ public class MachineOperationsController : BaseController
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    public sealed record UpdateScheduleBody(
-        string TaskDescription,
-        int IntervalDays,
-        DateTime? LastDone,
-        DateTime NextDue,
-        bool IsActive);
+    public sealed record UpdateScheduleBody
+    {
+        public string TaskDescription { get; init; } = string.Empty;
+        public int IntervalDays { get; init; }
+        public DateTime? LastDone { get; init; }
+        public DateTime NextDue { get; init; }
+        public bool IsActive { get; init; }
+    }
 
     [HttpPut("maintenance-schedules/{id}")]
     public async Task<IActionResult> UpdateSchedule(Guid id, [FromBody] UpdateScheduleBody body)
@@ -127,14 +144,16 @@ public class MachineOperationsController : BaseController
 
     // P11.5 — work orders ──────────────────────────────────────────
 
-    public sealed record CreateWorkOrderBody(
-        Guid MachineId,
-        Guid? ScheduleId,
-        DateTime ScheduledDate,
-        Guid? TechnicianEmployeeId,
-        string? TaskDescription,
-        string? Notes,
-        decimal? CostImpact);
+    public sealed record CreateWorkOrderBody
+    {
+        public Guid MachineId { get; init; }
+        public Guid? ScheduleId { get; init; }
+        public DateTime ScheduledDate { get; init; }
+        public Guid? TechnicianEmployeeId { get; init; }
+        public string? TaskDescription { get; init; }
+        public string? Notes { get; init; }
+        public decimal? CostImpact { get; init; }
+    }
 
     [HttpPost("maintenance-work-orders")]
     public async Task<IActionResult> CreateWorkOrder([FromBody] CreateWorkOrderBody body)
@@ -145,10 +164,12 @@ public class MachineOperationsController : BaseController
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    public sealed record CompleteWorkOrderBody(
-        DateTime? CompletedAt,
-        string? Notes,
-        decimal? CostImpact);
+    public sealed record CompleteWorkOrderBody
+    {
+        public DateTime? CompletedAt { get; init; }
+        public string? Notes { get; init; }
+        public decimal? CostImpact { get; init; }
+    }
 
     [HttpPost("maintenance-work-orders/{id}/complete")]
     public async Task<IActionResult> CompleteWorkOrder(Guid id, [FromBody] CompleteWorkOrderBody body)
