@@ -24,7 +24,16 @@ Single batch closing the remainder of Phase 2.5 (i18n) and Phase 5 (productivity
 
 **Build**: `dotnet build` 0/0 across `LON.API`, `LON.Application`, and `LON.IntegrationTests`. `npm run build` bundle `main.bb4dd2e5.js` — only pre-existing lint warnings.
 
-**VPS deploy + smoke** follow in the batch commit.
+**VPS deploy (commit `f701c60`, HEAD on main).** `git pull` + `docker compose build api frontend` + `up -d`. Post-deploy smoke (admin/Admin123!):
+- `GET /api/MasterData/items/article-picker?query=11&limit=5` → 200, grouped base + A-suffix variants, isASuffix flag correct.
+- `POST /api/QuickEntry/execute {"command":"fizzbuzz"}` → 400 + `errorCode:"quick_entry.invalid_command"`.
+- `POST /api/WMS/shipments/bulk-from-fg {}` → 400 + `errorCode:"transfer.no_filter"`.
+- `POST /api/WMS/receipts/bulk-from-declaration {"customsDeclarationId":"00000…"}` → 400 + `errorCode:"declaration.not_found"`.
+- Frontend bundle `main.bb4dd2e5.js` served from `https://elon.elbosoft.click/`.
+
+Serilog access logs confirm every endpoint hit with proper TenantId=TEKSPORT + UserName=admin. No warnings beyond pre-existing EF multiple-collection Include note.
+
+> **🎯 Phase 2.5 + Phase 5 closed.** Remaining backlog: P2.5.4 retrofit continues opportunistically when each page is next touched (helpers ready); P2.5.7 PDF/Excel i18n deferred; P6.36 waste/calculations UI wiring, P6.37.13/15 visual smoke + a11y audit remain open from the prior umbrella.
 
 ---
 
