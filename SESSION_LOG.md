@@ -76,7 +76,30 @@ properties од ден 1 (применето лекцијата од P11).
 - P10.6 training/certs — нов TrainingRecord entity.
 - P10.7 payroll-export — агрегација преку P10.3 + P12.3 rate cards.
 
-VPS deploy next.
+**VPS deploy (commit `b715eed`):** `git pull` + `docker compose build api
+frontend` + `up -d`. Migration `P10_HrOperations` applied on startup (1
+attempt, success).
+
+End-to-end smoke (admin/Admin123! + seeded employee `EMP-001 Marko
+Petrovski`, machine `P11-SMOKE` од Sprint 3):
+- `POST /Hr/attendance/clock-in {employeeId}` → 200 + attendance id.
+- `GET /Hr/attendance/today` → 1 row clocked in со `clockIn=2026-04-20T17:26Z`.
+- `POST /Hr/attendance/clock-out {employeeId}` → 200; attendance row has
+  `ClockOut`, `Hours=0.0` (curl flow < 1s), `Status=Present`.
+- Duplicate `POST .../clock-out` → 400 + `errorCode=hr.already_clocked_out`.
+- `POST /Hr/absences` with `from > to` → 400 +
+  `errorCode=hr.absence_range_invalid`.
+- `POST /Hr/absences` valid → pending; `POST .../decide {approve:true}` →
+  absence.Approved=true, ApprovedByUserId = admin userId, ApprovedAt stamped.
+- `POST /Hr/assignments` open-ended → GET with `activeOnly=true` returns
+  exactly 1 row со machineCode=P11-SMOKE, validTo=null.
+
+Все flows green од првиот deploy — двете протоколарни науки (init-only body
+DTOs + EF projection simplicity) се веќе применети од ден 1 во оваа sprint.
+
+> **🎯 Sprint 4 closed.** Sprint 5 (per ROADMAP) → Phase 9 FG simple queries
+> (P9.1 awaiting-pack + P9.3 ready-to-ship + P9.6 packaging-stock). P9.6 бара
+> нов `ItemType.PackagingMaterial` enum value + миграциски backfill.
 
 ---
 
