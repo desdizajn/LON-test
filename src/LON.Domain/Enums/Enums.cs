@@ -10,6 +10,7 @@ public enum ItemType
 
 public enum QualityStatus
 {
+    None = 0,
     OK = 1,
     Blocked = 2,
     Quarantine = 3

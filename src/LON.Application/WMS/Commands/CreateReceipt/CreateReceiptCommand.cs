@@ -30,7 +30,7 @@ public record ReceiptLineDto
     public string? MRN { get; init; }
     /// <summary>Per-line location. Falls back to CreateReceiptCommand.LocationId, then auto-resolve.</summary>
     public Guid? LocationId { get; init; }
-    public QualityStatus QualityStatus { get; init; }
+    public QualityStatus QualityStatus { get; init; } = QualityStatus.OK;
     public DateTime? ExpiryDate { get; init; }
     public Guid? CustomsDeclarationId { get; init; }
 }
@@ -84,6 +84,14 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                     $"Line {lineNumber}: no location resolved. " +
                     "Specify LocationId on the line, on the receipt, or configure a Receiving location in the warehouse.");
 
+            // P6.21 — coerce unset (enum default 0 = None) to OK so filters that
+            // match `== QualityStatus.OK` find the resulting balance. Without this,
+            // callers that omit qualityStatus in the JSON payload end up storing 0
+            // and MaterialIssue / Export / Waste queries skip the row.
+            var lineQuality = lineDto.QualityStatus == QualityStatus.None
+                ? QualityStatus.OK
+                : lineDto.QualityStatus;
+
             // I1 — inflate-for-waste. Applied per line, only for TEKSPORT-style
             // tenants AND only when the line references an MRN whose
             // LONAuthorizationItem carries a waste percentage > 0. The
@@ -115,7 +123,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 BatchNumber = lineDto.BatchNumber,
                 MRN = lineDto.MRN,
                 LocationId = lineLocationId,
-                QualityStatus = lineDto.QualityStatus,
+                QualityStatus = lineQuality,
                 ExpiryDate = lineDto.ExpiryDate,
                 CustomsDeclarationId = lineDto.CustomsDeclarationId
             };
@@ -144,7 +152,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                     b.BatchNumber == lineDto.BatchNumber &&
                     b.MRN == lineDto.MRN &&
                     b.UoMId == lineDto.UoMId &&
-                    b.QualityStatus == lineDto.QualityStatus,
+                    b.QualityStatus == lineQuality,
                 cancellationToken);
 
             if (balance is null)
@@ -158,7 +166,7 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                     MRN = lineDto.MRN,
                     Quantity = bookedQuantity,
                     UoMId = lineDto.UoMId,
-                    QualityStatus = lineDto.QualityStatus,
+                    QualityStatus = lineQuality,
                     ExpiryDate = lineDto.ExpiryDate,
                     LonProcessState = lineLonState
                 });

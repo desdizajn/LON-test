@@ -165,12 +165,15 @@ public class CreateExportDeclarationCommandHandler
         foreach (var lineDto in request.Lines)
         {
             // FG inventory decrement: find FG balance by Item + Batch (+ optional Location).
+            // P6.21 — accept both OK and legacy None so exports can discharge
+            // balances created before the unset-qualityStatus coercion landed.
             var fgQuery = _context.InventoryBalances
                 .Where(b => b.ItemId == lineDto.ItemId
                             && b.BatchNumber == lineDto.BatchNumber
                             && b.UoMId == lineDto.UoMId
                             && b.Quantity > 0m
-                            && b.QualityStatus == QualityStatus.OK);
+                            && (b.QualityStatus == QualityStatus.OK
+                                || b.QualityStatus == QualityStatus.None));
             if (lineDto.LocationId.HasValue)
                 fgQuery = fgQuery.Where(b => b.LocationId == lineDto.LocationId.Value);
 

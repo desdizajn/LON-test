@@ -80,8 +80,16 @@ public class ReceiptsImportExecutor : IImportTargetExecutor
                 return (false, lineNumber - 1, $"Row {row.RowIndex}: itemCode, uomCode and quantity are required.");
 
             var lineLocationId = row.GetOrDefault<Guid?>("locationCode") ?? fallbackLocationId.Value;
-            var qualityName = row.GetOrDefault<string>("qualityStatus") ?? "OK";
-            Enum.TryParse<QualityStatus>(qualityName, true, out var quality);
+            var qualityName = row.GetOrDefault<string>("qualityStatus");
+            QualityStatus quality;
+            if (string.IsNullOrWhiteSpace(qualityName)
+                || !Enum.TryParse<QualityStatus>(qualityName, true, out quality)
+                || quality == QualityStatus.None)
+            {
+                // P6.21 — blank/unknown/None collapses to OK so downstream filters
+                // that match `== QualityStatus.OK` find the balance we just book.
+                quality = QualityStatus.OK;
+            }
 
             receipt.Lines.Add(new ReceiptLine
             {

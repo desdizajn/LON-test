@@ -187,10 +187,16 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
         // Exact-match path: user nailed down batch/MRN/location.
         if (batchSpecified || mrnSpecified || line.LocationId.HasValue)
         {
+            // P6.21 — accept both OK and the legacy default (None = 0). Legacy
+            // receipts and imports that never explicitly set qualityStatus end up
+            // with 0 on disk; the stricter `== OK` filter used to hide them and
+            // the resolver would report "no inventory matches …" even though the
+            // balance is visible via GET /api/wms/inventory.
             var query = _context.InventoryBalances
                 .Where(b => b.ItemId == line.ItemId
                             && b.UoMId == line.UoMId
-                            && b.QualityStatus == QualityStatus.OK
+                            && (b.QualityStatus == QualityStatus.OK
+                                || b.QualityStatus == QualityStatus.None)
                             && b.Quantity > 0m);
 
             if (batchSpecified)
@@ -219,7 +225,8 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
         var pool = await _context.InventoryBalances
             .Where(b => b.ItemId == line.ItemId
                         && b.UoMId == line.UoMId
-                        && b.QualityStatus == QualityStatus.OK
+                        && (b.QualityStatus == QualityStatus.OK
+                            || b.QualityStatus == QualityStatus.None)
                         && b.Quantity > 0m)
             .OrderByDescending(b => b.LonProcessState == LonProcessState.Imported)
             .ThenBy(b => b.ExpiryDate ?? DateTime.MaxValue)

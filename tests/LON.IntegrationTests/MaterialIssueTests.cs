@@ -269,6 +269,77 @@ public class MaterialIssueTests : IClassFixture<LonApiFactory>
         body.Should().Contain("LON material requires");
     }
 
+    /// <summary>
+    /// P6.21 regression — legacy rows persisted with the unlabelled enum default
+    /// (`QualityStatus = 0 = None`) used to be skipped by `ResolveBalanceAsync`'s
+    /// `== QualityStatus.OK` filter, leaving the user staring at "no inventory
+    /// matches" even though GET /api/wms/inventory rendered the row. Guard against
+    /// regressing that filter.
+    /// </summary>
+    [Fact]
+    public async Task Issue_LegacyQualityStatusNone_IsResolvedLikeOk()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+
+        var (_, mrn) = await CreateIm4200Declaration(client, 20m);
+        var seed = await LoadSeedAsync();
+
+        // Engineer a legacy balance directly: QualityStatus = 0 (= None). This
+        // mirrors pre-P6.21 production rows produced by receipts that omitted the
+        // field in JSON and imports that hit the silent TryParse fallback.
+        Guid tenantId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            tenantId = (await ctx.Tenants.IgnoreQueryFilters().FirstAsync(t => t.Code == "TEKSPORT")).Id;
+            ctx.InventoryBalances.Add(new LON.Domain.Entities.WMS.InventoryBalance
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenantId,
+                ItemId = seed.ItemId,
+                LocationId = seed.RcvLocationId,
+                BatchNumber = "BATCH-P6-21-LEGACY",
+                MRN = mrn,
+                Quantity = 10m,
+                UoMId = seed.UomId,
+                QualityStatus = QualityStatus.None,
+                LonProcessState = LonProcessState.Imported
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        var orderId = await CreateProductionOrderAsync(seed);
+
+        var resp = await client.PostAsJsonAsync($"/api/production/orders/{orderId}/issues", new
+        {
+            issueDate = DateTime.UtcNow.Date,
+            lines = new[] { new {
+                itemId = seed.ItemId, quantity = 3m, uoMId = seed.UomId,
+                batchNumber = "BATCH-P6-21-LEGACY", mrn,
+                locationId = seed.RcvLocationId
+            } }
+        });
+        var body = await resp.Content.ReadAsStringAsync();
+        resp.StatusCode.Should().Be(HttpStatusCode.OK, because: body);
+
+        using var scope2 = _factory.Services.CreateScope();
+        var ctx2 = scope2.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var imported = await ctx2.InventoryBalances.IgnoreQueryFilters()
+            .FirstAsync(b => b.BatchNumber == "BATCH-P6-21-LEGACY"
+                             && b.LonProcessState == LonProcessState.Imported);
+        imported.Quantity.Should().Be(7m, "legacy-None balance drops from 10 → 7 after issuing 3");
+
+        var inProd = await ctx2.InventoryBalances.IgnoreQueryFilters()
+            .FirstAsync(b => b.BatchNumber == "BATCH-P6-21-LEGACY"
+                             && b.LonProcessState == LonProcessState.InProduction);
+        inProd.Quantity.Should().Be(3m);
+        inProd.QualityStatus.Should().Be(QualityStatus.None,
+            "sibling row copies QualityStatus from source — still None until a future " +
+            "UpsertInProductionBalance coerces it; the resolver, not the upsert, is the " +
+            "subject of this regression.");
+    }
+
     // ================================================================
     // Helpers
     // ================================================================
