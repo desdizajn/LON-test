@@ -57,7 +57,15 @@ const ItemImportAttributes: React.FC<Props> = ({ itemId }) => {
     itemsAdminApi
       .getImportAttributes(itemId)
       .then((resp) => {
-        if (!cancelled) setData(resp.data as ImportAttrResponse);
+        // Envelope: { isSuccess, data, errorMessage, errors }
+        const payload = (resp.data?.data ?? resp.data) as ImportAttrResponse;
+        if (!cancelled)
+          setData({
+            itemId: payload.itemId,
+            itemCode: payload.itemCode ?? null,
+            itemName: payload.itemName ?? null,
+            rows: payload.rows ?? [],
+          });
       })
       .catch(() => {
         if (!cancelled) setError(t('itemAttributes.loadError'));

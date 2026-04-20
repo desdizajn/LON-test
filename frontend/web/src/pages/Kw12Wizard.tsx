@@ -50,8 +50,16 @@ const Kw12Wizard: React.FC = () => {
     setFileName(file.name);
     try {
       const resp = await importApi.uploadKw12Preset(file);
-      // Endpoint returns data directly (no envelope).
-      setResult(resp.data as Kw12Response);
+      // Envelope: { isSuccess, data, ... }
+      const payload = (resp.data?.data ?? resp.data) as Kw12Response;
+      setResult({
+        itemsSessionId: payload.itemsSessionId ?? null,
+        customsDeclarationsSessionId: payload.customsDeclarationsSessionId ?? null,
+        receiptsSessionId: payload.receiptsSessionId ?? null,
+        sheetsFound: payload.sheetsFound ?? [],
+        sheetsSkipped: payload.sheetsSkipped ?? [],
+        suggestedDefaults: payload.suggestedDefaults ?? [],
+      });
     } catch (err: any) {
       showError(
         err?.response?.data?.errorMessage ||

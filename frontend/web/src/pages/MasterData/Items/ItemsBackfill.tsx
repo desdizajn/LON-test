@@ -49,7 +49,15 @@ const ItemsBackfill: React.FC = () => {
     setLastMode(dryRun ? 'dry' : 'exec');
     try {
       const resp = await itemsAdminApi.backfillBaseVariants(dryRun);
-      setResult(resp.data as BackfillResult);
+      // Envelope: { isSuccess, data, errorMessage, errors }
+      const payload = (resp.data?.data ?? resp.data) as BackfillResult;
+      setResult({
+        itemsScanned: payload.itemsScanned ?? 0,
+        variantsBackfilled: payload.variantsBackfilled ?? 0,
+        baseItemsCreated: payload.baseItemsCreated ?? 0,
+        untouchedBaseCodeAlreadyPresent: payload.untouchedBaseCodeAlreadyPresent ?? 0,
+        sampleChanges: payload.sampleChanges ?? [],
+      });
       if (!dryRun) showSuccess(t('itemsBackfill.execute'));
     } catch (err: any) {
       showError(
