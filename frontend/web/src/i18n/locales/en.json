@@ -440,6 +440,28 @@
     "submit": "Move all",
     "success": "Moved {{count}} balance(s), total {{qty}} units."
   },
+  "massTransfer": {
+    "title": "Mass location change",
+    "hint": "Filter inventory by any criterion and transfer every matching balance to a single target location in one atomic call.",
+    "item": "Item",
+    "batch": "Batch",
+    "sourceWarehouse": "From warehouse",
+    "sourceLocation": "From location",
+    "quality": "Quality",
+    "lonState": "LON state",
+    "target": "Target location",
+    "reason": "Reason",
+    "preview": "Preview",
+    "commit": "Commit",
+    "previewHeader": "Preview",
+    "noMatches": "No rows match the filter.",
+    "confirmPrompt": "About to move {{summary}}. Continue?",
+    "doneHeader": "Done",
+    "rowsMoved": "balance(s) moved",
+    "totalQty": "total",
+    "movementsCount": "Movements",
+    "qty": "Qty"
+  },
   "locationType": {
     "Receiving": "Receiving",
     "Storage": "Storage",

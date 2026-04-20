@@ -1,5 +1,7 @@
 using LON.Application.WMS.Commands.CreateReceipt;
+using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
+using LON.Application.WMS.Queries.MassLocationTransferPreview;
 using LON.Application.WMS.Queries.MozniMinusi;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
@@ -93,6 +95,32 @@ public class WMSController : BaseController
     /// </summary>
     [HttpPost("inventory/move-batch")]
     public async Task<IActionResult> MoveBatchAcrossStages([FromBody] MoveBatchAcrossStagesCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// P5.2.7 — preview which InventoryBalance rows would be touched by a
+    /// MassLocationTransfer. The UI invokes this before Commit so the user
+    /// sees a count + total qty + per-row list before confirming.
+    /// </summary>
+    [HttpPost("inventory/mass-transfer/preview")]
+    public async Task<IActionResult> MassTransferPreview([FromBody] MassLocationTransferPreviewQuery query)
+    {
+        var result = await Mediator.Send(query);
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// P5.2.7 — filter inventory by arbitrary predicate (item/batch/MRN/
+    /// source-warehouse/source-location/quality/lon-state) and transfer
+    /// every match to a single target location in one atomic call.
+    /// </summary>
+    [HttpPost("inventory/mass-transfer")]
+    public async Task<IActionResult> MassTransfer([FromBody] MassLocationTransferCommand command)
     {
         var result = await Mediator.Send(command);
         if (!result.IsSuccess) return BadRequest(result);

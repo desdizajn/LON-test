@@ -56,6 +56,32 @@ export const wmsApi = {
     targetLocationId?: string | null;
     reason?: string | null;
   }) => api.post('/WMS/inventory/move-batch', payload),
+
+  // P5.2.7 — filter inventory + preview matches before bulk transfer
+  massTransferPreview: (payload: {
+    itemId?: string | null;
+    batchNumber?: string | null;
+    mrn?: string | null;
+    sourceWarehouseId?: string | null;
+    sourceLocationId?: string | null;
+    qualityStatus?: number | null;
+    lonProcessState?: number | null;
+    targetLocationId?: string | null;
+  }) => api.post('/WMS/inventory/mass-transfer/preview', payload),
+
+  // P5.2.7 — bulk transfer every inventory row matching the filter to
+  // a single explicit target location in one atomic call.
+  massTransfer: (payload: {
+    targetLocationId: string;
+    itemId?: string | null;
+    batchNumber?: string | null;
+    mrn?: string | null;
+    sourceWarehouseId?: string | null;
+    sourceLocationId?: string | null;
+    qualityStatus?: number | null;
+    lonProcessState?: number | null;
+    reason?: string | null;
+  }) => api.post('/WMS/inventory/mass-transfer', payload),
   
   // Receipts
   getReceipts: (page: number = 1, pageSize: number = 20) => 

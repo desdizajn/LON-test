@@ -2,6 +2,98 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P5.3.5: per-user recent-values cache
+
+The "полињата памтат последните 10 внесени вредности per user" requirement from the original Phase 5 plan. Server-side (not localStorage) because the spec is explicit about cross-device persistence and we already have per-user auth — same rationale as every other per-user pref in the app.
+
+**Domain**: `UserFieldHistory` at `src/LON.Domain/Entities/MasterData/UserFieldHistory.cs` — (TenantId, UserId, FieldKey, Value, LastUsedAt, UsageCount). TenantScoped so admins that straddle multiple tenants don't pollute each other's histories. FieldKey is a caller-chosen dotted string (e.g. `receipt.supplier`, `item.tariffCode`, `massTransfer.reason`) so any form can adopt without a schema change.
+
+**EF config** (`UserFieldHistoryConfiguration.cs`):
+- `(UserId, FieldKey, LastUsedAt)` index — main read path.
+- Filtered unique `(UserId, FieldKey, Value) WHERE IsDeleted = 0` — prevents duplicate "recent" rows; upsert lands on this index.
+- `User` nav with cascade delete (per-user data is fine to drop when the user record goes).
+
+**Migration**: `P5_3_5_UserFieldHistory` — standard CreateTable + two indexes; no data.
+
+**MediatR handlers** at `src/LON.Application/UserPrefs/UserFieldHistoryHandlers.cs`:
+- `GetUserFieldHistoryQuery(FieldKey, Limit ≤ 50)` → `IReadOnlyList<UserFieldHistoryDto>` ordered by LastUsedAt DESC. Missing user id → empty list (graceful anon fallback).
+- `RecordUserFieldValueCommand(FieldKey, Value)` → upsert. If the triple exists: bump LastUsedAt + UsageCount. Else insert + soft-delete all rows past position 49 (so the cache stays bounded). Values over 512 chars are truncated — guardrail.
+
+**Controller**: `src/LON.API/Controllers/UserPrefsController.cs`. Inherits BaseController (gets `api/UserPrefs` default route + auth). Exposes `GET /field-history` + `POST /field-history`. `RecordFieldValueRequest` uses init-only props to avoid the positional-record JSON-binder trap (P6.42 lesson applied pre-emptively).
+
+**Frontend**:
+- `hooks/useFieldHistory.ts` — `{recent, record, refresh}` over `GET`/`POST /UserPrefs/field-history`. Optimistically reorders local state on record so the UI feels instant.
+- `components/common/RecentValuesInput.tsx` — thin text-input wrapper with native `<datalist>` autocomplete + optional `commitOnBlur`. Caller owns value/onChange.
+- Integration proof-point: MassTransfer page Reason field now pulls recent reasons via the hook + commits after a successful Commit (only paths that result in a movement enter the history).
+
+**Build / contract**: `dotnet build src/LON.API` — 0/0. `npm run build` — only pre-existing lint warnings. `./scripts/gen-api-types.sh` surfaces both endpoints under `/api/UserPrefs/field-history` in swagger.json + schema.d.ts.
+
+No dedicated integration test yet — the hook + handler are thin, and the real validation is cross-session persistence (one user logs out, logs back in, sees their recent values). That's best verified via the VPS smoke after deploy.
+
+---
+
+## 2026-04-20 — P5.2.5 + P5.3.3: per-tenant policy flags
+
+**P5.2.5 AllowFefoAutoPick flag.**
+
+Some tenants run strict-audit workflows where implicit (FEFO) material selection is unacceptable — every MaterialIssue has to pin the exact Batch/MRN that was physically consumed. Shipped an opt-out flag so those tenants can disable FEFO while the TEKSPORT-style default (auto-pick = most convenient) stays on.
+
+- `Tenant.AllowFefoAutoPick` (bool, default `true`) — `src/LON.Domain/Entities/MasterData/Tenant.cs`.
+- Migration `P5_2_5_AllowFefoAutoPickFlag` — single `AddColumn` with `defaultValue: true` so existing rows backfill to the permissive default and no tenant experiences a behaviour change.
+- `CreateMaterialIssueCommand.ResolveBalanceAsync` — new early-exit in the auto-pick branch: reads tenant (via `IgnoreQueryFilters()` because global filter excludes the current-tenant probe when called from the issue handler's internal pathway), refuses with `"FEFO auto-pick is disabled for this tenant. Supply BatchNumber, MRN, or LocationId on the issue line."` when flag is false. Exact-match path (caller already pinned Batch/MRN/Location) is untouched — that's the explicit path the strict tenants are expected to use.
+- `TenantsController`: added `InflateImportForWaste` + `AllowFefoAutoPick` to the existing PUT body and a dedicated `PUT /api/tenants/{id}/settings/fefo` so an admin UI toggle doesn't need to round-trip the full entity. Converted the positional-record `TenantRequest` to init-only properties (same lesson as P6.42) so System.Text.Json binds partial-property JSON bodies correctly.
+- Integration test `FefoAutoPickFlagTests`: resolves admin's tenant id via `ApplicationDbContext` scope (the `/me` endpoint doesn't expose TenantId), flips the flag off via the PUT, verifies persistence, then attempts a MaterialIssue without Batch/MRN/Location and expects 400 with the guardrail message. Re-enables the flag on exit so the test doesn't bleed into sibling tests.
+
+Export / Return / Waste declaration handlers still use FEFO unconditionally — those are business-rule discharge ordering (MRN consumption order is dictated by customs, not by local preference), so the flag is intentionally scoped to MaterialIssue.
+
+**P5.3.3 Inflate-for-waste flag.**
+
+Retroactively closed: `Tenant.InflateImportForWaste` + the receipt-side application in `CreateReceiptCommand.cs:356` were shipped with P2.2.5 I1 on 2026-04-18. Verified against the current codebase during this P5 sweep; no additional work needed. Closed in WORK_PLAN with the historical pointer.
+
+**Build / contract**: 0/0 warnings on both `src/LON.API` and `tests/LON.IntegrationTests`. `./scripts/gen-api-types.sh` now emits `/api/Tenants/{id}/settings/fefo` in both `api-contract/swagger.json` and `frontend/web/src/api/schema.d.ts`.
+
+VPS deploy + verification in the batch commit after more P5 tasks land.
+
+---
+
+## 2026-04-20 — P5.2.7: Mass location change — filter + atomic bulk transfer
+
+The pair-mate of P5.2.2 MoveBatch. That one is batch-scoped + target-stage-scoped; this one takes an arbitrary predicate + an explicit target location, which is the shape the Inventory page actually needs when cleaning up after a PO, or staging for a release.
+
+**Command**: `MassLocationTransferCommand` at `src/LON.Application/WMS/Commands/MassLocationTransfer/`.
+
+- Filter fields: ItemId, BatchNumber, MRN, SourceWarehouseId, SourceLocationId, QualityStatus, LonProcessState. **At least one** is required — handler refuses `null` everywhere to avoid "transfer every positive balance in tenant" blast radius.
+- `TargetLocationId` is mandatory (Location must exist + be active).
+- Rows already at target are skipped (no self-transfer).
+- Natural-key consolidation on target (Item, Location, Batch, MRN, UoM, QualityStatus): probe `DbSet.Local` first (batch-local consolidation across multiple source rows), then `FirstOrDefaultAsync` (merge with pre-existing DB row), else `Add` new row.
+- Drained source rows left at `Quantity = 0` for audit parity with MoveBatch.
+- One `InventoryMovement(Type=Transfer)` per source row, all with unique `MTR-yyyyMMdd-<hex>` MovementNumber and shared Reason/Notes.
+
+**Preview query**: `MassLocationTransferPreviewQuery` at `src/LON.Application/WMS/Queries/MassLocationTransferPreview/`. Same predicate, returns `(BalancesMatched, TotalQuantity, Rows)` with top-500 cap — the UI uses this for the non-destructive preview step before commit.
+
+**Endpoints** (in existing `WMSController`):
+- `POST /api/wms/inventory/mass-transfer/preview`
+- `POST /api/wms/inventory/mass-transfer`
+
+**Frontend page**: `/warehouse/transfers` rendered by `pages/Warehouse/MassTransfer.tsx`. Two-step flow: filter + Preview (non-destructive) → Commit (confirm dialog) → success summary. Target is always a concrete location from `masterDataApi.getLocations()`. Placeholder route in App.tsx replaced with the real page; navGroups entry flipped from `backendStatus: 'missing'` → `'exists'`.
+
+**i18n**: `massTransfer.*` namespace in all 4 locales (mk/sr/sq/en) — 21 keys each.
+
+**Integration tests**: `tests/LON.IntegrationTests/MassLocationTransferTests.cs`, 3 cases:
+1. Seeded item + 2 receipts with different batches (10 + 20 units) → ItemId filter matches both → preview shows `BalancesMatched=2, TotalQuantity=30` → commit returns `BalancesMoved=2, TotalQuantityMoved=30` with 2 movements all pointing at the target → re-preview afterwards shows `BalancesMatched=0` (idempotent).
+2. Missing all filter fields → 400 with "filter" error message (blast-radius guard).
+3. Unknown batch filter → 400 with "No positive-quantity inventory" message.
+
+**Verification**:
+- `dotnet build src/LON.API/LON.API.csproj` — 0/0.
+- `dotnet build tests/LON.IntegrationTests` — 0 errors, pre-existing warnings unchanged (new MassLocationTransferTests adds 0 warnings after `locations!` null-forgive).
+- `npm run build` — bundle main.681cbb14.js, only pre-existing lint warnings.
+- `./scripts/gen-api-types.sh` — `/api/WMS/inventory/mass-transfer` + `/preview` present in swagger.json + schema.d.ts (contract hygiene).
+
+VPS deploy + smoke in the batch commit after the next P5 task.
+
+---
+
 ## 2026-04-20 — P6.11: Items CRUD through MediatR + regression tests
 
 Completes the Items MediatR migration started by P6.30/P6.31. All 5 Items CRUD endpoints (list / get-by-id / create / update / soft-delete) now route through handlers in `src/LON.Application/MasterData/Items/ItemHandlers.cs`:

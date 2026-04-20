@@ -2120,6 +2120,32 @@ export interface paths {
       };
     };
   };
+  "/api/Tenants/{id}/settings/fefo": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["TenantFefoFlagRequest"];
+          "text/json": components["schemas"]["TenantFefoFlagRequest"];
+          "application/*+json": components["schemas"]["TenantFefoFlagRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Tenant"];
+            "application/json": components["schemas"]["Tenant"];
+            "text/json": components["schemas"]["Tenant"];
+          };
+        };
+      };
+    };
+  };
   "/api/Traceability/trace-forward": {
     get: {
       parameters: {
@@ -2245,6 +2271,37 @@ export interface paths {
       parameters: {
         path: {
           id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/UserPrefs/field-history": {
+    get: {
+      parameters: {
+        query?: {
+          fieldKey?: string;
+          limit?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["RecordFieldValueRequest"];
+          "text/json": components["schemas"]["RecordFieldValueRequest"];
+          "application/*+json": components["schemas"]["RecordFieldValueRequest"];
         };
       };
       responses: {
@@ -2502,6 +2559,40 @@ export interface paths {
           "application/json": components["schemas"]["MoveBatchAcrossStagesCommand"];
           "text/json": components["schemas"]["MoveBatchAcrossStagesCommand"];
           "application/*+json": components["schemas"]["MoveBatchAcrossStagesCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/inventory/mass-transfer/preview": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["MassLocationTransferPreviewQuery"];
+          "text/json": components["schemas"]["MassLocationTransferPreviewQuery"];
+          "application/*+json": components["schemas"]["MassLocationTransferPreviewQuery"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/inventory/mass-transfer": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["MassLocationTransferCommand"];
+          "text/json": components["schemas"]["MassLocationTransferCommand"];
+          "application/*+json": components["schemas"]["MassLocationTransferCommand"];
         };
       };
       responses: {
@@ -3241,6 +3332,37 @@ export interface components {
       serialNumber?: string | null;
       isActive?: boolean;
     };
+    MassLocationTransferCommand: {
+      /** Format: uuid */
+      targetLocationId?: string;
+      /** Format: uuid */
+      itemId?: string | null;
+      batchNumber?: string | null;
+      mrn?: string | null;
+      /** Format: uuid */
+      sourceWarehouseId?: string | null;
+      /** Format: uuid */
+      sourceLocationId?: string | null;
+      qualityStatus?: components["schemas"]["QualityStatus"];
+      lonProcessState?: components["schemas"]["LonProcessState"];
+      /** Format: date-time */
+      movementDate?: string | null;
+      reason?: string | null;
+    };
+    MassLocationTransferPreviewQuery: {
+      /** Format: uuid */
+      itemId?: string | null;
+      batchNumber?: string | null;
+      mrn?: string | null;
+      /** Format: uuid */
+      sourceWarehouseId?: string | null;
+      /** Format: uuid */
+      sourceLocationId?: string | null;
+      qualityStatus?: components["schemas"]["QualityStatus"];
+      lonProcessState?: components["schemas"]["LonProcessState"];
+      /** Format: uuid */
+      targetLocationId?: string | null;
+    };
     MaterialConsumptionDto: {
       /** Format: uuid */
       materialIssueId?: string;
@@ -3340,6 +3462,10 @@ export interface components {
       expiryDate?: string | null;
       /** Format: uuid */
       customsDeclarationId?: string | null;
+    };
+    RecordFieldValueRequest: {
+      fieldKey?: string | null;
+      value?: string | null;
     };
     RefreshTokenRequest: {
       refreshToken?: string | null;
@@ -3471,6 +3597,10 @@ export interface components {
       defaultLanguage?: string | null;
       isActive?: boolean;
       inflateImportForWaste?: boolean;
+      allowFefoAutoPick?: boolean;
+    };
+    TenantFefoFlagRequest: {
+      allowFefoAutoPick?: boolean;
     };
     TenantRequest: {
       code?: string | null;
@@ -3485,6 +3615,8 @@ export interface components {
       customsAuthorizationNumber?: string | null;
       defaultLanguage?: string | null;
       isActive?: boolean | null;
+      inflateImportForWaste?: boolean | null;
+      allowFefoAutoPick?: boolean | null;
     };
     UoMRequest: {
       code?: string | null;

@@ -261,18 +261,18 @@
 - [x] **P5.2.2** ✅ — **Move batch across stages** (1 клик). `POST /api/wms/inventory/move-batch` со `{batchNumber, targetStage, warehouseId?, targetLocationId?, reason?}`. Секоја `InventoryBalance` со даден batch се пренесува во target LocationType (Production/Shipping/Quarantine/...); multi-source + multi-warehouse; LonProcessState се зачувува; DbSet.Local консолидација; idempotent. Frontend: per-row `🔀` button на Inventory со modal и i18n (mk/sr/sq/en). VPS verified: 100 units moved од RCV-222 → PROD-222, idempotent repeat, unknown batch 400 (commits `a7a4ffb`, `b6699ae`). Bundle `main.56c19dea.js`.
 - [ ] **P5.2.3** — **Bulk receipt from invoice** (1 клик) — постоечки CustomsDeclaration + upload-наa faktura → авто-генерирање на Receipt со сите ReceiptLines
 - [ ] **P5.2.4** — **Bulk shipment from FG selection** — selektiraj FG редови по item/batch/PO → креира Shipment + EX декларација во еден flow
-- [ ] **P5.2.5** — **FIFO/FEFO auto-pick** — кога издаваш количина, системот автоматски го избира најстариот compatible batch/MRN (можно disable per tenant)
+- [x] **P5.2.5** ✅ — *2026-04-20*: `Tenant.AllowFefoAutoPick` flag (default `true` — keeps existing FEFO auto-pick behaviour). Migration `P5_2_5_AllowFefoAutoPickFlag` backfills `DEFAULT 1` for existing tenants. `CreateMaterialIssueCommand.ResolveBalanceAsync` short-circuits the auto-pick path with `"FEFO auto-pick is disabled for this tenant…"` when flag is false, forcing the caller to supply Batch/MRN/Location explicitly. Extended `PUT /api/tenants/{id}` + dedicated `PUT /api/tenants/{id}/settings/fefo` so admin UI can flip the flag without round-tripping the entity. Integration test `FefoAutoPickFlagTests`. Export / Return / Waste FEFO still always on (those are business-rule ordering, not audit preference).
 - [x] **P5.2.6** ✅ — **Release Production Order** (1 клик). `POST /api/production/orders/{id}/release`. Draft → Released; BOM lines scaled by `OrderQty / BaseQty × (1 + ScrapPct/100)` into ProductionOrderMaterials; Routing ops copied into ProductionOrderOperations. Already-released = idempotent success.
-- [ ] **P5.2.7** — **Mass location change** — филтрирај inventory (by item/batch/PO/warehouse) → избери target location → сите се transfer-ираат
+- [x] **P5.2.7** ✅ — **Mass location change** — *2026-04-20*: `POST /api/wms/inventory/mass-transfer` (+ `/preview`). Филтер по Item/Batch/MRN/SourceWarehouse/SourceLocation/QualityStatus/LonProcessState (барем еден задолжителен) → bulk transfer кон експлицитна таргет локација во еден атомичен повик. DbSet.Local консолидација, zero-qty source leftover за audit trail, `Type=Transfer` movement per source. Frontend page `/warehouse/transfers` со два-стапки wizard (preview → confirm). 3 integration тестови + i18n во 4 јазици. Сliдбар: placeholder→exists.
 - [ ] **P5.2.8** — **Quick-entry bar** — single-line command за power users: `issue PO-123 50 BATCH-X` → auto-parse + execute
 
 ### 5C — Template auto-apply (legacy pattern)
 
 - [ ] **P5.3.1** — `BOMTemplate` + auto-apply при ProductionOrder creation (legacy NormativTemplO/S) — zero keystrokes за repeat products
 - [ ] **P5.3.2** — `NormativeOverride` per partner/tenant (различни BOM-ови per Uvoznik за ист item)
-- [ ] **P5.3.3** — Inflate-for-waste опционална калкулација (per-tenant flag)
+- [x] **P5.3.3** ✅ — `Tenant.InflateImportForWaste` + Receipt handler (CreateReceiptCommand.cs:356) shipped with P2.2.5 I1 (2026-04-18). Closed retroactively 2026-04-20 when the P5 sweep re-verified it against the current codebase. TEKSPORT seed enables it; other tenants opt-in.
 - [ ] **P5.3.4** — Article picker со „A"-суфикс варијанти за tariff differences
-- [ ] **P5.3.5** — **Recent values** dropdown — полињата памтат последните 10 внесени вредности per user + date
+- [x] **P5.3.5** ✅ — *2026-04-20*: `UserFieldHistory` (TenantScoped, User-owned; FieldKey + Value natural-key with filtered unique index). Two endpoints: `GET /api/UserPrefs/field-history?fieldKey=...&limit=10` + `POST /api/UserPrefs/field-history {fieldKey, value}`. MediatR handlers upsert on hit, insert + prune beyond top-50 on miss. Frontend `useFieldHistory` hook + `RecentValuesInput` component + MassTransfer page reason field proof-point. Migration `P5_3_5_UserFieldHistory`. Future callers opt-in per field.
 
 ---
 

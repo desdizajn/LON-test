@@ -35,7 +35,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<WorkCenter> WorkCenters => Set<WorkCenter>();
     public DbSet<Machine> Machines => Set<Machine>();
-    
+    public DbSet<UserFieldHistory> UserFieldHistories => Set<UserFieldHistory>();
+
     // Knowledge Base - Master Data
     public DbSet<TariffCode> TariffCodes => Set<TariffCode>();
     public DbSet<TariffCodeRate> TariffCodeRates => Set<TariffCodeRate>();

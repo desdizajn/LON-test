@@ -79,12 +79,11 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         key: 'warehouse-transfers',
         labelKey: 'nav.warehouse.transfers',
-        icon: '🔄',
+        icon: '🔀',
         path: '/warehouse/transfers',
-        backendStatus: 'missing',
-        workPlanRef: 'P1.X — inter-location transfers UI',
-        plannedBehavior:
-          'Создавање и следење на трансфери помеѓу локации внатре во ист магацин или помеѓу магацини (Скопје ↔ Виница). InventoryMovement.Type=Transfer.',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P5.2.7 Mass Location Transfer — филтрирај по артикал/batch/MRN/магацин/квалитет/LON и префрли во една таргет локација атомично.',
       },
       {
         key: 'warehouse-stock-by-customer',

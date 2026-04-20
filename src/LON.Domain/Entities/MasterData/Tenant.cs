@@ -41,4 +41,15 @@ public class Tenant : BaseEntity
     /// application lands with P2.3.
     /// </summary>
     public bool InflateImportForWaste { get; set; }
+
+    /// <summary>
+    /// P5.2.5: per-tenant opt-out of FEFO auto-pick during MaterialIssue.
+    /// When <c>true</c> (default) the issue handler may auto-resolve
+    /// Batch/MRN/Location by FEFO (Imported-first, oldest expiry) when the
+    /// caller doesn't pin them. When <c>false</c>, auto-pick is disabled and
+    /// the caller MUST explicitly supply Batch or MRN or Location, so the
+    /// audit trail never picks inventory implicitly. Useful for tenants
+    /// with strict quality-chain or customs-paranoid workflows.
+    /// </summary>
+    public bool AllowFefoAutoPick { get; set; } = true;
 }

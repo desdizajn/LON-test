@@ -68,6 +68,9 @@ import ItemInquiry from './pages/Advanced/ItemInquiry';
 // P6.37 IA — placeholder component for unbuilt views
 import PlaceholderPage from './components/common/PlaceholderPage';
 
+// P5.2.7 — mass location change
+import MassTransfer from './pages/Warehouse/MassTransfer';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -258,18 +261,7 @@ const App: React.FC = () => {
               }
             />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
-            <Route
-              path="/warehouse/transfers"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.warehouse"
-                  titleKey="nav.warehouse.transfers"
-                  workPlanRef="P1.X — inter-location transfers UI"
-                  backendStatus="missing"
-                  plannedBehavior="Создавање и следење на трансфери помеѓу локации внатре во ист магацин или помеѓу магацини (Скопје ↔ Виница). InventoryMovement.Type=Transfer."
-                />
-              }
-            />
+            <Route path="/warehouse/transfers" element={<MassTransfer />} />
             <Route path="/warehouse/stock-by-customer" element={<InventoryByMRN />} />
             <Route
               path="/warehouse/variance"

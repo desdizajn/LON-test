@@ -222,6 +222,22 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
         }
 
         // Auto-pick path: nothing specified. FEFO, LON-first.
+        // P5.2.5 — tenants with strict audit requirements can opt out of
+        // implicit material selection. When AllowFefoAutoPick is false, the
+        // caller must pin at least one of Batch / MRN / Location.
+        if (_context.CurrentTenantId.HasValue)
+        {
+            var tenant = await _context.Tenants
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Id == _context.CurrentTenantId.Value, ct);
+            if (tenant is not null && !tenant.AllowFefoAutoPick)
+            {
+                return BalanceResolution.Fail(
+                    "FEFO auto-pick is disabled for this tenant. " +
+                    "Supply BatchNumber, MRN, or LocationId on the issue line.");
+            }
+        }
+
         var pool = await _context.InventoryBalances
             .Where(b => b.ItemId == line.ItemId
                         && b.UoMId == line.UoMId

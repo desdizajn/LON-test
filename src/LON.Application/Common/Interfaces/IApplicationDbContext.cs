@@ -31,6 +31,7 @@ public interface IApplicationDbContext
     DbSet<Shift> Shifts { get; }
     DbSet<WorkCenter> WorkCenters { get; }
     DbSet<Machine> Machines { get; }
+    DbSet<UserFieldHistory> UserFieldHistories { get; }
 
     // Knowledge Base
     DbSet<TariffCode> TariffCodes { get; }

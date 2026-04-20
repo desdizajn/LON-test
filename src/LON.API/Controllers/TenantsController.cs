@@ -88,7 +88,24 @@ public class TenantsController : BaseController
         if (req.CustomsAuthorizationNumber is not null) t.CustomsAuthorizationNumber = Nullable(req.CustomsAuthorizationNumber);
         if (!string.IsNullOrWhiteSpace(req.DefaultLanguage)) t.DefaultLanguage = req.DefaultLanguage;
         if (req.IsActive.HasValue) t.IsActive = req.IsActive.Value;
+        if (req.InflateImportForWaste.HasValue) t.InflateImportForWaste = req.InflateImportForWaste.Value;
+        if (req.AllowFefoAutoPick.HasValue) t.AllowFefoAutoPick = req.AllowFefoAutoPick.Value;
 
+        await _context.SaveChangesAsync();
+        return Ok(t);
+    }
+
+    /// <summary>
+    /// P5.2.5 — quick toggle for the per-tenant FEFO auto-pick policy.
+    /// PATCH-ish dedicated endpoint so admin UI can flip the flag without
+    /// round-tripping the entire Tenant entity.
+    /// </summary>
+    [HttpPut("{id}/settings/fefo")]
+    public async Task<ActionResult<Tenant>> SetFefoAutoPick(Guid id, [FromBody] TenantFefoFlagRequest req)
+    {
+        var t = await _context.Tenants.FirstOrDefaultAsync(x => x.Id == id);
+        if (t is null) return NotFound();
+        t.AllowFefoAutoPick = req.AllowFefoAutoPick;
         await _context.SaveChangesAsync();
         return Ok(t);
     }
@@ -106,17 +123,26 @@ public class TenantsController : BaseController
 
     private static string? Nullable(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-    public record TenantRequest(
-        string? Code,
-        string? Name,
-        string? LegacyUvoznik,
-        string? TaxNumber,
-        string? Address,
-        string? Country,
-        string? ContactName,
-        string? Email,
-        string? Phone,
-        string? CustomsAuthorizationNumber,
-        string? DefaultLanguage,
-        bool? IsActive);
+    public record TenantRequest
+    {
+        public string? Code { get; init; }
+        public string? Name { get; init; }
+        public string? LegacyUvoznik { get; init; }
+        public string? TaxNumber { get; init; }
+        public string? Address { get; init; }
+        public string? Country { get; init; }
+        public string? ContactName { get; init; }
+        public string? Email { get; init; }
+        public string? Phone { get; init; }
+        public string? CustomsAuthorizationNumber { get; init; }
+        public string? DefaultLanguage { get; init; }
+        public bool? IsActive { get; init; }
+        public bool? InflateImportForWaste { get; init; }
+        public bool? AllowFefoAutoPick { get; init; }
+    }
+
+    public record TenantFefoFlagRequest
+    {
+        public bool AllowFefoAutoPick { get; init; }
+    }
 }

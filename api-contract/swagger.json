@@ -3730,6 +3730,65 @@
         }
       }
     },
+    "/api/Tenants/{id}/settings/fefo": {
+      "put": {
+        "tags": [
+          "Tenants"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantFefoFlagRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantFefoFlagRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantFefoFlagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Traceability/trace-forward": {
       "get": {
         "tags": [
@@ -3947,6 +4006,65 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/UserPrefs/field-history": {
+      "get": {
+        "tags": [
+          "UserPrefs"
+        ],
+        "parameters": [
+          {
+            "name": "fieldKey",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "UserPrefs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordFieldValueRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordFieldValueRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordFieldValueRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -4392,6 +4510,68 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/MoveBatchAcrossStagesCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/inventory/mass-transfer/preview": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferPreviewQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferPreviewQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferPreviewQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/inventory/mass-transfer": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MassLocationTransferCommand"
               }
             }
           }
@@ -6221,6 +6401,94 @@
         },
         "additionalProperties": false
       },
+      "MassLocationTransferCommand": {
+        "type": "object",
+        "properties": {
+          "targetLocationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrn": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceWarehouseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceLocationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "qualityStatus": {
+            "$ref": "#/components/schemas/QualityStatus"
+          },
+          "lonProcessState": {
+            "$ref": "#/components/schemas/LonProcessState"
+          },
+          "movementDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MassLocationTransferPreviewQuery": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "batchNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "mrn": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceWarehouseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceLocationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "qualityStatus": {
+            "$ref": "#/components/schemas/QualityStatus"
+          },
+          "lonProcessState": {
+            "$ref": "#/components/schemas/LonProcessState"
+          },
+          "targetLocationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "MaterialConsumptionDto": {
         "type": "object",
         "properties": {
@@ -6500,6 +6768,20 @@
           "customsDeclarationId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RecordFieldValueRequest": {
+        "type": "object",
+        "properties": {
+          "fieldKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -6903,6 +7185,18 @@
           },
           "inflateImportForWaste": {
             "type": "boolean"
+          },
+          "allowFefoAutoPick": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TenantFefoFlagRequest": {
+        "type": "object",
+        "properties": {
+          "allowFefoAutoPick": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -6955,6 +7249,14 @@
             "nullable": true
           },
           "isActive": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "inflateImportForWaste": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "allowFefoAutoPick": {
             "type": "boolean",
             "nullable": true
           }

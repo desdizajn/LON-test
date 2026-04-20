@@ -440,6 +440,28 @@
     "submit": "Zhvendos të gjitha",
     "success": "U zhvendosën {{count}} bilance, gjithsej {{qty}} njësi."
   },
+  "massTransfer": {
+    "title": "Ndryshim masiv i vendndodhjes",
+    "hint": "Filtro inventarin sipas çdo kriteri dhe transfero çdo rresht që përputhet në një vendndodhje të vetme objektivi me një thirrje atomike.",
+    "item": "Artikull",
+    "batch": "Batch",
+    "sourceWarehouse": "Nga depo",
+    "sourceLocation": "Nga vendndodhja",
+    "quality": "Cilësia",
+    "lonState": "Gjendja LON",
+    "target": "Vendndodhja objektiv",
+    "reason": "Arsyeja",
+    "preview": "Paraparje",
+    "commit": "Ekzekuto",
+    "previewHeader": "Paraparje",
+    "noMatches": "Asnjë rresht nuk përputhet me filtrin.",
+    "confirmPrompt": "Do të zhvendosen {{summary}}. Vazhdo?",
+    "doneHeader": "E përfunduar",
+    "rowsMoved": "rreshta të zhvendosur",
+    "totalQty": "gjithsej",
+    "movementsCount": "Lëvizje",
+    "qty": "Sasi"
+  },
   "locationType": {
     "Receiving": "Pranim",
     "Storage": "Magazinë",
