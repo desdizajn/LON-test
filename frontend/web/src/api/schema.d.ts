@@ -1413,6 +1413,213 @@ export interface paths {
       };
     };
   };
+  "/api/Machines/{id}/state-events": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["LogStateBody"];
+          "text/json": components["schemas"]["LogStateBody"];
+          "application/*+json": components["schemas"]["LogStateBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/current-states": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/downtime": {
+    get: {
+      parameters: {
+        query?: {
+          machineId?: string;
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["LogDowntimeBody"];
+          "text/json": components["schemas"]["LogDowntimeBody"];
+          "application/*+json": components["schemas"]["LogDowntimeBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/downtime/{id}/close": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CloseDowntimeBody"];
+          "text/json": components["schemas"]["CloseDowntimeBody"];
+          "application/*+json": components["schemas"]["CloseDowntimeBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/downtime/pareto": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/maintenance-schedules": {
+    get: {
+      parameters: {
+        query?: {
+          activeOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateScheduleBody"];
+          "text/json": components["schemas"]["CreateScheduleBody"];
+          "application/*+json": components["schemas"]["CreateScheduleBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/maintenance-schedules/{id}": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateScheduleBody"];
+          "text/json": components["schemas"]["UpdateScheduleBody"];
+          "application/*+json": components["schemas"]["UpdateScheduleBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/maintenance-work-orders": {
+    get: {
+      parameters: {
+        query?: {
+          machineId?: string;
+          openOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateWorkOrderBody"];
+          "text/json": components["schemas"]["CreateWorkOrderBody"];
+          "application/*+json": components["schemas"]["CreateWorkOrderBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Machines/maintenance-work-orders/{id}/complete": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CompleteWorkOrderBody"];
+          "text/json": components["schemas"]["CompleteWorkOrderBody"];
+          "application/*+json": components["schemas"]["CompleteWorkOrderBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/MasterData/machines": {
     get: {
       parameters: {
@@ -3015,6 +3222,10 @@ export interface components {
       currentPassword?: string | null;
       newPassword?: string | null;
     };
+    CloseDowntimeBody: {
+      /** Format: date-time */
+      end?: string;
+    };
     CodeListItemRequest: {
       listType?: string | null;
       code?: string | null;
@@ -3022,6 +3233,13 @@ export interface components {
       descriptionEN?: string | null;
       /** Format: int32 */
       sortOrder?: number;
+    };
+    CompleteWorkOrderBody: {
+      /** Format: date-time */
+      completedAt?: string | null;
+      notes?: string | null;
+      /** Format: double */
+      costImpact?: number | null;
     };
     ConceptRequest: {
       concept?: string | null;
@@ -3177,6 +3395,17 @@ export interface components {
       specialRemarks?: string | null;
       lines?: components["schemas"]["ReturnLineDto"][] | null;
     };
+    CreateScheduleBody: {
+      /** Format: uuid */
+      machineId?: string;
+      taskDescription?: string | null;
+      /** Format: int32 */
+      intervalDays?: number;
+      /** Format: date-time */
+      lastDone?: string | null;
+      /** Format: date-time */
+      nextDue?: string | null;
+    };
     CreateShiftRequest: {
       name?: string | null;
       startTime?: string | null;
@@ -3220,6 +3449,20 @@ export interface components {
       /** Format: uuid */
       locationId?: string | null;
       slots?: components["schemas"]["WasteSlot"][] | null;
+    };
+    CreateWorkOrderBody: {
+      /** Format: uuid */
+      machineId?: string;
+      /** Format: uuid */
+      scheduleId?: string | null;
+      /** Format: date-time */
+      scheduledDate?: string;
+      /** Format: uuid */
+      technicianEmployeeId?: string | null;
+      taskDescription?: string | null;
+      notes?: string | null;
+      /** Format: double */
+      costImpact?: number | null;
     };
     CreditGuaranteeCommand: {
       /** Format: uuid */
@@ -3279,6 +3522,11 @@ export interface components {
      * @enum {integer}
      */
     DeclarationStatus: 0 | 1 | 2 | 3 | 99;
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    DowntimeCategory: 1 | 2 | 3 | 4 | 5 | 6 | 99;
     EmployeeDto: {
       /** Format: uuid */
       id?: string;
@@ -3419,6 +3667,28 @@ export interface components {
      * @enum {integer}
      */
     LocationType: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    LogDowntimeBody: {
+      /** Format: uuid */
+      machineId?: string;
+      /** Format: date-time */
+      start?: string;
+      /** Format: date-time */
+      end?: string | null;
+      category?: components["schemas"]["DowntimeCategory"];
+      reason?: string | null;
+      /** Format: double */
+      costImpact?: number | null;
+      /** Format: uuid */
+      reportedByEmployeeId?: string | null;
+    };
+    LogStateBody: {
+      state?: components["schemas"]["MachineState"];
+      /** Format: date-time */
+      changedAt?: string | null;
+      /** Format: uuid */
+      changedByEmployeeId?: string | null;
+      notes?: string | null;
+    };
     LoginRequest: {
       username?: string | null;
       password?: string | null;
@@ -3443,6 +3713,11 @@ export interface components {
       serialNumber?: string | null;
       isActive?: boolean;
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    MachineState: 1 | 2 | 3 | 4 | 5;
     MassLocationTransferCommand: {
       /** Format: uuid */
       targetLocationId?: string;
@@ -3761,6 +4036,16 @@ export interface components {
       phone?: string | null;
       position?: string | null;
       department?: string | null;
+      isActive?: boolean;
+    };
+    UpdateScheduleBody: {
+      taskDescription?: string | null;
+      /** Format: int32 */
+      intervalDays?: number;
+      /** Format: date-time */
+      lastDone?: string | null;
+      /** Format: date-time */
+      nextDue?: string;
       isActive?: boolean;
     };
     UpdateShiftRequest: {

@@ -213,6 +213,71 @@ export const productionApi = {
   getShortage: () => api.get('/Production/shortage'),
 };
 
+// P11.1–P11.5 — machine operations (state, downtime, maintenance)
+export const machinesApi = {
+  // State events
+  logState: (machineId: string, payload: {
+    state: number;
+    changedAt?: string | null;
+    changedByEmployeeId?: string | null;
+    notes?: string | null;
+  }) => api.post(`/Machines/${machineId}/state-events`, payload),
+  getCurrentStates: () => api.get('/Machines/current-states'),
+
+  // Downtime
+  logDowntime: (payload: {
+    machineId: string;
+    start: string;
+    end?: string | null;
+    category: number;
+    reason: string;
+    costImpact?: number | null;
+    reportedByEmployeeId?: string | null;
+  }) => api.post('/Machines/downtime', payload),
+  closeDowntime: (id: string, end: string) =>
+    api.post(`/Machines/downtime/${id}/close`, { end }),
+  getDowntime: (params?: { machineId?: string; from?: string; to?: string }) =>
+    api.get('/Machines/downtime', { params }),
+  getDowntimePareto: (params?: { from?: string; to?: string }) =>
+    api.get('/Machines/downtime/pareto', { params }),
+
+  // Maintenance schedules
+  createSchedule: (payload: {
+    machineId: string;
+    taskDescription: string;
+    intervalDays: number;
+    lastDone?: string | null;
+    nextDue?: string | null;
+  }) => api.post('/Machines/maintenance-schedules', payload),
+  updateSchedule: (id: string, payload: {
+    taskDescription: string;
+    intervalDays: number;
+    lastDone?: string | null;
+    nextDue: string;
+    isActive: boolean;
+  }) => api.put(`/Machines/maintenance-schedules/${id}`, payload),
+  getSchedules: (activeOnly: boolean = true) =>
+    api.get('/Machines/maintenance-schedules', { params: { activeOnly } }),
+
+  // Maintenance work orders
+  createWorkOrder: (payload: {
+    machineId: string;
+    scheduleId?: string | null;
+    scheduledDate: string;
+    technicianEmployeeId?: string | null;
+    taskDescription?: string | null;
+    notes?: string | null;
+    costImpact?: number | null;
+  }) => api.post('/Machines/maintenance-work-orders', payload),
+  completeWorkOrder: (id: string, payload: {
+    completedAt?: string | null;
+    notes?: string | null;
+    costImpact?: number | null;
+  }) => api.post(`/Machines/maintenance-work-orders/${id}/complete`, payload),
+  getWorkOrders: (params?: { machineId?: string; openOnly?: boolean }) =>
+    api.get('/Machines/maintenance-work-orders', { params }),
+};
+
 export const customsApi = {
   // Declarations
   getDeclarations: (isCleared?: boolean) => 

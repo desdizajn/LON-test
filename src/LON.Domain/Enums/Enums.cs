@@ -189,3 +189,26 @@ public enum ImportSessionStatus
     Committed = 3,
     Failed = 4
 }
+
+/// <summary>P11.1 — current machine operating state. Manually updated until
+/// telemetry lands.</summary>
+public enum MachineState
+{
+    Running = 1,
+    Idle = 2,
+    Down = 3,
+    SetUp = 4,
+    Maintenance = 5
+}
+
+/// <summary>P11.2 — root-cause taxonomy for DowntimeEvent.</summary>
+public enum DowntimeCategory
+{
+    Breakdown = 1,
+    MissingMaterial = 2,
+    MissingOperator = 3,
+    Changeover = 4,
+    Quality = 5,
+    PowerOrUtility = 6,
+    Other = 99
+}

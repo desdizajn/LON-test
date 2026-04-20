@@ -90,6 +90,12 @@ import ProductionCompleted from './pages/Production/ProductionCompleted';
 import ProductionAtRisk from './pages/Production/ProductionAtRisk';
 import ProductionShortage from './pages/Production/ProductionShortage';
 
+// P11.1/11.2/11.4/11.5 — machine operations
+import MachineStatus from './pages/Machines/MachineStatus';
+import MachineDowntime from './pages/Machines/MachineDowntime';
+import MaintenancePlan from './pages/Machines/MaintenancePlan';
+import MaintenanceHistory from './pages/Machines/MaintenanceHistory';
+
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
@@ -529,68 +535,23 @@ const App: React.FC = () => {
             />
 
             {/* ───────── P6.37.10 — ⚙️ Machines / Work Centers / Efficiency ───────── */}
-            <Route
-              path="/machines/status"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.status"
-                  workPlanRef="P3.X — live machine status dashboard"
-                  backendStatus="partial"
-                  plannedBehavior="Live статус на сите машини: running / idle / down / maintenance. Со current operator, current order, utilization %."
-                  existingDataHint="Master регистар (/master-data/machines) постои; live status бара telemetry integration."
-                />
-              }
-            />
+            <Route path="/machines/status" element={<MachineStatus />} />
             <Route path="/machines/work-centers" element={<WorkCenterList />} />
-            <Route
-              path="/machines/downtime"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.downtime"
-                  workPlanRef="P3.X — downtime event log"
-                  backendStatus="missing"
-                  plannedBehavior="Downtime events: машина, start/end time, причина (breakdown / setup / missing material / missing operator), cost impact."
-                />
-              }
-            />
+            <Route path="/machines/downtime" element={<MachineDowntime />} />
             <Route
               path="/machines/oee"
               element={
                 <PlaceholderPage
                   groupKey="nav.groups.machines"
                   titleKey="nav.machines.oee"
-                  workPlanRef="P3.X — OEE calculation"
+                  workPlanRef="P11.3 — OEE (depends on P11.1 + P11.2 + P8.9 time log)"
                   backendStatus="missing"
                   plannedBehavior="OEE (Availability × Performance × Quality) по машина / линија / смена. Benchmark vs target + тренд низ време."
                 />
               }
             />
-            <Route
-              path="/machines/maintenance-plan"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.maintenancePlan"
-                  workPlanRef="P3.X — preventive maintenance schedule"
-                  backendStatus="missing"
-                  plannedBehavior="PM план по машина: секое N часа / денови / парчиња. Alerts за наредни превентивни сервиси."
-                />
-              }
-            />
-            <Route
-              path="/machines/maintenance-history"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.maintenanceHistory"
-                  workPlanRef="P3.X — maintenance work orders"
-                  backendStatus="missing"
-                  plannedBehavior="Историја на интервенции: work orders, parts used, cost, MTBF / MTTR metrics."
-                />
-              }
-            />
+            <Route path="/machines/maintenance-plan" element={<MaintenancePlan />} />
+            <Route path="/machines/maintenance-history" element={<MaintenanceHistory />} />
             <Route
               path="/machines/capacity"
               element={

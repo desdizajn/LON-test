@@ -165,17 +165,19 @@ payroll export файл добар за upload во надворешна пла�
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P11.1** | `/machines/status` | new-entity: MachineStateEvent + current-state query | M | P1 | — | Manual state updates до telemetry. |
-| **P11.2** | `/machines/downtime` | new-entity: DowntimeEvent | M | P1 | — | Log + Pareto chart. |
+| **P11.1** | `/machines/status` | new-entity: MachineStateEvent + current-state query | M | P1 | — | **✅ 2026-04-20** — `MachineStateEvent` entity + `POST /Machines/{id}/state-events` + `GET /Machines/current-states` resolver. `MachineStatus.tsx` со pill-based states + inline change modal. |
+| **P11.2** | `/machines/downtime` | new-entity: DowntimeEvent | M | P1 | — | **✅ 2026-04-20** — `DowntimeEvent` entity + POST/close endpoints + `GET /Machines/downtime/pareto` category rollup. `MachineDowntime.tsx` со inline log + Pareto bars + open-events highlight. |
 | **P11.3** | `/machines/oee` | aggregate: MachineStateEvent + DowntimeEvent + production pieces | L | P2 | P11.1, P11.2, P8.9 | Availability × Performance × Quality формула. |
-| **P11.4** | `/machines/maintenance-plan` | new-entity: MaintenanceSchedule | M | P1 | — | Calendar view + NextDue alerts. |
-| **P11.5** | `/machines/maintenance-history` | new-entity: MaintenanceWorkOrder | S | P2 | P11.4 | Per-machine log. |
+| **P11.4** | `/machines/maintenance-plan` | new-entity: MaintenanceSchedule | M | P1 | — | **✅ 2026-04-20** — `MaintenanceSchedule` entity + POST/PUT/GET. NextDue auto-computed од LastDone + IntervalDays, advanced at work-order completion. `MaintenancePlan.tsx` со risk-coloured days-until-due. |
+| **P11.5** | `/machines/maintenance-history` | new-entity: MaintenanceWorkOrder | S | P2 | P11.4 | **✅ 2026-04-20** — `MaintenanceWorkOrder` entity + POST/Complete/GET. Complete action rolls Schedule.LastDone + NextDue forward. `MaintenanceHistory.tsx` со inline create + complete action + filter by machine/open. |
 | **P11.6** | `/machines/capacity` | aggregate: WorkCenter × RoutingOperation.StandardTime × shift hours | S | P2 | — | Проста roll-up. |
 | **P11.7** | `/machines/setup-time` | new-entity: SetupEvent | M | P3 | — | Matrix view (From×To). |
 | **P11.8** | `/machines/bottleneck` | aggregate: Throughput vs capacity per work center | L | P3 | P11.1, P11.3, P11.6 | Weeks of analysis work. |
 
 **Phase 11 DoD:** мантенанс менаџер гледа next-due maintenance; shift supervisor
-знае колку била downtime денес по машина.
+знае колку била downtime денес по машина. **Sprint 3 closed 2026-04-20
+(P11.1/11.2/11.4/11.5).** P11.3 OEE + P11.6–P11.8 long-tail — зависат од ops time
+log (P8.9) или се bottleneck аналитика за подоцна.
 
 ---
 

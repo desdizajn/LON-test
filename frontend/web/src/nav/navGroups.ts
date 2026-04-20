@@ -543,11 +543,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.status',
         icon: '📡',
         path: '/machines/status',
-        backendStatus: 'partial',
-        workPlanRef: 'P3.X — live machine status dashboard',
-        plannedBehavior:
-          'Live статус на сите машини: running / idle / down / maintenance. Со current operator, current order, utilization %.',
-        existingDataHint: 'Master регистар (/master-data/machines) постои; live status бара telemetry integration.',
+        backendStatus: 'exists',
+        existingDataHint: 'P11.1 — MachineStateEvent log + current-state resolver. Manual entry until telemetry lands.',
       },
       {
         key: 'machines-work-centers',
@@ -563,10 +560,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.downtime',
         icon: '🔴',
         path: '/machines/downtime',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — downtime event log',
-        plannedBehavior:
-          'Downtime events: машина, start/end time, причина (breakdown / setup / missing material / missing operator), cost impact.',
+        backendStatus: 'exists',
+        existingDataHint: 'P11.2 — DowntimeEvent log + close action + Pareto-by-category rollup.',
       },
       {
         key: 'machines-oee',
@@ -583,20 +578,16 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.maintenancePlan',
         icon: '📋',
         path: '/machines/maintenance-plan',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — preventive maintenance schedule',
-        plannedBehavior:
-          'PM план по машина: секое N часа / денови / парчиња. Alerts за наредни превентивни сервиси.',
+        backendStatus: 'exists',
+        existingDataHint: 'P11.4 — MaintenanceSchedule per machine with interval-days-driven NextDue.',
       },
       {
         key: 'machines-maintenance-history',
         labelKey: 'nav.machines.maintenanceHistory',
         icon: '🗂️',
         path: '/machines/maintenance-history',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — maintenance work orders',
-        plannedBehavior:
-          'Историја на интервенции: work orders, parts used, cost, MTBF / MTTR metrics.',
+        backendStatus: 'exists',
+        existingDataHint: 'P11.5 — MaintenanceWorkOrder list + Complete action that rolls schedule NextDue.',
       },
       {
         key: 'machines-capacity',

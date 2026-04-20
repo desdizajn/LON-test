@@ -31,6 +31,10 @@ public interface IApplicationDbContext
     DbSet<Shift> Shifts { get; }
     DbSet<WorkCenter> WorkCenters { get; }
     DbSet<Machine> Machines { get; }
+    DbSet<MachineStateEvent> MachineStateEvents { get; }
+    DbSet<DowntimeEvent> DowntimeEvents { get; }
+    DbSet<MaintenanceSchedule> MaintenanceSchedules { get; }
+    DbSet<MaintenanceWorkOrder> MaintenanceWorkOrders { get; }
     DbSet<UserFieldHistory> UserFieldHistories { get; }
 
     // Knowledge Base

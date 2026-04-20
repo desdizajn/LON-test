@@ -2,6 +2,99 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 3: Phase 11.1/11.2/11.4/11.5 machine basics shipped
+
+Sprint 3 од `docs/ROADMAP.md` — machine operations (status + downtime +
+preventive maintenance + work orders). Еден коњ-session: 4 нови entity-s, 1
+migration, нов `MachineOperationsController`, 4 FE pages, 4 integration test
+cases.
+
+**Нови entities (`src/LON.Domain/Entities/MasterData/Machines.cs`):**
+- `MachineStateEvent (Id, TenantId, MachineId, State, ChangedAt, ChangedByEmployeeId?, Notes?)`
+- `DowntimeEvent (Id, TenantId, MachineId, Start, End?, DurationMinutes?, Category, Reason, CostImpact?, ReportedByEmployeeId?)`
+- `MaintenanceSchedule (Id, TenantId, MachineId, TaskDescription, IntervalDays, LastDone?, NextDue, IsActive)`
+- `MaintenanceWorkOrder (Id, TenantId, MachineId, ScheduleId?, ScheduledDate, CompletedAt?, TechnicianEmployeeId?, TaskDescription?, Notes?, CostImpact?)`
+
+**Нови enums:**
+- `MachineState { Running=1, Idle=2, Down=3, SetUp=4, Maintenance=5 }`
+- `DowntimeCategory { Breakdown=1, MissingMaterial=2, MissingOperator=3, Changeover=4, Quality=5, PowerOrUtility=6, Other=99 }`
+
+**Миграција `P11_MachineOperations`:** 4 нови табели со TenantId FK, `decimal(18,2)`
+за Duration/Cost, композитни индекси `(TenantId, MachineId, Start/ChangedAt/ScheduledDate)`
++ `(TenantId, NextDue)` за хот-пат на maintenance plan query. IdSet auto-picked преку
+`ApplyConfigurationsFromAssembly`; ITenantScoped global query filter се applied-у без
+мануелно вriting.
+
+**P11.1 `/machines/status`** — `MachineStatus.tsx`. `GET /Machines/current-states`
+прави per-machine latest-state lookup (GroupBy + OrderByDesc ChangedAt + First).
+Frontend: 5 summary counters (Running/Idle/Down/SetUp/Maintenance) + pill
+per row + inline "Change state" modal → POST state-event → reload. Manual-only до
+telemetry land (P11.3 OEE dep chain).
+
+**P11.2 `/machines/downtime`** — `MachineDowntime.tsx`. Inline log form (machine
++ category + start/end + reason + cost). Two sections:
+- Pareto by category — `GET /Machines/downtime/pareto` sum(durationMinutes)
+  desc, со share bar per row.
+- Event list — open events highlighted (fff3e0 background) со "Close" action
+  → POST `/downtime/{id}/close` → computes `DurationMinutes` server-side.
+
+Validation: `downtime.reason_required` error code when reason is whitespace;
+`downtime.end_before_start` when End < Start.
+
+**P11.4 `/machines/maintenance-plan`** — `MaintenancePlan.tsx`. `POST
+/Machines/maintenance-schedules` со auto-computed NextDue (prefer explicit →
+LastDone + IntervalDays → today + IntervalDays). GET sortiran по NextDue asc со
+days-until-due colour band (red < 0, amber ≤ 7, green > 7).
+
+**P11.5 `/machines/maintenance-history`** — `MaintenanceHistory.tsx`. GET
+work-orders со filter по machine + openOnly toggle. Ad-hoc create form inline.
+Complete action (`POST /maintenance-work-orders/{id}/complete`) на backend:
+(а) sets CompletedAt + updates Notes/CostImpact, (б) ако WO е линкан на Schedule
+кои е Active, rolls `Schedule.LastDone = completedAt` и `Schedule.NextDue =
+completedAt + IntervalDays`. Ова е главниот начин како planovi напредуваат — без
+cron.
+
+**Integration test** (`tests/LON.IntegrationTests/MachineOperationsTests.cs`)
+покрива 4 cases:
+1. `LogState_ThenCurrentStates_ReflectsLatestRow` — два consecutive state events
+   → current resolver враќа вториот (Running + notes=started).
+2. `LogDowntime_ThenClose_ComputesDurationMinutes` — open event (30 min ago) →
+   close at +18 min → DurationMinutes ≈ 18.
+3. `DowntimeWithBadReason_Returns400_WithErrorCode` — blank reason → 400 +
+   `errorCode=downtime.reason_required`.
+4. `CompleteWorkOrder_RollsSchedulesNextDueForward` — create schedule LastDone=
+   2026-01-01 NextDue=2026-03-01, create WO linked to it, complete on 2026-03-05
+   → LastDone→2026-03-05, NextDue→2026-04-04 (IntervalDays=30).
+
+Сите 3 backend DTO + request body shapes се exposed via Swagger. Интеграциски
+тестови не се извршени локално (нема Docker desktop) — CI gate fails ако тест
+паѓа.
+
+**Cross-cutting:**
+- `frontend/web/src/services/api.ts` — нов `machinesApi` export со 11 endpoints.
+- 4 i18n namespaces (`machineStatus`, `downtime`, `maintenancePlan`,
+  `maintenanceHistory`) × 4 locales.
+- navGroups: 4 `missing → exists` со P11.x existingDataHint pointers.
+- App.tsx: 4 `PlaceholderPage` blocks replaced; renamed new controller
+  (`MachineOperationsController`) to avoid class collision со existing
+  master-data `MachinesController`. Route explicit as `[Route("api/Machines")]`.
+
+**Contract hygiene:**
+- `./scripts/gen-api-types.sh` — swagger + schema.d.ts носат 8 нови paths.
+- `IApplicationDbContext` expanded со 4 нови DbSets (per Phase-0 lesson).
+- `dotnet build` на Infrastructure + Application + API + IntegrationTests:
+  0/0 errors. `npm run build` bundle `main.02ced61e.js` (+8.4kB).
+
+**Phase 11 long-tail (deferred):**
+- P11.3 OEE (Availability × Performance × Quality) — needs P8.9 piece-level
+  time log.
+- P11.6 capacity roll-up, P11.7 setup matrix, P11.8 bottleneck analysis — P3
+  priority, nice-to-have.
+
+VPS deploy next.
+
+---
+
 ## 2026-04-20 — Sprint 2: Phase 8.1–8.5 production visibility shipped
 
 Sprint 2 од `docs/ROADMAP.md` — TEKSPORT primary-flow visibility (днес, WIP,

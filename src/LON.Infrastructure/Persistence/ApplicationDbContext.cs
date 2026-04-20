@@ -35,6 +35,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<WorkCenter> WorkCenters => Set<WorkCenter>();
     public DbSet<Machine> Machines => Set<Machine>();
+    public DbSet<MachineStateEvent> MachineStateEvents => Set<MachineStateEvent>();
+    public DbSet<DowntimeEvent> DowntimeEvents => Set<DowntimeEvent>();
+    public DbSet<MaintenanceSchedule> MaintenanceSchedules => Set<MaintenanceSchedule>();
+    public DbSet<MaintenanceWorkOrder> MaintenanceWorkOrders => Set<MaintenanceWorkOrder>();
     public DbSet<UserFieldHistory> UserFieldHistories => Set<UserFieldHistory>();
 
     // Knowledge Base - Master Data
