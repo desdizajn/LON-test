@@ -57,7 +57,11 @@
     "notes": "Notes",
     "refresh": "Refresh",
     "export": "Export",
-    "exportExcel": "Export to Excel"
+    "exportExcel": "Export to Excel",
+    "all": "All",
+    "select": "select",
+    "generate": "Generate",
+    "exportCsv": "Export CSV"
   },
   "kbSearch": {
     "title": "Knowledge base search",
@@ -1114,6 +1118,85 @@
       "Partners": "Partners",
       "BOMs": "BOMs (recipes)",
       "CustomsDeclarations": "Customs declarations"
+    }
+  },
+  "finance": {
+    "contracts": {
+      "title": "Client contracts",
+      "subtitle": "Partner contracts + rate cards (per-piece / per-minute). Authoritative source for invoicing.",
+      "listTitle": "Contracts",
+      "number": "Number",
+      "partner": "Partner",
+      "filterPartner": "Partner",
+      "activeOnly": "Active only",
+      "newContract": "New contract",
+      "newRate": "New rate",
+      "editRate": "Edit rate",
+      "validFrom": "Valid from",
+      "validTo": "Valid to",
+      "validity": "Validity",
+      "paymentTerms": "Payment terms (days)",
+      "paymentTermsShort": "{{days}} day terms",
+      "currency": "Currency",
+      "notes": "Notes",
+      "rateCard": "Rate card",
+      "rateType": "Type",
+      "rate": "Rate",
+      "target": "Target",
+      "item": "Item",
+      "operationCode": "Operation code",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "selectAContract": "Select a contract from the list to see details",
+      "confirmDeleteRate": "Delete this rate?",
+      "rateTypes": {
+        "perPiece": "Per piece",
+        "perMinute": "Per minute",
+        "unknown": "unknown"
+      },
+      "errors": {
+        "numberAndPartnerRequired": "Number and partner are required.",
+        "rateMissingItem": "PerPiece rate requires an item.",
+        "rateMissingOperation": "PerMinute rate requires an operation code."
+      }
+    },
+    "invoicing": {
+      "title": "Invoicing",
+      "subtitle": "Draft → Issued → Paid. Drafts can be generated from a PO via active contract + rate.",
+      "listTitle": "Invoices",
+      "number": "Number",
+      "partner": "Partner",
+      "contract": "Contract",
+      "status": "Status",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "due": "Due",
+      "issued": "Issued",
+      "issue": "Issue",
+      "markPaid": "Mark paid",
+      "cancel": "Cancel",
+      "cancelReason": "Cancellation reason (optional):",
+      "selectInvoice": "Select an invoice from the list",
+      "lines": "Lines",
+      "description": "Description",
+      "reference": "Reference",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "generateFromPo": "Generate from PO",
+      "productionOrder": "Production order",
+      "overrideUnitPrice": "Override price",
+      "useContractRate": "Leave blank for contract rate",
+      "generateHint": "If no active contract + rate for this item, provide an override.",
+      "outstanding": "Issued (unpaid)",
+      "paidTotal": "Paid",
+      "drafts": "Drafts",
+      "statuses": {
+        "draft": "Draft",
+        "issued": "Issued",
+        "paid": "Paid",
+        "cancelled": "Cancelled",
+        "unknown": "unknown"
+      }
     }
   }
 }

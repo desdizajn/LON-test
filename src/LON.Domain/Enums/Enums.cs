@@ -233,3 +233,26 @@ public enum DowntimeCategory
     PowerOrUtility = 6,
     Other = 99
 }
+
+/// <summary>
+/// P12.3 — rate card entry dimension. PerPiece rows require ItemId
+/// (finished good). PerMinute rows require OperationCode (links to
+/// routing operations / future OperationTimeLog).
+/// </summary>
+public enum RateType
+{
+    PerPiece = 1,
+    PerMinute = 2
+}
+
+/// <summary>
+/// P12.2 — invoice lifecycle. Draft is fully editable; Issued is immutable
+/// except for status transitions; Paid/Cancelled are terminal.
+/// </summary>
+public enum InvoiceStatus
+{
+    Draft = 1,
+    Issued = 2,
+    Paid = 3,
+    Cancelled = 4
+}

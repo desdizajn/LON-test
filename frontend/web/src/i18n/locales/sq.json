@@ -57,7 +57,11 @@
     "notes": "Shënime",
     "refresh": "Rifresko",
     "export": "Eksporto",
-    "exportExcel": "Eksporto në Excel"
+    "exportExcel": "Eksporto në Excel",
+    "all": "Të gjitha",
+    "select": "zgjidh",
+    "generate": "Gjenero",
+    "exportCsv": "Eksporto në CSV"
   },
   "kbSearch": {
     "title": "Kërkim në bazën e njohurive",
@@ -1114,6 +1118,85 @@
       "Partners": "Partnerët",
       "BOMs": "BOM-et (recetat)",
       "CustomsDeclarations": "Deklaratat doganore"
+    }
+  },
+  "finance": {
+    "contracts": {
+      "title": "Kontratat e klientit",
+      "subtitle": "Kontrata me partnerë + rate karta (për copë / për minutë). Burim autoritativ për faturim.",
+      "listTitle": "Kontratat",
+      "number": "Numri",
+      "partner": "Partneri",
+      "filterPartner": "Partneri",
+      "activeOnly": "Vetëm aktive",
+      "newContract": "Kontratë e re",
+      "newRate": "Rate i ri",
+      "editRate": "Ndrysho rate",
+      "validFrom": "Vlen nga",
+      "validTo": "Vlen deri",
+      "validity": "Vlefshmëria",
+      "paymentTerms": "Afati i pagesës (ditë)",
+      "paymentTermsShort": "{{days}} ditë afat",
+      "currency": "Valuta",
+      "notes": "Shënime",
+      "rateCard": "Rate karta",
+      "rateType": "Lloji",
+      "rate": "Çmimi",
+      "target": "Objektivi",
+      "item": "Artikulli",
+      "operationCode": "Kodi i operacionit",
+      "activate": "Aktivizo",
+      "deactivate": "Çaktivizo",
+      "selectAContract": "Zgjidh kontratë nga lista për detaje",
+      "confirmDeleteRate": "Ta fshijmë këtë rate?",
+      "rateTypes": {
+        "perPiece": "Për copë",
+        "perMinute": "Për minutë",
+        "unknown": "panjohur"
+      },
+      "errors": {
+        "numberAndPartnerRequired": "Numri dhe partneri janë të detyrueshëm.",
+        "rateMissingItem": "PerPiece rate kërkon artikull.",
+        "rateMissingOperation": "PerMinute rate kërkon kod operacioni."
+      }
+    },
+    "invoicing": {
+      "title": "Faturimi",
+      "subtitle": "Draft → Issued → Paid. Draft mund të gjenerohet nga PO me kontratë aktive + rate.",
+      "listTitle": "Faturat",
+      "number": "Numri",
+      "partner": "Partneri",
+      "contract": "Kontrata",
+      "status": "Statusi",
+      "total": "Totali",
+      "subtotal": "Subtotal",
+      "due": "Afati",
+      "issued": "Lëshuar",
+      "issue": "Lësho",
+      "markPaid": "Shëno e paguar",
+      "cancel": "Anulo",
+      "cancelReason": "Arsyeja e anulimit (opsionale):",
+      "selectInvoice": "Zgjidh faturë nga lista",
+      "lines": "Rreshtat",
+      "description": "Përshkrimi",
+      "reference": "Referenca",
+      "qty": "Sasia",
+      "unitPrice": "Çmim/njësi",
+      "generateFromPo": "Gjenero nga PO",
+      "productionOrder": "Urdhër prodhimi",
+      "overrideUnitPrice": "Override çmimi",
+      "useContractRate": "Lër bosh për rate-in e kontratës",
+      "generateHint": "Nëse nuk ka kontratë aktive + rate për këtë artikull, fut override.",
+      "outstanding": "Lëshuar (të papaguara)",
+      "paidTotal": "Të paguara",
+      "drafts": "Drafts",
+      "statuses": {
+        "draft": "Draft",
+        "issued": "Lëshuar",
+        "paid": "E paguar",
+        "cancelled": "E anuluar",
+        "unknown": "panjohur"
+      }
     }
   }
 }

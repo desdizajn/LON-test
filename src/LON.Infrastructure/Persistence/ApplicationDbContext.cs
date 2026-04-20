@@ -4,6 +4,7 @@ using LON.Application.Common.Interfaces;
 using LON.Domain.Common;
 using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Entities.Finance;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.Importing;
 using LON.Domain.Entities.MasterData;
@@ -94,6 +95,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<GuaranteeAccount> GuaranteeAccounts => Set<GuaranteeAccount>();
     public DbSet<GuaranteeLedgerEntry> GuaranteeLedgerEntries => Set<GuaranteeLedgerEntry>();
     public DbSet<DutyCalculation> DutyCalculations => Set<DutyCalculation>();
+
+    // Finance (P12.2 / P12.3)
+    public DbSet<ClientContract> ClientContracts => Set<ClientContract>();
+    public DbSet<RateCardEntry> RateCardEntries => Set<RateCardEntry>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
 
     // Traceability
     public DbSet<TraceLink> TraceLinks => Set<TraceLink>();

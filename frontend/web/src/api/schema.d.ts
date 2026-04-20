@@ -598,6 +598,272 @@ export interface paths {
       };
     };
   };
+  "/api/Finance/contracts": {
+    get: {
+      parameters: {
+        query?: {
+          partnerId?: string;
+          activeOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateContractBody"];
+          "text/json": components["schemas"]["CreateContractBody"];
+          "application/*+json": components["schemas"]["CreateContractBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/contracts/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateContractBody"];
+          "text/json": components["schemas"]["UpdateContractBody"];
+          "application/*+json": components["schemas"]["UpdateContractBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/contracts/{contractId}/rates": {
+    post: {
+      parameters: {
+        path: {
+          contractId: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpsertRateEntryBody"];
+          "text/json": components["schemas"]["UpsertRateEntryBody"];
+          "application/*+json": components["schemas"]["UpsertRateEntryBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/contracts/{contractId}/rates/{entryId}": {
+    delete: {
+      parameters: {
+        path: {
+          contractId: string;
+          entryId: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices": {
+    get: {
+      parameters: {
+        query?: {
+          partnerId?: string;
+          status?: components["schemas"]["InvoiceStatus"];
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateInvoiceBody"];
+          "text/json": components["schemas"]["CreateInvoiceBody"];
+          "application/*+json": components["schemas"]["CreateInvoiceBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}/lines": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["InvoiceLineBody"];
+          "text/json": components["schemas"]["InvoiceLineBody"];
+          "application/*+json": components["schemas"]["InvoiceLineBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}/lines/{lineId}": {
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+          lineId: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/generate-from-po": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["GenerateFromPoBody"];
+          "text/json": components["schemas"]["GenerateFromPoBody"];
+          "application/*+json": components["schemas"]["GenerateFromPoBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}/issue": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}/mark-paid": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["MarkPaidBody"];
+          "text/json": components["schemas"]["MarkPaidBody"];
+          "application/*+json": components["schemas"]["MarkPaidBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}/cancel": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CancelBody"];
+          "text/json": components["schemas"]["CancelBody"];
+          "application/*+json": components["schemas"]["CancelBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/invoices/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/FinishedGoods/awaiting-pack": {
     get: {
       responses: {
@@ -3411,6 +3677,9 @@ export interface components {
       reference?: string | null;
       createExportDeclaration?: boolean;
     };
+    CancelBody: {
+      reason?: string | null;
+    };
     CertifyDeclarationBody: {
       zaverkaNumber?: string | null;
       /** Format: date-time */
@@ -3468,6 +3737,20 @@ export interface components {
       /** Format: date-time */
       validTo?: string | null;
       notes?: string | null;
+    };
+    CreateContractBody: {
+      number?: string | null;
+      /** Format: uuid */
+      partnerId?: string;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
+      /** Format: int32 */
+      paymentTermsDays?: number;
+      currency?: string | null;
+      notes?: string | null;
+      rateCard?: components["schemas"]["RateCardEntryBody"][] | null;
     };
     CreateCustomsDeclarationCommand: {
       declarationNumber?: string | null;
@@ -3536,6 +3819,19 @@ export interface components {
       countryOfDestination?: string | null;
       specialRemarks?: string | null;
       lines?: components["schemas"]["ExportLineDto"][] | null;
+    };
+    CreateInvoiceBody: {
+      /** Format: uuid */
+      partnerId?: string;
+      /** Format: uuid */
+      contractId?: string | null;
+      /** Format: date-time */
+      issueDate?: string | null;
+      /** Format: date-time */
+      dueDate?: string | null;
+      currency?: string | null;
+      notes?: string | null;
+      lines?: components["schemas"]["InvoiceLineBody"][] | null;
     };
     CreateMaterialIssueCommand: {
       /** Format: uuid */
@@ -3797,6 +4093,16 @@ export interface components {
       /** Format: double */
       dischargeQuantity?: number;
     };
+    GenerateFromPoBody: {
+      /** Format: uuid */
+      productionOrderId?: string;
+      /** Format: uuid */
+      contractId?: string | null;
+      /** Format: double */
+      overrideUnitPrice?: number | null;
+      /** Format: date-time */
+      issueDate?: string | null;
+    };
     GuaranteeAccountRequest: {
       accountNumber?: string | null;
       accountName?: string | null;
@@ -3852,6 +4158,24 @@ export interface components {
     ImportTransforms: {
       columns?: components["schemas"]["ImportColumnTransform"][] | null;
     };
+    InvoiceLineBody: {
+      description?: string | null;
+      /** Format: uuid */
+      itemId?: string | null;
+      /** Format: uuid */
+      relatedProductionOrderId?: string | null;
+      /** Format: uuid */
+      relatedShipmentId?: string | null;
+      /** Format: double */
+      quantity?: number;
+      /** Format: double */
+      unitPrice?: number;
+    };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    InvoiceStatus: 1 | 2 | 3 | 4;
     IssueAllMaterialsBody: {
       /** Format: date-time */
       issueDate?: string;
@@ -3950,6 +4274,10 @@ export interface components {
      * @enum {integer}
      */
     MachineState: 1 | 2 | 3 | 4 | 5;
+    MarkPaidBody: {
+      /** Format: date-time */
+      paidAt?: string | null;
+    };
     MassLocationTransferCommand: {
       /** Format: uuid */
       targetLocationId?: string;
@@ -4067,6 +4395,25 @@ export interface components {
       errorMessage?: string | null;
       success?: boolean;
     };
+    RateCardEntryBody: {
+      rateType?: components["schemas"]["RateType"];
+      /** Format: uuid */
+      itemId?: string | null;
+      operationCode?: string | null;
+      /** Format: double */
+      ratePerUnit?: number;
+      currency?: string | null;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
+      notes?: string | null;
+    };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    RateType: 1 | 2;
     ReceiptLineDto: {
       /** Format: uuid */
       itemId?: string;
@@ -4245,6 +4592,14 @@ export interface components {
       description?: string | null;
       isActive?: boolean | null;
     };
+    UpdateContractBody: {
+      /** Format: date-time */
+      validTo?: string | null;
+      /** Format: int32 */
+      paymentTermsDays?: number;
+      isActive?: boolean;
+      notes?: string | null;
+    };
     UpdateCustomsDeclarationCommand: {
       /** Format: uuid */
       id?: string;
@@ -4292,6 +4647,22 @@ export interface components {
       fullName?: string | null;
       isActive?: boolean;
       roleIds?: string[] | null;
+    };
+    UpsertRateEntryBody: {
+      /** Format: uuid */
+      entryId?: string | null;
+      rateType?: components["schemas"]["RateType"];
+      /** Format: uuid */
+      itemId?: string | null;
+      operationCode?: string | null;
+      /** Format: double */
+      ratePerUnit?: number;
+      currency?: string | null;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
+      notes?: string | null;
     };
     UserDto: {
       /** Format: uuid */

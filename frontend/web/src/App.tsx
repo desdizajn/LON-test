@@ -112,6 +112,10 @@ import QuickEntry from './pages/QuickEntry';
 import TenantSettings from './pages/Admin/TenantSettings';
 import AuditLog from './pages/Admin/AuditLog';
 
+// P12.2 / P12.3 — Finance
+import ClientContracts from './pages/Finance/ClientContracts';
+import Invoicing from './pages/Finance/Invoicing';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -542,30 +546,10 @@ const App: React.FC = () => {
             />
 
             {/* ───────── P6.37.11 — 💵 Finance group ───────── */}
-            <Route
-              path="/finance/invoicing"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.invoicing"
-                  workPlanRef="P5.X — invoicing flow"
-                  backendStatus="missing"
-                  plannedBehavior="AR tracking: за фактурирање (завршени shipments), фактурирано, платено, overdue. Со aging buckets 0-30-60-90."
-                />
-              }
-            />
-            <Route
-              path="/finance/contracts"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.contracts"
-                  workPlanRef="P5.X — customer contracts + rates"
-                  backendStatus="missing"
-                  plannedBehavior="Клиентски договори: per-минута / per-парче rates, срок на важност, specijalni conditions. Authoritative source за invoicing."
-                />
-              }
-            />
+            {/* P12.2 — invoicing MVP (shipped) */}
+            <Route path="/finance/invoicing" element={<Invoicing />} />
+            {/* P12.3 — client contracts + rate cards (shipped) */}
+            <Route path="/finance/contracts" element={<ClientContracts />} />
             <Route path="/finance/guarantees" element={<Guarantees />} />
             <Route
               path="/finance/cost-accounting"

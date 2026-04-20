@@ -57,7 +57,11 @@
     "notes": "Белешки",
     "refresh": "Освежи",
     "export": "Извоз",
-    "exportExcel": "Извоз во Excel"
+    "exportExcel": "Извоз во Excel",
+    "all": "Сите",
+    "select": "избери",
+    "generate": "Генерирај",
+    "exportCsv": "Извоз во CSV"
   },
   "kbSearch": {
     "title": "Пребарај во базата на знаење",
@@ -1114,6 +1118,85 @@
       "Partners": "Партнери",
       "BOMs": "BOM-ови (рецепти)",
       "CustomsDeclarations": "Царински декларации"
+    }
+  },
+  "finance": {
+    "contracts": {
+      "title": "Клиентски договори",
+      "subtitle": "Договори со партнери + rate картички (по парче / по минута). Authoritative извор за фактурирање.",
+      "listTitle": "Договори",
+      "number": "Број",
+      "partner": "Партнер",
+      "filterPartner": "Партнер",
+      "activeOnly": "Само активни",
+      "newContract": "Нов договор",
+      "newRate": "Нов rate",
+      "editRate": "Измени rate",
+      "validFrom": "Важи од",
+      "validTo": "Важи до",
+      "validity": "Валидност",
+      "paymentTerms": "Рок на плаќање (дена)",
+      "paymentTermsShort": "{{days}} дена рок",
+      "currency": "Валута",
+      "notes": "Белешки",
+      "rateCard": "Rate картичка",
+      "rateType": "Тип",
+      "rate": "Цена",
+      "target": "Цел",
+      "item": "Артикл",
+      "operationCode": "Шифра на операција",
+      "activate": "Активирај",
+      "deactivate": "Деактивирај",
+      "selectAContract": "Избери договор од листата за детали",
+      "confirmDeleteRate": "Да го избришеш овој rate?",
+      "rateTypes": {
+        "perPiece": "По парче",
+        "perMinute": "По минута",
+        "unknown": "непознато"
+      },
+      "errors": {
+        "numberAndPartnerRequired": "Број и партнер се задолжителни.",
+        "rateMissingItem": "PerPiece rate бара артикл.",
+        "rateMissingOperation": "PerMinute rate бара шифра на операција."
+      }
+    },
+    "invoicing": {
+      "title": "Фактурирање",
+      "subtitle": "Draft → Issued → Paid. Draft може да се генерира од PO преку активен договор + rate.",
+      "listTitle": "Фактури",
+      "number": "Број",
+      "partner": "Партнер",
+      "contract": "Договор",
+      "status": "Статус",
+      "total": "Вкупно",
+      "subtotal": "Subtotal",
+      "due": "Доспева",
+      "issued": "Издадена",
+      "issue": "Издади",
+      "markPaid": "Означи платена",
+      "cancel": "Откажи",
+      "cancelReason": "Причина за откажување (опционо):",
+      "selectInvoice": "Избери фактура од листата",
+      "lines": "Ставки",
+      "description": "Опис",
+      "reference": "Референца",
+      "qty": "Количина",
+      "unitPrice": "Цена/ед",
+      "generateFromPo": "Генерирај од PO",
+      "productionOrder": "Налог за производство",
+      "overrideUnitPrice": "Override цена",
+      "useContractRate": "Остави празно за contract rate",
+      "generateHint": "Ако нема активен contract + rate за овој артикл, внеси override.",
+      "outstanding": "Издадени (неплатени)",
+      "paidTotal": "Платени",
+      "drafts": "Drafts",
+      "statuses": {
+        "draft": "Draft",
+        "issued": "Издадена",
+        "paid": "Платена",
+        "cancelled": "Откажана",
+        "unknown": "непознато"
+      }
     }
   }
 }

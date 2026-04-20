@@ -625,20 +625,20 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.invoicing',
         icon: '🧾',
         path: '/finance/invoicing',
-        backendStatus: 'missing',
-        workPlanRef: 'P5.X — invoicing flow',
+        backendStatus: 'shipped',
+        workPlanRef: 'P12.2 — invoicing MVP',
         plannedBehavior:
-          'AR tracking: за фактурирање (завршени shipments), фактурирано, платено, overdue. Со aging buckets 0-30-60-90.',
+          'Draft → Issued → Paid. Generate from PO via active contract + PerPiece rate. Shipped 2026-04-20.',
       },
       {
         key: 'finance-contracts',
         labelKey: 'nav.finance.contracts',
         icon: '📜',
         path: '/finance/contracts',
-        backendStatus: 'missing',
-        workPlanRef: 'P5.X — customer contracts + rates',
+        backendStatus: 'shipped',
+        workPlanRef: 'P12.3 — client contracts + rate cards',
         plannedBehavior:
-          'Клиентски договори: per-минута / per-парче rates, срок на важност, specijalni conditions. Authoritative source за invoicing.',
+          'Клиентски договори + rate картички (PerPiece / PerMinute). Authoritative source за invoicing. Shipped 2026-04-20.',
       },
       {
         key: 'finance-guarantees',

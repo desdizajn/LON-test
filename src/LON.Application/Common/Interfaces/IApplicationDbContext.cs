@@ -1,5 +1,6 @@
 using LON.Domain.Entities.Audit;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Entities.Finance;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.Importing;
 using LON.Domain.Entities.MasterData;
@@ -90,6 +91,12 @@ public interface IApplicationDbContext
     DbSet<GuaranteeAccount> GuaranteeAccounts { get; }
     DbSet<GuaranteeLedgerEntry> GuaranteeLedgerEntries { get; }
     DbSet<DutyCalculation> DutyCalculations { get; }
+
+    // Finance (P12.2 / P12.3)
+    DbSet<ClientContract> ClientContracts { get; }
+    DbSet<RateCardEntry> RateCardEntries { get; }
+    DbSet<Invoice> Invoices { get; }
+    DbSet<InvoiceLine> InvoiceLines { get; }
 
     // Traceability
     DbSet<TraceLink> TraceLinks { get; }

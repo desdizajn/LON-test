@@ -323,6 +323,98 @@ export const hrApi = {
     api.get('/Hr/assignments', { params }),
 };
 
+// P12.2 / P12.3 — Finance (contracts, rate cards, invoices)
+export const financeApi = {
+  // Contracts
+  getContracts: (params?: { partnerId?: string; activeOnly?: boolean }) =>
+    api.get('/Finance/contracts', { params }),
+  getContract: (id: string) => api.get(`/Finance/contracts/${id}`),
+  createContract: (payload: {
+    number: string;
+    partnerId: string;
+    validFrom: string;
+    validTo?: string | null;
+    paymentTermsDays: number;
+    currency?: string | null;
+    notes?: string | null;
+    rateCard?: Array<{
+      rateType: number;
+      itemId?: string | null;
+      operationCode?: string | null;
+      ratePerUnit: number;
+      currency?: string | null;
+      validFrom: string;
+      validTo?: string | null;
+      notes?: string | null;
+    }>;
+  }) => api.post('/Finance/contracts', payload),
+  updateContract: (id: string, payload: {
+    validTo?: string | null;
+    paymentTermsDays: number;
+    isActive: boolean;
+    notes?: string | null;
+  }) => api.put(`/Finance/contracts/${id}`, payload),
+  upsertRate: (contractId: string, payload: {
+    entryId?: string | null;
+    rateType: number;
+    itemId?: string | null;
+    operationCode?: string | null;
+    ratePerUnit: number;
+    currency?: string | null;
+    validFrom: string;
+    validTo?: string | null;
+    notes?: string | null;
+  }) => api.post(`/Finance/contracts/${contractId}/rates`, payload),
+  deleteRate: (contractId: string, entryId: string) =>
+    api.delete(`/Finance/contracts/${contractId}/rates/${entryId}`),
+
+  // Invoices
+  getInvoices: (params?: {
+    partnerId?: string;
+    status?: number;
+    from?: string;
+    to?: string;
+  }) => api.get('/Finance/invoices', { params }),
+  getInvoice: (id: string) => api.get(`/Finance/invoices/${id}`),
+  createInvoice: (payload: {
+    partnerId: string;
+    contractId?: string | null;
+    issueDate?: string | null;
+    dueDate?: string | null;
+    currency?: string | null;
+    notes?: string | null;
+    lines?: Array<{
+      description: string;
+      itemId?: string | null;
+      relatedProductionOrderId?: string | null;
+      relatedShipmentId?: string | null;
+      quantity: number;
+      unitPrice: number;
+    }>;
+  }) => api.post('/Finance/invoices', payload),
+  addLine: (id: string, payload: {
+    description: string;
+    itemId?: string | null;
+    relatedProductionOrderId?: string | null;
+    relatedShipmentId?: string | null;
+    quantity: number;
+    unitPrice: number;
+  }) => api.post(`/Finance/invoices/${id}/lines`, payload),
+  removeLine: (id: string, lineId: string) =>
+    api.delete(`/Finance/invoices/${id}/lines/${lineId}`),
+  generateFromPo: (payload: {
+    productionOrderId: string;
+    contractId?: string | null;
+    overrideUnitPrice?: number | null;
+    issueDate?: string | null;
+  }) => api.post('/Finance/invoices/generate-from-po', payload),
+  issue: (id: string) => api.post(`/Finance/invoices/${id}/issue`),
+  markPaid: (id: string, paidAt?: string | null) =>
+    api.post(`/Finance/invoices/${id}/mark-paid`, { paidAt: paidAt ?? null }),
+  cancel: (id: string, reason?: string | null) =>
+    api.post(`/Finance/invoices/${id}/cancel`, { reason: reason ?? null }),
+};
+
 export const customsApi = {
   // Declarations
   getDeclarations: (isCleared?: boolean) => 
