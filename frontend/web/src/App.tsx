@@ -72,6 +72,9 @@ import PlaceholderPage from './components/common/PlaceholderPage';
 import MassTransfer from './pages/Warehouse/MassTransfer';
 import BulkReceiptFromDeclaration from './pages/Warehouse/BulkReceiptFromDeclaration';
 import BulkShipmentFromFG from './pages/Warehouse/BulkShipmentFromFG';
+import LONAuthorizationsList from './pages/Customs/LONAuthorizationsList';
+import DeclarationsByType from './pages/Customs/DeclarationsByType';
+import MrnDeadlines from './pages/Customs/MrnDeadlines';
 
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
@@ -318,56 +321,12 @@ const App: React.FC = () => {
             />
 
             {/* ───────── P6.37.6 — 🛃 Customs group ───────── */}
-            <Route
-              path="/customs/authorizations"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.customs"
-                  titleKey="nav.customs.authorizations"
-                  workPlanRef="P2.3.X — inward processing authorizations"
-                  backendStatus="missing"
-                  plannedBehavior="Активни царински дозволи за облагородување (LON authorizations) по тенант: број, важност, procedure code, преостаната количина."
-                />
-              }
-            />
-            <Route path="/customs/import-docs" element={<Customs />} />
-            <Route
-              path="/customs/export-docs"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.customs"
-                  titleKey="nav.customs.exportDocs"
-                  workPlanRef="P2.4.X — export declarations flow"
-                  backendStatus="missing"
-                  plannedBehavior="Листа на извозни декларации со статус, linkirани shipments и раздолжени увозни MRN позиции."
-                />
-              }
-            />
+            <Route path="/customs/authorizations" element={<LONAuthorizationsList />} />
+            <Route path="/customs/import-docs" element={<DeclarationsByType type="import" />} />
+            <Route path="/customs/export-docs" element={<DeclarationsByType type="export" />} />
             <Route path="/customs/traceability" element={<Traceability />} />
-            <Route
-              path="/customs/deadlines"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.customs"
-                  titleKey="nav.customs.deadlines"
-                  workPlanRef="P2.3.X — deadline watcher"
-                  backendStatus="missing"
-                  plannedBehavior="Deadline-driven листа: MRN и authorizations што истекуваат за N дена. Filter „истекува за: <7, <30, <90 дена“."
-                />
-              }
-            />
-            <Route
-              path="/customs/open-items"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.customs"
-                  titleKey="nav.customs.openItems"
-                  workPlanRef="P2.3.X — open-items reconciliation"
-                  backendStatus="missing"
-                  plannedBehavior="Нераздолжени ставки: MRN позиции каде consumed qty < imported qty и не е поврзано со извозна декларација. Критично за царински ризик."
-                />
-              }
-            />
+            <Route path="/customs/deadlines" element={<MrnDeadlines />} />
+            <Route path="/customs/open-items" element={<MrnDeadlines />} />
             <Route path="/customs/guarantees" element={<Guarantees />} />
             <Route
               path="/customs/search"

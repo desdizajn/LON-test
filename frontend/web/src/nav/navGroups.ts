@@ -164,8 +164,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.customs.authorizations',
         icon: '📜',
         path: '/customs/authorizations',
-        backendStatus: 'missing',
-        workPlanRef: 'P2.3.X — inward processing authorizations',
+        backendStatus: 'exists',
+        existingDataHint: 'Листа со истек, статус, гаранција + days-left индикатор.',
         plannedBehavior:
           'Активни царински дозволи за облагородување (LON authorizations) по тенант: број, важност, procedure code, преостаната количина.',
       },
@@ -182,8 +182,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.customs.exportDocs',
         icon: '📤',
         path: '/customs/export-docs',
-        backendStatus: 'missing',
-        workPlanRef: 'P2.4.X — export declarations flow',
+        backendStatus: 'exists',
+        existingDataHint: 'Извозни декларации (IM/EX discrimination по procedureCode).',
         plannedBehavior:
           'Листа на извозни декларации со статус, linkiranи shipments и раздолжени увозни MRN позиции.',
       },
@@ -201,8 +201,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.customs.deadlines',
         icon: '⏰',
         path: '/customs/deadlines',
-        backendStatus: 'missing',
-        workPlanRef: 'P2.3.X — deadline watcher',
+        backendStatus: 'exists',
+        existingDataHint: 'MRN со days-left, consumption + discharge meters, outstanding qty.',
         plannedBehavior:
           'Deadline-driven листа: MRN и authorizations што истекуваат за N дена. Со filter „истекува за: <7, <30, <90 дена“.',
       },
@@ -211,8 +211,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.customs.openItems',
         icon: '❗',
         path: '/customs/open-items',
-        backendStatus: 'missing',
-        workPlanRef: 'P2.3.X — open-items reconciliation',
+        backendStatus: 'exists',
+        existingDataHint: 'Истиот view како Deadlines со onlyOpen=true filter — нераздолжени MRN позиции.',
         plannedBehavior:
           'Нераздолжени ставки: MRN позиции каде consumed qty < imported qty и не е поврзано со извозна декларација. Критично за царински ризик.',
       },

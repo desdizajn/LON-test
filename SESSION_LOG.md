@@ -2,6 +2,32 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P6.37 customs placeholders → real pages + P6.36 MRN meter + P2.5.7 CSV export
+
+Batch of placeholder-to-real conversions in the customs group plus two cross-cutting utilities.
+
+**`/customs/authorizations` — LON authorizations list.** New `pages/Customs/LONAuthorizationsList.tsx`. Consumes the existing `GET /api/Customs/lon-authorizations?activeOnly=`. Columns: auth number, partner, issue + expiry dates, days-left (colour-coded: <14d orange, <30d yellow, negative red), guarantee amount, status, customs office. Client-side search, active-only toggle, row count, CSV export.
+
+**`/customs/import-docs` + `/customs/export-docs` — filtered declaration views.** New `pages/Customs/DeclarationsByType.tsx`. Same endpoint as the main Customs page but filters client-side on procedure code prefixes (IM: 40/42/51, EX: 10/31/35). Replaces the placeholder that was still on `Customs` for import-docs.
+
+**`/customs/deadlines` + `/customs/open-items` — MRN consumption + discharge view.** New `pages/Customs/MrnDeadlines.tsx`. Consumes `GET /api/Customs/mrn-registry`. Each row shows: days-left, Used/Total bar, Discharged/Used bar, outstanding undischarged qty (= Used − Discharged), active/closed status. Default filter "only open" (outstanding > 0) so the page doubles as the open-items reconciliation view from the IA. Both routes point to the same component.
+
+**P6.36 — `components/common/MrnMeter.tsx`** — reusable inline consumption strip. Given an `mrn` prop it fetches the registry row, renders two progress bars (Used/Total + Discharged/Used) + outstanding warning + days-to-expiry badge. Mounted in the MRN column of the main `Customs` declaration list so every row surfaces its own MRN state without leaving the list.
+
+**P2.5.7 — `utils/export.ts`** — locale-aware CSV helper. `exportToCsv(rows, columns, filename)` writes a UTF-8 BOM CSV with RFC-4180 quoting. `type: 'number'` columns go through `formatQuantity` (Macedonian users get `1.234,56`, English users `1,234.56`), `type: 'date'` through `formatDate`. Wired on the three new customs pages (auth list, declarations, MRN deadlines).
+
+**i18n**: new namespaces `lonAuthorizations`, `declarationsByType`, `mrnDeadlines`, `mrnMeter` in mk/sr/sq/en. `nav.warehouse.bulkReceipt/bulkShipment` retained from the previous batch.
+
+**navGroups**: 4 customs entries flipped from `missing/placeholder` → `exists` with updated existingDataHint strings.
+
+**Routes**: 5 `PlaceholderPage` blocks in `App.tsx` replaced with real `<Route>` elements. `BulkReceiptFromDeclaration` + `BulkShipmentFromFG` routes from the earlier batch retained.
+
+**Build**: `npm run build` — bundle `main.c29572b6.js` (+133B net over the previous batch despite 5 new pages thanks to placeholder removal). Pre-existing lint warnings only.
+
+VPS deploy in the same commit.
+
+---
+
 ## 2026-04-20 — Phase 2.5 + Phase 5 closing sweep: Intl helpers, error codes, article picker, bulk receipt/shipment, page retrofits
 
 Single batch closing the remainder of Phase 2.5 (i18n) and Phase 5 (productivity parity).

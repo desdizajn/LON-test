@@ -8,6 +8,7 @@ import WasteDeclarationModal from '../components/Customs/WasteDeclarationModal';
 import ExportDeclarationModal from '../components/Customs/ExportDeclarationModal';
 import ReturnDeclarationModal from '../components/Customs/ReturnDeclarationModal';
 import { formatQuantity, formatDate } from '../utils/format';
+import MrnMeter from '../components/common/MrnMeter';
 
 const Customs: React.FC = () => {
   const { t } = useTranslation();
@@ -112,7 +113,14 @@ const Customs: React.FC = () => {
             {declarations.map((decl, idx) => (
               <tr key={idx}>
                 <td><strong>{decl.declarationNumber}</strong></td>
-                <td>{decl.mrn || '-'}</td>
+                <td>
+                  {decl.mrn ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <code style={{ fontSize: 12 }}>{decl.mrn}</code>
+                      <MrnMeter mrn={decl.mrn} compact />
+                    </div>
+                  ) : '-'}
+                </td>
                 <td>{decl.customsProcedure?.name || '-'}</td>
                 <td>{formatQuantity(decl.totalCustomsValue ?? 0)} {decl.currency}</td>
                 <td>{formatQuantity(decl.totalDuty ?? 0)}</td>
