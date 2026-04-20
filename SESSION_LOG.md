@@ -66,9 +66,81 @@ Background Worker still on Microsoft.Extensions.Logging — future task when Wor
 
 ### Build / verification
 
-- `dotnet build LON.sln` — 0 errors across all commits (3 pre-existing non-P6 warnings in MoveBatchAcrossStagesTests/UserProvisioningTests/package refs unchanged).
-- Integration tests NOT executed locally (Docker Desktop needed for Testcontainers-MsSql). CI will run them on push.
-- **Deploy to VPS + end-to-end verification still pending — user.**
+- `dotnet build LON.sln` — 0 errors across all commits (3 pre-existing non-P6 warnings unchanged).
+- Integration tests NOT executed locally (Docker Desktop needed for Testcontainers-MsSql). CI runs them on push.
+
+### VPS deploy + end-to-end verification (commit `39db2f1`)
+
+Pushed to `origin/main` after rebase on the overnight PR-#11 merge (`9985680`). SSH'd VPS, `git pull --ff-only`, `docker compose build api && up -d api`. Recreate clean, `lon-api` healthy within 15 s.
+
+**(a) Migration applied.** `SELECT TOP 3 MigrationId FROM __EFMigrationsHistory ORDER BY DESC`:
+```
+20260420064048_P6_21_QualityStatusBackfill     ← new
+20260419192743_P0_3_4_DecimalPrecision_…       ← prior
+20260419190825_P6_32_FilteredUniqueIndexes     ← prior
+```
+
+**(b) Data backfill confirmed.** After migration:
+```
+InventoryBalances: 136 rows, 100% QualityStatus = 1 (OK)
+ReceiptLines:      135 rows, 100% QualityStatus = 1 (OK)
+```
+Zero rows at legacy `0 = None`. The P6.21 root-cause bug is definitionally unreachable on future writes (coercion on create) and historically scrubbed on existing rows.
+
+**(c) Three new endpoints smoke-tested as `admin` against `https://elon.elbosoft.click`.**
+
+*P6.30 — `POST /api/masterdata/items/backfill-base-variants?dryRun=true`:*
+```
+{
+  "itemsScanned": 2050,
+  "variantsBackfilled": 450,
+  "baseItemsCreated": 41,
+  "untouchedBaseCodeAlreadyPresent": 1600,
+  "sampleChanges": ["9100499470nl → base=91004 color=994 size=70nl", ...]
+}
+```
+Close to the 2 170 the user had flagged; 450 of those 2 050 decompose into real variants; 41 new base items would be created. Dry-run only — no writes.
+
+*P6.31 — `GET /api/masterdata/items/{id}/import-attributes` for a real item (code `3500010004`):*
+```
+rows: [{
+  tariffCode: "6006310000",
+  countryOfOrigin: "EU",
+  isPreferentialOrigin: true,
+  supplierCode: "TEXPORT-AT",
+  supplierName: "Texport Austria",
+  dutyRate: 0.0, vatRate: 18.0,
+  batchCount: 3,
+  availableQuantity: 763.47
+}]
+```
+Exactly the report shape the user specified.
+
+*P6.34 — `POST /api/import/presets/kw12`* with real `docs/KW12.xlsx`:
+```
+{
+  "itemsSessionId":               "ab62d735-…",  ← Matriks, 7582 rows
+  "customsDeclarationsSessionId": "7606728d-…",  ← Faktura, 134 rows
+  "receiptsSessionId":            "8d24d01e-…",  ← Transport, 8 rows
+  "sheetsFound":   ["Matriks → Items (7582 rows)", "Faktura → CustomsDeclarations (134)", "Transport → Receipts (8)"],
+  "sheetsSkipped": []
+}
+```
+All three sheets recognised; three ImportSessions created atomically.
+
+**(d) Serilog JSON logs** — sample request log (one line per event) after smoke:
+```json
+{"@t":"2026-04-20T07:19:28Z", "@mt":"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms",
+ "RequestMethod":"GET", "RequestPath":"/api/masterdata/items/.../import-attributes",
+ "StatusCode":200, "Elapsed":225.525,
+ "TenantId":"b8d4fe76-8d94-470b-a251-f8111d3f1db3", "UserName":"admin", "RequestId":"0HNKULKAVI4MR:00000007",
+ "ActionName":"...MasterDataController.GetItemImportAttributes", "Application":"LON-API"}
+```
+All four enrichers present + Application tag + Serilog message-template fields. Pre-auth login request shows `TenantId:"-"` / `UserName:"-"` — expected.
+
+`/api/health/ready` returns 200 `{"status":"ready","database":"connected"}`.
+
+**Session bottom line:** P6.21 / 30 / 31 / 34 / 35 / 15b all deployed + verified end-to-end against real data. OpenAI 401 (P6.41) still the only non-fatal startup error — unrelated, needs operator to set `.env` key.
 
 ---
 

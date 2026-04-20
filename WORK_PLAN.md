@@ -350,7 +350,13 @@
 > - **P6.12** (consistent response shape) — breaking contract, requires frontend + test refactor in a coordinated pass.
 > - **P6.10/P6.11** (MasterDataController split + MediatR migration for Items/Partners) — cross-mapper coupling + test shape assumptions make a partial split leakier than staying monolithic. Own session when ready.
 >
-> **Pending VPS verification (user):** deploy + smoke each new endpoint — migration applies cleanly, KW12 preset returns 3 session IDs on a real workbook, backfill/import-attributes/Serilog JSON logs all render as expected on `elon.elbosoft.click`.
+> **VPS verified (commit `39db2f1` live):**
+> - Migration `P6_21_QualityStatusBackfill` applied; InventoryBalances (136) + ReceiptLines (135) all at QualityStatus=1.
+> - `POST /items/backfill-base-variants?dryRun=true` → 2050 scanned, 450 variants, 41 base items.
+> - `GET /items/{id}/import-attributes` → real data row: 3 batches, 763.47 kg, EU preferential, TEXPORT-AT, dutyRate 0, vatRate 18.
+> - `POST /import/presets/kw12` with real KW12.xlsx → 3 sessions (Matriks/Faktura/Transport = 7582/134/8 rows).
+> - Serilog JSON request logs carry TenantId + UserName + RequestId + Application tag.
+> - `/api/health/ready` 200 OK.
 >
 > **Previous session (2026-04-19 — P6.37.14 code-complete):** Legacy flat sidebar removed; `<Navigate>` redirects for all old top-level routes; idempotent `RoleTopUpSeed` with 8 new roles + 8 TEKSPORT test users. Pending VPS deploy + per-role smoke.
 >
