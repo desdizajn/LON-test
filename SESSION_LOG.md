@@ -84,7 +84,27 @@ Operations-based refinement (RoutingOperation.StandardTimeMinutes × remaining) 
 - P8.9 minutes-variance — нов `OperationTimeLog` entity (L effort, P2 priority).
   Овие се sprint 8+ work.
 
-VPS deploy next.
+**VPS deploy (commit `e413826`):** `git pull` + `docker compose build api frontend`
++ `up -d`. Startup: `Database is ready (migrations applied or already up to date)`.
+Post-deploy smoke (admin/Admin123!):
+
+- `GET /Production/shortage` → 200 + `isSuccess:true`. **Real TEKSPORT deficit surfaced:**
+  Item `5600013460 Конец Арамид 70` has `totalRequiredRemaining: 429850 M`,
+  `totalAvailable: 86 M`, `deficit: 429764 M`, distributed across dozens of active POs
+  (PA2602012-0001, PA2602067/68-* variants, etc.). All affectedOrders entries carry
+  planned window + per-PO remaining requirement.
+- `GET /Production/orders` → 132 rows; all status=1 (Draft) as expected on current
+  VPS state. `?status=InProgress` → 0 (no POs released yet).
+- Frontend bundle `main.2fc4c8e2.js` served from `https://elon.elbosoft.click/`.
+
+Implication of all-Draft state: `/production/today` will surface any Draft POs whose
+planned window spans today; `/production/wip` will show empty orders section + any
+inventory balances carrying `LonProcessState=InProduction`; `/production/completed`
+will show "no data" until a PO is produced + completed. All five pages render
+correctly — the empty states are a property of the seed data, not a bug.
+
+> **🎯 Sprint 2 closed.** Sprint 3 (per ROADMAP) → Phase 11.1/11.2/11.4/11.5 machine
+> basics (manual state + downtime + maintenance schedule + history, without OEE yet).
 
 ---
 
