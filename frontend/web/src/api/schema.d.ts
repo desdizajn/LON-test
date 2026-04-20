@@ -1733,6 +1733,16 @@ export interface paths {
       };
     };
   };
+  "/api/Production/shortage": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Production/boms": {
     get: {
       parameters: {

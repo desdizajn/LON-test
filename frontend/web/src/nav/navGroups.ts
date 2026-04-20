@@ -240,11 +240,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.today',
         icon: '📅',
         path: '/production/today',
-        backendStatus: 'partial',
-        workPlanRef: 'P3.X — daily production plan view',
-        plannedBehavior:
-          'Денешен план: налози по линија / машина / оператор, со progress %, шорт-фол, expected completion time.',
-        existingDataHint: 'Production page (/production) ги прикажува сите налози; ова е филтер за денес.',
+        backendStatus: 'exists',
+        existingDataHint: 'P8.1 — POs active today (PlannedStart ≤ today ≤ PlannedEnd) with progress bars + CSV.',
       },
       {
         key: 'production-cutting-queue',
@@ -271,30 +268,24 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.wip',
         icon: '⚙️',
         path: '/production/wip',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — WIP tracking',
-        plannedBehavior:
-          'WIP по налог: визуелен tree прикажувајќи каде е секое парче/lot низ routing фазите (cut → sew → QC → pack).',
+        backendStatus: 'exists',
+        existingDataHint: 'P8.2 — InProgress POs + InventoryBalance(LonProcessState=InProduction) in one view.',
       },
       {
         key: 'production-at-risk',
         labelKey: 'nav.production.atRisk',
         icon: '🚨',
         path: '/production/at-risk',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — at-risk detection',
-        plannedBehavior:
-          'Налози во ризик за доцнење: planned_end > promisedBy или незадоволен capacity. Со predicted delay + корективни actions.',
+        backendStatus: 'exists',
+        existingDataHint: 'P8.4 — heuristic schedule_used% − progress% gap, red/amber banding.',
       },
       {
         key: 'production-shortage',
         labelKey: 'nav.production.shortage',
         icon: '📉',
         path: '/production/shortage',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — material shortage calc',
-        plannedBehavior:
-          'Material shortage за денешниот план: BOM требе vs InventoryBalance available, групирано по material. Со actions: expedite receipt, swap MRN, re-schedule.',
+        backendStatus: 'exists',
+        existingDataHint: 'P8.5 — GET /Production/shortage: (Required − Issued) sum vs available inventory per material.',
       },
       {
         key: 'production-minutes-variance',
@@ -321,10 +312,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.completed',
         icon: '✅',
         path: '/production/completed',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — completed orders list',
-        plannedBehavior:
-          'Завршени налози денес / оваа недела: actual pieces, actual minutes, margin vs planned. Hand-off кон Готов производ.',
+        backendStatus: 'exists',
+        existingDataHint: 'P8.3 — Completed POs with period selector (7/30/90/365) + totals + CSV.',
       },
       {
         key: 'production-search',

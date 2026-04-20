@@ -545,6 +545,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 11. 🆕 **Phase 7–13** — види [`docs/ROADMAP.md`](docs/ROADMAP.md) **(single source of traceability)** за сите преостанати placeholder screens распоредени во фази P7–P13 со ефорт/приоритет/зависности. Препорачан sprint редослед + DoD per phase.
 12. Flutter mobile (ex-Phase 7) — bumped to a later track bundled со stabilized desktop UI.
 
-**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ (9/9 done 2026-04-20). Sprint 2 → Phase 8.1–8.5 (production visibility).
+**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ (9/9) · ~~Sprint 2 Phase 8.1–8.5~~ ✅ (2026-04-20). Sprint 3 → Phase 11 machine basics (11.1 status + 11.2 downtime + 11.4 maintenance plan + 11.5 maintenance history).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

@@ -208,6 +208,9 @@ export const productionApi = {
   // P5.2.1 — Bulk issue all remaining materials (FEFO auto-pick)
   issueAllMaterials: (id: string, issueDate: string, issuedByEmployeeId?: string) =>
     api.post(`/Production/orders/${id}/issues/bulk`, { issueDate, issuedByEmployeeId }),
+
+  // P8.5 — Material shortage aggregate for active production orders
+  getShortage: () => api.get('/Production/shortage'),
 };
 
 export const customsApi = {

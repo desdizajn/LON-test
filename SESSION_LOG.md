@@ -2,6 +2,92 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 2: Phase 8.1–8.5 production visibility shipped
+
+Sprint 2 од `docs/ROADMAP.md` — TEKSPORT primary-flow visibility (днес, WIP,
+completed, at-risk, shortage) — целосно затворен во една сесија.
+
+**P8.1 `/production/today`** — `pages/Production/ProductionToday.tsx`. Client-side
+филтер врз `GET /Production/orders`: PO со `PlannedStartDate ≤ today ≤ PlannedEndDate`
+и status != Closed/Cancelled. Progress bar со 3-colour threshold (blue < 50%, amber <
+100%, green == 100%). CSV export + row count + kostumerski налог колона.
+
+**P8.2 `/production/wip`** — `pages/Production/ProductionWip.tsx`. Две секции:
+(1) `GET /Production/orders?status=InProgress` за активни налози со progress %,
+(2) `GET /WMS/inventory` client-filtered на `LonProcessState=6 (InProduction)` за
+физички WIP stock (со item/location/batch/MRN/qty). Независен CSV за секоја секција.
+Вкупно WIP количина во header hint.
+
+**P8.3 `/production/completed`** — `pages/Production/ProductionCompleted.tsx`. Period
+selector (7/30/90/365 денови) врз `GET /Production/orders?status=Completed`. Filter
+по `ActualEndDate` (fallback на `PlannedEndDate` ако null). Totals панел: ordered +
+produced + scrap. CSV + row count. Sort desc по effective end date.
+
+**P8.4 `/production/at-risk`** — `pages/Production/ProductionAtRisk.tsx`. Self-contained
+heuristic што користи само полиња од `GET /Production/orders` (без да бара operations):
+
+```
+scheduleUsedPct = (now - PlannedStart) / (PlannedEnd - PlannedStart)
+progressPct     = ProducedQuantity / OrderQuantity
+gap             = scheduleUsedPct - progressPct
+```
+
+`red` = `gap ≥ 0.25 && daysToEnd ≤ 7`, `amber` = `gap ≥ 0.10`, под-amber редови скриени.
+Табела со colour-coded risk badge, scheduleUsed%, progress%, gap, daysToEnd, remainingQty.
+Operations-based refinement (RoutingOperation.StandardTimeMinutes × remaining) deferred
+до P8.9 piece-level time log — документирано во code comment + ROADMAP dep.
+
+**P8.5 `/production/shortage`** — **новa backend MediatR query** `GetProductionShortageQuery`
+под `src/LON.Application/Production/Queries/GetProductionShortage/`. Агрегира:
+
+1. ProductionOrderMaterial rows за POs in Draft/Released/InProgress → sum of
+   `max(0, Required − Issued)` по materialItemId.
+2. InventoryBalance grouped by ItemId filtered on `QualityStatus == OK` AND
+   `LonProcessState IN (Imported, null)` → sum.
+3. deficit = required_remaining − available; only rows with deficit > 0 returned,
+   sorted desc by deficit. Per-row `affectedOrders[]` with PO number + planned
+   window + per-PO remaining requirement, ordered by PlannedEndDate.
+
+Нови endpoint: `GET /Production/shortage` во `ProductionController`. Frontend page
+со header statistika (active orders / materials short / total deficit), CSV export,
++ expandable row per material co affected POs.
+
+**Cross-cutting additions:**
+- `frontend/web/src/services/api.ts` — нов `productionApi.getShortage()`.
+- i18n 5 нови namespaces (`productionToday`, `productionWip`, `productionCompleted`,
+  `productionAtRisk`, `productionShortage`) + `production.status.{draft,released,
+  inProgress,completed,closed,cancelled}` — сите 4 јазици (mk/sr/sq/en).
+- navGroups: 5 entries flipped од `missing` → `exists` со updated `existingDataHint`
+  pointing to P8.x IDs.
+- App.tsx: 5 `PlaceholderPage` блокови заменети со real Route elements. Воведен нов
+  path `/production/orders` за legacy Production CRUD page (детално работење со PO);
+  сите нови pages користат `to="/production/orders?order={id}"` за deep-link.
+
+**Contract hygiene:**
+- `./scripts/gen-api-types.sh` re-ran → `api-contract/swagger.json` + `schema.d.ts`
+  ги носат новиот endpoint + shortage DTO.
+- `src/LON.Application/Common/Interfaces/IApplicationDbContext.cs` веќе го излoжуваше
+  `ProductionOrders`, `ProductionOrderMaterials`, `InventoryBalances` — нема потреба од
+  интерфејс проширување.
+- `dotnet build` на Application + API projects: 0 warnings, 0 errors.
+
+**Build:**
+- `dotnet build` — 0/0 (Application + API).
+- `npm run build` — bundle `main.2fc4c8e2.js`, само pre-existing lint warnings
+  (ProductionShortage initial useMemo dep warning поправен со wrapping `rows` во
+  useMemo).
+
+**Phase 8 preostanat long-tail:**
+- P8.6 cutting queue + P8.7 sewing queue — бараат `ProductionOrderOperation.Status`
+  enum + `OperationType` tag.
+- P8.8 rework — P4.6 backend postoi, treba UI.
+- P8.9 minutes-variance — нов `OperationTimeLog` entity (L effort, P2 priority).
+  Овие се sprint 8+ work.
+
+VPS deploy next.
+
+---
+
 ## 2026-04-20 — Phase 7 complete: 9 placeholder→real conversions (quick wins over existing data)
 
 Single-session sweep of Phase 7 from `docs/ROADMAP.md`. All 9 items shipped as

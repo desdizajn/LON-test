@@ -3,6 +3,7 @@ using LON.Application.Production.Commands.CreateProductionOrder;
 using LON.Application.Production.Commands.CreateProductionReceipt;
 using LON.Application.Production.Commands.IssueAllMaterials;
 using LON.Application.Production.Commands.ReleaseProductionOrder;
+using LON.Application.Production.Queries.GetProductionShortage;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -127,6 +128,14 @@ public class ProductionController : BaseController
             .ToListAsync();
 
         return Ok(receipts);
+    }
+
+    /// <summary>P8.5 — material shortage for active production orders.</summary>
+    [HttpGet("shortage")]
+    public async Task<IActionResult> GetShortage()
+    {
+        var result = await Mediator.Send(new GetProductionShortageQuery());
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
     [HttpGet("boms")]

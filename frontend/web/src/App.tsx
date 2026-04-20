@@ -83,6 +83,13 @@ import StockByCustomer from './pages/Warehouse/StockByCustomer';
 import ShipmentsHistoryByCustomer from './pages/Warehouse/ShipmentsHistoryByCustomer';
 import ScopedSearch from './pages/ScopedSearch';
 
+// P8.1–P8.5 — production visibility
+import ProductionToday from './pages/Production/ProductionToday';
+import ProductionWip from './pages/Production/ProductionWip';
+import ProductionCompleted from './pages/Production/ProductionCompleted';
+import ProductionAtRisk from './pages/Production/ProductionAtRisk';
+import ProductionShortage from './pages/Production/ProductionShortage';
+
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
@@ -290,14 +297,15 @@ const App: React.FC = () => {
             <Route path="/customs/search" element={<ScopedSearch scope="customs" />} />
 
             {/* ───────── P6.37.7 — ✂️ Production group ───────── */}
-            <Route path="/production/today" element={<Production />} />
+            <Route path="/production/today" element={<ProductionToday />} />
+            <Route path="/production/orders" element={<Production />} />
             <Route
               path="/production/cutting-queue"
               element={
                 <PlaceholderPage
                   groupKey="nav.groups.production"
                   titleKey="nav.production.cuttingQueue"
-                  workPlanRef="P3.X — cutting queue"
+                  workPlanRef="P8.6 — cutting queue"
                   backendStatus="missing"
                   plannedBehavior="Queue на налози чекаат кроење: приоритет, required material (со shortage flags), estimated minutes, allotted machine. Drag-to-reorder приоритизација."
                 />
@@ -309,55 +317,22 @@ const App: React.FC = () => {
                 <PlaceholderPage
                   groupKey="nav.groups.production"
                   titleKey="nav.production.sewingQueue"
-                  workPlanRef="P3.X — sewing queue"
+                  workPlanRef="P8.7 — sewing queue"
                   backendStatus="missing"
                   plannedBehavior="Queue на налози во шиење: по линија / оператор / машина. WIP visibility, required operations per route, capacity check."
                 />
               }
             />
-            <Route
-              path="/production/wip"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.wip"
-                  workPlanRef="P3.X — WIP tracking"
-                  backendStatus="missing"
-                  plannedBehavior="WIP по налог: визуелен tree прикажувајќи каде е секое парче/lot низ routing фазите (cut → sew → QC → pack)."
-                />
-              }
-            />
-            <Route
-              path="/production/at-risk"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.atRisk"
-                  workPlanRef="P3.X — at-risk detection"
-                  backendStatus="missing"
-                  plannedBehavior="Налози во ризик за доцнење: planned_end > promisedBy или незадоволен capacity. Predicted delay + корективни actions."
-                />
-              }
-            />
-            <Route
-              path="/production/shortage"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.shortage"
-                  workPlanRef="P3.X — material shortage calc"
-                  backendStatus="missing"
-                  plannedBehavior="Material shortage за денешниот план: BOM требе vs InventoryBalance available, групирано по material. Actions: expedite receipt, swap MRN, re-schedule."
-                />
-              }
-            />
+            <Route path="/production/wip" element={<ProductionWip />} />
+            <Route path="/production/at-risk" element={<ProductionAtRisk />} />
+            <Route path="/production/shortage" element={<ProductionShortage />} />
             <Route
               path="/production/minutes-variance"
               element={
                 <PlaceholderPage
                   groupKey="nav.groups.production"
                   titleKey="nav.production.minutesVariance"
-                  workPlanRef="P3.X — standard vs actual minutes"
+                  workPlanRef="P8.9 — standard vs actual minutes (needs piece-level time log)"
                   backendStatus="missing"
                   plannedBehavior="Routing standard минути vs actual time log: отклони по налог / оператор / линија. Критично за billing (фабриката продава минути)."
                 />
@@ -369,24 +344,13 @@ const App: React.FC = () => {
                 <PlaceholderPage
                   groupKey="nav.groups.production"
                   titleKey="nav.production.rework"
-                  workPlanRef="P4.6 — waste slots (backend exists, UI missing)"
+                  workPlanRef="P8.8 — rework + waste (backend exists, UI missing)"
                   backendStatus="partial"
                   plannedBehavior="Rework и waste парчиња: причина, cost impact, responsible operator/machine. P4.6 backend постои; UI недостасува."
                 />
               }
             />
-            <Route
-              path="/production/completed"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.completed"
-                  workPlanRef="P3.X — completed orders list"
-                  backendStatus="missing"
-                  plannedBehavior="Завршени налози денес / оваа недела: actual pieces, actual minutes, margin vs planned. Hand-off кон Готов производ."
-                />
-              }
-            />
+            <Route path="/production/completed" element={<ProductionCompleted />} />
             <Route path="/production/search" element={<ScopedSearch scope="production" />} />
 
             {/* ───────── P6.37.8 — 📦 Finished Goods group ───────── */}

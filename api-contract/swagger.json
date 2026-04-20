@@ -3056,6 +3056,18 @@
         }
       }
     },
+    "/api/Production/shortage": {
+      "get": {
+        "tags": [
+          "Production"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Production/boms": {
       "get": {
         "tags": [

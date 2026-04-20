@@ -81,11 +81,11 @@
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P8.1** | `/production/today` | aggregate: PO WHERE PlannedStartDate ≤ today ≤ PlannedEndDate | S | P0 | — | Со linked Shipment + MRN hints. |
-| **P8.2** | `/production/wip` | aggregate: PO(Status=InProgress) + InventoryBalance(LonProcessState=InProduction) | S | P0 | — | Две секции: налози, и WIP stock. |
-| **P8.3** | `/production/completed` | aggregate: PO(Status=Completed) | S | P1 | — | Period selector + CSV. |
-| **P8.4** | `/production/at-risk` | aggregate + heuristic: остаток × минути/парче vs преостанато време | M | P1 | — | Користи RoutingOperation.StandardTimeMinutes × remaining qty. |
-| **P8.5** | `/production/shortage` | aggregate: ProductionOrderMaterial WHERE RequiredQuantity > available inventory | M | P0 | — | Материјален deficit по PO; критично за планирање. |
+| **P8.1** | `/production/today` | aggregate: PO WHERE PlannedStartDate ≤ today ≤ PlannedEndDate | S | P0 | — | **✅ 2026-04-20** — `ProductionToday.tsx`. Client-side filter on `GET /Production/orders`; progress bar + colour-coded by pct; CSV export. |
+| **P8.2** | `/production/wip` | aggregate: PO(Status=InProgress) + InventoryBalance(LonProcessState=InProduction) | S | P0 | — | **✅ 2026-04-20** — `ProductionWip.tsx`. Two-section page: POs InProgress + WIP inventory rows (LonProcessState=6). Independent CSV per section. |
+| **P8.3** | `/production/completed` | aggregate: PO(Status=Completed) | S | P1 | — | **✅ 2026-04-20** — `ProductionCompleted.tsx`. Period selector (7/30/90/365) on ActualEndDate (falls back to PlannedEndDate); totals row (ordered/produced/scrap). |
+| **P8.4** | `/production/at-risk` | aggregate + heuristic: остаток × минути/парче vs преостанато време | M | P1 | — | **✅ 2026-04-20** — `ProductionAtRisk.tsx`. Schedule-vs-progress heuristic (`scheduleUsed% − progress%`): red ≥ 25% + ≤ 7d to end, amber ≥ 10%. Operations-based refinement deferred to P8.9. |
+| **P8.5** | `/production/shortage` | aggregate: ProductionOrderMaterial WHERE RequiredQuantity > available inventory | M | P0 | — | **✅ 2026-04-20** — new backend `GET /Production/shortage` + MediatR `GetProductionShortageQuery`. Sums (Required − Issued) across active POs per material; subtracts OK/Imported inventory; surfaces deficit rows with expandable affected-POs detail. `ProductionShortage.tsx`. |
 | **P8.6** | `/production/cutting-queue` | aggregate: ProductionOrderOperation WHERE OperationType='Cutting' AND Status≠Completed | M | P1 | — | Бара `ProductionOrderOperation.Status` enum + `OperationType` tag (може да се изведе од име). |
 | **P8.7** | `/production/sewing-queue` | исто како P8.6 со OperationType='Sewing' | M | P1 | P8.6 | Shared component. |
 | **P8.8** | `/production/rework` | reuse: Waste declarations + InventoryMovement(Type=Adjustment) | S | P2 | — | Поврзано со P4.6 waste slots. |
@@ -93,7 +93,9 @@
 
 **Phase 8 DoD:** корисник гледа денешен план, WIP, completed, at-risk и shortage без
 да влезе во master data. Доказ: TEKSPORT експерт може да препознае оперативна
-состојба само од /production/* screens.
+состојба само од /production/* screens. **Sprint 2 closed 2026-04-20 (P8.1–P8.5).**
+P8.6–P8.9 стануваат long-tail (види Sprint 8+); P8.6/P8.7 бараат ProductionOrderOperation
+status + OperationType tagging, P8.9 бара новиот `OperationTimeLog` entity.
 
 ---
 
