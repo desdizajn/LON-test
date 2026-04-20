@@ -450,10 +450,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.attendanceToday',
         icon: '📅',
         path: '/hr/attendance-today',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — attendance tracking',
-        plannedBehavior:
-          'Денешен roster: кој е на работа, кој не е, доцнење, рано појавување. Со quick actions: mark late, clock-out.',
+        backendStatus: 'exists',
+        existingDataHint: 'P10.1 — AttendanceRecord entity + Clock-in/Clock-out endpoints. One row per (Employee, Date); hours computed on clock-out.',
       },
       {
         key: 'hr-shifts',
@@ -469,10 +467,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.absences',
         icon: '🏥',
         path: '/hr/absences',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — absences (sick / vacation / other)',
-        plannedBehavior:
-          'Изостаноци по тип: болни, годишни, слободни денови, родителски отсутства. Со approve/reject workflow.',
+        backendStatus: 'exists',
+        existingDataHint: 'P10.2 — Absence entity + create + decide (approve/reject) workflow with stamped ApprovedBy/At.',
       },
       {
         key: 'hr-overtime',
@@ -499,10 +495,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.assignment',
         icon: '🔗',
         path: '/hr/assignment',
-        backendStatus: 'missing',
-        workPlanRef: 'P3.X — operator-machine assignment',
-        plannedBehavior:
-          'Матрица: оператор × машина/линија × смена. Со certification check (дали операторот има право да ракува со машината).',
+        backendStatus: 'exists',
+        existingDataHint: 'P10.5 — OperatorMachineAssignment with ValidFrom/ValidTo windows + active-only filter.',
       },
       {
         key: 'hr-training',

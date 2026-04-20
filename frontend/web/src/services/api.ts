@@ -278,6 +278,45 @@ export const machinesApi = {
     api.get('/Machines/maintenance-work-orders', { params }),
 };
 
+// P10.1/10.2/10.5 — HR operations (attendance, absences, operator assignments)
+export const hrApi = {
+  // Attendance
+  clockIn: (payload: { employeeId: string; at?: string | null }) =>
+    api.post('/Hr/attendance/clock-in', payload),
+  clockOut: (payload: { employeeId: string; at?: string | null }) =>
+    api.post('/Hr/attendance/clock-out', payload),
+  getAttendanceToday: (day?: string) =>
+    api.get('/Hr/attendance/today', { params: { day } }),
+  getAttendanceHistory: (params?: { employeeId?: string; from?: string; to?: string }) =>
+    api.get('/Hr/attendance', { params }),
+
+  // Absences
+  createAbsence: (payload: {
+    employeeId: string;
+    from: string;
+    to: string;
+    type: number;
+    reason?: string | null;
+  }) => api.post('/Hr/absences', payload),
+  decideAbsence: (id: string, approve: boolean) =>
+    api.post(`/Hr/absences/${id}/decide`, { approve }),
+  getAbsences: (params?: { employeeId?: string; pendingOnly?: boolean }) =>
+    api.get('/Hr/absences', { params }),
+
+  // Operator-machine assignments
+  createAssignment: (payload: {
+    employeeId: string;
+    machineId: string;
+    validFrom: string;
+    validTo?: string | null;
+    notes?: string | null;
+  }) => api.post('/Hr/assignments', payload),
+  endAssignment: (id: string, validTo: string) =>
+    api.post(`/Hr/assignments/${id}/end`, { validTo }),
+  getAssignments: (params?: { employeeId?: string; machineId?: string; activeOnly?: boolean }) =>
+    api.get('/Hr/assignments', { params }),
+};
+
 export const customsApi = {
   // Declarations
   getDeclarations: (isCleared?: boolean) => 

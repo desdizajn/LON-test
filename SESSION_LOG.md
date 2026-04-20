@@ -2,6 +2,84 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 4: Phase 10.1/10.2/10.5 HR basics shipped
+
+Sprint 4 од `docs/ROADMAP.md` — attendance, absences, operator-machine
+assignments. Еден-session delivery: 3 нови entities + 1 migration +
+`HrOperationsController` + 3 FE pages + 5 integration test cases.
+
+**Нови entities (`src/LON.Domain/Entities/MasterData/HrOperations.cs`):**
+- `AttendanceRecord (Id, TenantId, EmployeeId, Date, ClockIn?, ClockOut?,
+  Hours?, Status, Notes?)` — филтрирано уникатна по `(Tenant, Employee, Date)`.
+- `Absence (Id, TenantId, EmployeeId, From, To, Type, Reason?, Approved?,
+  ApprovedByUserId?, ApprovedAt?)` — `Approved == null` значи "pending".
+- `OperatorMachineAssignment (Id, TenantId, EmployeeId, MachineId, ValidFrom,
+  ValidTo?, Notes?)` — NULL `ValidTo` = open-ended.
+
+**Нови enums:**
+- `AttendanceStatus { Present=1, Late=2, Absent=3, Excused=4, OnLeave=5 }`
+- `AbsenceType { Sick=1, Vacation=2, Personal=3, Parental=4, Unpaid=5, Other=99 }`
+
+**Миграција `P10_HrOperations`:** 3 нови табели со TenantId FK, индекси
+`(Tenant,Employee,Date/From/ValidFrom)` + filtered unique на attendance per
+(Employee, Date). ITenantScoped global query filter auto-applied.
+
+**P10.1 `/hr/attendance-today`** — `AttendanceToday.tsx`. `ClockInHandler`
+upsert-ира row per (Employee, Date); ако веќе постои со ClockIn → 400
+`errorCode=hr.already_clocked_in`. `ClockOutHandler` бара постоечки ClockIn,
+компјутира `Hours = Round((ClockOut - ClockIn).TotalHours, 2)`, setira на
+completing status. GET /Hr/attendance/today прави LEFT JOIN Employees ×
+AttendanceRecord(date=today) — секој активен employee добива row дури ако
+нема attendance.
+
+Frontend: summary counters (clocked-in / clocked-out / not-started / total
+hours), search filter, inline Clock-in / Clock-out buttons што reload-ираат.
+
+**P10.2 `/hr/absences`** — `Absences.tsx`. `CreateAbsenceCommand` зачува
+`Approved = null` (pending). `DecideAbsenceCommand` stamps
+ApprovedByUserId (од `ICurrentUserService`) + ApprovedAt. Refuses ако
+`absence.Approved.HasValue` со errorCode `hr.absence_already_decided`.
+Validation: `from > to` → `hr.absence_range_invalid`.
+
+Frontend: inline create form, pending-only toggle, approve / reject buttons
+on pending rows; pending rows highlighted (fff8e1).
+
+**P10.5 `/hr/assignment`** — `OperatorAssignment.tsx`. CreateAssignmentCommand
++ EndAssignmentCommand. GetAssignmentsQuery с active-only filter
+`ValidFrom ≤ now ≤ (ValidTo ?? ∞)`. FE page: create form + active-only toggle
++ open-ended rows highlighted зелено + "End now" action.
+
+**Integration test** (`tests/LON.IntegrationTests/HrOperationsTests.cs`,
+5 cases):
+1. Clock-in + Clock-out → Hours ≈ 7.5 (08:00 → 15:30 window).
+2. Clock-out без clock-in → 400 + `errorCode=hr.no_clock_in`.
+3. Absence create + approve → `Approved=true`, `ApprovedByUserId` stamped,
+   `ApprovedAt` not null.
+4. Absence со `from > to` → 400 + `errorCode=hr.absence_range_invalid`.
+5. Two assignments (one ongoing, one ended 60d ago) → active-only filter
+   returns exactly the ongoing one; unfiltered returns both.
+
+**Cross-cutting:**
+- `hrApi` export во services/api.ts со 8 endpoints.
+- 3 нови i18n namespaces (`attendance`, `absences`, `assignments`) × 4
+  locales.
+- navGroups: 3 `missing → exists` со P10.x existingDataHint.
+- App.tsx: 3 `PlaceholderPage` blocks replaced.
+
+**Contract hygiene:** gen-api-types re-ran; 8 нови paths во swagger +
+schema.d.ts. Сите 9 `[FromBody]` DTOs на контролерот се с init-only
+properties од ден 1 (применето лекцијата од P11).
+
+**Phase 10 long-tail (deferred):**
+- P10.3 overtime tracking — нов OvertimeRecord entity.
+- P10.4 performance — зависи од P8.9 piece-level time log.
+- P10.6 training/certs — нов TrainingRecord entity.
+- P10.7 payroll-export — агрегација преку P10.3 + P12.3 rate cards.
+
+VPS deploy next.
+
+---
+
 ## 2026-04-20 — Sprint 3: Phase 11.1/11.2/11.4/11.5 machine basics shipped
 
 Sprint 3 од `docs/ROADMAP.md` — machine operations (status + downtime +

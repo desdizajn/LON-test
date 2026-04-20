@@ -39,6 +39,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<DowntimeEvent> DowntimeEvents => Set<DowntimeEvent>();
     public DbSet<MaintenanceSchedule> MaintenanceSchedules => Set<MaintenanceSchedule>();
     public DbSet<MaintenanceWorkOrder> MaintenanceWorkOrders => Set<MaintenanceWorkOrder>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<Absence> Absences => Set<Absence>();
+    public DbSet<OperatorMachineAssignment> OperatorMachineAssignments => Set<OperatorMachineAssignment>();
     public DbSet<UserFieldHistory> UserFieldHistories => Set<UserFieldHistory>();
 
     // Knowledge Base - Master Data

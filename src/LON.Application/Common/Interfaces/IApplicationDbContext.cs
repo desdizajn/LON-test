@@ -35,6 +35,9 @@ public interface IApplicationDbContext
     DbSet<DowntimeEvent> DowntimeEvents { get; }
     DbSet<MaintenanceSchedule> MaintenanceSchedules { get; }
     DbSet<MaintenanceWorkOrder> MaintenanceWorkOrders { get; }
+    DbSet<AttendanceRecord> AttendanceRecords { get; }
+    DbSet<Absence> Absences { get; }
+    DbSet<OperatorMachineAssignment> OperatorMachineAssignments { get; }
     DbSet<UserFieldHistory> UserFieldHistories { get; }
 
     // Knowledge Base

@@ -771,6 +771,179 @@ export interface paths {
       };
     };
   };
+  "/api/Hr/attendance/clock-in": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ClockBody"];
+          "text/json": components["schemas"]["ClockBody"];
+          "application/*+json": components["schemas"]["ClockBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/attendance/clock-out": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ClockBody"];
+          "text/json": components["schemas"]["ClockBody"];
+          "application/*+json": components["schemas"]["ClockBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/attendance/today": {
+    get: {
+      parameters: {
+        query?: {
+          day?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/attendance": {
+    get: {
+      parameters: {
+        query?: {
+          employeeId?: string;
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/absences": {
+    get: {
+      parameters: {
+        query?: {
+          employeeId?: string;
+          pendingOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateAbsenceBody"];
+          "text/json": components["schemas"]["CreateAbsenceBody"];
+          "application/*+json": components["schemas"]["CreateAbsenceBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/absences/{id}/decide": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["DecideAbsenceBody"];
+          "text/json": components["schemas"]["DecideAbsenceBody"];
+          "application/*+json": components["schemas"]["DecideAbsenceBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/assignments": {
+    get: {
+      parameters: {
+        query?: {
+          employeeId?: string;
+          machineId?: string;
+          activeOnly?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateAssignmentBody"];
+          "text/json": components["schemas"]["CreateAssignmentBody"];
+          "application/*+json": components["schemas"]["CreateAssignmentBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/assignments/{id}/end": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["EndAssignmentBody"];
+          "text/json": components["schemas"]["EndAssignmentBody"];
+          "application/*+json": components["schemas"]["EndAssignmentBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/import/sessions": {
     get: {
       parameters: {
@@ -3146,6 +3319,11 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    AbsenceType: 1 | 2 | 3 | 4 | 5 | 99;
     ApplyMappingRequest: {
       mapping?: components["schemas"]["ImportMapping"];
       targetEntity?: string | null;
@@ -3222,6 +3400,12 @@ export interface components {
       currentPassword?: string | null;
       newPassword?: string | null;
     };
+    ClockBody: {
+      /** Format: uuid */
+      employeeId?: string;
+      /** Format: date-time */
+      at?: string | null;
+    };
     CloseDowntimeBody: {
       /** Format: date-time */
       end?: string;
@@ -3243,6 +3427,27 @@ export interface components {
     };
     ConceptRequest: {
       concept?: string | null;
+    };
+    CreateAbsenceBody: {
+      /** Format: uuid */
+      employeeId?: string;
+      /** Format: date-time */
+      from?: string;
+      /** Format: date-time */
+      to?: string;
+      type?: components["schemas"]["AbsenceType"];
+      reason?: string | null;
+    };
+    CreateAssignmentBody: {
+      /** Format: uuid */
+      employeeId?: string;
+      /** Format: uuid */
+      machineId?: string;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
+      notes?: string | null;
     };
     CreateCustomsDeclarationCommand: {
       declarationNumber?: string | null;
@@ -3493,6 +3698,9 @@ export interface components {
       /** Format: date-time */
       expectedReleaseDate?: string | null;
     };
+    DecideAbsenceBody: {
+      approve?: boolean;
+    };
     DeclarationLineDto: {
       /** Format: uuid */
       itemId?: string;
@@ -3541,6 +3749,10 @@ export interface components {
       hireDate?: string | null;
       shift?: components["schemas"]["ShiftDto"];
       isActive?: boolean;
+    };
+    EndAssignmentBody: {
+      /** Format: date-time */
+      validTo?: string;
     };
     ExportLineDto: {
       /** Format: uuid */

@@ -96,6 +96,11 @@ import MachineDowntime from './pages/Machines/MachineDowntime';
 import MaintenancePlan from './pages/Machines/MaintenancePlan';
 import MaintenanceHistory from './pages/Machines/MaintenanceHistory';
 
+// P10.1/10.2/10.5 — HR operations
+import AttendanceToday from './pages/Hr/AttendanceToday';
+import Absences from './pages/Hr/Absences';
+import OperatorAssignment from './pages/Hr/OperatorAssignment';
+
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
@@ -448,31 +453,9 @@ const App: React.FC = () => {
 
             {/* ───────── P6.37.9 — 👥 HR group ───────── */}
             <Route path="/hr/employees" element={<EmployeeManagement />} />
-            <Route
-              path="/hr/attendance-today"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.attendanceToday"
-                  workPlanRef="P3.X — attendance tracking"
-                  backendStatus="missing"
-                  plannedBehavior="Денешен roster: кој е на работа, кој не е, доцнење, рано појавување. Quick actions: mark late, clock-out."
-                />
-              }
-            />
+            <Route path="/hr/attendance-today" element={<AttendanceToday />} />
             <Route path="/hr/shifts" element={<ShiftManagement />} />
-            <Route
-              path="/hr/absences"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.absences"
-                  workPlanRef="P3.X — absences (sick / vacation / other)"
-                  backendStatus="missing"
-                  plannedBehavior="Изостаноци по тип: болни, годишни, слободни денови, родителски отсутства. Approve/reject workflow."
-                />
-              }
-            />
+            <Route path="/hr/absences" element={<Absences />} />
             <Route
               path="/hr/overtime"
               element={
@@ -497,18 +480,7 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/hr/assignment"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.assignment"
-                  workPlanRef="P3.X — operator-machine assignment"
-                  backendStatus="missing"
-                  plannedBehavior="Матрица: оператор × машина/линија × смена. Со certification check (дали операторот има право да ракува со машината)."
-                />
-              }
-            />
+            <Route path="/hr/assignment" element={<OperatorAssignment />} />
             <Route
               path="/hr/training"
               element={

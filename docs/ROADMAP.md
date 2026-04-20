@@ -139,16 +139,19 @@ Training.
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P10.1** | `/hr/attendance-today` | new-entity: AttendanceRecord + clock-in/out endpoints | M | P0 | — | Clock-in/out UI + late/early badges. |
-| **P10.2** | `/hr/absences` | new-entity: Absence + approval workflow | M | P1 | — | Approve/reject + filter by type. |
+| **P10.1** | `/hr/attendance-today` | new-entity: AttendanceRecord + clock-in/out endpoints | M | P0 | — | **✅ 2026-04-20** — `AttendanceRecord` entity, (Employee, Date) uniq, `POST /Hr/attendance/clock-in`/`clock-out` upsert with server-side hours compute on clock-out. `AttendanceToday.tsx` пилот-dashboard со inline clock actions. |
+| **P10.2** | `/hr/absences` | new-entity: Absence + approval workflow | M | P1 | — | **✅ 2026-04-20** — `Absence` entity with null-Approved → pending, POST+Approve+Reject endpoints; ApprovedByUserId/ApprovedAt stamped. `Absences.tsx` со inline create + pending-only filter + approve/reject buttons. |
 | **P10.3** | `/hr/overtime` | new-entity: OvertimeRecord + aggregate vs shift | M | P2 | P10.1 | Weekly overtime summary. |
 | **P10.4** | `/hr/performance` | aggregate: OperationTimeLog GROUPBY Operator | L | P2 | P8.9 | Pieces per shift + variance vs standard. |
-| **P10.5** | `/hr/assignment` | new-entity: OperatorMachineAssignment | M | P1 | — | Shift board view. |
+| **P10.5** | `/hr/assignment` | new-entity: OperatorMachineAssignment | M | P1 | — | **✅ 2026-04-20** — `OperatorMachineAssignment` entity (Employee × Machine × ValidFrom/ValidTo window), create + end-now + active-only filter. `OperatorAssignment.tsx` со open-ended highlight + end-now action. |
 | **P10.6** | `/hr/training` | new-entity: TrainingRecord | M | P3 | — | Expiry tracking. |
 | **P10.7** | `/hr/payroll-export` | aggregate: Attendance + Overtime + Absence + piece-rate | M | P2 | P10.1, P10.3, P12.3 | CSV/Excel export за payroll provider. |
 
 **Phase 10 DoD:** shift lead клика "clock in" за сите, види живи hours + late;
-payroll export файл добар за upload во надворешна платформа.
+payroll export файл добар за upload во надворешна платформа. **Sprint 4 closed
+2026-04-20 (P10.1/10.2/10.5).** P10.3 overtime / P10.4 performance / P10.6
+training / P10.7 payroll-export остануваат long-tail (P10.4 зависи од P8.9
+time log; P10.7 зависи од P10.3 + P12.3 rate cards).
 
 ---
 

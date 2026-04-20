@@ -201,6 +201,27 @@ public enum MachineState
     Maintenance = 5
 }
 
+/// <summary>P10.1 — resolved attendance status for a given day.</summary>
+public enum AttendanceStatus
+{
+    Present = 1,
+    Late = 2,
+    Absent = 3,
+    Excused = 4,
+    OnLeave = 5
+}
+
+/// <summary>P10.2 — reason taxonomy for Absence records.</summary>
+public enum AbsenceType
+{
+    Sick = 1,
+    Vacation = 2,
+    Personal = 3,
+    Parental = 4,
+    Unpaid = 5,
+    Other = 99
+}
+
 /// <summary>P11.2 — root-cause taxonomy for DowntimeEvent.</summary>
 public enum DowntimeCategory
 {
