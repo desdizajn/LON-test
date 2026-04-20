@@ -625,7 +625,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.invoicing',
         icon: '🧾',
         path: '/finance/invoicing',
-        backendStatus: 'shipped',
+        backendStatus: 'exists',
         workPlanRef: 'P12.2 — invoicing MVP',
         plannedBehavior:
           'Draft → Issued → Paid. Generate from PO via active contract + PerPiece rate. Shipped 2026-04-20.',
@@ -635,7 +635,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.contracts',
         icon: '📜',
         path: '/finance/contracts',
-        backendStatus: 'shipped',
+        backendStatus: 'exists',
         workPlanRef: 'P12.3 — client contracts + rate cards',
         plannedBehavior:
           'Клиентски договори + rate картички (PerPiece / PerMinute). Authoritative source за invoicing. Shipped 2026-04-20.',
