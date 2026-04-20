@@ -337,7 +337,76 @@
 
 ## Current Active Task
 
-> **>>>** **2026-04-20 — Phase 5 autonomous sweep: 7 tasks shipped + VPS green (HEAD `031f0f3`)**
+> **>>>** **2026-04-20 (late) — Phase 5 sweep (7 tasks) + P6.38 FE catch-up batch (5 UIs) — HEAD `c5db4c6`, VPS green**
+>
+> ### 🎯 Handoff за следна сесија (чита се прво)
+>
+> **Каде запре:** Ти кажа "продолжи со must-have" после Phase 5 sweep. Јас направив 5 FE страници/модалки што ги покриваа shipped-без-UI backends: Export + Return declaration modals, Dashboard traffic-light widget, `/admin/tenant-settings`, `/admin/audit-log`. VPS green, сите тестирани преку curl.
+>
+> **Прв потег следна сесија:**
+> 1. **User UAT на денешните UIs** — најави на https://elon.elbosoft.click/ како admin, провери Customs → Export/Return buttons работат, провери `/admin/tenant-settings` + `/admin/audit-log`, провери Dashboard traffic-light панел. Додаток ги допре и Phase 5 endpoints — mass transfer `/warehouse/transfers`, quick entry `/tools/quick-entry`, recent values (MassTransfer reason field).
+> 2. **Ако UAT е OK → продолжи со P6.38 umbrella** (види "Остануваат" листа долу). Следен приоритет: declaration detail line editor + MRN usage meter, или TariffCodeRate CRUD — сите backend е жив, само UI.
+> 3. **Ако UAT крие bug → тоа е првиот таск.**
+>
+> ### 📦 Денес shipped + VPS-verified (5 commits)
+>
+> **Phase 5 (3 commits):** `c002fac` + `23a29ef` + `031f0f3` — 7 таскови: P5.2.7 mass-transfer, P5.2.5 FEFO flag, P5.3.3 inflate retroactive, P5.3.5 UserFieldHistory, P5.2.8 quick-entry, P5.3.1 BOM auto-apply, P5.3.2 partner override.
+>
+> **P6.38 FE catch-up (1 commit):** `c5db4c6` — ExportDeclarationModal (P2.6a), ReturnDeclarationModal (P2.6b), Dashboard traffic-light widget mount, `/admin/tenant-settings` (FEFO + InflateWaste toggles), `/admin/audit-log` viewer.
+>
+> **Log commit:** `11d845a` (Phase 5 sweep WORK_PLAN update).
+>
+> ### 🗄️ Migrations live on VPS (applied automatically on restart)
+>
+> - `P5_2_5_AllowFefoAutoPickFlag` — `Tenants.AllowFefoAutoPick bit DEFAULT 1`.
+> - `P5_3_5_UserFieldHistory` — new table + (UserId, FieldKey, Value) filtered unique index.
+> - `P5_3_2_BomPartnerOverride` — `BOMs.PartnerId uniqueidentifier NULL` + FK.
+>
+> ### 🧭 Остануваат (приоритетен редослед)
+>
+> **P6.38 umbrella (must-have, UI-only — backends live):**
+> - Declaration detail line editor (currently read-only)
+> - MRN usage meter inline на Customs detail
+> - Guarantee ledger tree со debit/credit math + release button
+> - Inventory filter-by-base toggle (дел од P6.33)
+> - ProductionOrder materials table со PreAssignedMRN + EfficiencyFactor visibility
+> - TariffCodeRate CRUD (P4.7)
+> - BOM / Routings builders
+> - Reports per-material import breakdown
+>
+> **Phase 2.5 i18n (долг рут):**
+> - P2.5.4 retrofit на ~30 постоечки страници
+> - P2.5.5 Intl.NumberFormat / DateTimeFormat helpers
+> - P2.5.6 backend errorCode → `t('errors.<code>')`
+> - P2.5.7 PDF/Excel/XML i18n (gated на Phase 4 реално reports)
+>
+> **Phase 5 остаток (design работа потребна):**
+> - P5.2.3 bulk receipt from invoice
+> - P5.2.4 bulk shipment from FG selection + EX
+> - P5.3.4 article picker "A"-суфикс варијанти
+>
+> **Phase 6 остаток:**
+> - P6.12 consistent response envelope (big refactor across controllers)
+> - P6.36 waste/calculations UI wiring (MRN consumption meter, waste-slot preview, advisory panel)
+> - P6.37.13 user visual smoke (пер-роля)
+> - P6.37.15 full-app a11y audit
+>
+> **Phase 7:** Flutter mobile — 0% started.
+>
+> ### ⚠️ Потенцијални ризици / забелешки
+>
+> - Integration тестовите **не се извршени локално** во оваа сесија (нема Docker Desktop). CI runner на GitHub Actions треба да ги провери — види последен run на `main`. Ако CI е жолт/црвен, тоа е првиот блокер.
+> - Working tree и понатаму има **16 deleted legacy `*_COMPLETE.md`** + `docs/*.md` deletions од пред-сесиски cleanup што никој не го committnuvao. Проверка со корисник пред било каков `git add -A`.
+> - VPS `.env` содржи `OPENAI_API_KEY` + `SQL_SA_PASSWORD`. Backup `.env.bak.p641`. Не логирај их.
+>
+> ### 🧰 Quick facts за hydration
+>
+> - HEAD: `c5db4c6` (main). Last 5 commits се сите од денес, сите од оваа сесија.
+> - VPS deploy flow: `ssh root@173.212.254.216 → cd /opt/apps/LON/LON-test && git pull && docker compose build <svc> && docker compose up -d <svc>`.
+> - SSH мора со explicit key path (бидејќи Windows HOME има cyrillic): `ssh -i "$HOME/.ssh/id_ed25519" -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o StrictHostKeyChecking=no root@173.212.254.216 "..."`.
+> - Admin: `admin / Admin123!`. TEKSPORT test users: `Test123!` (tek-customs / tek-wh-op / tek-operator / tek-qc / tek-hr / tek-maint / tek-finance / tek-mgr).
+
+> **>>>** **2026-04-20 — Phase 5 autonomous sweep: 7 tasks shipped + VPS green (HEAD `031f0f3`) (заменето погоре)**
 >
 > **All closed this session (3 batched commits):**
 > - **P5.2.7** Mass location change — `POST /api/wms/inventory/mass-transfer[/preview]` + `/warehouse/transfers` page (preview→confirm). 3 integration tests. i18n × 4.
