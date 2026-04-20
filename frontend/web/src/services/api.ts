@@ -323,6 +323,15 @@ export const hrApi = {
     api.get('/Hr/assignments', { params }),
 };
 
+// P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)
+export const managementApi = {
+  getOnTime: (params?: { from?: string; to?: string }) =>
+    api.get('/Management/on-time', { params }),
+  getByCustomer: (params?: { from?: string; to?: string }) =>
+    api.get('/Management/by-customer', { params }),
+  getAlerts: () => api.get('/Management/alerts'),
+};
+
 // P12.2 / P12.3 — Finance (contracts, rate cards, invoices)
 export const financeApi = {
   // Contracts

@@ -116,6 +116,11 @@ import AuditLog from './pages/Admin/AuditLog';
 import ClientContracts from './pages/Finance/ClientContracts';
 import Invoicing from './pages/Finance/Invoicing';
 
+// P13.1 / P13.3 / P13.5 — Management KPIs
+import OnTimeDelivery from './pages/Management/OnTimeDelivery';
+import ByCustomer from './pages/Management/ByCustomer';
+import Alerts from './pages/Management/Alerts';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -638,18 +643,7 @@ const App: React.FC = () => {
 
             {/* ───────── P6.37.12 — 🎯 Management (KPI) group ───────── */}
             <Route path="/management/dashboard" element={<Dashboard />} />
-            <Route
-              path="/management/on-time"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.onTime"
-                  workPlanRef="P5.X — on-time delivery metric"
-                  backendStatus="missing"
-                  plannedBehavior="On-time delivery % по клиент / период. Distribution: on-time / late by <7d / late by >7d."
-                />
-              }
-            />
+            <Route path="/management/on-time" element={<OnTimeDelivery />} />
             <Route
               path="/management/capacity"
               element={
@@ -662,18 +656,7 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/management/by-customer"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.byCustomer"
-                  workPlanRef="P5.X — production by customer"
-                  backendStatus="missing"
-                  plannedBehavior="Aggregated: парчиња, минути, маржа по клиент за период. Ranked list + тренд."
-                />
-              }
-            />
+            <Route path="/management/by-customer" element={<ByCustomer />} />
             <Route
               path="/management/margin"
               element={
@@ -686,18 +669,7 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/management/alerts"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.alerts"
-                  workPlanRef="P6.X — exception alerts"
-                  backendStatus="missing"
-                  plannedBehavior="Активни exceptions кои бараат управување: shortage, overdue налог, истекуван MRN, gaps во capacity."
-                />
-              }
-            />
+            <Route path="/management/alerts" element={<Alerts />} />
             <Route
               path="/management/risks"
               element={

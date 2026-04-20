@@ -1120,6 +1120,68 @@
       "CustomsDeclarations": "Царински декларации"
     }
   },
+  "management": {
+    "onTime": {
+      "title": "On-time delivery",
+      "subtitle": "Shipped/Delivered shipments vs planned PO end date (по batch). Excludes Unknown од %.",
+      "from": "Од",
+      "to": "До",
+      "overall": "Вкупен on-time %",
+      "shipments": "Shipments",
+      "byCustomer": "По клиент",
+      "customer": "Клиент",
+      "shipmentNumber": "Број",
+      "shippedOn": "Испратено",
+      "plannedEnd": "Planned end",
+      "daysLate": "Денови задоцнувaње",
+      "bucket": "Bucket",
+      "buckets": {
+        "onTime": "На време",
+        "late1To7": "Late 1-7д",
+        "lateOver7": "Late >7д",
+        "unknown": "Непознат"
+      }
+    },
+    "byCustomer": {
+      "title": "По клиент",
+      "subtitle": "Per-customer rollup: POs + shipments + invoices (за период).",
+      "from": "Од",
+      "to": "До",
+      "customers": "Клиенти",
+      "customerCode": "Шифра",
+      "customerName": "Клиент",
+      "openPOs": "Отворени POs",
+      "completedPOs": "Затворени POs",
+      "produced": "Произведено",
+      "shipments": "Пратки",
+      "shipped": "Испратено",
+      "invoicesIssued": "Фактури",
+      "outstanding": "Неплатени",
+      "paid": "Платени",
+      "currency": "Валута"
+    },
+    "alerts": {
+      "title": "Exception alerts",
+      "subtitle": "Ticker за активни exceptions: MRN истек, overdue фактури, shortage, at-risk POs, LON auth истек.",
+      "total": "Вкупно",
+      "category": "Категорија",
+      "generatedAt": "Генерирано",
+      "goTo": "Отвори",
+      "noAlerts": "Нема активни alerts. Се е под контрола.",
+      "severity": {
+        "critical": "Критично",
+        "warning": "Предупредувaње",
+        "info": "Информациски"
+      },
+      "categories": {
+        "mrnExpiring": "MRN истек",
+        "overdueInvoice": "Overdue фактура",
+        "materialShortage": "Недостиг на материјал",
+        "atRiskPO": "PO под ризик",
+        "lonAuthExpiring": "LON auth истек"
+      }
+    }
+  },
   "finance": {
     "contracts": {
       "title": "Клиентски договори",

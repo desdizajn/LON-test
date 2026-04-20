@@ -1120,6 +1120,68 @@
       "CustomsDeclarations": "Deklaratat doganore"
     }
   },
+  "management": {
+    "onTime": {
+      "title": "Dorëzimi në kohë",
+      "subtitle": "Shipped/Delivered dërgesat kundrejt planned PO end (përmes batch). Unknown nuk llogaritet në %.",
+      "from": "Nga",
+      "to": "Deri",
+      "overall": "Totali on-time %",
+      "shipments": "Dërgesat",
+      "byCustomer": "Sipas klientit",
+      "customer": "Klienti",
+      "shipmentNumber": "Numri",
+      "shippedOn": "Dërguar",
+      "plannedEnd": "Planned end",
+      "daysLate": "Ditë vonesë",
+      "bucket": "Bucket",
+      "buckets": {
+        "onTime": "Në kohë",
+        "late1To7": "Vonesë 1-7d",
+        "lateOver7": "Vonesë >7d",
+        "unknown": "I panjohur"
+      }
+    },
+    "byCustomer": {
+      "title": "Sipas klientit",
+      "subtitle": "Per-customer rollup: POs + dërgesat + faturat (për periudhën).",
+      "from": "Nga",
+      "to": "Deri",
+      "customers": "Klientët",
+      "customerCode": "Kodi",
+      "customerName": "Klienti",
+      "openPOs": "POs të hapura",
+      "completedPOs": "POs të mbyllura",
+      "produced": "Prodhuar",
+      "shipments": "Dërgesat",
+      "shipped": "Dërguar",
+      "invoicesIssued": "Faturat",
+      "outstanding": "Të papaguara",
+      "paid": "Të paguara",
+      "currency": "Valuta"
+    },
+    "alerts": {
+      "title": "Exception alerts",
+      "subtitle": "Ticker exceptions aktive: skadim MRN, fatura të vonuara, shortage, at-risk POs, skadim LON auth.",
+      "total": "Totali",
+      "category": "Kategoria",
+      "generatedAt": "Gjeneruar",
+      "goTo": "Hap",
+      "noAlerts": "Nuk ka alerts aktive. Gjithçka nën kontroll.",
+      "severity": {
+        "critical": "Kritik",
+        "warning": "Paralajmërim",
+        "info": "Informative"
+      },
+      "categories": {
+        "mrnExpiring": "Skadim MRN",
+        "overdueInvoice": "Faturë e vonuar",
+        "materialShortage": "Mungesë materiali",
+        "atRiskPO": "PO në rrezik",
+        "lonAuthExpiring": "Skadim LON auth"
+      }
+    }
+  },
   "finance": {
     "contracts": {
       "title": "Kontratat e klientit",

@@ -1120,6 +1120,68 @@
       "CustomsDeclarations": "Customs declarations"
     }
   },
+  "management": {
+    "onTime": {
+      "title": "On-time delivery",
+      "subtitle": "Shipped/Delivered shipments vs planned PO end date (joined by batch). Unknown excluded from %.",
+      "from": "From",
+      "to": "To",
+      "overall": "Overall on-time %",
+      "shipments": "Shipments",
+      "byCustomer": "By customer",
+      "customer": "Customer",
+      "shipmentNumber": "Number",
+      "shippedOn": "Shipped",
+      "plannedEnd": "Planned end",
+      "daysLate": "Days late",
+      "bucket": "Bucket",
+      "buckets": {
+        "onTime": "On time",
+        "late1To7": "Late 1-7d",
+        "lateOver7": "Late >7d",
+        "unknown": "Unknown"
+      }
+    },
+    "byCustomer": {
+      "title": "By customer",
+      "subtitle": "Per-customer rollup: POs + shipments + invoices for the period.",
+      "from": "From",
+      "to": "To",
+      "customers": "Customers",
+      "customerCode": "Code",
+      "customerName": "Customer",
+      "openPOs": "Open POs",
+      "completedPOs": "Completed POs",
+      "produced": "Produced",
+      "shipments": "Shipments",
+      "shipped": "Shipped",
+      "invoicesIssued": "Invoices",
+      "outstanding": "Outstanding",
+      "paid": "Paid",
+      "currency": "Currency"
+    },
+    "alerts": {
+      "title": "Exception alerts",
+      "subtitle": "Feed of active exceptions: MRN expiry, overdue invoices, shortage, at-risk POs, LON auth expiry.",
+      "total": "Total",
+      "category": "Category",
+      "generatedAt": "Generated",
+      "goTo": "Go",
+      "noAlerts": "No active alerts. All clear.",
+      "severity": {
+        "critical": "Critical",
+        "warning": "Warning",
+        "info": "Info"
+      },
+      "categories": {
+        "mrnExpiring": "MRN expiring",
+        "overdueInvoice": "Overdue invoice",
+        "materialShortage": "Material shortage",
+        "atRiskPO": "PO at risk",
+        "lonAuthExpiring": "LON auth expiring"
+      }
+    }
+  },
   "finance": {
     "contracts": {
       "title": "Client contracts",

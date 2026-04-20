@@ -1120,6 +1120,68 @@
       "CustomsDeclarations": "Царинске декларације"
     }
   },
+  "management": {
+    "onTime": {
+      "title": "On-time испорука",
+      "subtitle": "Shipped/Delivered пратке у односу на planned PO end (преко batch). Unknown се не броји у %.",
+      "from": "Од",
+      "to": "До",
+      "overall": "Укупан on-time %",
+      "shipments": "Пратке",
+      "byCustomer": "По клијенту",
+      "customer": "Клијент",
+      "shipmentNumber": "Број",
+      "shippedOn": "Послато",
+      "plannedEnd": "Planned end",
+      "daysLate": "Дана кашњења",
+      "bucket": "Bucket",
+      "buckets": {
+        "onTime": "На време",
+        "late1To7": "Касни 1-7д",
+        "lateOver7": "Касни >7д",
+        "unknown": "Непознато"
+      }
+    },
+    "byCustomer": {
+      "title": "По клијенту",
+      "subtitle": "Per-customer rollup: POs + пратке + фактуре (за период).",
+      "from": "Од",
+      "to": "До",
+      "customers": "Клијенти",
+      "customerCode": "Шифра",
+      "customerName": "Клијент",
+      "openPOs": "Отворени POs",
+      "completedPOs": "Затворени POs",
+      "produced": "Произведено",
+      "shipments": "Пратке",
+      "shipped": "Послато",
+      "invoicesIssued": "Фактуре",
+      "outstanding": "Неплаћене",
+      "paid": "Плаћене",
+      "currency": "Валута"
+    },
+    "alerts": {
+      "title": "Exception alerts",
+      "subtitle": "Ticker активних exceptions: MRN истек, overdue фактуре, shortage, at-risk POs, LON auth истек.",
+      "total": "Укупно",
+      "category": "Категорија",
+      "generatedAt": "Генерисано",
+      "goTo": "Отвори",
+      "noAlerts": "Нема активних alerts. Све је под контролом.",
+      "severity": {
+        "critical": "Критично",
+        "warning": "Упозорење",
+        "info": "Информативно"
+      },
+      "categories": {
+        "mrnExpiring": "MRN истек",
+        "overdueInvoice": "Overdue фактура",
+        "materialShortage": "Недостатак материјала",
+        "atRiskPO": "PO под ризиком",
+        "lonAuthExpiring": "LON auth истек"
+      }
+    }
+  },
   "finance": {
     "contracts": {
       "title": "Уговори са клијентима",

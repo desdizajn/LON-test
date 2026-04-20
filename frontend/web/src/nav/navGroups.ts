@@ -749,10 +749,10 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.onTime',
         icon: '⏰',
         path: '/management/on-time',
-        backendStatus: 'missing',
-        workPlanRef: 'P5.X — on-time delivery metric',
+        backendStatus: 'exists',
+        workPlanRef: 'P13.1 — on-time delivery metric',
         plannedBehavior:
-          'On-time delivery % по клиент / период. Distribution: on-time / late by <7d / late by >7d.',
+          'On-time % joined Shipment.ShipmentDate ↔ PO.PlannedEndDate via batch. Per-customer rollup. Shipped 2026-04-20.',
       },
       {
         key: 'management-capacity',
@@ -769,10 +769,10 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.byCustomer',
         icon: '👤',
         path: '/management/by-customer',
-        backendStatus: 'missing',
-        workPlanRef: 'P5.X — production by customer',
+        backendStatus: 'exists',
+        workPlanRef: 'P13.3 — production + shipment + billing by customer',
         plannedBehavior:
-          'Aggregated: парчиња, минути, маржа по клиент за период. Ranked list + тренд.',
+          'Per-customer aggregate: open/completed POs, produced qty, shipment count + qty, invoices issued + outstanding + paid. Shipped 2026-04-20.',
       },
       {
         key: 'management-margin',
@@ -789,10 +789,10 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.alerts',
         icon: '🚨',
         path: '/management/alerts',
-        backendStatus: 'missing',
-        workPlanRef: 'P6.X — exception alerts',
+        backendStatus: 'exists',
+        workPlanRef: 'P13.5 — exception alerts feed',
         plannedBehavior:
-          'Активни exceptions кои бараат управување: shortage, overdue налог, истекуван MRN, gaps во capacity.',
+          'Aggregated alerts: MRN expiring, overdue invoices, material shortage, at-risk POs, LON-auth expiring. Severity-sorted. Shipped 2026-04-20.',
       },
       {
         key: 'management-risks',

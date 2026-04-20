@@ -2157,6 +2157,48 @@ export interface paths {
       };
     };
   };
+  "/api/Management/on-time": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/by-customer": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/alerts": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/MasterData/partners": {
     get: {
       parameters: {
