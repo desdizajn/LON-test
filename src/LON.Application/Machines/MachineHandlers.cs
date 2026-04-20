@@ -252,14 +252,22 @@ public sealed class GetDowntimeParetoHandler
         if (request.From.HasValue) q = q.Where(e => e.Start >= request.From.Value);
         if (request.To.HasValue) q = q.Where(e => e.Start <= request.To.Value);
 
-        var buckets = await q
+        // Project into anonymous first, materialize, then map. Positional-record
+        // construction inside a LINQ-to-SQL projection is fragile in EF Core 8.
+        var raw = await q
             .GroupBy(e => e.Category)
-            .Select(g => new DowntimeParetoBucket(
-                g.Key,
-                g.Count(),
-                g.Sum(e => e.DurationMinutes ?? 0m)))
-            .OrderByDescending(b => b.TotalMinutes)
+            .Select(g => new
+            {
+                Category = g.Key,
+                Count = g.Count(),
+                TotalMinutes = g.Sum(e => (decimal?)e.DurationMinutes) ?? 0m,
+            })
             .ToListAsync(ct);
+
+        var buckets = raw
+            .Select(r => new DowntimeParetoBucket(r.Category, r.Count, r.TotalMinutes))
+            .OrderByDescending(b => b.TotalMinutes)
+            .ToList();
 
         return Result<IReadOnlyList<DowntimeParetoBucket>>.Success(buckets);
     }
