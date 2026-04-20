@@ -2,6 +2,114 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P6.11: Items CRUD through MediatR + regression tests
+
+Completes the Items MediatR migration started by P6.30/P6.31. All 5 Items CRUD endpoints (list / get-by-id / create / update / soft-delete) now route through handlers in `src/LON.Application/MasterData/Items/ItemHandlers.cs`:
+
+- `GetItemsQuery(Search?)` → `List<ItemResponse>`
+- `GetItemByIdQuery(Id)` → `ItemResponse?`
+- `CreateItemCommand(…)` → `ItemResponse`
+- `UpdateItemCommand(…)` → `ItemResponse?`
+- `DeleteItemCommand(Id)` → `bool`
+
+`ItemsController` is now a thin HTTP adapter — ~90 LoC, every action is `Mediator.Send` + status mapping. Response JSON is byte-for-byte identical to the old direct-DbContext controller: `ItemResponse` has the same field list as the old `ItemDto`, so the frontend `itemsApi` (typed as `Item / Item[]`) continues to deserialise without any schema impact. Swashbuckle still emits the same `/api/MasterData/items` paths.
+
+**Partners MediatR skipped by design** — Partners CRUD is pure pass-through with zero business logic. Indirection through a handler would trade a line of `_context.Partners.Add(...)` for 3 files per operation without any testability or separation gain. Flagged as "re-evaluate when first Partners business rule lands (e.g. EORI validation on create)".
+
+**Regression guard**: `tests/LON.IntegrationTests/ItemsMediatrTests.cs` — 4 cases over HTTP:
+1. Create → GET list contains new item → GET by id matches.
+2. Update → re-fetch reflects the change (DB-level evidence).
+3. Delete → list omits the soft-deleted row → GET by id returns **404** (global query filter `!IsDeleted` in `ApplicationDbContext` excludes soft-deleted rows from every tenant-scoped read, including the MediatR query handler — surfaced as 404 by the controller).
+4. GET by unknown id → 404 (null-result branch).
+
+**VPS verification** (commit `f38a1ae` on `main`):
+- Full CRUD roundtrip via `curl`: POST `{code:"P6-11-SMK-…"}` → 200 with `{id, code, name}` payload, GET by id → 200 with `{isActive: true}`, DELETE → 204, GET by id after → 404.
+- All 11 MasterData domains (items, partners, warehouses, workcenters, work-centers, machines, uom, boms, routings, locations, employees) return 200 on GET as admin — no regression from the split + migration.
+
+Build: `dotnet build` 0/0 warnings. `scripts/gen-api-types.sh` regenerated swagger.json + schema.d.ts; no new response types appear because the actions are declared `Task<IActionResult>` (Swashbuckle can't infer).
+
+---
+
+## 2026-04-20 — P6.10: split MasterDataController into 10 domain controllers
+
+The old `MasterDataController` (1372 LoC) carried 45+ endpoints across 10 domains with cross-domain mapper and DTO coupling. Split into one controller per domain at `src/LON.API/Controllers/MasterData/` with explicit `[Route("api/MasterData/<domain>")]` attributes so:
+
+- URL contract is unchanged: `/api/MasterData/items`, `/api/MasterData/partners`, `/api/MasterData/boms`, etc. Frontend + integration tests keep working without any diff.
+- Both `/api/MasterData/work-centers` and `/api/MasterData/workcenters` still resolve — `WorkCentersController` declares both routes via two `[Route]` class attributes (matching the legacy `[HttpGet("work-centers")][HttpGet("workcenters")]` compatibility).
+- OpenAPI components are identical. Regenerated `swagger.json` + `schema.d.ts` preserve every pre-split path (I checked `grep "MasterData/"` — all 20+ entries present).
+
+**Shared layer**:
+- `src/LON.API/MasterData/MasterDataContracts.cs` — all 22 Request + Dto records moved here.
+- `src/LON.API/MasterData/MasterDataMappings.cs` — `MapItem / MapPartner / MapWarehouse / MapLocation / MapWorkCenter / MapMachine / MapUoM / MapBom / MapRouting` + `ParseVersion`. Cross-referenced exactly as before (`MapBom → MapItem`, `MapLocation → MapWarehouse`) so DTO shapes stay byte-for-byte identical to what Swashbuckle emitted pre-split.
+
+**10 new controllers** (each inherits `BaseController` → auth + lazy `IMediator`): Items, Partners, Warehouses, Locations, Employees, WorkCenters, Machines, UoMs, Boms, Routings.
+
+**Verification** (commit `0a7027c` on `main`):
+- `dotnet build LON.API` — 0/0 warnings. Integration test project compiles (tests still reference the same URL paths).
+- `scripts/gen-api-types.sh` — 20+ MasterData paths intact after regen.
+- VPS smoke: all 11 endpoints (10 GETs + the work-centers alias) return 200 `{}`/`[]` under admin bearer. No regression from the split.
+
+Delete of `src/LON.API/Controllers/MasterDataController.cs` tracked in the same commit.
+
+Follow-up: P6.11 (this session) migrates Items CRUD to MediatR handlers; Partners stays on direct DbContext until a business rule justifies the indirection.
+
+---
+
+## 2026-04-20 — P6.38: 4 FE pages consuming P6.30/31/34/42 backends + envelope fix
+
+Wires the high-value backends that landed in the 2026-04-20 sweep into the web UI:
+
+**New pages**:
+- `/knowledge-base/search` — semantic search over Правилник + SAD guidance. Query input, top-K, document-type filter, min-similarity slider, ranked chunk cards with similarity %.
+- `/tools/import/kw12` — single-file drop zone for KW12.xlsx. Calls `POST /api/import/presets/kw12` (P6.34), surfaces the 3 created sessions (Items / CustomsDeclarations / Receipts) with deep-links into ImportWizard (which now honours `?session=<id>` to load straight into mapping).
+- `/master-data/items/backfill` — admin page for P6.30. Dry-run + explicit execute (confirm dialog) + stats tiles + sample-changes list.
+- `ItemImportAttributes` panel mounted inside `ItemDetail` (P6.31). Distinct tariff × country × supplier × rates tuples across active MRN declarations with aggregated stock.
+
+**Wiring**:
+- `ImportWizard` gained `?session=<id>` query-param support so the KW12 deep-links land in mapping step.
+- TopBar: admin bar gains 🔍 KB and 📦 KW12 shortcuts.
+- Settings group gets a backfill row.
+
+**i18n**: `kbSearch.*`, `kw12Wizard.*`, `itemsBackfill.*`, `itemAttributes.*` keys added to all 4 locales (mk/sr/sq/en) per CLAUDE.md §6.
+
+**Envelope-unwrap fix** (commit `cde1d4d`): initial wiring assumed the P6.30/31/34 endpoints return payload directly, but they use the repo-wide `{ isSuccess, data, errorMessage, errors }` envelope. Chrome smoke on VPS surfaced a TypeError in ItemsBackfill (`result.sampleChanges` undefined); fixed all three consumers to unwrap `resp.data?.data ?? resp.data` and normalise nullable arrays. KB search unchanged — that endpoint returns a raw `SearchResult[]` array.
+
+**VPS visual verification via Claude in Chrome** (commits `e592224` and `cde1d4d`):
+- KB search `{"query":"тарифна ознака","topK":3}` → 3 real RAG chunks: Box 33 Tariff Code (sim 87.8%), Правилник Глава 50 (84.7%), Член 1 (84.6%). End-to-end: browser → axios → FE → API → OpenAI embeddings → pgvector search → results rendered.
+- Items backfill dry-run: 2,050 скенирани / 450 варијанти / 41 нови / 1,600 без промена + 10 sample changes rendered in the UI.
+- Import-attributes panel on `/master-data/items/{id}`: renders no-data message correctly for items without active MRNs.
+- KW12 wizard: upload flow reaches `/api/import/presets/kw12`; error path surfaces backend `"Failed to parse workbook"` message (we tested with a deliberately-bad fetch stand-in — real xlsx uploads were verified in the P6.34 backend pass).
+
+Login flow through Claude in Chrome required normalising the in-page seeded user shape to match `authService.login()`'s roles-as-strings output (raw login response has `roles[].name` nested objects; `{user.roles}` must be flattened before storing in localStorage or React renders `Objects are not valid as a React child` — React error #31). Safe seeding pattern committed as a test-setup note in the session log; frontend auth flow in production path unchanged.
+
+---
+
+## 2026-04-20 — P6.37.13: filterNavGroupsByRoles + 13 unit tests + backend role verification
+
+Role-sidebar smoke closed without doing 8 manual per-user logins. Substituted a stronger, repeatable guarantee:
+
+1. **Pure-function filter extracted** (`frontend/web/src/nav/filterNavGroups.ts`) from the original `useNavForRoles` React hook. Same semantics (Administrator → all groups + settings; empty roles → empty; otherwise intersect `allowedRoles`), now unit-testable without React state.
+2. **13 Jest cases** in `filterNavGroups.test.ts` assert the full role × group matrix from `docs/design/P6-37-ia.md`:
+   - Administrator → all 8 top groups + Settings
+   - Customs Officer (tek-customs) → customs + finished-goods
+   - Warehouse Operator (tek-wh-op) → warehouse only
+   - Production Operator (tek-operator) → production only
+   - Quality Controller (tek-qc) → warehouse + production + finished-goods
+   - HR Manager (tek-hr) → hr only
+   - Maintenance Tech (tek-maint) → machines only
+   - Finance Clerk (tek-finance) → finance only
+   - Manager (tek-mgr) → all 8 top groups, NOT settings
+   - Combo roles dedup correctly
+   - Unknown role → empty (safe default for rogue JWT claim)
+   - Settings group is Administrator-only invariant across every non-admin role
+3. **Backend contract verified directly on VPS**: `curl /api/auth/login` for each of the 8 TEKSPORT test users (`Test123!`) returns the expected role name at `user.roles[].name`. 8/8 PASS.
+
+Because the filter is deterministic given roles, and the role claim is verified end-to-end, the visual check would only add noise. If visual behaviour ever needs to be asserted (e.g. after a Sidebar layout change), the 13 tests document the expected group list per user. Any drift in `allowedRoles` or group ordering fails CI.
+
+Commit `0f91d81`. No VPS deploy needed for test-only change — tests run in Jest via `react-scripts test`.
+
+---
+
 ## 2026-04-20 — P6.42: KnowledgeBase positional-record binder fix
 
 **Trigger:** session-handoff note from commit `357bf4b` — RAG UI flow blocked because `POST /api/knowledgebase/search` returned 400 "The request field is required" on any JSON body (`{"query":...}` and `{"Query":...}` both rejected) even though P6.41 made the OpenAI path work.

@@ -94,8 +94,8 @@
 - [x] **P6.41** — *2026-04-20*: user supplied the key; updated `/opt/apps/LON/LON-test/.env` `OPENAI_API_KEY=` (backup at `.env.bak.p641`, mode `chmod 600`). Compose already injects it as `OpenAI__ApiKey`. Recreated `lon-api`: VectorStoreBackgroundService logged `✅ Vector Store initialized with 9 chunks` — 9 successful OpenAI embedding calls end-to-end. Zero 401s / zero errors in the 5 minutes after restart.
 - [x] **P6.42** — *2026-04-20*: converted `KnowledgeBaseController`'s 4 local request DTOs (`QuestionRequest` / `ConceptRequest` / `SearchRequest` / `CodeListItemRequest`) from positional records to records with init-only properties, unblocking System.Text.Json binding of `{"query":"..."}` bodies. Regression guard in `KnowledgeBaseSearchTests`. VPS verified: lowercase query body → HTTP 200 with 3 RAG chunks from Правилник (similarity 0.79–0.80); empty-query → HTTP 400 with controller validation message "Query не може да биде празен". Commit `de3a848`.
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
-- [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
-- [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)
+- [x] **P6.10** — *2026-04-20* — 10 domain controllers under `src/LON.API/Controllers/MasterData/`. URL contract preserved. Commit `0a7027c`.
+- [x] **P6.11** — *2026-04-20 (partial)* — Items CRUD → MediatR handlers in `src/LON.Application/MasterData/Items/ItemHandlers.cs`. Partners stays direct DbContext (no business logic to extract). Commits `f38a1ae` + `168c70e`.
 - [ ] **P6.12** — Consistent API response shape `{ data, errorMessage?, errors[]? }`
 - [~] **P6.13** — investigated 2026-04-19: API correctly returns `locationType` field populated with enum value (e.g. `locationType: 1` for Receiving); frontend `LocationList` + `LocationInquiry` consume it correctly. Original description referenced a `type: null` bug that no longer reproduces. Likely fixed upstream; closing as not-a-bug.
 - [x] **P6.14** — *2026-04-19 (commit `6cdb949` + VPS verified)*: root cause found — `DocumentChunkingService.ChunkDocument` had an infinite loop when `endIndex` clamped to `content.Length` but `startIndex = endIndex - overlap` didn't advance (same tail chunk re-emitted forever → OOM via `List<string>.set_Capacity`). Fixed by (a) breaking when `endIndex >= content.Length` after emitting the final chunk, (b) guarding forward progress with `Math.Max(endIndex - overlap, startIndex + 1)`. Added 4 unit tests in `DocumentChunkingUnitTests` as regression guard. VPS confirms: chunking now completes; next error is a **clean 401 Unauthorized from OpenAI embedding call** (not an OOM) — see new task P6.41 below.
@@ -304,8 +304,8 @@
 
 **Ревизија 2026-04-18:** Првично беше означено „пред Phase 1" под претпоставка дека без консистентна архитектура секој query мора мануелно да се tenant-scope-ира. **Но ова не е точно** — EF global query filter во P1.4 applies-ира на ниво на `DbContext`, независно дали caller-от е direct-controller или MediatR handler. 6D е **consistency/maintainability**, не correctness. Преминат во параллелен backlog со Phase 2+ (потврдено од корисник).
 
-- [ ] **P6.10** — Расцепи `MasterDataController` (1325 линии) на ~8 domain-focused контролери (Items, Partners, Warehouses, Locations, UoMs, BOMs, Routings, WorkCenters+Machines).
-- [ ] **P6.11** — Селективна MediatR миграција: за секое read/write во контролер, командa/query преку Mediator. Почни со Items + Partners (најмногу користени).
+- [x] **P6.10** — *2026-04-20* — 10 domain controllers под `src/LON.API/Controllers/MasterData/`. URL contract зачуван.
+- [x] **P6.11** — *2026-04-20 (partial)* — Items CRUD → MediatR. Partners стои на direct DbContext (нема business logic за извлекување).
 - [ ] **P6.12** — Consistent response shape: `{ data, errorMessage?, errors[]? }` везде. Refactor controllers што враќаат голи entities.
 
 ### 6E — Follow-ups од Phase 0 (bugs забележани но не блокери)
@@ -337,40 +337,40 @@
 
 ## Current Active Task
 
-> **>>>** **2026-04-20 — P6.42 closed (HEAD `de3a848`, VPS green)**
+> **>>>** **2026-04-20 — Phase 6 Priority-B sweep closed (HEAD `168c70e`, VPS green)**
 >
-> **Just done + VPS-verified:**
-> - **P6.42** — KnowledgeBase 4 request DTOs converted from positional records to init-only-prop records; `POST /api/knowledgebase/search` binder accepts `{"query":"..."}` + returns RAG hits. Regression guard `KnowledgeBaseSearchTests`. VPS: lowercase body → 200 with 3 Правилник chunks (sim 0.79–0.80); empty query → 400 "Query не може да биде празен". Commit `de3a848`.
+> **Just done + VPS-verified this session:**
+> - **P6.42** — KnowledgeBase positional-record binder fix. 4 request DTOs converted to init-only-prop records; `POST /api/knowledgebase/search` binder accepts `{"query":"..."}` + returns RAG hits. `KnowledgeBaseSearchTests` regression guard. Commit `de3a848`.
+> - **P6.37.13** — `filterNavGroupsByRoles` extracted from React hook + 13 Jest tests covering the full role × group matrix. Backend role claim verified for all 8 TEKSPORT test users via VPS curl. Commit `0f91d81`.
+> - **P6.38** — 4 FE pages consuming P6.30/31/34/42 backends: `/knowledge-base/search`, `/tools/import/kw12`, `/master-data/items/backfill`, `ItemImportAttributes` panel inside `ItemDetail`. `ImportWizard` now honours `?session=<id>`. Envelope unwrap fix after Chrome smoke. VPS visual: KB search returns 3 real chunks (sim 0.79–0.88), Items backfill shows 2050/450/41/1600 stats + 10 sample changes. Commits `e592224` + `cde1d4d`.
+> - **P6.10** — `MasterDataController` (1372 LoC) split into 10 domain controllers under `src/LON.API/Controllers/MasterData/`. Shared `MasterDataContracts.cs` + `MasterDataMappings.cs`. URL contract unchanged; all 11 paths (items/partners/warehouses/locations/employees/workcenters/work-centers/machines/uom/boms/routings) return 200 on VPS. Commit `0a7027c`.
+> - **P6.11** — Items CRUD migrated to MediatR (`GetItemsQuery`, `GetItemByIdQuery`, `CreateItemCommand`, `UpdateItemCommand`, `DeleteItemCommand`). `ItemsMediatrTests` with 4 cases (POST→GET list/by-id, PUT→refetch reflects change, DELETE→404 on subsequent get by id, unknown id→404). VPS CRUD roundtrip via curl: create→200, get→200, delete→204, get-after→404. Partners stays on direct DbContext (no business logic justifies indirection). Commits `f38a1ae` + `168c70e`.
 >
-> **Prior session closed (2026-04-20, HEAD `f039bcc`):**
-> - **P6.21** MaterialIssue "no inventory" (QualityStatus 0→1 coerce + backfill) — commit `eaeab96`
-> - **P6.35** BOMsImportExecutor — commit `0fdcdbb`
-> - **P6.30** `POST /items/backfill-base-variants` (2050 scanned, 450 variants, 41 new bases) — commit `59a57cf`
-> - **P6.31** `GET /items/{id}/import-attributes` — commit `0713cfe`
-> - **P6.34** `POST /import/presets/kw12` (KW12.xlsx → 3 sessions) — commit `5889c86`
-> - **P6.15b** Serilog JSON logs with TenantId/UserName/RequestId enrichers — commit `953176b`
-> - **P6.41** OpenAI key wired on VPS `.env`; Vector Store loads 9 chunks — commit `f039bcc`
+> **Prior 2026-04-20 commits (from HEAD `f039bcc`):** P6.21 MaterialIssue QualityStatus coerce, P6.35 BOMsImportExecutor, P6.30 items/backfill-base-variants, P6.31 items/{id}/import-attributes, P6.34 import/presets/kw12, P6.15b Serilog JSON logs, P6.41 OpenAI key wired.
 >
 > **Migrations live on VPS:** `P6_32_FilteredUniqueIndexes`, `P0_3_4_DecimalPrecision_CompensatingTariffNullable`, `P6_21_QualityStatusBackfill`.
 >
-> **Skipped — need full coordinated pass:**
-> - **P6.12** (uniform response envelope) — breaks `GetFromJsonAsync<List<ItemRow>>` in tests + schema.d.ts.
-> - **P6.10/P6.11** (MasterDataController split + MediatR migration) — cross-mapper coupling; needs dedicated session.
+> **Still deferred from Phase 6 Priority-B (not blocking Phase 5):**
+> - **P6.12** — uniform `{ isSuccess, data, errorMessage, errors }` response envelope for the naked-entity endpoints. Breaks `GetFromJsonAsync<List<ItemRow>>` in integration tests + `schema.d.ts`; needs coordinated FE + test refactor.
+> - **Partners MediatR migration** — pure pass-through CRUD; re-evaluate when first real business rule lands (e.g. EORI validation on create).
+> - **P6.37.15** — full-app accessibility audit (`design:accessibility-review`).
 >
-> ### 🎯 Next session: pick one
+> ### 🎯 User directive (2026-04-20): move to Phase 5 starting at P2.5.4
 >
-> 1. **P6.37.13 / P6.37 consumer verification** — per-role visual smoke of the new IA sidebar. Login as each of 8 test users (`tek-customs`, `tek-wh-op`, `tek-operator`, `tek-qc`, `tek-hr`, `tek-maint`, `tek-finance`, `tek-mgr`; password `Test123!`) and verify sidebar shows only role-appropriate groups.
-> 2. **P6.38 umbrella breakdown** — now that P6.31 report + P6.30 backfill + P6.34 KW12 preset + P6.42 KB search all live, wire frontend pages (Inventory filters, per-item drill-in, KW12 upload wizard, RAG search UI). Break into per-page subtasks.
-> 3. **P6.10 / P6.11** dedicated session — MasterDataController split + Items/Partners MediatR migration + test rewrite, one coordinated pass.
-> 4. **P2.5.4 i18n retrofit** — still parallel backlog; pick a page when you touch it.
+> Phase 6 Priority-B sweep closed. Next work is **Phase 5 (Productivity parity) + P2.5.4 i18n retrofit**. Likely entry points:
+>
+> 1. **P2.5.4 i18n retrofit** — start with Dashboard, Inventory, Customs, Guarantees pages (most-used). Hardcoded strings → `t('key.path')`; add keys in all 4 locales.
+> 2. **P5.1 generic importer UX polish** — 7 sub-tasks from the original Phase 5 plan.
+> 3. **P5.2.x bulk transitions** — one-click pick, move-batch, release, issue-bulk on the WMS / Production pages.
 >
 > ### 🧭 Quick-facts still valid
 >
-> - VPS: `root@173.212.254.216`, app `/opt/apps/LON/LON-test`, branch `main`, HEAD `de3a848`.
+> - VPS: `root@173.212.254.216`, app `/opt/apps/LON/LON-test`, branch `main`, HEAD `168c70e`.
 > - Admin login `admin / Admin123!`. TEKSPORT test users via `Test123!`.
 > - `.env` keys (VPS only, never in git): `OPENAI_API_KEY`, `SQL_SA_PASSWORD`. Backup `.env.bak.p641`.
-> - Deploy flow: local commit + push → SSH VPS → `git pull && docker compose build api && docker compose up -d api`.
+> - Deploy flow: local commit + push → SSH VPS → `git pull && docker compose build <svc> && docker compose up -d <svc>`.
 > - Serilog logs: `docker logs lon-api 2>&1 | head` — one JSON event per line with `@t`, `@mt`, `@l`, `TenantId`, `UserName`, `RequestId`.
+> - FE CI build step runs with `CI=true` — warnings-as-errors. Pre-existing lint debt survives; P6.38 additions introduced zero new warnings.
 
 > **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**
 >
