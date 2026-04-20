@@ -2,6 +2,81 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — UX: Taris LON management brand + design system + responsive + i18n wave 1+2
+
+**Status:** [x] done (waves 1+2 deployed; wave 3 long-tail queued). HEAD `03d7013`, VPS green.
+
+**User feedback что разрешивме:**
+1. Sidebar scroll-а заедно со content → ❌ fixed (position: fixed + own `.sidebar__scroll`).
+2. Mobile практично неупотребливо → ❌ fixed (hamburger drawer + backdrop, responsive tables, collapsing grids).
+3. „Дете го цртало" дизајнот → ❌ fixed (full design system rewrite).
+4. Branding = „Taris LON management" + лого + favicon + Elbosoft footer → ❌ fixed.
+5. Преводи само делумно → ❌ wave 1+2 shipped; wave 3 е backlog (flagged).
+
+**Branding (од `docs/Taris_LON_management_logo.png` + `docs/Taris_LON_management_favicon.png`):**
+- PNG assets копирани во `frontend/web/public/{taris-logo.png,taris-favicon.png}`.
+- `index.html`: `<title>Taris LON management</title>`, meta description, `<link rel="icon">` + `apple-touch-icon`, Inter font loaded.
+- Sidebar header: compass mark на бел chip + wordmark „TARIS / LON management".
+- Sidebar footer: `© YYYY Elbosoft Consulting DOOEL`.
+- Login page редизајниран: split-screen со brand hero (navy gradient + compass watermark + 5 pillar chips за Production / Warehouse / Customs / Finance / KPI) лево, form card десно. Hero footer: Elbosoft Consulting DOOEL. На < 860px, hero се колабсира во компактен header.
+
+**Design system (index.css):**
+- Палета од логото: `--taris-blue-500 #1e88e5` primary, `--taris-red-500 #e53935` accent, slate neutrals (ink-50..900), semantic success/warning/danger/info + _bg variants.
+- Elevation (`--shadow-xs..lg`), radius (4..16), consistent spacing.
+- Buttons, forms, tables, cards, badges, headers — сите со tokens.
+- Print stylesheet скрива sidebar/topbar.
+
+**App shell:**
+- `.sidebar` е position: fixed со сопствен `.sidebar__scroll` (internal overflow).
+- `LayoutContext.tsx` споделува `mobileNavOpen` за drawer state; Esc затвора, body scroll lock.
+- TopBar hamburger видлив < 900px; button labels колапсирaат под 640px.
+- Active submenu: 3px blue bar лево.
+- Responsive: < 900px sidebar = off-canvas drawer + backdrop; 2/3-col grids стакaат; wide tables = horizontal scroll.
+
+**i18n — audited целата платформа; класифицирани pages:**
+
+*Wave 1 (fully translated, shipped commit `66d19bd`):*
+- `Traceability.tsx` — 100% hardcoded English → сите strings кроз `t('traceability.*')`.
+- `WMS/PickTaskList.tsx` — кроз `t('pickTasks.*')` со status + priority enums.
+- `Inventory.tsx` — header, 6 action buttons, 7 column headers, QC status badges.
+
+*Wave 2 (fully translated, shipped commit `03d7013`):*
+- `Reports/InventoryByLocation.tsx` — title, 4 summary cards, 4 filters, grouped view headers, 7 columns, CSV headers, empty state.
+- `Reports/InventoryByBatch.tsx` — same coverage + search + 3 summary cards + per-batch header.
+- `Reports/InventoryByMRN.tsx` — compliance notice + status filter + 4 summary cards + per-MRN active/depleted badge.
+- `Reports/BlockedInventory.tsx` — warning banner, status filter, 4 summary cards, aging badges (critical/old/days), release action.
+- `Reports/MovementReports.tsx` — date-range filter, receipts/shipments tabs, per-tab summary cards, tables, shipment status badges (`shipmentStatus.*`).
+- `Guarantees.tsx` — title, 2 CTAs, accounts grid, active guarantees table, new-account + new-ledger modals (all labels).
+
+*Wave 2 surgical (title + t() hook only):*
+- `Reports/CycleCountAccuracy.tsx`
+- `Reports/WarehouseUtilization.tsx`
+- `Reports/WMSDashboard.tsx`
+
+**Wave 3 backlog (long-tail — known remaining i18n gaps):**
+- Admin pages со Macedonian-only hardcoded strings (не грижа за Macedonian корисник, но switching на sr/sq/en fallback-ува на Macedonian):
+  - `UserManagement.tsx`, `RoleManagement.tsx`, `EmployeeManagement.tsx`, `ShiftManagement.tsx`, `CodeListManagement.tsx`
+- `MasterData/` forms и лист:
+  - `WarehouseForm.tsx`, `WarehouseList.tsx`, `LocationForm.tsx`, `LocationList.tsx`
+- `Advanced/` (low-traffic operator tools):
+  - `BatchTraceability.tsx`, `ItemInquiry.tsx`, `LocationInquiry.tsx`, `MRNUsageTracking.tsx`
+- `KnowledgeBase/KnowledgeBaseChat.tsx`
+- Deep strings within the 3 surgically-touched reports (CycleCountAccuracy, WarehouseUtilization, WMSDashboard) — filter labels, column headers, empty states.
+
+**Keys added across mk/sr/sq/en:**
+- `inventory.*`, `pickTasks.*`, `traceability.*`, `reports.common.*`, `reports.<page>.title`,
+  `inventoryByBatch.*`, `inventoryByMrn.*`, `blockedInventory.*`, `movements.*`,
+  `shipmentStatus.*`, `guarantees.*`, `login.hero*`, `login.pillars.*`, `topBar.openMenu`,
+  `common.all/select/generate/exportCsv`.
+
+**Gotcha:** Nested double-quotes во Macedonian typography („текст") троеиле JSON parsing. Fix: користи `„текст"` (low U+201E + closing U+201C) наместо mixed `„текст"`.
+
+**Commits:** `66d19bd` (branding + layout + wave 1), `03d7013` (wave 2).
+
+**Next:** Wave 3 i18n (admin + MasterData + Advanced) — ad-hoc кога се допираат природно или во посветена сесија. Expert UAT (корисник) поднесувањето е следниот ripe step — платформата сега физички изгледа spremна.
+
+---
+
 ## 2026-04-20 — Sprint 7: Phase 13.1 on-time + 13.3 by-customer + 13.5 alerts
 
 **Status:** [x] done — HEAD `951eaa1`, VPS green.
