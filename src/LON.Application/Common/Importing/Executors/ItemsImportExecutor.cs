@@ -14,8 +14,10 @@ public class ItemsImportExecutor : IImportTargetExecutor
     /// KW12 code shape: FG `\d{5}\d{3}.*`, material `\d{7}\d{3}.*`. Parse into
     /// (base, color, size). When the code doesn't match the shape rule, the
     /// item is treated as a bare base item (no parent-variant relationship).
+    /// Exposed as public so the P6.30 legacy backfill command can re-use the
+    /// identical decomposition logic without forking the regex.
     /// </summary>
-    internal static (string? Base, string? Color, string? Size) DecomposeCode(string code, ItemType type)
+    public static (string? Base, string? Color, string? Size) DecomposeCode(string code, ItemType type)
     {
         if (string.IsNullOrWhiteSpace(code)) return (null, null, null);
         var trimmed = code.Trim();

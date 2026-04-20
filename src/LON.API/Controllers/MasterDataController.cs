@@ -1,6 +1,8 @@
+using LON.Application.MasterData.Commands.BackfillItemBaseVariants;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -105,6 +107,21 @@ public class MasterDataController : BaseController
         item.IsDeleted = true;
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    /// <summary>
+    /// P6.30 — one-shot backfill of BaseCode/ColorCode/SizeCode/ParentItemId
+    /// on legacy items migrated from ELON before KW12 variant model existed.
+    /// Admin-only; idempotent (second run is a no-op). Pass ?dryRun=true to
+    /// preview the counts without persisting.
+    /// </summary>
+    [HttpPost("items/backfill-base-variants")]
+    [Authorize(Roles = "Administrator")]
+    public async Task<IActionResult> BackfillBaseVariants([FromQuery] bool dryRun = false)
+    {
+        var result = await Mediator.Send(new BackfillItemBaseVariantsCommand(dryRun));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
     }
 
     [HttpGet("warehouses")]
