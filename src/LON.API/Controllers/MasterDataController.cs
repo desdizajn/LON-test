@@ -1,4 +1,5 @@
 using LON.Application.MasterData.Commands.BackfillItemBaseVariants;
+using LON.Application.MasterData.Queries.GetItemImportAttributes;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Infrastructure.Persistence;
@@ -120,6 +121,22 @@ public class MasterDataController : BaseController
     public async Task<IActionResult> BackfillBaseVariants([FromQuery] bool dryRun = false)
     {
         var result = await Mediator.Send(new BackfillItemBaseVariantsCommand(dryRun));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// P6.31 — for a given Item, returns the distinct (TariffCode, CountryOfOrigin,
+    /// IsPreferentialOrigin, Supplier, DutyRate, VATRate) tuples seen across all
+    /// CustomsDeclarationLines whose MRN is still active in the registry, with
+    /// the aggregate available stock per tuple. Surfaces "one material, three
+    /// import profiles" scenarios that were previously only visible by eyeballing
+    /// per-line tables.
+    /// </summary>
+    [HttpGet("items/{id}/import-attributes")]
+    public async Task<IActionResult> GetItemImportAttributes(Guid id)
+    {
+        var result = await Mediator.Send(new GetItemImportAttributesQuery(id));
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }
