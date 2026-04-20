@@ -132,6 +132,81 @@ public class ImportRunTests : IClassFixture<LonApiFactory>
         items!.Should().NotContain(i => i.Code == dup);
     }
 
+    /// <summary>
+    /// P6.35 — BOMs target commits a BOM per parent FG with one BOMLine per row.
+    /// Verifies baseline: 2 components share the same parentItemCode (header
+    /// default) → 1 BOM + 2 BOMLines + monotonic line numbers.
+    /// </summary>
+    [Fact]
+    public async Task Commit_Boms_CreatesBomWithLinesForHeaderParent()
+    {
+        var client = _factory.CreateClient();
+        await Authenticate(client);
+        var uomCode = await FirstUomCodeAsync(client);
+
+        // Seed a parent FG + two components via the Items executor so the LOOKUPs
+        // resolve. Using the same session flow keeps the test self-contained.
+        var tag = Guid.NewGuid().ToString("N").Substring(0, 6);
+        var parent = $"FG-P635-{tag}";
+        var compA = $"MAT-A-{tag}";
+        var compB = $"MAT-B-{tag}";
+        var sidItems = await UploadCsvAsync(client,
+            $"Code,Name\n{parent},ParentFG\n{compA},CompA\n{compB},CompB\n",
+            "items.csv");
+        await ApplyMapping(client, sidItems, "Items", new (string, string)[] {
+            ("Code", "code"), ("Name", "name")
+        });
+        await client.PutAsJsonAsync($"/api/import/sessions/{sidItems}/defaults", new {
+            defaults = new {
+                values = new Dictionary<string, string?> {
+                    ["type"] = "RawMaterial",
+                    ["baseUoMCode"] = uomCode
+                }
+            }
+        });
+        var itemsCommit = await client.PostAsync($"/api/import/sessions/{sidItems}/commit", null);
+        itemsCommit.EnsureSuccessStatusCode();
+
+        // Now the BOMs import.
+        var sid = await UploadCsvAsync(client,
+            $"Component,Qty,Uom\n{compA},2,{uomCode}\n{compB},5,{uomCode}\n",
+            "bom.csv");
+        await ApplyMapping(client, sid, "BOMs", new (string, string)[] {
+            ("Component", "componentItemCode"),
+            ("Qty", "componentQuantity"),
+            ("Uom", "componentUomCode")
+        });
+        await client.PutAsJsonAsync($"/api/import/sessions/{sid}/transforms", new {
+            transforms = new { columns = new[] {
+                new { sourceHeader = "Component", rules = new[] { "LOOKUP:Items.Code" } },
+                new { sourceHeader = "Uom", rules = new[] { "LOOKUP:UnitsOfMeasure.Code" } }
+            }}
+        });
+        await client.PutAsJsonAsync($"/api/import/sessions/{sid}/defaults", new {
+            defaults = new {
+                values = new Dictionary<string, string?> {
+                    ["parentItemCode"] = parent,
+                    ["baseQuantity"] = "1"
+                }
+            }
+        });
+        // parentItemCode is an Items lookup too — it must be transformed.
+        var currentTransforms = new {
+            transforms = new { columns = new[] {
+                new { sourceHeader = "Component", rules = new[] { "LOOKUP:Items.Code" } },
+                new { sourceHeader = "Uom", rules = new[] { "LOOKUP:UnitsOfMeasure.Code" } },
+                new { sourceHeader = "parentItemCode", rules = new[] { "LOOKUP:Items.Code" } }
+            }}
+        };
+        await client.PutAsJsonAsync($"/api/import/sessions/{sid}/transforms", currentTransforms);
+
+        var commit = await client.PostAsync($"/api/import/sessions/{sid}/commit", null);
+        var body = await commit.Content.ReadFromJsonAsync<ResultResponse<RunReport>>();
+        commit.StatusCode.Should().Be(HttpStatusCode.OK, body?.ErrorMessage ?? "unknown");
+        body!.Data!.WasCommitted.Should().BeTrue();
+        body.Data.EntitiesCreated.Should().Be(3, "1 BOM + 2 BOMLines");
+    }
+
     [Fact]
     public async Task Commit_UnknownLookup_ReportedAndRolledBack()
     {

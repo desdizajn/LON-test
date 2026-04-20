@@ -1,26 +1,108 @@
 using LON.Application.Common.Interfaces;
 using LON.Domain.Entities.Customs;
+using LON.Domain.Entities.Production;
 using LON.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace LON.Application.Common.Importing.Executors;
 
 /// <summary>
-/// Placeholder executor for a target whose commit pipeline isn't wired up
-/// yet. Dry-run still exercises the resolver + validator against this
-/// target's schema; only the final save fails with a clear "not implemented"
-/// message so nothing silently gets created.
+/// P6.35 — commits one <see cref="BOM"/> per distinct parent FG found in the
+/// import rows plus one <see cref="BOMLine"/> per row. Grouping key is the
+/// row's <c>parentItemCode</c> (Either-scope, so header defaults flow into
+/// every row when the file carries a single BOM).
+///
+/// Versioning: if a BOM for the same (TenantId, ItemId) already exists
+/// (undeleted), a new BOM with `Version = max(existing) + 1` is written and
+/// the old one stays active until the caller flips it off. Lets Matriks-style
+/// files land without clobbering hand-edited BOMs.
+///
+/// ScrapPct / position / baseQuantity / bomCode are optional; sensible
+/// defaults (0, row order, 1, auto-generated) are applied when absent.
 /// </summary>
 public class BOMsImportExecutor : IImportTargetExecutor
 {
     public string TargetName => "BOMs";
-    public Task<(bool Ok, int Created, string? Error)> ExecuteAsync(
+
+    public async Task<(bool Ok, int Created, string? Error)> ExecuteAsync(
         IReadOnlyList<ResolvedImportRow> rows,
         IReadOnlyDictionary<string, object?> headerDefaults,
         IApplicationDbContext context,
         CancellationToken cancellationToken)
-        => Task.FromResult<(bool, int, string?)>(
-            (false, 0, "BOMs import commit is not yet implemented; dry-run is supported."));
+    {
+        if (rows.Count == 0) return (true, 0, null);
+
+        var created = 0;
+        var grouped = rows.GroupBy(r => r.GetOrDefault<Guid>("parentItemCode")).ToList();
+
+        foreach (var group in grouped)
+        {
+            var parentItemId = group.Key;
+            if (parentItemId == Guid.Empty)
+            {
+                var firstRow = group.First();
+                return (false, created, $"Row {firstRow.RowIndex}: parentItemCode is required (no header default supplied either).");
+            }
+
+            // Version-bump: highest existing version for (TenantId, ItemId) + 1.
+            // IgnoreQueryFilters so soft-deleted BOMs still count towards the
+            // numeric sequence (composite unique is filtered on IsDeleted=0 but
+            // monotonic numbering across undeletes is friendlier).
+            var existingMaxVersion = await context.BOMs
+                .IgnoreQueryFilters()
+                .Where(b => b.ItemId == parentItemId)
+                .Select(b => (int?)b.Version)
+                .MaxAsync(cancellationToken) ?? 0;
+
+            var headRow = group.First();
+            var bomCode = headRow.GetOrDefault<string>("bomCode");
+            var baseQuantity = headRow.GetOrDefault<decimal?>("baseQuantity") ?? 1m;
+
+            var bom = new BOM
+            {
+                Id = Guid.NewGuid(),
+                Code = string.IsNullOrWhiteSpace(bomCode)
+                    ? $"BOM-{parentItemId:N}".Substring(0, 28) + $"-V{existingMaxVersion + 1}"
+                    : bomCode!,
+                ItemId = parentItemId,
+                Version = existingMaxVersion + 1,
+                ValidFrom = DateTime.UtcNow.Date,
+                ValidTo = null,
+                IsActive = true,
+                BaseQuantity = baseQuantity
+            };
+            await context.BOMs.AddAsync(bom, cancellationToken);
+            created++;
+
+            int lineNumber = 1;
+            foreach (var row in group.OrderBy(r => r.GetOrDefault<int?>("position") ?? int.MaxValue).ThenBy(r => r.RowIndex))
+            {
+                var componentItemId = row.GetOrDefault<Guid>("componentItemCode");
+                var componentUomId = row.GetOrDefault<Guid>("componentUomCode");
+                var componentQty = row.GetOrDefault<decimal>("componentQuantity");
+
+                if (componentItemId == Guid.Empty || componentUomId == Guid.Empty || componentQty <= 0m)
+                    return (false, created,
+                        $"Row {row.RowIndex}: componentItemCode, componentUomCode and positive componentQuantity are required.");
+
+                var line = new BOMLine
+                {
+                    Id = Guid.NewGuid(),
+                    BOMId = bom.Id,
+                    LineNumber = row.GetOrDefault<int?>("position") ?? lineNumber,
+                    ItemId = componentItemId,
+                    Quantity = componentQty,
+                    UoMId = componentUomId,
+                    ScrapPercentage = row.GetOrDefault<decimal?>("scrapPct") ?? 0m
+                };
+                bom.Lines.Add(line);
+                lineNumber++;
+                created++;
+            }
+        }
+
+        return (true, created, null);
+    }
 }
 
 /// <summary>
