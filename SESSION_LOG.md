@@ -2,6 +2,34 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P6.41: OpenAI key wired on VPS, Vector Store green
+
+User supplied the OpenAI API key. Updated `/opt/apps/LON/LON-test/.env`:
+- Backed up current file to `.env.bak.p641`.
+- Replaced the empty `OPENAI_API_KEY=` line (single sed-like Python rewrite, no stray duplication — `grep -c '^OPENAI_API_KEY=sk-' .env` → 1).
+- `chmod 600 .env`.
+- Key is NOT in git (repo `.env` is gitignored; value lives only on VPS).
+
+`docker-compose.yml` already injects the env var into `lon-api` as `OpenAI__ApiKey` (from `${OPENAI_API_KEY:-}`). `docker compose up -d api` recreated the container; the VectorStoreBackgroundService now completes cleanly:
+
+```
+🚀 Starting Vector Store initialization in background...
+🚀 Initializing Vector Store...
+📄 Seeding Правилник за примена на царинска тарифа...
+   ✓ Seeded 4 sections from Правилник
+📄 Seeding SAD-ка упатства...
+   ✓ Seeded 5 SAD упатства
+📊 Loading 9 document chunks into vector store...
+✅ Vector Store initialized with 9 chunks
+✅ Vector Store initialization completed successfully!
+```
+
+9 OpenAI embedding calls succeeded end-to-end. Zero 401s, zero `@l:"Error"` events in `docker logs lon-api --since 5m`. RAG is functionally live.
+
+Note: `POST /api/knowledgebase/search` currently returns a 400 on `{"query":...}` bodies — unrelated record-positional binder quirk (existing controller bug, not the OpenAI path). Filing as a separate follow-up.
+
+---
+
 ## 2026-04-20 — Autonomous P6 sweep (6 tasks)
 
 Commits `eaeab96` → `0fdcdbb` → `59a57cf` → `0713cfe` → `5889c86` → `953176b`. User requested "заврши ги сите P6 таскови" without further input. Closed six Priority-B items from the deferred backlog.
