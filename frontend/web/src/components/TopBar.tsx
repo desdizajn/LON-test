@@ -83,17 +83,39 @@ const TopBar: React.FC = () => {
           <span>{t('topBar.aiAssistant')}</span>
         </button>
 
+        {/* KB semantic search (P6.38) */}
+        <button
+          onClick={() => navigate('/knowledge-base/search')}
+          style={btnStyle}
+          aria-label={t('kbSearch.title')}
+          title={t('kbSearch.title')}
+        >
+          <span>🔍</span>
+          <span>KB</span>
+        </button>
+
         {/* Import Wizard — admin only */}
         {isAdmin && (
-          <button
-            onClick={() => navigate('/tools/import')}
-            style={btnStyle}
-            aria-label={t('topBar.import')}
-            title={t('topBar.import')}
-          >
-            <span>📥</span>
-            <span>{t('topBar.import')}</span>
-          </button>
+          <>
+            <button
+              onClick={() => navigate('/tools/import')}
+              style={btnStyle}
+              aria-label={t('topBar.import')}
+              title={t('topBar.import')}
+            >
+              <span>📥</span>
+              <span>{t('topBar.import')}</span>
+            </button>
+            <button
+              onClick={() => navigate('/tools/import/kw12')}
+              style={btnStyle}
+              aria-label={t('kw12Wizard.title')}
+              title={t('kw12Wizard.title')}
+            >
+              <span>📦</span>
+              <span>KW12</span>
+            </button>
+          </>
         )}
 
         {/* User identity */}

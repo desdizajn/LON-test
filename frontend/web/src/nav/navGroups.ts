@@ -913,6 +913,14 @@ export const SETTINGS_GROUP: NavGroup = {
       backendStatus: 'exists',
     },
     {
+      key: 'settings-items-backfill',
+      labelKey: 'itemsBackfill.title',
+      path: '/master-data/items/backfill',
+      backendStatus: 'exists',
+      existingDataHint:
+        'P6.30 — Декомпозира legacy шифри во Base/Color/Size/ParentItemId. Dry-run + execute.',
+    },
+    {
       key: 'settings-boms',
       labelKey: 'nav.settings.boms',
       path: '/master-data/boms',

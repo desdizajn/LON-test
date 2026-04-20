@@ -16,6 +16,7 @@ import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import ErrorDisplay from '../../../components/common/ErrorDisplay';
 import { showError } from '../../../utils/toast';
 import type { Item } from '../../../types/masterData';
+import ItemImportAttributes from './ItemImportAttributes';
 
 const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -213,6 +214,8 @@ const ItemDetail: React.FC = () => {
           </Grid>
         </CardContent>
       </Card>
+
+      {id && <ItemImportAttributes itemId={id} />}
     </Box>
   );
 };

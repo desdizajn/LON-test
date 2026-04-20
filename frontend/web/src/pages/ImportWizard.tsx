@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { importApi } from '../services/api';
 
 /* ------------ shape types (manually mirrored; not codegen'd to stay lean) ------------ */
@@ -96,6 +97,39 @@ const ImportWizard: React.FC = () => {
   useEffect(() => {
     importApi.getTargets().then((r) => setTargets(r.data?.data || [])).catch(() => {});
   }, []);
+
+  // P6.38 — honor ?session=<id> so KW12 preset can link users straight
+  // into the wizard for a pre-created session (Items/CustomsDeclarations/Receipts).
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const sessionId = searchParams.get('session');
+    if (!sessionId || session?.id === sessionId) return;
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await importApi.getSession(sessionId);
+        const s: Session = r.data?.data;
+        if (!s) return;
+        setSession(s);
+        setMapping(
+          s.mapping?.columns ??
+            s.headers.map((h) => ({ sourceHeader: h, targetField: null, ignore: false }))
+        );
+        setStep('mapping');
+        if (s.targetEntity) {
+          importApi
+            .getTarget(s.targetEntity)
+            .then((tr) => setCurrentTarget(tr.data?.data ?? null))
+            .catch(() => {});
+        }
+      } catch (e: any) {
+        setErr(e?.response?.data?.errorMessage || e?.message || 'Session load failed');
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const resetAll = () => {
     setStep('upload');

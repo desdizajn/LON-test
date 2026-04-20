@@ -394,5 +394,22 @@ export const importApi = {
 
   dryRun: (id: string) => api.post(`/Import/sessions/${id}/dry-run`),
   commit: (id: string) => api.post(`/Import/sessions/${id}/commit`),
+
+  // P6.34 — KW12 preset: single xlsx → 3 pre-configured sessions (Items/CustomsDeclarations/Receipts).
+  uploadKw12Preset: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/Import/presets/kw12', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+// P6.30/P6.31 — admin-only item backfill + per-item import-attributes drill-in.
+export const itemsAdminApi = {
+  backfillBaseVariants: (dryRun: boolean = true) =>
+    api.post(`/MasterData/items/backfill-base-variants`, null, { params: { dryRun } }),
+  getImportAttributes: (id: string) =>
+    api.get(`/MasterData/items/${id}/import-attributes`),
 };
 

@@ -39,6 +39,7 @@ import MachineList from './pages/MasterData/Machines/MachineList';
 
 // Knowledge Base
 import KnowledgeBaseChat from './pages/KnowledgeBase/KnowledgeBaseChat';
+import KnowledgeBaseSearch from './pages/KnowledgeBase/KnowledgeBaseSearch';
 import CodeListManagement from './pages/CodeListManagement';
 
 // WMS Pages
@@ -55,6 +56,8 @@ import CycleCountAccuracy from './pages/Reports/CycleCountAccuracy';
 import WarehouseUtilization from './pages/Reports/WarehouseUtilization';
 import MozniMinusi from './pages/MozniMinusi';
 import ImportWizard from './pages/ImportWizard';
+import Kw12Wizard from './pages/Kw12Wizard';
+import ItemsBackfill from './pages/MasterData/Items/ItemsBackfill';
 
 // Advanced Features
 import BatchTraceability from './pages/Advanced/BatchTraceability';
@@ -1043,6 +1046,11 @@ const App: React.FC = () => {
 
             {/* Knowledge Base Routes */}
             <Route path="/knowledge-base" element={<KnowledgeBaseChat />} />
+            <Route path="/knowledge-base/search" element={<KnowledgeBaseSearch />} />
+
+            {/* P6.38 — Import presets + admin backfills */}
+            <Route path="/tools/import/kw12" element={<Kw12Wizard />} />
+            <Route path="/master-data/items/backfill" element={<ItemsBackfill />} />
           </Route>
         </Routes>
       </div>
