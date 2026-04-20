@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { authService } from '../services/authService';
 import { NAV_GROUPS, SETTINGS_GROUP } from './navGroups';
+import { filterNavGroupsByRoles } from './filterNavGroups';
 import { NavGroup } from './types';
 
 /**
@@ -14,24 +15,14 @@ import { NavGroup } from './types';
  *
  * Empty-item groups are still returned — the sidebar renders their header with a
  * "🚧 во изработка" affordance so the user can see IA progress group-by-group.
+ *
+ * The filtering is delegated to `filterNavGroupsByRoles` so it can be unit-tested
+ * without React state.
  */
 export function useNavForRoles(): NavGroup[] {
   return useMemo(() => {
     const user = authService.getCurrentUser();
     const roles = user?.roles ?? [];
-
-    if (roles.length === 0) return [];
-
-    const isAdmin = roles.includes('Administrator');
-
-    if (isAdmin) {
-      return [...NAV_GROUPS, SETTINGS_GROUP];
-    }
-
-    const visible = NAV_GROUPS.filter((group) =>
-      group.allowedRoles.some((allowed) => roles.includes(allowed))
-    );
-
-    return visible;
+    return filterNavGroupsByRoles(NAV_GROUPS, SETTINGS_GROUP, roles);
   }, []);
 }
