@@ -1,4 +1,5 @@
 using LON.Application.Importing.Commands.ApplyImportMapping;
+using LON.Application.Importing.Commands.CreateKw12ImportBundle;
 using LON.Application.Importing.Commands.DeleteMappingProfile;
 using LON.Application.Importing.Commands.RunImport;
 using LON.Application.Importing.Commands.SetImportDefaults;
@@ -47,6 +48,31 @@ public class ImportController : BaseController
 
         var result = await Mediator.Send(new UploadImportFileCommand(
             bytes, file.FileName, targetEntity, partnerContextId));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// P6.34 — KW12 preset. One upload, one call. Parses every sheet in the
+    /// workbook, creates one ImportSession per recognised sheet (Matriks →
+    /// Items, Faktura → CustomsDeclarations, Transport → Receipts), and returns
+    /// the ordered session IDs. Wizard then walks the user through
+    /// mapping/defaults/commit for each session in sequence.
+    /// </summary>
+    [HttpPost("presets/kw12")]
+    [RequestSizeLimit(MaxUploadBytes)]
+    public async Task<IActionResult> CreateKw12Bundle(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { isSuccess = false, errorMessage = "No file provided." });
+        if (file.Length > MaxUploadBytes)
+            return BadRequest(new { isSuccess = false, errorMessage = $"File exceeds limit of {MaxUploadBytes / (1024 * 1024)} MB." });
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var bytes = ms.ToArray();
+
+        var result = await Mediator.Send(new CreateKw12ImportBundleCommand(bytes, file.FileName));
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }

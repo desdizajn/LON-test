@@ -92,6 +92,8 @@ public static class DependencyInjection
         services.AddScoped<IImportFileParser, JsonImportParser>();
         services.AddScoped<IImportFileParser, XmlImportParser>();
         services.AddScoped<IImportFileParserRegistry, ImportFileParserRegistry>();
+        // P6.34 — multi-sheet xlsx parsing for the KW12 preset orchestrator.
+        services.AddScoped<IXlsxMultiSheetParser, XlsxImportParser>();
 
         // P5.1.5 — target schema registry. One schema per supported entity.
         services.AddSingleton<IImportTargetSchema, ReceiptsTargetSchema>();
