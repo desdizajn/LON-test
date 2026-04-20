@@ -2,6 +2,76 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Autonomous P6 sweep (6 tasks)
+
+Commits `eaeab96` → `0fdcdbb` → `59a57cf` → `0713cfe` → `5889c86` → `953176b`. User requested "заврши ги сите P6 таскови" without further input. Closed six Priority-B items from the deferred backlog.
+
+### P6.21 — QualityStatus legacy-zero trap (eaeab96)
+
+**Root cause (real):** `QualityStatus` enum only defined `OK=1 / Blocked=2 / Quarantine=3`. Any receipt/import that omitted the field persisted the CLR default `0`. `ResolveBalanceAsync`, `CreateExportDeclaration.fgQuery`, and Return/Waste match logic all filtered `== QualityStatus.OK` and silently skipped those rows. GET /api/wms/inventory doesn't filter on quality, so the bug only surfaced on writes — the user's "visible in inventory, invisible to MaterialIssue" repro matches.
+
+**Fix:**
+- Added `QualityStatus.None = 0` as explicit legacy label (no schema change, just a label on the existing persisted int).
+- `CreateReceiptCommand.ReceiptLineDto.QualityStatus` defaults to `OK`. Handler coerces `None → OK` before constructing ReceiptLine / InventoryMovement / InventoryBalance.
+- `ReceiptsImportExecutor` — blank / None / unparseable string all collapse to OK instead of silent fallback to 0.
+- `CreateMaterialIssueCommand.ResolveBalanceAsync` (both exact-match and auto-pick paths) and `CreateExportDeclarationCommand.fgQuery` now accept `OK OR None` as defense-in-depth for legacy rows that never went through the new create path.
+- Migration `P6_21_QualityStatusBackfill`: `UPDATE InventoryBalances SET QualityStatus = 1 WHERE = 0;` same for ReceiptLines. Data-only, no DDL.
+- Regression test `Issue_LegacyQualityStatusNone_IsResolvedLikeOk` engineers a legacy balance and asserts resolver surfaces it + happy-path splitting works.
+
+Theory WORK_PLAN originally carried ("EF closure over CurrentTenantId" / "dual HasQueryFilter") was incorrect and is now crossed out.
+
+### P6.35 — BOMs import executor (0fdcdbb)
+
+Replaces the "not yet implemented" stub. Groups rows by resolved `parentItemCode` (Either-scope, so header defaults fan out). Per group: one `BOM` + one `BOMLine` per row. Version auto-increments over the highest existing BOM for `(TenantId, ItemId)` so hand-edited BOMs stay live. `position` column drives line ordering; sensible defaults for `scrapPct / baseQuantity / bomCode` when absent.
+
+Integration test `Commit_Boms_CreatesBomWithLinesForHeaderParent` seeds parent + 2 components via Items executor, posts a 2-row BOM CSV with header `parentItemCode` default, asserts `EntitiesCreated=3` (1 BOM + 2 lines).
+
+### P6.30 — legacy item Base/Color/Size/ParentItemId backfill (59a57cf)
+
+`POST /api/masterdata/items/backfill-base-variants` (Administrator role, `?dryRun=true` preview). MediatR `BackfillItemBaseVariantsCommand` walks every tenant-scoped Item with null BaseCode/ColorCode/SizeCode, runs `ItemsImportExecutor.DecomposeCode` (promoted internal → public for reuse), creates/links base Items when the code decomposes to one, and patches variant fields + `ParentItemId`. Non-variant items get `BaseCode = Code` so reports that group by BaseCode aggregate cleanly.
+
+Idempotent (second run finds no candidates). Tenant-scoped via global query filter.
+
+### P6.31 — per-material import attributes report (0713cfe)
+
+`GET /api/masterdata/items/{id}/import-attributes`. MediatR `GetItemImportAttributesQuery`. Returns distinct `(TariffCode, CountryOfOrigin, IsPreferentialOrigin, SupplierId/Code/Name, DutyRate, VATRate)` tuples across `CustomsDeclarationLine` rows whose parent declaration's MRN is still active in `MRNRegistry`, with aggregate `InventoryBalance.Quantity` per tuple. Answers "same cotton thread from AT/TR/US — what are the distinct combos and how much is in stock per combo?".
+
+### P6.34 — KW12 preset orchestrator (5889c86)
+
+`POST /api/import/presets/kw12`. One xlsx upload → parses every worksheet → creates one `ImportSession` per recognised sheet with `TargetEntity` pre-set:
+
+| Sheet | Alias | Target |
+|---|---|---|
+| Matriks (also Матрикс) | → | Items |
+| Faktura (Фактура/Invoice) | → | CustomsDeclarations |
+| Transport (Транспорт) | → | Receipts |
+
+Returns ordered session IDs for the wizard + human-readable `SuggestedDefaults` list.
+
+- New `IXlsxMultiSheetParser` in Application layer. Single-sheet `IImportFileParser` contract left unchanged; XlsxImportParser implements both via a shared `ParseSheet` helper.
+- DI: `XlsxImportParser` additionally registered as `IXlsxMultiSheetParser`.
+
+Frontend wizard wiring (auto-applying mappings across the 3 sessions + sequential execution) deferred to a follow-up UI task.
+
+### P6.15b — Serilog JSON logging (953176b)
+
+Structured logs on stdout via CompactJsonFormatter — one JSON object per event. Per-request middleware pushes RequestId / UserName / TenantId (from JWT `tenant_id` claim) into `LogContext` before the pipeline continues, so every downstream log event (including the `UseSerilogRequestLogging` access log) carries those fields. `appsettings.json` adds a Serilog MinimumLevel section with the same overrides as the default Logging section.
+
+Background Worker still on Microsoft.Extensions.Logging — future task when Worker needs structured output.
+
+### Skipped (too risky to do safely in autonomous mode)
+
+- **P6.12** (uniform `{ data, errorMessage?, errors[]? }` response envelope): changing response shape on naked-entity endpoints breaks both frontend schema.d.ts and integration tests (e.g. `GetFromJsonAsync<List<ItemRow>>("/api/masterdata/items")`). Needs FE coordination + test refactor in a dedicated pass.
+- **P6.10 / P6.11** (MasterDataController split into 8 per-domain controllers + Items/Partners MediatR migration): BomDto/ItemDto cross-mapper dependencies and the `[Route("api/[controller]")]` convention mean a partial split leaks state; full split + MediatR + test rewrite is a full session on its own.
+
+### Build / verification
+
+- `dotnet build LON.sln` — 0 errors across all commits (3 pre-existing non-P6 warnings in MoveBatchAcrossStagesTests/UserProvisioningTests/package refs unchanged).
+- Integration tests NOT executed locally (Docker Desktop needed for Testcontainers-MsSql). CI will run them on push.
+- **Deploy to VPS + end-to-end verification still pending — user.**
+
+---
+
 ## 2026-04-19 — P6.15 + P6.16: health checks + DataProtection config
 
 **P6.15 (health checks)** — added K8s-style split endpoints in `Program.cs`:
