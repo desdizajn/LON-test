@@ -2,6 +2,28 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P6.38 FE catch-up batch: Export + Return forms + TrafficLight on Dashboard + Tenant policies + Audit viewer
+
+Five FE-only additions closing the "backend shipped, UI missing" gap for a chunk of the customs / admin surface.
+
+**Customs — Export + Return declaration modals.** Two new modals at `frontend/web/src/components/Customs/ExportDeclarationModal.tsx` and `ReturnDeclarationModal.tsx`. Wired into the existing `Customs.tsx` page as two extra buttons next to Waste + PEE060 + "+ New Declaration". Both modals share the same header shape (number / date / MRN / procedure / partner / currency / total / remarks) + a line editor table for FG lines referencing SourceMRN + DischargeQuantity (Export) or SourceMRN + ReturnQuantity + ReturnTarget (Return, picks Imported vs InProduction as the restoration bucket). Auto-default the procedure selection to `3151` (Export) / `6121` (Return) when the CustomsProcedures list contains them. API helpers `createExportDeclaration` / `createReturnDeclaration` added to `customsApi` (POST /Customs/declarations/export and /return — both were the last unwired v1 customs endpoints).
+
+**Dashboard — TrafficLightGuarantees widget.** The component already existed at `components/common/TrafficLightGuarantees.tsx` and was used on the Guarantees page, but the Dashboard never mounted it. Imported + inserted as a new `dashboard-section` block above the statistics grid so the first thing any user sees is the per-account utilisation colour.
+
+**/admin/tenant-settings.** New page at `pages/Admin/TenantSettings.tsx`. Lists all tenants (GET /Tenants) + renders two checkboxes per row: **Inflate-for-waste (I1)** and **FEFO auto-pick (P5.2.5)**. Saves via PUT /Tenants/{id} (Inflate) and the dedicated PUT /Tenants/{id}/settings/fefo (FEFO), both admin-only. Per-row save indicator + success/error banner.
+
+**/admin/audit-log.** New page at `pages/Admin/AuditLog.tsx`. Wraps GET /api/audit. Filter row (entity type / entity id / action / from / to / take up to 500) + result table with action-coloured verb badge + collapsible pretty-printed ChangesJson per row.
+
+**Nav + routing.** Both pages appear under the existing `⚙️ Поставки` admin group (`settings-tenant-policies` + `settings-audit-log`). `App.tsx` gets two new `<Route>` entries and two `resolveActiveModule` branches. i18n: new `nav.settings.tenantPolicies` + `nav.settings.auditLog` keys across mk / sr / sq / en.
+
+**Build**: `npm run build` clean except pre-existing lint debt.
+
+Gap tracker (P6.38 umbrella): moved from `[ ]` to `[/]` with the list of remaining work (declaration detail line editor, MRN usage meter inline, guarantee ledger tree, Inventory filter-by-base toggle, ProductionOrder materials table with PreAssignedMRN/EfficiencyFactor visibility, TariffCodeRate CRUD, BOM/Routings builders, Reports per-material import breakdown).
+
+VPS deploy follows in the batched commit.
+
+---
+
 ## 2026-04-20 — P5.3.2: BOM normative override per partner
 
 The "different BOMs per Uvoznik for the same item" requirement. Previously `BOM` was keyed on `(TenantId, ItemId, Version)` — one recipe per tenant regardless of customer. Added `BOM.PartnerId` nullable column + the corresponding selector logic in `CreateProductionOrderCommand`:

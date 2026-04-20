@@ -989,5 +989,20 @@ export const SETTINGS_GROUP: NavGroup = {
       plannedBehavior:
         'Листа + CRUD на тенанти. Backend CRUD постои (TenantsController); UI страница е TODO.',
     },
+    {
+      key: 'settings-tenant-policies',
+      labelKey: 'nav.settings.tenantPolicies',
+      path: '/admin/tenant-settings',
+      backendStatus: 'exists',
+      existingDataHint:
+        'P5.2.5 + I1 — toggle FEFO auto-pick + InflateImportForWaste по тенант. Персистира веднаш.',
+    },
+    {
+      key: 'settings-audit-log',
+      labelKey: 'nav.settings.auditLog',
+      path: '/admin/audit-log',
+      backendStatus: 'exists',
+      existingDataHint: 'I8 — Admin view over GET /api/audit. Filter по entity/action/датум.',
+    },
   ],
 };

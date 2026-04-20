@@ -172,7 +172,9 @@
       "machines": "Машине",
       "users": "Корисници",
       "roles": "Улоге",
-      "tenants": "Тенанти"
+      "tenants": "Тенанти",
+      "tenantPolicies": "Политике по тенанту",
+      "auditLog": "Audit log"
     },
     "warehouse": {
       "receipts": "Пријем",

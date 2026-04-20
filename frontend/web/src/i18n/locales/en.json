@@ -172,7 +172,9 @@
       "machines": "Machines",
       "users": "Users",
       "roles": "Roles",
-      "tenants": "Tenants"
+      "tenants": "Tenants",
+      "tenantPolicies": "Tenant policies",
+      "auditLog": "Audit log"
     },
     "warehouse": {
       "receipts": "Receipts",

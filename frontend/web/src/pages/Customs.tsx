@@ -5,6 +5,8 @@ import CustomsDeclarationForm from '../components/Customs/CustomsDeclarationForm
 import CertifyDeclarationModal from '../components/Customs/CertifyDeclarationModal';
 import Pee060Panel from '../components/Customs/Pee060Panel';
 import WasteDeclarationModal from '../components/Customs/WasteDeclarationModal';
+import ExportDeclarationModal from '../components/Customs/ExportDeclarationModal';
+import ReturnDeclarationModal from '../components/Customs/ReturnDeclarationModal';
 
 const Customs: React.FC = () => {
   const { t } = useTranslation();
@@ -15,6 +17,8 @@ const Customs: React.FC = () => {
   const [certifyTarget, setCertifyTarget] = useState<any>(null);
   const [showPee, setShowPee] = useState(false);
   const [showWaste, setShowWaste] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showReturn, setShowReturn] = useState(false);
 
   useEffect(() => {
     loadDeclarations();
@@ -70,6 +74,12 @@ const Customs: React.FC = () => {
       <div className="header">
         <h2>🛃 Customs & MRN</h2>
         <div>
+          <button className="btn" style={{ marginRight: 10 }} onClick={() => setShowExport(true)}>
+            + {t('exportDecl.button', 'EX (3151)')}
+          </button>
+          <button className="btn" style={{ marginRight: 10 }} onClick={() => setShowReturn(true)}>
+            + {t('returnDecl.button', 'Враќање (6121)')}
+          </button>
           <button className="btn" style={{ marginRight: 10 }} onClick={() => setShowWaste(true)}>
             + {t('waste.title')}
           </button>
@@ -155,6 +165,24 @@ const Customs: React.FC = () => {
           onClose={() => setShowWaste(false)}
           onSuccess={() => {
             setShowWaste(false);
+            loadDeclarations();
+          }}
+        />
+      )}
+      {showExport && (
+        <ExportDeclarationModal
+          onClose={() => setShowExport(false)}
+          onSuccess={() => {
+            setShowExport(false);
+            loadDeclarations();
+          }}
+        />
+      )}
+      {showReturn && (
+        <ReturnDeclarationModal
+          onClose={() => setShowReturn(false)}
+          onSuccess={() => {
+            setShowReturn(false);
             loadDeclarations();
           }}
         />

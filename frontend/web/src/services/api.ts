@@ -225,6 +225,14 @@ export const customsApi = {
   // P2.6c + P4.6 — Waste declaration with optional 4 slots + Zaguba
   createWasteDeclaration: (data: any) =>
     api.post('/Customs/declarations/waste', data),
+
+  // P2.6a — Re-export (EX / 3151)
+  createExportDeclaration: (data: any) =>
+    api.post('/Customs/declarations/export', data),
+
+  // P2.6b — Return (6121) — reverses a prior EX
+  createReturnDeclaration: (data: any) =>
+    api.post('/Customs/declarations/return', data),
 };
 
 export const guaranteeApi = {

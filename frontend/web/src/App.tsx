@@ -74,6 +74,10 @@ import MassTransfer from './pages/Warehouse/MassTransfer';
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
+// Admin — tenant policy settings + audit log
+import TenantSettings from './pages/Admin/TenantSettings';
+import AuditLog from './pages/Admin/AuditLog';
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
@@ -143,7 +147,9 @@ const resolveActiveModule = (path: string) => {
   // Settings (admin + master-data)
   if (path.startsWith('/admin/users')) return 'settings-users';
   if (path.startsWith('/admin/roles')) return 'settings-roles';
+  if (path.startsWith('/admin/tenant-settings')) return 'settings-tenant-policies';
   if (path.startsWith('/admin/tenants')) return 'settings-tenants';
+  if (path.startsWith('/admin/audit-log')) return 'settings-audit-log';
   if (path.startsWith('/master-data/partners')) return 'settings-partners';
   if (path.startsWith('/master-data/items')) return 'settings-items';
   if (path.startsWith('/master-data/boms')) return 'settings-boms';
@@ -230,6 +236,8 @@ const App: React.FC = () => {
             {/* P5.1 — generic importer wizard */}
             <Route path="/tools/import" element={<ImportWizard />} />
             <Route path="/tools/quick-entry" element={<QuickEntry />} />
+            <Route path="/admin/tenant-settings" element={<TenantSettings />} />
+            <Route path="/admin/audit-log" element={<AuditLog />} />
 
             {/* Advanced Features Routes */}
             <Route path="/advanced/batch-traceability" element={<BatchTraceability />} />

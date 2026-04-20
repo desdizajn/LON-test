@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { analyticsApi } from '../services/api';
 import { authService } from '../services/authService';
 import './Dashboard.css';
+import TrafficLightGuarantees from '../components/common/TrafficLightGuarantees';
 
 interface DashboardData {
   inventory: {
@@ -144,6 +145,10 @@ const Dashboard: React.FC = () => {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="dashboard-section">
+        <TrafficLightGuarantees />
       </section>
 
       <div className="original-dashboard">

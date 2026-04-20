@@ -172,7 +172,9 @@
       "machines": "Makineritë",
       "users": "Përdoruesit",
       "roles": "Rolet",
-      "tenants": "Tenantët"
+      "tenants": "Tenantët",
+      "tenantPolicies": "Politikat sipas tenantit",
+      "auditLog": "Audit log"
     },
     "warehouse": {
       "receipts": "Pranimi",
