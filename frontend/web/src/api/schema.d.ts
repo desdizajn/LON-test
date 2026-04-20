@@ -179,6 +179,99 @@ export interface paths {
       };
     };
   };
+  "/api/MasterData/boms": {
+    get: {
+      parameters: {
+        query?: {
+          itemId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BOMRequest"];
+          "text/json": components["schemas"]["BOMRequest"];
+          "application/*+json": components["schemas"]["BOMRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/boms/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BOMRequest"];
+          "text/json": components["schemas"]["BOMRequest"];
+          "application/*+json": components["schemas"]["BOMRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/boms/item/{itemId}": {
+    get: {
+      parameters: {
+        path: {
+          itemId: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations": {
     get: {
       parameters: {
@@ -487,6 +580,16 @@ export interface paths {
           id: string;
         };
       };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/employees": {
+    get: {
       responses: {
         /** @description OK */
         200: {
@@ -908,6 +1011,114 @@ export interface paths {
       };
     };
   };
+  "/api/MasterData/items": {
+    get: {
+      parameters: {
+        query?: {
+          search?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ItemRequest"];
+          "text/json": components["schemas"]["ItemRequest"];
+          "application/*+json": components["schemas"]["ItemRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/items/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ItemRequest"];
+          "text/json": components["schemas"]["ItemRequest"];
+          "application/*+json": components["schemas"]["ItemRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/items/backfill-base-variants": {
+    post: {
+      parameters: {
+        query?: {
+          dryRun?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/items/{id}/import-attributes": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/KnowledgeBase/ask": {
     post: {
       requestBody?: {
@@ -1108,187 +1319,6 @@ export interface paths {
       };
     };
   };
-  "/api/MasterData/items": {
-    get: {
-      parameters: {
-        query?: {
-          search?: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["ItemRequest"];
-          "text/json": components["schemas"]["ItemRequest"];
-          "application/*+json": components["schemas"]["ItemRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/items/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["ItemRequest"];
-          "text/json": components["schemas"]["ItemRequest"];
-          "application/*+json": components["schemas"]["ItemRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/items/backfill-base-variants": {
-    post: {
-      parameters: {
-        query?: {
-          dryRun?: boolean;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/items/{id}/import-attributes": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/warehouses": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["WarehouseRequest"];
-          "text/json": components["schemas"]["WarehouseRequest"];
-          "application/*+json": components["schemas"]["WarehouseRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/warehouses/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["WarehouseRequest"];
-          "text/json": components["schemas"]["WarehouseRequest"];
-          "application/*+json": components["schemas"]["WarehouseRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
   "/api/MasterData/locations": {
     get: {
       parameters: {
@@ -1344,177 +1374,6 @@ export interface paths {
           "application/json": components["schemas"]["LocationRequest"];
           "text/json": components["schemas"]["LocationRequest"];
           "application/*+json": components["schemas"]["LocationRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/partners": {
-    get: {
-      parameters: {
-        query?: {
-          type?: components["schemas"]["PartnerType"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["PartnerRequest"];
-          "text/json": components["schemas"]["PartnerRequest"];
-          "application/*+json": components["schemas"]["PartnerRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/partners/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["PartnerRequest"];
-          "text/json": components["schemas"]["PartnerRequest"];
-          "application/*+json": components["schemas"]["PartnerRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/employees": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/work-centers": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/workcenters": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["WorkCenterRequest"];
-          "text/json": components["schemas"]["WorkCenterRequest"];
-          "application/*+json": components["schemas"]["WorkCenterRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/workcenters/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["WorkCenterRequest"];
-          "text/json": components["schemas"]["WorkCenterRequest"];
-          "application/*+json": components["schemas"]["WorkCenterRequest"];
         };
       };
       responses: {
@@ -1616,84 +1475,11 @@ export interface paths {
       };
     };
   };
-  "/api/MasterData/uom": {
-    get: {
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["UoMRequest"];
-          "text/json": components["schemas"]["UoMRequest"];
-          "application/*+json": components["schemas"]["UoMRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/uom/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["UoMRequest"];
-          "text/json": components["schemas"]["UoMRequest"];
-          "application/*+json": components["schemas"]["UoMRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/boms": {
+  "/api/MasterData/partners": {
     get: {
       parameters: {
         query?: {
-          itemId?: string;
+          type?: components["schemas"]["PartnerType"];
         };
       };
       responses: {
@@ -1706,9 +1492,9 @@ export interface paths {
     post: {
       requestBody?: {
         content: {
-          "application/json": components["schemas"]["BOMRequest"];
-          "text/json": components["schemas"]["BOMRequest"];
-          "application/*+json": components["schemas"]["BOMRequest"];
+          "application/json": components["schemas"]["PartnerRequest"];
+          "text/json": components["schemas"]["PartnerRequest"];
+          "application/*+json": components["schemas"]["PartnerRequest"];
         };
       };
       responses: {
@@ -1719,7 +1505,7 @@ export interface paths {
       };
     };
   };
-  "/api/MasterData/boms/{id}": {
+  "/api/MasterData/partners/{id}": {
     get: {
       parameters: {
         path: {
@@ -1741,9 +1527,9 @@ export interface paths {
       };
       requestBody?: {
         content: {
-          "application/json": components["schemas"]["BOMRequest"];
-          "text/json": components["schemas"]["BOMRequest"];
-          "application/*+json": components["schemas"]["BOMRequest"];
+          "application/json": components["schemas"]["PartnerRequest"];
+          "text/json": components["schemas"]["PartnerRequest"];
+          "application/*+json": components["schemas"]["PartnerRequest"];
         };
       };
       responses: {
@@ -1757,114 +1543,6 @@ export interface paths {
       parameters: {
         path: {
           id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/boms/item/{itemId}": {
-    get: {
-      parameters: {
-        path: {
-          itemId: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/routings": {
-    get: {
-      parameters: {
-        query?: {
-          itemId?: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["RoutingRequest"];
-          "text/json": components["schemas"]["RoutingRequest"];
-          "application/*+json": components["schemas"]["RoutingRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/routings/{id}": {
-    get: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    put: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["RoutingRequest"];
-          "text/json": components["schemas"]["RoutingRequest"];
-          "application/*+json": components["schemas"]["RoutingRequest"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          id: string;
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          content: never;
-        };
-      };
-    };
-  };
-  "/api/MasterData/routings/item/{itemId}": {
-    get: {
-      parameters: {
-        path: {
-          itemId: string;
         };
       };
       responses: {
@@ -2187,6 +1865,99 @@ export interface paths {
       };
     };
   };
+  "/api/MasterData/routings": {
+    get: {
+      parameters: {
+        query?: {
+          itemId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["RoutingRequest"];
+          "text/json": components["schemas"]["RoutingRequest"];
+          "application/*+json": components["schemas"]["RoutingRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/routings/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["RoutingRequest"];
+          "text/json": components["schemas"]["RoutingRequest"];
+          "application/*+json": components["schemas"]["RoutingRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/routings/item/{itemId}": {
+    get: {
+      parameters: {
+        path: {
+          itemId: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Shifts": {
     get: {
       responses: {
@@ -2411,6 +2182,79 @@ export interface paths {
       };
     };
   };
+  "/api/MasterData/uom": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UoMRequest"];
+          "text/json": components["schemas"]["UoMRequest"];
+          "application/*+json": components["schemas"]["UoMRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/uom/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UoMRequest"];
+          "text/json": components["schemas"]["UoMRequest"];
+          "application/*+json": components["schemas"]["UoMRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Users": {
     get: {
       responses: {
@@ -2496,6 +2340,79 @@ export interface paths {
           "application/json": components["schemas"]["ChangePasswordRequest"];
           "text/json": components["schemas"]["ChangePasswordRequest"];
           "application/*+json": components["schemas"]["ChangePasswordRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/warehouses": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WarehouseRequest"];
+          "text/json": components["schemas"]["WarehouseRequest"];
+          "application/*+json": components["schemas"]["WarehouseRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/warehouses/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WarehouseRequest"];
+          "text/json": components["schemas"]["WarehouseRequest"];
+          "application/*+json": components["schemas"]["WarehouseRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
         };
       };
       responses: {
@@ -2692,6 +2609,152 @@ export interface paths {
       parameters: {
         query?: {
           status?: components["schemas"]["PickTaskStatus"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/workcenters": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WorkCenterRequest"];
+          "text/json": components["schemas"]["WorkCenterRequest"];
+          "application/*+json": components["schemas"]["WorkCenterRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/work-centers": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WorkCenterRequest"];
+          "text/json": components["schemas"]["WorkCenterRequest"];
+          "application/*+json": components["schemas"]["WorkCenterRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/workcenters/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WorkCenterRequest"];
+          "text/json": components["schemas"]["WorkCenterRequest"];
+          "application/*+json": components["schemas"]["WorkCenterRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/MasterData/work-centers/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["WorkCenterRequest"];
+          "text/json": components["schemas"]["WorkCenterRequest"];
+          "application/*+json": components["schemas"]["WorkCenterRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
         };
       };
       responses: {
