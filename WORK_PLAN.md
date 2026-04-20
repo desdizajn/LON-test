@@ -92,6 +92,7 @@
   - [x] **P6.37.14** — *2026-04-19 (commit `dd78b32`, VPS fast-forwarded via SSH)*. Legacy flat Sidebar section removed; `<Navigate>` redirects added for `/dashboard`, `/inventory`, `/production`, `/customs`, `/guarantees`, `/traceability`; `resolveActiveModule` rewritten per new IA. Idempotent `RoleTopUpSeed` creates 8 missing roles + 8 TEKSPORT test users (Customs Officer `tek-customs`, Warehouse Operator `tek-wh-op`, Production Operator `tek-operator`, QC `tek-qc`, HR Manager `tek-hr`, Maintenance Tech `tek-maint`, Finance Clerk `tek-finance`, Manager `tek-mgr`; password `Test123!`). API log confirmed `RoleTopUpSeed: added 8 missing roles + created 8 test users`. All 8 logins verified — JWT carries correct role. Bundle check: new nav keys present; `Поставки` (not `Настройки`) in mk.json live. **Per-role visual smoke = user-driven (P6.37 consumer verification).**
   - [ ] **P6.37.15** — (follow-up, deferred) `design:accessibility-review` audit across full app
 - [x] **P6.41** — *2026-04-20*: user supplied the key; updated `/opt/apps/LON/LON-test/.env` `OPENAI_API_KEY=` (backup at `.env.bak.p641`, mode `chmod 600`). Compose already injects it as `OpenAI__ApiKey`. Recreated `lon-api`: VectorStoreBackgroundService logged `✅ Vector Store initialized with 9 chunks` — 9 successful OpenAI embedding calls end-to-end. Zero 401s / zero errors in the 5 minutes after restart.
+- [ ] **P6.42** — **`POST /api/knowledgebase/search` binder returns 400 on `{"query":...}`.** Surfaced 2026-04-20 while smoke-testing RAG after P6.41. `SearchRequest` is a positional record (`public record SearchRequest(string Query, int TopK=5, double MinSimilarity=0.7, string? DocumentType=null)`); System.Text.Json refuses both `{"query":...}` and `{"Query":...}` bodies with `"The JSON value could not be converted to LON.API.Controllers.SearchRequest"` + `"The request field is required"`. Not on the OpenAI path (embeddings work — Vector Store initialised). Fix: convert to a regular record class with init-only props, or add `[JsonConstructor]` + named parameters to satisfy case-insensitive binding. Affects every frontend KB search call. Low-risk isolated change.
 - [ ] **P6.38** — **Frontend catch-up sweep (umbrella).** Tracks the 2026-04-19 user feedback that ~300 backend features aren't reflected on UI. Break down per page: Dashboard KPIs, Customs (declaration detail, line editor, MRN usage meter, guarantee impact), Guarantees (ledger tree + debit/credit math + release button), Inventory (filter-by-base toggle, per-import attribute report P6.31), Production (materials table with PreAssignedMRN + EfficiencyFactor visibility, waste slots UI), MasterData (BOM builder, Routings editor, Code List browser with tariff/country/procedure tabs), Reports (per-material import breakdown). Split into subtasks once P6.37 settles the IA.
 - [ ] **P6.10** — Split `MasterDataController` (1325 LoC → ~8 domain controllers)
 - [ ] **P6.11** — Selective MediatR migration (почни: Items + Partners)
@@ -336,34 +337,38 @@
 
 ## Current Active Task
 
-> **>>>** **2026-04-20 — Autonomous P6 sweep (commits `eaeab96` → `953176b`)**: six deferred-backlog tasks closed in one pass.
+> **>>>** **2026-04-20 session wrap — 7 P6 items closed + VPS green (HEAD `f039bcc`)**
 >
-> **Shipped:**
-> 1. **P6.21** — MaterialIssue "no inventory" root cause: silent enum-default for QualityStatus. Coercion at create + defense-in-depth filter accept OK||None + data-only migration + regression test.
-> 2. **P6.35** — BOMsImportExecutor with version-bump semantics + integration test.
-> 3. **P6.30** — admin endpoint to backfill legacy Item BaseCode/ColorCode/SizeCode/ParentItemId.
-> 4. **P6.31** — per-Item import-attributes report (tariff/country/pref/supplier tuples + stock per tuple).
-> 5. **P6.34** — KW12 preset orchestrator: one xlsx upload → 3 pre-configured ImportSessions.
-> 6. **P6.15b** — Serilog JSON logs + per-request RequestId/UserName/TenantId enrichers.
+> **Done + VPS-verified:**
+> - **P6.21** — MaterialIssue "no inventory" fixed (QualityStatus 0→1 coercion + data migration). Commit `eaeab96`.
+> - **P6.35** — BOMsImportExecutor shipped + integration test. Commit `0fdcdbb`.
+> - **P6.30** — `POST /items/backfill-base-variants` (admin, dryRun; 2050 scanned, 450 variants, 41 new bases). Commit `59a57cf`.
+> - **P6.31** — `GET /items/{id}/import-attributes` (real data row: 3 batches, 763.47 kg, TEXPORT-AT). Commit `0713cfe`.
+> - **P6.34** — `POST /import/presets/kw12` (7582/134/8 rows parsed from real KW12.xlsx → 3 sessions). Commit `5889c86`.
+> - **P6.15b** — Serilog JSON logs with TenantId/UserName/RequestId enrichers. Commit `953176b`.
+> - **P6.41** — OpenAI key set in VPS `.env`; Vector Store initialises with 9 chunks; 0 errors. Commit `f039bcc`.
 >
-> **Skipped (too risky for autonomous):**
-> - **P6.12** (consistent response shape) — breaking contract, requires frontend + test refactor in a coordinated pass.
-> - **P6.10/P6.11** (MasterDataController split + MediatR migration for Items/Partners) — cross-mapper coupling + test shape assumptions make a partial split leakier than staying monolithic. Own session when ready.
+> **Migrations live on VPS:** `P6_32_FilteredUniqueIndexes`, `P0_3_4_DecimalPrecision_CompensatingTariffNullable`, `P6_21_QualityStatusBackfill`.
 >
-> **VPS verified (commit `39db2f1` live):**
-> - Migration `P6_21_QualityStatusBackfill` applied; InventoryBalances (136) + ReceiptLines (135) all at QualityStatus=1.
-> - `POST /items/backfill-base-variants?dryRun=true` → 2050 scanned, 450 variants, 41 base items.
-> - `GET /items/{id}/import-attributes` → real data row: 3 batches, 763.47 kg, EU preferential, TEXPORT-AT, dutyRate 0, vatRate 18.
-> - `POST /import/presets/kw12` with real KW12.xlsx → 3 sessions (Matriks/Faktura/Transport = 7582/134/8 rows).
-> - Serilog JSON request logs carry TenantId + UserName + RequestId + Application tag.
-> - `/api/health/ready` 200 OK.
+> **Skipped this session (need full coordination, not one-pass):**
+> - **P6.12** (uniform response envelope) — breaks `GetFromJsonAsync<List<ItemRow>>` in tests + frontend schema.d.ts. Coordinated pass with FE + test rewrite.
+> - **P6.10/P6.11** (MasterDataController split + MediatR migration for Items/Partners) — cross-mapper coupling; partial split leakier than monolith. Dedicated session.
 >
-> **Previous session (2026-04-19 — P6.37.14 code-complete):** Legacy flat sidebar removed; `<Navigate>` redirects for all old top-level routes; idempotent `RoleTopUpSeed` with 8 new roles + 8 TEKSPORT test users. Pending VPS deploy + per-role smoke.
+> ### 🎯 Next session: pick one
 >
-> **Next session pick one:**
-> 1. **P6.37.14 finish** — deploy to VPS, login as each of the 8 new test users, verify sidebar shows only the expected groups for each role, confirm redirects resolve.
-> 2. **P6.37 consumer verification** — user spot-checks sidebar wording / grouping before it ossifies.
-> 3. **Return to Phase 3/6 backlog** (below).
+> 1. **P6.42** — fix `KnowledgeBaseController.SearchRequest` positional-record binder. Frontend KB search currently broken (400 on any POST body). Isolated, low-risk, unblocks every RAG UI flow now that P6.41 is green. **Recommended start** — small, high-ROI, well-defined.
+> 2. **P6.37.13 / P6.37 consumer verification** — per-role visual smoke of the new IA sidebar. Login as each of the 8 test users (`tek-customs`, `tek-wh-op`, `tek-operator`, `tek-qc`, `tek-hr`, `tek-maint`, `tek-finance`, `tek-mgr`; password `Test123!`) and verify sidebar shows only role-appropriate groups.
+> 3. **P6.38 umbrella breakdown** — now that P6.31 report + P6.30 backfill + P6.34 KW12 preset exist on the backend, frontend pages (Inventory filters, per-item drill-in, KW12 upload wizard) can be wired. Break into per-page subtasks.
+> 4. **P6.10 / P6.11** dedicated session — MasterDataController split + Items/Partners MediatR migration + test rewrite, all in one coordinated pass.
+> 5. **P2.5.4 i18n retrofit** — still parallel backlog; pick a page when you touch it.
+>
+> ### 🧭 Quick-facts still valid
+>
+> - VPS: `root@173.212.254.216`, app `/opt/apps/LON/LON-test`, branch `main`, HEAD `f039bcc`.
+> - Admin login `admin / Admin123!`. TEKSPORT test users via `Test123!`.
+> - `.env` keys (VPS only, never in git): `OPENAI_API_KEY`, `SQL_SA_PASSWORD`. Backup `.env.bak.p641`.
+> - Deploy flow: local commit + push → SSH VPS → `git pull && docker compose build api && docker compose up -d api`.
+> - Serilog logs: `docker logs lon-api 2>&1 | head` — one JSON event per line with `@t`, `@mt`, `@l`, `TenantId`, `UserName`, `RequestId`.
 
 > **>>>** **🎉 Phase 3 (7/7 started, 5/7 committed) + Phase 4 (6/7 done; P4.5 ECD deferred) + Phase 5 quick wins (P5.2.1 + P5.2.6) + P6.19 shipped in autonomous overnight session 2026-04-19.**
 >
