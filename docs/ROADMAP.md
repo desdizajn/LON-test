@@ -202,8 +202,8 @@ spilt across several weeks.
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
 | **P12.1** | `/finance/guarantees` | done (redirect to /guarantees) | — | — | — | Shipped. |
-| **P12.2** | `/finance/invoicing` | new-entity: Invoice + InvoiceLine + GenerateFromPoCommand | L | P0 | P12.3 | Первичен драйвер за fiскал кореспонденција. |
-| **P12.3** | `/finance/contracts` | new-entity: ClientContract + RateCardEntry | L | P0 | — | Unlock-ува margin + payroll piece rate. |
+| **P12.2** | `/finance/invoicing` | new-entity: Invoice + InvoiceLine + GenerateFromPoCommand | L | P0 | P12.3 | **✅ 2026-04-20** — Draft→Issued→Paid lifecycle; sequential `INV-{yyyy}-{NNNN}` on issue; GenerateFromPO resolves rate via active contract (or override). VPS smoke green: `INV-2026-0001` lifecycle end-to-end. |
+| **P12.3** | `/finance/contracts` | new-entity: ClientContract + RateCardEntry | L | P0 | — | **✅ 2026-04-20** — `ClientContract` + `RateCardEntry` (PerPiece / PerMinute). Unique per tenant; currency + payment-terms on header. 6 integration tests. |
 | **P12.4** | `/finance/cost-accounting` | new-entity: CostRate + aggregate per job | L | P1 | P12.3, P11.6 | Cost/минута × машинско време. |
 | **P12.5** | `/finance/margin` | aggregate: Invoice total − CostRate rollup | M | P1 | P12.2, P12.4 | Per PO или per shipment. |
 | **P12.6** | `/finance/ap` | new-entity: VendorInvoice | L | P2 | — | Vendor invoice tracking + payment schedule. |

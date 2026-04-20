@@ -2,6 +2,51 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 6: Phase 12.3 ClientContracts + Phase 12.2 Invoicing MVP
+
+**Status:** [x] done — HEAD `7e2cd40`, VPS green.
+
+**What shipped (1 main commit + 1 fixup):**
+
+*P12.3 — Client contracts + rate cards*
+- `ClientContract` entity: tenant-scoped, filtered-unique (TenantId, Number), PartnerId FK to Partner, ValidFrom/To window, PaymentTermsDays (default 30), Currency (default EUR), IsActive, Notes.
+- `RateCardEntry` entity: tenant-scoped, ContractId FK (Cascade), RateType enum (PerPiece | PerMinute), optional ItemId (required for PerPiece) + OperationCode (required for PerMinute), RatePerUnit decimal(18,4), Currency, ValidFrom/To, Notes.
+- MediatR: `CreateContract` / `UpdateContract` / `UpsertRateCardEntry` / `DeleteRateCardEntry` / `GetContracts` / `GetContractById`.
+
+*P12.2 — Invoice MVP*
+- `Invoice` entity: tenant-scoped, Status enum (Draft/Issued/Paid/Cancelled), Number (filtered-unique per tenant among non-deleted), PartnerId + optional ContractId, IssueDate + DueDate + Currency + SubTotal + TotalAmount.
+- `InvoiceLine` entity: InvoiceId Cascade, LineNumber, Description, optional ItemId / RelatedProductionOrderId / RelatedShipmentId, Quantity + UnitPrice + LineTotal decimals.
+- Draft invoices carry provisional `DRAFT-XXXXXXXX` number; `IssueInvoiceCommand` computes next sequential `INV-{yyyy}-{NNNN}` scoped to the tenant (ignores Cancelled when choosing max seq).
+- `GenerateInvoiceFromPOCommand`: looks up PO.CustomerPartnerId → active contract (or caller-supplied) → PerPiece RateCardEntry matching (ContractId, PO.ItemId, IssueDate window) → creates Draft with `Quantity = PO.ProducedQuantity`. `OverrideUnitPrice` bypasses rate lookup.
+- MediatR: `CreateInvoice` / `AddInvoiceLine` / `RemoveInvoiceLine` (Draft-only) / `GenerateInvoiceFromPO` / `IssueInvoice` / `MarkInvoicePaid` / `CancelInvoice` (blocked from Paid) / `GetInvoices` / `GetInvoiceById`.
+
+*FE + API + tests*
+- `FinanceController` at `/api/Finance`: POST/PUT/GET for contracts, POST/GET/DELETE for rates, POST/GET for invoices + lifecycle transitions.
+- 6 integration tests in `FinanceTests.cs`: happy-path contract + rate card; PerPiece-missing-item rejection; GenerateFromPO end-to-end; no-contract-no-override → `invoice.no_contract`; empty-invoice-issue → `invoice.no_lines`; cancel-paid → `invoice.paid_immutable`.
+- Frontend: `/finance/contracts` (split-pane list + detail, rate-card inline CRUD, activate/deactivate) + `/finance/invoicing` (filter + detail, issue/mark-paid/cancel, generate-from-PO form, inline line removal on Draft, CSV export).
+- `financeApi` service layer. OpenAPI + TS types regenerated + committed. i18n × 4 locales. Nav backendStatus flipped missing → exists.
+
+**Migration live on VPS:** `20260420175358_P12_Finance`.
+
+**VPS smoke (2026-04-20 18:22 UTC):**
+- `POST /api/Finance/contracts` → contract `SMOKE-CT-1` created.
+- `POST /api/Finance/invoices` (Draft, 1 line × 10 × 2.50 = 25.00 EUR) → provisional `DRAFT-xxxxxxxx`.
+- `POST /api/Finance/invoices/{id}/issue` → `"INV-2026-0001"`.
+- `POST /api/Finance/invoices/{id}/mark-paid` → status=3.
+- Negative: `invoice.po_not_found` + `invoice.paid_immutable` both return structured error envelopes.
+
+**Commits:** `244c8e2` (main), `7e2cd40` (BackendStatus fixup — 'shipped' invalid literal; use 'exists').
+
+**Gotchas this session:**
+1. Pre-existing lint debt under CI=true trips old pages with missing-dep warnings; the new Finance files introduce zero new warnings (verified via grep of the CI output for "Finance").
+2. `BackendStatus` type = `'missing' | 'partial' | 'exists'` — no `shipped`. Used `exists` for shipped backends.
+3. `exportToCsv(rows, columns[], filename)` — not `(filename, rows)`. Caught at build time.
+4. Anonymous-array mixed shapes in xUnit tests need explicit `(Guid?)` / `(string?)` casts so the compiler picks a common element type.
+
+**Next:** Sprint 7 per ROADMAP — Phase 13.1 + 13.3 + 13.5 (management alerts / on-time / by-customer).
+
+---
+
 ## 2026-04-20 — Sprint 5: Phase 9.1/9.3/9.6 Finished Goods simple queries shipped
 
 Sprint 5 од `docs/ROADMAP.md` — без нови entities (P9.6 планираше нов

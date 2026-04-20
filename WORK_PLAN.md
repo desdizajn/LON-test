@@ -339,6 +339,59 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-20 (later) — Sprint 6: Phase 12.3 ClientContracts + Phase 12.2 Invoicing MVP — HEAD `7e2cd40`, VPS green**
+>
+> ### 🎯 Handoff за следна сесија
+>
+> **Shipped во оваа сесија (1 commit + 1 fixup):**
+> - **P12.3 ClientContract + RateCardEntry**: tenant-scoped entities + filtered unique index на (TenantId, Number). `RateType` enum = PerPiece (итемизирано) | PerMinute (opCode). Контракт носи currency + payment-terms + ValidFrom/To.
+> - **P12.2 Invoice + InvoiceLine**: Draft → Issued → Paid → Cancelled. Draft-овите имаат `DRAFT-XXXXXXXX` provisional number; Issue генерира sequential `INV-{yyyy}-{NNNN}` во тенант. GenerateFromPOCommand = резолвира PO.CustomerPartnerId → активен контракт → PerPiece RateCardEntry кое важи на IssueDate + ItemId. OverrideUnitPrice за бusines cases без rate.
+> - FinanceController под `/api/Finance/` (contracts + invoices + rates + generate-from-po + issue + mark-paid + cancel).
+> - 6 integration tests (POST→GET→DB assert + negative paths за rate validation, no-contract, empty-invoice-issue, paid-immutable-cancel).
+> - FE 2 страници: `/finance/contracts` (split-pane со rate-card CRUD) + `/finance/invoicing` (filter + detail со issue/mark-paid/cancel + generate-from-PO form + CSV export). i18n × 4 јазика.
+> - Nav: `backendStatus: missing → exists` за finance-invoicing + finance-contracts.
+>
+> **VPS smoke (2026-04-20 18:22 UTC):**
+> - `POST /api/Finance/contracts` → `SMOKE-CT-1` created (contractId `1306afed-7030-46b2-991c-6ab08b8e83bc`).
+> - `POST /api/Finance/invoices` (draft со 1 line, 10×2.50=25.00 EUR).
+> - `POST /api/Finance/invoices/{id}/issue` → `INV-2026-0001`.
+> - `POST /api/Finance/invoices/{id}/mark-paid` → status=3.
+> - Negative: `invoice.po_not_found` (generate-from-po са empty PO id) + `invoice.paid_immutable` (cancel after paid).
+>
+> **Migration live:** `20260420175358_P12_Finance` (ClientContracts + RateCardEntries + Invoices + InvoiceLines).
+>
+> ### 🧭 Остануваат (приоритетен редослед)
+>
+> **Sprint 7 (ROADMAP recommends):** Phase 13.1 On-time delivery + 13.3 By-customer + 13.5 Exception alerts. Aggregations врз shipment / PO / MRN — нема нови entities потребни.
+>
+> **Phase 12 long-tail (Sprint 8+):**
+> - P12.4 Cost accounting (CostRate per machine/work-center × minute).
+> - P12.5 Margin (aggregate: invoice.total − cost rollup).
+> - P12.6 AP (VendorInvoice entity).
+> - P12.7 Payroll aggregate (дел веќе во P10.7).
+> - P12.8 P&L preview.
+> - P12.9 Cash-flow forecast.
+> - P12.10 Reports index.
+>
+> **Follow-ups за Phase 12 MVP (nice-to-have):**
+> - PDF render за Issued invoices (P2.5.7 extension).
+> - Aging buckets (0-30-60-90) на `/finance/invoicing` dashboard header.
+> - Rate effectivity overlap validation (два PerPiece rates за ист Item + overlapping ValidFrom/To → warn на save).
+> - `GenerateInvoiceFromShipmentCommand` (за non-LON flow каде billing е per shipped qty, не per PO).
+>
+> **Phase 2.5 i18n retrofit:** постоечки long-tail (~30 страници).
+>
+> ### 🧰 Quick facts
+>
+> - HEAD: `7e2cd40` (main). Сите смени деплојирани на VPS.
+> - Админ login и семата работаат per quick-facts по default.
+> - Contract hygiene почитуван: grep пред DTO change + regenerated TS + integration tests + Preview smoke (заменет со live VPS curl). 6 нови тестови во `FinanceTests.cs`.
+> - Не беа потребни нови DbSets во `IApplicationDbContext` за да поминат сите handlers — додадени се 4 (`ClientContracts`, `RateCardEntries`, `Invoices`, `InvoiceLines`).
+> - Enum `BackendStatus` има **только** `missing | partial | exists` — `shipped` не постои; користи `exists` за live-backend-и.
+> - `exportToCsv` signature = `(rows, columns[], filename)` (не `(filename, rows)`).
+>
+> ---
+
 > **>>>** **2026-04-20 (late) — Phase 5 sweep (7 tasks) + P6.38 FE catch-up batch (5 UIs) — HEAD `c5db4c6`, VPS green**
 >
 > ### 🎯 Handoff за следна сесија (чита се прво)
@@ -545,6 +598,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 11. 🆕 **Phase 7–13** — види [`docs/ROADMAP.md`](docs/ROADMAP.md) **(single source of traceability)** за сите преостанати placeholder screens распоредени во фази P7–P13 со ефорт/приоритет/зависности. Препорачан sprint редослед + DoD per phase.
 12. Flutter mobile (ex-Phase 7) — bumped to a later track bundled со stabilized desktop UI.
 
-**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ (2026-04-20; `ItemType.Packaging` веќе постои — миграција не требаше). Sprint 6 → Phase 12.3 Client Contracts + P12.2 Invoicing MVP (largest finance ROI; unlocks margin + piece-rate payroll).
+**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ · ~~Sprint 6 Phase 12.3 + 12.2~~ ✅ (2026-04-20; migration `P12_Finance`, VPS smoke green: SMOKE-CT-1 contract + `INV-2026-0001` Draft→Issued→Paid lifecycle end-to-end). Sprint 7 → Phase 13.1 + 13.3 + 13.5 (Management alerts + on-time + by-customer; data sources now exist from Sprints 1–6).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
