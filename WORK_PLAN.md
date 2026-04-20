@@ -337,6 +337,26 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-20 — Phase 5 autonomous sweep: 7 tasks shipped + VPS green (HEAD `031f0f3`)**
+>
+> **All closed this session (3 batched commits):**
+> - **P5.2.7** Mass location change — `POST /api/wms/inventory/mass-transfer[/preview]` + `/warehouse/transfers` page (preview→confirm). 3 integration tests. i18n × 4.
+> - **P5.2.5** FEFO auto-pick per-tenant flag — `Tenant.AllowFefoAutoPick` (default true, opt-out). `PUT /api/tenants/{id}/settings/fefo` + extended PUT body. Integration test flips flag and verifies MaterialIssue 400. Migration `P5_2_5_AllowFefoAutoPickFlag`.
+> - **P5.3.3** Inflate-for-waste flag — retroactively closed; shipped with P2.2.5 I1 as `Tenant.InflateImportForWaste`.
+> - **P5.3.5** Recent values dropdown — `UserFieldHistory` entity + MediatR handlers + `GET/POST /api/UserPrefs/field-history` + `useFieldHistory` hook + `RecentValuesInput` component. MassTransfer reason proof-point. Migration `P5_3_5_UserFieldHistory`. VPS-verified UsageCount bump (1→2).
+> - **P5.2.8** Quick-entry bar — `POST /api/QuickEntry/execute` parses `issue/release/move/help`, dispatches to existing MediatR handlers. `/tools/quick-entry` page with ↑/↓ history + result log. 4 integration tests. VPS-verified all error paths.
+> - **P5.3.1** BOM template auto-apply — `CreateProductionOrderCommand` fills BOMId + RoutingId when caller omits them (latest-Version ACTIVE + currently-valid). Integration test v1-expired + v2-current → v2 lands.
+> - **P5.3.2** BOM normative override per partner — `BOM.PartnerId` nullable + `CreateProductionOrderCommand.PartnerId`. Auto-apply prefers partner-scoped over global (Version 1 partner BOM trumps Version 5 global). Migration `P5_3_2_BomPartnerOverride`. SQL-verified column exists on VPS.
+>
+> **Migrations live on VPS:** `P5_2_5_AllowFefoAutoPickFlag`, `P5_3_5_UserFieldHistory`, `P5_3_2_BomPartnerOverride`.
+>
+> **Phase 5 remaining:**
+> - `P5.2.3` — Bulk receipt from invoice (not tackled; needs Shipment/Receipt auto-gen design).
+> - `P5.2.4` — Bulk shipment from FG selection (same design shape as P5.2.3).
+> - `P5.3.4` — Article picker with "A"-suffix variants (needs KW12 catalog rules).
+>
+> **Commits:** `c002fac` (P5.2.7 + P5.2.5 + P5.3.3 + P5.3.5), `23a29ef` (P5.2.8 + P5.3.1), `031f0f3` (P5.3.2). VPS tested green after each push.
+
 > **>>>** **2026-04-20 — Phase 6 Priority-B sweep closed (HEAD `168c70e`, VPS green)**
 >
 > **Just done + VPS-verified this session:**
