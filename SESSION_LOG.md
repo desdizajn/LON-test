@@ -2,6 +2,51 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — P6.42: KnowledgeBase positional-record binder fix
+
+**Trigger:** session-handoff note from commit `357bf4b` — RAG UI flow blocked because `POST /api/knowledgebase/search` returned 400 "The request field is required" on any JSON body (`{"query":...}` and `{"Query":...}` both rejected) even though P6.41 made the OpenAI path work.
+
+**Root cause:** `KnowledgeBaseController.cs:402` had `SearchRequest` as a positional record (`public record SearchRequest(string Query, int TopK = 5, ...)`). System.Text.Json's primary-constructor binding path refused the JSON body despite every parameter having a default. Same shape in `QuestionRequest` / `ConceptRequest` / `CodeListItemRequest` for consistency (no visible failure reports but identical risk profile).
+
+**Fix (commit `de3a848`):** converted all 4 local request DTOs to records with init-only properties plus explicit defaults. The binder now uses ordinary property setters instead of the primary-constructor path. No OpenAPI shape change — Swashbuckle still emits the same `components.schemas.SearchRequest` (all props optional + camelCase). The regenerated `schema.d.ts` / `swagger.json` pull in the extra endpoints added over the last few sessions (P6.30/P6.31/P6.34 + health/live/ready + QualityStatus=0 legacy label), which had not been regenerated yet.
+
+**Regression guard:** `tests/LON.IntegrationTests/KnowledgeBaseSearchTests.cs`
+- `Search_WithLowercaseQuery_BindsAndDoesNotReturn400` — POST `{"query":"customs procedure","topK":3}` must not 400.
+- `Search_WithPascalCaseQuery_BindsAndDoesNotReturn400` — POST `{"Query":"tariff",...}` must not 400.
+- `Search_WithEmptyQuery_Returns400WithControllerValidationMessage` — POST `{"query":""}` must 400 with `"Query не може да биде празен"` (asserts the controller validation path is reached, not the JSON binder).
+
+Vector store is disabled under `EnableVectorStore=false` in `LonApiFactory`, so the tests deliberately check only the model-binding contract (not RAG hits).
+
+**VPS verification (after `git pull --ff-only` + `docker compose build api && up -d api`, container Up 12s):**
+
+```
+POST /api/knowledgebase/search   Body: {"query":"tariff","topK":3}
+→ HTTP 200
+→ [
+    { "documentTitle":"Правилник за примена на царинска тарифа",
+      "reference":"Член 1", "similarityScore":0.802 },
+    { "documentTitle":"Правилник…", "reference":"Член 5",
+      "similarityScore":0.801 },
+    { "documentTitle":"Упатство за пополнување на Box 33",
+      "reference":"Box 33", "similarityScore":0.790 }
+  ]
+
+POST /api/knowledgebase/search   Body: {"query":""}
+→ HTTP 400  "Query не може да биде празен"
+```
+
+Happy-path (binder reaches OpenAI embeddings → pgvector cosine-similarity search → 3 hits with ~0.8 similarity) confirms the full RAG chain is now reachable from the web UI — not only the backend binder. Empty-query rejection goes through the controller's own `IsNullOrWhiteSpace(request.Query)` check, confirming the binder populates `Query` from lowercase JSON keys.
+
+**Build / contract hygiene:**
+- `dotnet build src/LON.API` — 0/0 warnings.
+- `dotnet build tests/LON.IntegrationTests` — 0 errors (3 pre-existing nullable warnings in unrelated files).
+- `./scripts/gen-api-types.sh` regenerated `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts`; committed alongside the controller change.
+- Contract Hygiene §3 (integration test on handler/DTO change) satisfied.
+
+**Deploy evidence:** commit `de3a848` on `main`, VPS HEAD matches, `lon-api` container healthy, two live smoke requests through Caddy/HTTPS.
+
+---
+
 ## 2026-04-20 — P6.41: OpenAI key wired on VPS, Vector Store green
 
 User supplied the OpenAI API key. Updated `/opt/apps/LON/LON-test/.env`:
