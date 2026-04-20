@@ -238,6 +238,33 @@
     "daysToEnd": "Ditë deri",
     "remainingQty": "Mbeten"
   },
+  "awaitingPack": {
+    "title": "Presin paketim",
+    "subtitle": "Porositë e përfunduara me sasi të prodhuar mbi dërgesën. Lidhje me ShipmentLine përmes batch-it të ProductionReceipt.",
+    "rowCount": "{{count}} porosi",
+    "produced": "Prodhuar",
+    "shipped": "Dërguar",
+    "remaining": "Mbetur",
+    "orderNumber": "Porosi",
+    "item": "Artikull",
+    "customerOrderNumber": "Porosi e klientit",
+    "actualEnd": "Mbarimi real",
+    "none": "Nuk ka porosi që presin paketim."
+  },
+  "packagingStock": {
+    "title": "Stoku i ambalazhit",
+    "subtitle": "Shuma e InventoryBalance për Item.Type=Packaging, OK quality, jo Exported/Waste.",
+    "items": "Artikuj",
+    "zeroItems": "Pa stok",
+    "totalOnHand": "Gjithsej",
+    "searchPlaceholder": "Kërko sipas kodit / emrit...",
+    "zeroOnly": "Vetëm të zbrazëta",
+    "code": "Kodi",
+    "name": "Emri",
+    "uom": "NjM",
+    "onHand": "Në stok",
+    "locations": "Vendndodhje"
+  },
   "attendance": {
     "title": "Prezenca e sotme",
     "subtitle": "Clock-in / Clock-out për punonjës. Orët llogariten në clock-out.",

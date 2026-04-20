@@ -1060,6 +1060,30 @@
         }
       }
     },
+    "/api/FinishedGoods/awaiting-pack": {
+      "get": {
+        "tags": [
+          "FinishedGoods"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/FinishedGoods/packaging-stock": {
+      "get": {
+        "tags": [
+          "FinishedGoods"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Guarantee/accounts": {
       "get": {
         "tags": [

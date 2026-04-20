@@ -344,10 +344,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.awaitingPack',
         icon: '📥',
         path: '/finished/awaiting-pack',
-        backendStatus: 'missing',
-        workPlanRef: 'P4.X — packing queue',
-        plannedBehavior:
-          'Завршени налози кои чекаат пакување: налог, кол., стандарди за пакување, клиентски барања (box size, етикети).',
+        backendStatus: 'exists',
+        existingDataHint: 'P9.1 — Completed POs where ProducedQuantity > SUM(ShipmentLine.Quantity joined on batch). Server-side aggregate.',
       },
       {
         key: 'finished-packing',
@@ -364,10 +362,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.readyToShip',
         icon: '🚢',
         path: '/finished/ready-to-ship',
-        backendStatus: 'missing',
-        workPlanRef: 'P4.X — shipment staging',
-        plannedBehavior:
-          'Спакувани налози кои чекаат извозна декларација или transport. Pending документи + rok за pickup.',
+        backendStatus: 'exists',
+        existingDataHint: 'P9.3 — Shipments WHERE Status=Packed. Reuses ShipmentsByStatus component (same as /warehouse/ready-to-ship).',
       },
       {
         key: 'finished-shipped',
@@ -392,10 +388,8 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.packagingStock',
         icon: '📬',
         path: '/finished/packaging-stock',
-        backendStatus: 'missing',
-        workPlanRef: 'P1.X — packaging inventory view',
-        plannedBehavior:
-          'Состојба на паковни материјали (картони, етикети, найлон): alert кога паѓа под reorder point.',
+        backendStatus: 'exists',
+        existingDataHint: 'P9.6 — Items.Type=Packaging × InventoryBalance rollup. Reorder-point alerts deferred until the field exists on Item.',
       },
       {
         key: 'finished-returns',

@@ -238,6 +238,33 @@
     "daysToEnd": "Дана до",
     "remainingQty": "Остало"
   },
+  "awaitingPack": {
+    "title": "Чекају паковање",
+    "subtitle": "Завршени налози са произведеном количином изнад испорученог. Веза са ShipmentLine преко batch-а ProductionReceipt.",
+    "rowCount": "{{count}} налога",
+    "produced": "Произведено",
+    "shipped": "Испоручено",
+    "remaining": "Остало",
+    "orderNumber": "Налог",
+    "item": "Артикал",
+    "customerOrderNumber": "Налог купца",
+    "actualEnd": "Стварни крај",
+    "none": "Нема налога који чекају паковање."
+  },
+  "packagingStock": {
+    "title": "Залихе амбалаже",
+    "subtitle": "Збир InventoryBalance за Item.Type=Packaging, OK quality, не-Exported/Waste.",
+    "items": "Артикли",
+    "zeroItems": "Без залихе",
+    "totalOnHand": "Укупно",
+    "searchPlaceholder": "Претражи по шифри / имену...",
+    "zeroOnly": "Само празни",
+    "code": "Шифра",
+    "name": "Назив",
+    "uom": "ЈМ",
+    "onHand": "На залихи",
+    "locations": "Локације"
+  },
   "attendance": {
     "title": "Данашња присутност",
     "subtitle": "Clock-in / Clock-out по запосленом. Сати се рачунају на clock-out.",

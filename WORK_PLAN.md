@@ -545,6 +545,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 11. 🆕 **Phase 7–13** — види [`docs/ROADMAP.md`](docs/ROADMAP.md) **(single source of traceability)** за сите преостанати placeholder screens распоредени во фази P7–P13 со ефорт/приоритет/зависности. Препорачан sprint редослед + DoD per phase.
 12. Flutter mobile (ex-Phase 7) — bumped to a later track bundled со stabilized desktop UI.
 
-**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ (2026-04-20). Sprint 5 → Phase 9 Finished Goods simple queries (9.1 awaiting-pack + 9.3 ready-to-ship + 9.6 packaging-stock). P9.6 бара нов `ItemType.PackagingMaterial` enum value + backfill.
+**Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ (2026-04-20; `ItemType.Packaging` веќе постои — миграција не требаше). Sprint 6 → Phase 12.3 Client Contracts + P12.2 Invoicing MVP (largest finance ROI; unlocks margin + piece-rate payroll).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

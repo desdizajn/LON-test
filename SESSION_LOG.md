@@ -2,6 +2,73 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-20 — Sprint 5: Phase 9.1/9.3/9.6 Finished Goods simple queries shipped
+
+Sprint 5 од `docs/ROADMAP.md` — без нови entities (P9.6 планираше нов
+`ItemType.PackagingMaterial` но `ItemType.Packaging=4` веќе постои од ден 1).
+Еден session: 2 нови backend queries + 2 FE pages + 1 reuse.
+
+**P9.1 `/finished/awaiting-pack`** — нов `GetAwaitingPackQuery` во
+`src/LON.Application/FinishedGoods/FinishedGoodsHandlers.cs`. Алгоритам:
+
+1. Pull POs со `Status=Completed`, проектирано во `{po, po.Item.Code/Name,
+   po.UoM.Code, distinctBatches = ProductionReceipt.BatchNumber WHERE po=this}`.
+2. Pull сите `ShipmentLine` за item-ите за активните POs.
+3. Клиент-side join: per PO, sum(ShipmentLine.Quantity WHERE batchNumber ∈
+   PO's distinct batch set). `remaining = Produced − shipped`, filter > 0.
+
+Ова е pragmatic bridge преку batch (не строго PO-to-ShipmentLine FK) — ако
+подоцна се додаде директен `ShipmentLine.ProductionOrderId` FK, query-то
+можеме да го поедноставиме, но за сега purely aggregation-only.
+
+`AwaitingPack.tsx` со summary totals + row-level remaining badge.
+
+**P9.3 `/finished/ready-to-ship`** — reuse на постоечкиот `ShipmentsByStatus`
+компонент (P7.4). Zero backend — само App.tsx замена на placeholder со
+`<ShipmentsByStatus filterStatus={4} />`. Исто data как
+`/warehouse/ready-to-ship`; само различен IA placement.
+
+**P9.6 `/finished/packaging-stock`** — нов `GetPackagingStockQuery`. Join
+`Item WHERE Type=Packaging` × `InventoryBalance WHERE QualityStatus=OK AND
+LonProcessState ∉ {Exported, Waste}`. Per-Item rollup: total + distinct
+location count. Покажуваме сите packaging items во catalog дури и со 0 stock
+(црвена линија — операторот ги бара од Prokurir). `PackagingStock.tsx` со
+zero-only toggle + search.
+
+**Backend infrastructure:**
+- `FinishedGoodsController` at `/api/FinishedGoods` со 2 GET endpoints.
+- EF projection pattern: anonymous → materialize → DTO map (per Phase-11
+  Pareto lesson).
+
+**Integration tests** (`FinishedGoodsTests.cs`):
+1. `PackagingStock_FiltersItemTypeEqualsPackaging` — seeds 1 Packaging +
+   1 RawMaterial + inventory row → response contains packaging only,
+   excludes raw.
+2. `AwaitingPack_Excludes_FullyShipped_ProductionOrders` — seeds 2 POs, one
+   fully shipped (batch-matched ShipmentLine=10 on Qty=10), one remaining
+   (no ShipmentLine). Response contains only the remaining one со
+   `RemainingToPack=20, ShippedQuantity=0`.
+
+**Cross-cutting:**
+- `finishedGoodsApi` во services/api.ts.
+- 2 нови i18n namespaces (`awaitingPack`, `packagingStock`) × 4 locales.
+- navGroups: 3 `missing → exists` (P9.1 + P9.3 + P9.6).
+- App.tsx: 3 PlaceholderPage blocks replaced.
+
+**Contract hygiene:**
+- gen-api-types.sh re-run; 2 нови paths во swagger + schema.d.ts.
+- `[FromBody]` не користено (двата endpoints се GET only).
+- `dotnet build`: 0/0. `npm run build` bundle `main.8ac13781.js` (+1.77kB).
+
+**Phase 9 long-tail (deferred):**
+- P9.2 PackingTask entity + station/operator assign workflow.
+- P9.5 PackListTemplate + PDF renderer (QuestPDF).
+- P9.7 ReturnRequest + `CreateReturnDeclarationCommand` hook (P2.6b dep).
+
+VPS deploy next.
+
+---
+
 ## 2026-04-20 — Sprint 4: Phase 10.1/10.2/10.5 HR basics shipped
 
 Sprint 4 од `docs/ROADMAP.md` — attendance, absences, operator-machine

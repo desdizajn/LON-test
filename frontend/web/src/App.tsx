@@ -101,6 +101,10 @@ import AttendanceToday from './pages/Hr/AttendanceToday';
 import Absences from './pages/Hr/Absences';
 import OperatorAssignment from './pages/Hr/OperatorAssignment';
 
+// P9.1/9.6 — Finished Goods simple queries
+import AwaitingPack from './pages/FinishedGoods/AwaitingPack';
+import PackagingStock from './pages/FinishedGoods/PackagingStock';
+
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
@@ -365,18 +369,7 @@ const App: React.FC = () => {
             <Route path="/production/search" element={<ScopedSearch scope="production" />} />
 
             {/* ───────── P6.37.8 — 📦 Finished Goods group ───────── */}
-            <Route
-              path="/finished/awaiting-pack"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.awaitingPack"
-                  workPlanRef="P4.X — packing queue"
-                  backendStatus="missing"
-                  plannedBehavior="Завршени налози кои чекаат пакување: налог, кол., стандарди за пакување, клиентски барања (box size, етикети)."
-                />
-              }
-            />
+            <Route path="/finished/awaiting-pack" element={<AwaitingPack />} />
             <Route
               path="/finished/packing"
               element={
@@ -392,12 +385,10 @@ const App: React.FC = () => {
             <Route
               path="/finished/ready-to-ship"
               element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.readyToShip"
-                  workPlanRef="P4.X — shipment staging"
-                  backendStatus="missing"
-                  plannedBehavior="Спакувани налози кои чекаат извозна декларација или transport. Pending документи + рок за pickup."
+                <ShipmentsByStatus
+                  title="Готови за испорака"
+                  subtitle="Shipments со Status=Packed — pending извозна декларација или transport."
+                  filterStatus={4}
                 />
               }
             />
@@ -423,18 +414,7 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/finished/packaging-stock"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.packagingStock"
-                  workPlanRef="P1.X — packaging inventory view"
-                  backendStatus="missing"
-                  plannedBehavior="Состојба на паковни материјали (картони, етикети, најлон): alert кога паѓа под reorder point."
-                />
-              }
-            />
+            <Route path="/finished/packaging-stock" element={<PackagingStock />} />
             <Route
               path="/finished/returns"
               element={

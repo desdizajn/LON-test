@@ -111,16 +111,18 @@ status + OperationType tagging, P8.9 бара новиот `OperationTimeLog` en
 
 | ID | Path | Backend | Eff | Pri | Deps | Note |
 |---|---|---|---|---|---|---|
-| **P9.1** | `/finished/awaiting-pack` | aggregate: PO(Status=Completed) WHERE NOT EXISTS ShipmentLine | M | P1 | — | Без нов entity — чиста query. |
+| **P9.1** | `/finished/awaiting-pack` | aggregate: PO(Status=Completed) WHERE NOT EXISTS ShipmentLine | M | P1 | — | **✅ 2026-04-20** — `GetAwaitingPackQuery`: Completed POs whose ProducedQuantity > SUM(ShipmentLine joined on batch-of-ProductionReceipt). `GET /FinishedGoods/awaiting-pack` + `AwaitingPack.tsx`. |
 | **P9.2** | `/finished/packing` | new-entity: PackingTask + CreatePackingTaskCommand + UpdateStatusCommand | L | P2 | P9.1 | Со assign to station/operator. |
-| **P9.3** | `/finished/ready-to-ship` | aggregate: Shipments WHERE Status=Packed | S | P1 | — | Shares data со /warehouse/ready-to-ship (P7.4). |
+| **P9.3** | `/finished/ready-to-ship` | aggregate: Shipments WHERE Status=Packed | S | P1 | — | **✅ 2026-04-20** — reuses existing `ShipmentsByStatus` component со `filterStatus=4` (shared pattern со /warehouse/ready-to-ship P7.4). Zero backend. |
 | **P9.4** | `/finished/shipped` | see P7.6 | — | — | P7.6 | Dup entry; link to P7.6. |
 | **P9.5** | `/finished/pack-lists` | new-entity: PackListTemplate + PDF generation | L | P2 | P9.1 | PDF render преку QuestPDF или iText. |
-| **P9.6** | `/finished/packaging-stock` | reuse: Items WHERE Type=PackagingMaterial + InventoryBalance | M | P1 | — | Bара `ItemType.PackagingMaterial` нова enum vрednost + миграција. |
+| **P9.6** | `/finished/packaging-stock` | reuse: Items WHERE Type=PackagingMaterial + InventoryBalance | M | P1 | — | **✅ 2026-04-20** — `GetPackagingStockQuery`: Items.Type=Packaging × InventoryBalance (OK, non-Exported/Waste) rollup. `ItemType.Packaging` enum value веќе постои — не треба миграција. `GET /FinishedGoods/packaging-stock` + `PackagingStock.tsx`. |
 | **P9.7** | `/finished/returns` | new-entity: ReturnRequest + CreateReturnRequestCommand + customs hook | L | P2 | P2.6b | Linkage до `CreateReturnDeclarationCommand` за customs impact. |
 
 **Phase 9 DoD:** од Completed PO до Shipment без leaving апликацијата. Експертски
-preview pack list за една shipment.
+preview pack list за една shipment. **Sprint 5 closed 2026-04-20
+(P9.1/9.3/9.6).** P9.2/9.5/9.7 long-tail — бараат нови entities (PackingTask,
+PackListTemplate, ReturnRequest) + PDF renderer / customs hook.
 
 ---
 

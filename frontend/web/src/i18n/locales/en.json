@@ -238,6 +238,33 @@
     "daysToEnd": "Days to end",
     "remainingQty": "Remaining"
   },
+  "awaitingPack": {
+    "title": "Awaiting pack",
+    "subtitle": "Completed POs whose produced quantity exceeds what's been shipped. Join ShipmentLine via ProductionReceipt batches.",
+    "rowCount": "{{count}} orders",
+    "produced": "Produced",
+    "shipped": "Shipped",
+    "remaining": "Remaining",
+    "orderNumber": "Order",
+    "item": "Item",
+    "customerOrderNumber": "Customer order",
+    "actualEnd": "Actual end",
+    "none": "No orders awaiting pack."
+  },
+  "packagingStock": {
+    "title": "Packaging stock",
+    "subtitle": "Sum of InventoryBalance for Item.Type=Packaging, OK quality, not Exported/Waste.",
+    "items": "Items",
+    "zeroItems": "Zero stock",
+    "totalOnHand": "Total",
+    "searchPlaceholder": "Search by code / name...",
+    "zeroOnly": "Zero only",
+    "code": "Code",
+    "name": "Name",
+    "uom": "UoM",
+    "onHand": "On hand",
+    "locations": "Locations"
+  },
   "attendance": {
     "title": "Today's attendance",
     "subtitle": "Clock-in / Clock-out per employee. Hours are computed on clock-out.",

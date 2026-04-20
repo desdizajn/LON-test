@@ -278,6 +278,12 @@ export const machinesApi = {
     api.get('/Machines/maintenance-work-orders', { params }),
 };
 
+// P9.1/9.6 — Finished Goods simple queries
+export const finishedGoodsApi = {
+  getAwaitingPack: () => api.get('/FinishedGoods/awaiting-pack'),
+  getPackagingStock: () => api.get('/FinishedGoods/packaging-stock'),
+};
+
 // P10.1/10.2/10.5 — HR operations (attendance, absences, operator assignments)
 export const hrApi = {
   // Attendance

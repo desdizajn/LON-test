@@ -598,6 +598,26 @@ export interface paths {
       };
     };
   };
+  "/api/FinishedGoods/awaiting-pack": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/FinishedGoods/packaging-stock": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Guarantee/accounts": {
     get: {
       responses: {
