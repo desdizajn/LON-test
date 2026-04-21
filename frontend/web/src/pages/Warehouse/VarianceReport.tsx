@@ -44,6 +44,8 @@ const VarianceReport: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'shortage' | 'surplus'>('all');
+  const [itemSearch, setItemSearch] = useState('');
+  const [countSearch, setCountSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -75,10 +77,19 @@ const VarianceReport: React.FC = () => {
   }, [counts]);
 
   const filtered = useMemo(() => {
-    if (filter === 'shortage') return flat.filter((r) => (r.variance ?? 0) < 0);
-    if (filter === 'surplus') return flat.filter((r) => (r.variance ?? 0) > 0);
-    return flat;
-  }, [flat, filter]);
+    const iq = itemSearch.trim().toLowerCase();
+    const cq = countSearch.trim().toLowerCase();
+    return flat.filter((r) => {
+      if (filter === 'shortage' && (r.variance ?? 0) >= 0) return false;
+      if (filter === 'surplus' && (r.variance ?? 0) <= 0) return false;
+      if (iq) {
+        const hay = `${r.item?.code ?? ''} ${r.item?.name ?? ''} ${r.batchNumber ?? ''} ${r.mrn ?? ''}`.toLowerCase();
+        if (!hay.includes(iq)) return false;
+      }
+      if (cq && !r.countNumber.toLowerCase().includes(cq)) return false;
+      return true;
+    });
+  }, [flat, filter, itemSearch, countSearch]);
 
   const totals = useMemo(() => ({
     shortage: flat.filter((r) => (r.variance ?? 0) < 0).length,
@@ -91,7 +102,7 @@ const VarianceReport: React.FC = () => {
       <h1>{t('variance.title')}</h1>
       <p style={{ color: '#666' }}>{t('variance.subtitle')}</p>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button onClick={() => setFilter('all')} style={{ padding: '6px 12px', fontWeight: filter === 'all' ? 'bold' : 'normal' }}>
           {t('variance.all')} ({flat.length})
         </button>
@@ -104,6 +115,23 @@ const VarianceReport: React.FC = () => {
         <span style={{ color: '#666', marginLeft: 'auto' }}>
           {t('variance.netQty')}: <strong>{formatQuantity(totals.netQty)}</strong>
         </span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={countSearch}
+          onChange={(e) => setCountSearch(e.target.value)}
+          placeholder={t('variance.countSearchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 180 }}
+        />
+        <input
+          type="text"
+          value={itemSearch}
+          onChange={(e) => setItemSearch(e.target.value)}
+          placeholder={t('variance.itemSearchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
+        <span style={{ fontSize: 12, color: '#666' }}>{t('inventory.filters.showing', { count: filtered.length, total: flat.length })}</span>
         <button
           onClick={() =>
             exportToCsv(

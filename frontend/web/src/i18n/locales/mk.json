@@ -96,7 +96,9 @@
     "declaration": "Декларација",
     "declarationDate": "Датум на декларација",
     "expectedQty": "Очекувана количина",
-    "expiryDate": "Истек на MRN"
+    "expiryDate": "Истек на MRN",
+    "searchPlaceholder": "Пребарај по MRN / декларација / партнер...",
+    "clickToOpen": "Кликнете за детали на декларацијата"
   },
   "qcHold": {
     "title": "Блокирано од QC",
@@ -106,7 +108,12 @@
     "quarantine": "Карантин",
     "location": "Локација",
     "release": "Ослободи",
-    "releaseConfirm": "Да ја вратиш оваа ставка во OK статус?"
+    "releaseConfirm": "Да ја вратиш оваа ставка во OK статус?",
+    "bulkReleaseAction": "Ослободи означени",
+    "bulkReleaseTitle": "Bulk ослободување во QC OK",
+    "bulkReleaseIntro": "Ќе се ослободат {{count}} редови (вкупно {{qty}}).",
+    "bulkReleaseSuccess": "Ослободени {{count}} редови.",
+    "bulkReleasePartial": "Успешни: {{ok}}. Грешки: {{failed}}. Прва грешка: {{first}}"
   },
   "variance": {
     "title": "Недостиг / Вишок / Разлика",
@@ -120,7 +127,9 @@
     "location": "Локација",
     "system": "Во систем",
     "counted": "Пребројано",
-    "variance": "Разлика"
+    "variance": "Разлика",
+    "countSearchPlaceholder": "Пребарај по број на попис...",
+    "itemSearchPlaceholder": "Пребарај по шифра / име / батч / MRN..."
   },
   "shipmentsByStatus": {
     "searchPlaceholder": "Пребарај по број / купец / tracking / SO #...",
@@ -131,7 +140,9 @@
     "carrier": "Превозник",
     "tracking": "Tracking",
     "linesCount": "Ставки",
-    "totalQty": "Вкупно"
+    "totalQty": "Вкупно",
+    "clickToOpen": "Кликнете за детали",
+    "linesTitle": "Ставки ({{count}})"
   },
   "stockByCustomer": {
     "title": "Состојба по клиентски материјал",
@@ -139,7 +150,9 @@
     "unassigned": "— Без клиент / domestic —",
     "groupCount": "{{count}} клиент(и)",
     "customer": "Клиент",
-    "itemsLabel": "ставки"
+    "itemsLabel": "ставки",
+    "searchPlaceholder": "Пребарај партнер / артикл / MRN...",
+    "minQty": "Мин. количина"
   },
   "shipmentsHistoryByCustomer": {
     "title": "Историја по клиент",
@@ -515,6 +528,7 @@
     "onlyOpen": "Само нераздолжени",
     "daysLeftFilter": "До N дена до истек",
     "rowCount": "{{count}} MRN",
+    "searchPlaceholder": "Пребарај по MRN / декларација / партнер...",
     "expiryDate": "Истекува",
     "daysLeft": "Денови",
     "consumption": "Консумација (Used / Total)",

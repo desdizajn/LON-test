@@ -96,7 +96,9 @@
     "declaration": "Deklarata",
     "declarationDate": "Data e deklaratës",
     "expectedQty": "Sasia e pritshme",
-    "expiryDate": "Skadim MRN"
+    "expiryDate": "Skadim MRN",
+    "searchPlaceholder": "Kërko sipas MRN / deklaratës / partnerit...",
+    "clickToOpen": "Kliko për detaje të deklaratës"
   },
   "qcHold": {
     "title": "Bllokuar nga QC",
@@ -106,7 +108,12 @@
     "quarantine": "Karantinë",
     "location": "Lokacioni",
     "release": "Liro",
-    "releaseConfirm": "Ta kthej këtë inventar në statusin OK?"
+    "releaseConfirm": "Ta kthej këtë inventar në statusin OK?",
+    "bulkReleaseAction": "Liro të zgjedhurit",
+    "bulkReleaseTitle": "Lirim bulk në QC OK",
+    "bulkReleaseIntro": "Do të lirohen {{count}} rreshta (gjithsej {{qty}}).",
+    "bulkReleaseSuccess": "U liruan {{count}} rreshta.",
+    "bulkReleasePartial": "Të suksesshme: {{ok}}. Dështime: {{failed}}. Gabimi i parë: {{first}}"
   },
   "variance": {
     "title": "Mungesë / Tepricë / Ndryshim",
@@ -120,7 +127,9 @@
     "location": "Lokacioni",
     "system": "Në sistem",
     "counted": "E numëruar",
-    "variance": "Ndryshimi"
+    "variance": "Ndryshimi",
+    "countSearchPlaceholder": "Kërko sipas numrit të inventarit...",
+    "itemSearchPlaceholder": "Kërko sipas kodit / emrit / batch / MRN..."
   },
   "shipmentsByStatus": {
     "searchPlaceholder": "Kërko sipas numrit / klientit / tracking / SO #…",
@@ -131,7 +140,9 @@
     "carrier": "Transportuesi",
     "tracking": "Tracking",
     "linesCount": "Rreshta",
-    "totalQty": "Total"
+    "totalQty": "Total",
+    "clickToOpen": "Kliko për detaje",
+    "linesTitle": "Rreshtat ({{count}})"
   },
   "stockByCustomer": {
     "title": "Inventari sipas klientit",
@@ -139,7 +150,9 @@
     "unassigned": "— Pa klient / vendor —",
     "groupCount": "{{count}} klient(ë)",
     "customer": "Klienti",
-    "itemsLabel": "artikuj"
+    "itemsLabel": "artikuj",
+    "searchPlaceholder": "Kërko partner / artikull / MRN...",
+    "minQty": "Sasia min."
   },
   "shipmentsHistoryByCustomer": {
     "title": "Historiku sipas klientit",
@@ -515,6 +528,7 @@
     "onlyOpen": "Vetëm të hapura",
     "daysLeftFilter": "Deri N ditë para skadimit",
     "rowCount": "{{count}} MRN",
+    "searchPlaceholder": "Kërko sipas MRN / deklaratës / partnerit...",
     "expiryDate": "Skadon",
     "daysLeft": "Ditë",
     "consumption": "Konsumi (Used / Total)",

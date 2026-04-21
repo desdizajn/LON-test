@@ -4,12 +4,28 @@ import { wmsApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate, formatQuantity } from '../../utils/format';
 import { exportToCsv } from '../../utils/export';
+import DetailDrawer from '../../components/common/DetailDrawer';
 
 /**
  * Shared component for shipment status-slice pages.
  *   P7.4 /warehouse/ready-to-ship → status=Packed (4)
  *   P7.6 /finished/shipped → status=Shipped (5)
+ *
+ * Row click opens a drawer with header fields + lines (item, batch, MRN,
+ * quantity). Uses cached row data — no extra fetch.
  */
+
+type Line = {
+  id: string;
+  lineNumber?: number;
+  itemId: string;
+  itemCode?: string;
+  itemName?: string;
+  quantity: number;
+  uoMCode?: string | null;
+  batchNumber?: string | null;
+  mrn?: string | null;
+};
 
 type Shipment = {
   id: string;
@@ -22,7 +38,8 @@ type Shipment = {
   status: number;
   trackingNumber?: string | null;
   salesOrderNumber?: string | null;
-  lines?: Array<{ id: string; itemId: string; quantity: number; batchNumber?: string | null; mrn?: string | null }>;
+  notes?: string | null;
+  lines?: Line[];
 };
 
 interface Props {
@@ -37,6 +54,7 @@ const ShipmentsByStatus: React.FC<Props> = ({ title, subtitle, filterStatus }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [detail, setDetail] = useState<Shipment | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +88,8 @@ const ShipmentsByStatus: React.FC<Props> = ({ title, subtitle, filterStatus }) =
         (s.salesOrderNumber ?? '').toLowerCase().includes(q)
     );
   }, [rows, search]);
+
+  const detailTotal = useMemo(() => detail?.lines?.reduce((a, l) => a + l.quantity, 0) ?? 0, [detail]);
 
   return (
     <div style={{ padding: 16 }}>
@@ -133,7 +153,12 @@ const ShipmentsByStatus: React.FC<Props> = ({ title, subtitle, filterStatus }) =
               <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>
             )}
             {!loading && filtered.map((s) => (
-              <tr key={s.id}>
+              <tr
+                key={s.id}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setDetail(s)}
+                title={t('shipmentsByStatus.clickToOpen') as string}
+              >
                 <td><strong>{s.shipmentNumber}</strong></td>
                 <td>{formatDate(s.shipmentDate)}</td>
                 <td>{s.customerName ?? '-'}</td>
@@ -147,8 +172,74 @@ const ShipmentsByStatus: React.FC<Props> = ({ title, subtitle, filterStatus }) =
           </tbody>
         </table>
       </div>
+
+      <DetailDrawer
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        title={detail?.shipmentNumber ?? ''}
+        subtitle={detail?.customerName ?? undefined}
+        width={680}
+      >
+        {detail && (
+          <>
+            <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+              <Field label={t('shipmentsByStatus.date') as string} value={formatDate(detail.shipmentDate)} />
+              <Field label={t('shipmentsByStatus.customer') as string} value={detail.customerName ?? '-'} />
+              <Field label={t('shipmentsByStatus.carrier') as string} value={detail.carrierName ?? '-'} />
+              <Field label={t('shipmentsByStatus.tracking') as string} value={detail.trackingNumber ?? '-'} />
+              <Field label="SO #" value={detail.salesOrderNumber ?? '-'} />
+              <Field label={t('shipmentsByStatus.totalQty') as string} value={formatQuantity(detailTotal)} />
+            </section>
+            <h3 style={{ fontSize: 14, margin: '0 0 8px' }}>
+              {t('shipmentsByStatus.linesTitle', { count: detail.lines?.length ?? 0 })}
+            </h3>
+            {(detail.lines?.length ?? 0) === 0 && (
+              <div style={{ color: '#888', fontSize: 13 }}>{t('declarationsByType.noLines')}</div>
+            )}
+            {detail.lines && detail.lines.length > 0 && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>#</th>
+                      <th style={{ textAlign: 'left' }}>{t('declarationsByType.line.item')}</th>
+                      <th style={{ textAlign: 'left' }}>{t('declarationsByType.line.batch')}</th>
+                      <th style={{ textAlign: 'left' }}>MRN</th>
+                      <th style={{ textAlign: 'right' }}>{t('declarationsByType.line.qty')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.lines.map((l, i) => (
+                      <tr key={l.id ?? i}>
+                        <td>{l.lineNumber ?? i + 1}</td>
+                        <td>{l.itemCode ?? l.itemId}{l.itemName ? ' · ' + l.itemName : ''}</td>
+                        <td>{l.batchNumber ?? '-'}</td>
+                        <td>{l.mrn ?? '-'}</td>
+                        <td style={{ textAlign: 'right' }}>{formatQuantity(l.quantity)} {l.uoMCode ?? ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {detail.notes && (
+              <section style={{ marginTop: 18 }}>
+                <h3 style={{ fontSize: 14, margin: '0 0 6px' }}>{t('declarationsByType.notes')}</h3>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{detail.notes}</div>
+              </section>
+            )}
+          </>
+        )}
+      </DetailDrawer>
     </div>
   );
 };
+
+const Field: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div>
+    <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
+    <div style={{ fontSize: 14 }}>{value ?? '-'}</div>
+  </div>
+);
 
 export default ShipmentsByStatus;

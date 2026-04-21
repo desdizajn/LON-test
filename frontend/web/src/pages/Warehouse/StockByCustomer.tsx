@@ -42,6 +42,8 @@ const StockByCustomer: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [minQty, setMinQty] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -93,9 +95,32 @@ const StockByCustomer: React.FC = () => {
     };
   }, [t]);
 
+  const filteredGroups = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const minQ = minQty ? Number(minQty) : 0;
+    return groups
+      .map((g) => {
+        const lines = q
+          ? g.lines.filter(
+              (l) =>
+                l.itemCode.toLowerCase().includes(q) ||
+                l.itemName.toLowerCase().includes(q) ||
+                (l.mrn ?? '').toLowerCase().includes(q)
+            )
+          : g.lines;
+        const filteredTotal = lines.reduce((s, l) => s + l.quantity, 0);
+        return { ...g, lines, totalQty: filteredTotal };
+      })
+      .filter((g) => {
+        if (q && !g.partnerName.toLowerCase().includes(q) && g.lines.length === 0) return false;
+        if (minQ > 0 && g.totalQty < minQ) return false;
+        return true;
+      });
+  }, [groups, search, minQty]);
+
   const flatForExport = useMemo(
     () =>
-      groups.flatMap((g) =>
+      filteredGroups.flatMap((g) =>
         g.lines.map((l) => ({
           partner: g.partnerName,
           itemCode: l.itemCode,
@@ -105,7 +130,7 @@ const StockByCustomer: React.FC = () => {
           uom: l.uom ?? '',
         }))
       ),
-    [groups]
+    [filteredGroups]
   );
 
   function toggle(id: string) {
@@ -122,9 +147,26 @@ const StockByCustomer: React.FC = () => {
       <h1>{t('stockByCustomer.title')}</h1>
       <p style={{ color: '#666' }}>{t('stockByCustomer.subtitle')}</p>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('stockByCustomer.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          {t('stockByCustomer.minQty')}:
+          <input
+            type="number"
+            value={minQty}
+            onChange={(e) => setMinQty(e.target.value)}
+            style={{ width: 90, padding: 4 }}
+            min={0}
+          />
+        </label>
         <span style={{ color: '#888', marginLeft: 'auto' }}>
-          {t('stockByCustomer.groupCount', { count: groups.length })}
+          {t('stockByCustomer.groupCount', { count: filteredGroups.length })}
         </span>
         <button
           onClick={() =>
@@ -151,9 +193,9 @@ const StockByCustomer: React.FC = () => {
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 
       {loading && <div>{t('common.loading')}</div>}
-      {!loading && groups.length === 0 && <div style={{ color: '#888' }}>{t('common.noData')}</div>}
+      {!loading && filteredGroups.length === 0 && <div style={{ color: '#888' }}>{search || minQty ? t('inventory.filters.noResults') : t('common.noData')}</div>}
 
-      {!loading && groups.map((g) => (
+      {!loading && filteredGroups.map((g) => (
         <div key={g.partnerId} style={{ border: '1px solid #eee', borderRadius: 4, marginBottom: 8 }}>
           <button
             onClick={() => toggle(g.partnerId)}

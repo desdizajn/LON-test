@@ -4,6 +4,7 @@ import { customsApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate, formatQuantity } from '../../utils/format';
 import { exportToCsv } from '../../utils/export';
+import DetailDrawer from '../../components/common/DetailDrawer';
 
 /**
  * P6.37 customs-deadlines + P6.36 MRN meter.
@@ -14,8 +15,9 @@ import { exportToCsv } from '../../utils/export';
  *   - Discharged / Used bar (export closure progress).
  *   - Outstanding undischarged quantity = Used − Discharged.
  *
- * Defaults to showing only rows with unfinished closure so the page doubles
- * as "open items": active MRNs where UsedQuantity > DischargedQuantity.
+ * Row click opens a drawer with the source declaration (partner, procedure,
+ * customs value, lines). Text search across MRN / declaration number / partner
+ * helps narrow the list when there are hundreds of active rows.
  */
 
 type MRNRow = {
@@ -27,6 +29,31 @@ type MRNRow = {
   expiryDate?: string | null;
   isActive: boolean;
   customsDeclarationId?: string | null;
+  customsDeclaration?: {
+    declarationNumber?: string;
+    partnerName?: string | null;
+  };
+};
+
+type DeclarationDetail = {
+  id: string;
+  declarationNumber: string;
+  mrn: string;
+  declarationDate: string;
+  partnerName?: string | null;
+  procedureCode?: string | null;
+  procedureName?: string | null;
+  totalCustomsValue?: number | null;
+  currency?: string | null;
+  lines?: Array<{
+    id: string;
+    lineNumber?: number;
+    itemCode?: string;
+    itemName?: string;
+    batchNumber?: string | null;
+    quantity: number;
+    uoMCode?: string | null;
+  }>;
 };
 
 const MrnDeadlines: React.FC = () => {
@@ -36,6 +63,10 @@ const MrnDeadlines: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [onlyOpen, setOnlyOpen] = useState(true);
   const [maxDaysLeft, setMaxDaysLeft] = useState<number | ''>('');
+  const [search, setSearch] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<DeclarationDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +86,28 @@ const MrnDeadlines: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!detailId) {
+      setDetail(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setDetailLoading(true);
+      try {
+        const resp = await customsApi.getDeclaration(detailId);
+        if (!cancelled) setDetail(resp.data as DeclarationDetail);
+      } catch (err) {
+        if (!cancelled) setError(translateError(err));
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [detailId]);
+
   const enriched = useMemo(() => {
     return rows.map((r) => {
       const discharged = r.dischargedQuantity ?? 0;
@@ -67,19 +120,24 @@ const MrnDeadlines: React.FC = () => {
   }, [rows]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return enriched.filter((r) => {
       if (onlyOpen && r.outstanding <= 0) return false;
       if (maxDaysLeft !== '' && r.days !== null && r.days > Number(maxDaysLeft)) return false;
+      if (q) {
+        const hay = `${r.mrn} ${r.customsDeclaration?.declarationNumber ?? ''} ${r.customsDeclaration?.partnerName ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [enriched, onlyOpen, maxDaysLeft]);
+  }, [enriched, onlyOpen, maxDaysLeft, search]);
 
   return (
     <div style={{ padding: 16 }}>
       <h1>{t('mrnDeadlines.title')}</h1>
       <p style={{ color: '#666' }}>{t('mrnDeadlines.subtitle')}</p>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} />
           {t('mrnDeadlines.onlyOpen')}
@@ -94,6 +152,13 @@ const MrnDeadlines: React.FC = () => {
             min={-30}
           />
         </label>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('mrnDeadlines.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <span style={{ color: '#888', marginLeft: 'auto' }}>
           {t('mrnDeadlines.rowCount', { count: filtered.length })}
         </span>
@@ -151,7 +216,12 @@ const MrnDeadlines: React.FC = () => {
               const daysColor =
                 r.days === null ? '#888' : r.days < 0 ? '#c00' : r.days < 14 ? '#e67e22' : r.days < 30 ? '#f1c40f' : '#27ae60';
               return (
-                <tr key={r.id}>
+                <tr
+                  key={r.id}
+                  style={{ cursor: r.customsDeclarationId ? 'pointer' : undefined }}
+                  onClick={() => r.customsDeclarationId && setDetailId(r.customsDeclarationId)}
+                  title={r.customsDeclarationId ? (t('incomingShipments.clickToOpen') as string) : undefined}
+                >
                   <td><code>{r.mrn}</code></td>
                   <td>{formatDate(r.expiryDate)}</td>
                   <td style={{ color: daysColor, fontWeight: 'bold' }}>
@@ -181,6 +251,56 @@ const MrnDeadlines: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <DetailDrawer
+        open={!!detailId}
+        onClose={() => setDetailId(null)}
+        title={detail?.declarationNumber ?? (t('common.loading') as string)}
+        subtitle={detail?.mrn ?? undefined}
+        width={680}
+      >
+        {detailLoading && <div>{t('common.loading')}</div>}
+        {!detailLoading && detail && (
+          <>
+            <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+              <Field label={t('declarationsByType.procedure') as string} value={`${detail.procedureCode ?? '-'}${detail.procedureName ? ' · ' + detail.procedureName : ''}`} />
+              <Field label={t('declarationsByType.date') as string} value={formatDate(detail.declarationDate)} />
+              <Field label={t('declarationsByType.partner') as string} value={detail.partnerName ?? '-'} />
+              <Field label={t('declarationsByType.customsValue') as string} value={`${formatQuantity(detail.totalCustomsValue ?? 0)} ${detail.currency ?? ''}`} />
+            </section>
+            <h3 style={{ fontSize: 14, margin: '0 0 8px' }}>
+              {t('declarationsByType.linesTitle', { count: detail.lines?.length ?? 0 })}
+            </h3>
+            {(detail.lines?.length ?? 0) === 0 && (
+              <div style={{ color: '#888', fontSize: 13 }}>{t('declarationsByType.noLines')}</div>
+            )}
+            {detail.lines && detail.lines.length > 0 && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>#</th>
+                      <th style={{ textAlign: 'left' }}>{t('declarationsByType.line.item')}</th>
+                      <th style={{ textAlign: 'left' }}>{t('declarationsByType.line.batch')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('declarationsByType.line.qty')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.lines.map((l, i) => (
+                      <tr key={l.id ?? i}>
+                        <td>{l.lineNumber ?? i + 1}</td>
+                        <td>{l.itemCode ?? '-'}{l.itemName ? ' · ' + l.itemName : ''}</td>
+                        <td>{l.batchNumber ?? '-'}</td>
+                        <td style={{ textAlign: 'right' }}>{formatQuantity(l.quantity)} {l.uoMCode ?? ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </DetailDrawer>
     </div>
   );
 };
@@ -194,5 +314,12 @@ const Bar: React.FC<{ pct: number; tone: 'red' | 'amber' | 'green' }> = ({ pct, 
     </div>
   );
 };
+
+const Field: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div>
+    <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
+    <div style={{ fontSize: 14 }}>{value ?? '-'}</div>
+  </div>
+);
 
 export default MrnDeadlines;

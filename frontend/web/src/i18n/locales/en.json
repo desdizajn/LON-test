@@ -96,7 +96,9 @@
     "declaration": "Declaration",
     "declarationDate": "Declaration date",
     "expectedQty": "Expected qty",
-    "expiryDate": "MRN expiry"
+    "expiryDate": "MRN expiry",
+    "searchPlaceholder": "Search by MRN / declaration / partner...",
+    "clickToOpen": "Click for declaration details"
   },
   "qcHold": {
     "title": "Blocked by QC",
@@ -106,7 +108,12 @@
     "quarantine": "Quarantine",
     "location": "Location",
     "release": "Release",
-    "releaseConfirm": "Release this inventory to OK status?"
+    "releaseConfirm": "Release this inventory to OK status?",
+    "bulkReleaseAction": "Release selected",
+    "bulkReleaseTitle": "Bulk release to QC OK",
+    "bulkReleaseIntro": "Will release {{count}} rows ({{qty}} total).",
+    "bulkReleaseSuccess": "Released {{count}} rows.",
+    "bulkReleasePartial": "Succeeded: {{ok}}. Failed: {{failed}}. First error: {{first}}"
   },
   "variance": {
     "title": "Variance report",
@@ -120,7 +127,9 @@
     "location": "Location",
     "system": "System",
     "counted": "Counted",
-    "variance": "Variance"
+    "variance": "Variance",
+    "countSearchPlaceholder": "Search by count number...",
+    "itemSearchPlaceholder": "Search by code / name / batch / MRN..."
   },
   "shipmentsByStatus": {
     "searchPlaceholder": "Search by number / customer / tracking / SO #…",
@@ -131,7 +140,9 @@
     "carrier": "Carrier",
     "tracking": "Tracking",
     "linesCount": "Lines",
-    "totalQty": "Total"
+    "totalQty": "Total",
+    "clickToOpen": "Click for details",
+    "linesTitle": "Lines ({{count}})"
   },
   "stockByCustomer": {
     "title": "Stock by customer",
@@ -139,7 +150,9 @@
     "unassigned": "— No customer / domestic —",
     "groupCount": "{{count}} customer(s)",
     "customer": "Customer",
-    "itemsLabel": "items"
+    "itemsLabel": "items",
+    "searchPlaceholder": "Search partner / item / MRN...",
+    "minQty": "Min qty"
   },
   "shipmentsHistoryByCustomer": {
     "title": "History by customer",
@@ -515,6 +528,7 @@
     "onlyOpen": "Open only",
     "daysLeftFilter": "Up to N days to expiry",
     "rowCount": "{{count}} MRN",
+    "searchPlaceholder": "Search by MRN / declaration / partner...",
     "expiryDate": "Expires",
     "daysLeft": "Days",
     "consumption": "Consumption (Used / Total)",
