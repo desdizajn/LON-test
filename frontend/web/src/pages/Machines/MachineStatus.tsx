@@ -51,6 +51,8 @@ const MachineStatus: React.FC = () => {
   const [newState, setNewState] = useState<number>(1);
   const [newNotes, setNewNotes] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [stateFilter, setStateFilter] = useState<string>('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,6 +78,19 @@ const MachineStatus: React.FC = () => {
     });
     return { counts, unknown };
   }, [rows]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (stateFilter === '-1' && r.currentState !== null) return false;
+      if (stateFilter && stateFilter !== '-1' && String(r.currentState) !== stateFilter) return false;
+      if (q) {
+        const hay = `${r.machineCode} ${r.machineName} ${r.workCenterCode} ${r.notes ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, search, stateFilter]);
 
   const openEdit = (row: CurrentState) => {
     setEditing(row);
@@ -113,10 +128,24 @@ const MachineStatus: React.FC = () => {
           <small>{t('machineStatus.unknown')}</small>
           <div style={{ fontWeight: 600, color: '#888' }}>{summary.unknown}</div>
         </div>
-        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('machineStatus.rowCount', { count: rows.length })}</span>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('machineStatus.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 200 }}
+        />
+        <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} style={{ padding: 6 }}>
+          <option value="">{t('machineStatus.stateAll')}</option>
+          {STATES.map((s) => (
+            <option key={s.value} value={String(s.value)}>{t(`machineStatus.states.${s.key}`)}</option>
+          ))}
+          <option value="-1">{t('machineStatus.unknown')}</option>
+        </select>
+        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('machineStatus.rowCount', { count: filtered.length })}</span>
         <button
           onClick={() => exportToCsv(
-            rows,
+            filtered,
             [
               { key: 'machineCode', label: 'Code' },
               { key: 'machineName', label: 'Name' },
@@ -127,7 +156,7 @@ const MachineStatus: React.FC = () => {
             ],
             'machine-status'
           )}
-          disabled={rows.length === 0}
+          disabled={filtered.length === 0}
           style={{ padding: '6px 12px' }}
         >
           {t('common.exportExcel')}
@@ -153,10 +182,10 @@ const MachineStatus: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search || stateFilter ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>
             )}
-            {!loading && rows.map((r) => (
+            {!loading && filtered.map((r) => (
               <tr key={r.machineId}>
                 <td><code>{r.machineCode}</code></td>
                 <td>{r.machineName}</td>

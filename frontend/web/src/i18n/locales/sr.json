@@ -347,7 +347,9 @@
       "parental": "Родитељски",
       "unpaid": "Неплаћено",
       "other": "Друго"
-    }
+    },
+    "searchPlaceholder": "Претрага по запосленом / разлогу...",
+    "typeAll": "Сви типови"
   },
   "assignments": {
     "title": "Оператор ↔ машина",
@@ -386,7 +388,9 @@
       "down": "Застој",
       "setUp": "Подешавање",
       "maintenance": "Одржавање"
-    }
+    },
+    "searchPlaceholder": "Претрага по шифри / називу / радном центру...",
+    "stateAll": "Сва стања"
   },
   "downtime": {
     "title": "Лог застоја",
@@ -1569,6 +1573,7 @@
     "invoicing": {
       "title": "Фактурисање",
       "subtitle": "Draft → Issued → Paid. Draft се може генерисати из PO преко активног уговора + rate.",
+      "searchPlaceholder": "Претрага по броју / партнеру / уговору...",
       "listTitle": "Фактуре",
       "number": "Број",
       "partner": "Партнер",

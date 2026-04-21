@@ -76,6 +76,7 @@ const Invoicing: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<number | ''>('');
   const [partnerFilter, setPartnerFilter] = useState('');
+  const [search, setSearch] = useState('');
 
   // Generate-from-PO draft
   const [genOpen, setGenOpen] = useState(false);
@@ -209,20 +210,31 @@ const Invoicing: React.FC = () => {
     }
   };
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        r.number.toLowerCase().includes(q) ||
+        (r.partnerName ?? '').toLowerCase().includes(q) ||
+        (r.contractNumber ?? '').toLowerCase().includes(q)
+    );
+  }, [rows, search]);
+
   const summary = useMemo(() => {
-    const outstanding = rows
+    const outstanding = filteredRows
       .filter((r) => r.status === 2)
       .reduce((acc, r) => acc + r.totalAmount, 0);
-    const paid = rows
+    const paid = filteredRows
       .filter((r) => r.status === 3)
       .reduce((acc, r) => acc + r.totalAmount, 0);
-    const drafts = rows.filter((r) => r.status === 1).length;
+    const drafts = filteredRows.filter((r) => r.status === 1).length;
     return { outstanding, paid, drafts };
-  }, [rows]);
+  }, [filteredRows]);
 
   const exportCsv = () => {
     exportToCsv(
-      rows,
+      filteredRows,
       [
         { key: 'number', label: t('finance.invoicing.number') },
         { key: 'partnerName', label: t('finance.invoicing.partner') },
@@ -259,6 +271,13 @@ const Invoicing: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('finance.invoicing.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 220 }}
+        />
         <label>
           {t('finance.invoicing.status')}:{' '}
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value === '' ? '' : Number(e.target.value))}>
@@ -312,7 +331,7 @@ const Invoicing: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 16 }}>
         <div>
-          <h3>{t('finance.invoicing.listTitle')} ({rows.length})</h3>
+          <h3>{t('finance.invoicing.listTitle')} ({filteredRows.length})</h3>
           {loading ? <div>{t('common.loading')}</div> : (
             <table style={{ width: '100%', fontSize: 13 }}>
               <thead>
@@ -325,7 +344,7 @@ const Invoicing: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
+                {filteredRows.map((r) => {
                   const s = STATUSES.find((x) => x.value === r.status);
                   return (
                     <tr key={r.id}

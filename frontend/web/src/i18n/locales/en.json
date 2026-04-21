@@ -347,7 +347,9 @@
       "parental": "Parental",
       "unpaid": "Unpaid",
       "other": "Other"
-    }
+    },
+    "searchPlaceholder": "Search by employee / reason...",
+    "typeAll": "All types"
   },
   "assignments": {
     "title": "Operator ↔ machine",
@@ -386,7 +388,9 @@
       "down": "Down",
       "setUp": "Set up",
       "maintenance": "Maintenance"
-    }
+    },
+    "searchPlaceholder": "Search by code / name / work center...",
+    "stateAll": "All states"
   },
   "downtime": {
     "title": "Downtime log",
@@ -1569,6 +1573,7 @@
     "invoicing": {
       "title": "Invoicing",
       "subtitle": "Draft → Issued → Paid. Drafts can be generated from a PO via active contract + rate.",
+      "searchPlaceholder": "Search by number / partner / contract...",
       "listTitle": "Invoices",
       "number": "Number",
       "partner": "Partner",

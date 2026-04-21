@@ -46,6 +46,8 @@ const Absences: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [pendingOnly, setPendingOnly] = useState<boolean>(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
 
   // Form
   const [employeeId, setEmployeeId] = useState<string>('');
@@ -117,6 +119,18 @@ const Absences: React.FC = () => {
 
   const pendingCount = useMemo(() => rows.filter((r) => r.approved == null).length, [rows]);
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (typeFilter && String(r.type) !== typeFilter) return false;
+      if (q) {
+        const hay = `${r.employeeNumber} ${r.fullName} ${r.reason ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, search, typeFilter]);
+
   return (
     <div style={{ padding: 16 }}>
       <h1>{t('absences.title')}</h1>
@@ -156,16 +170,27 @@ const Absences: React.FC = () => {
       </div>
 
       {/* Controls */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <input type="checkbox" checked={pendingOnly} onChange={(e) => setPendingOnly(e.target.checked)} />
           {t('absences.pendingOnly')}
         </label>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('absences.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 200 }}
+        />
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ padding: 6 }}>
+          <option value="">{t('absences.typeAll')}</option>
+          {TYPES.map((tt) => <option key={tt.value} value={String(tt.value)}>{t(`absences.types.${tt.key}`)}</option>)}
+        </select>
         <span style={{ color: '#ef6c00' }}>{t('absences.pendingCount', { count: pendingCount })}</span>
-        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('absences.rowCount', { count: rows.length })}</span>
+        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('absences.rowCount', { count: filteredRows.length })}</span>
         <button
           onClick={() => exportToCsv(
-            rows,
+            filteredRows,
             [
               { key: 'employeeNumber', label: 'Emp#' },
               { key: 'fullName', label: 'Name' },
@@ -177,7 +202,7 @@ const Absences: React.FC = () => {
             ],
             'absences'
           )}
-          disabled={rows.length === 0}
+          disabled={filteredRows.length === 0}
           style={{ padding: '4px 10px' }}
         >
           {t('common.exportExcel')}
@@ -201,8 +226,8 @@ const Absences: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>}
-            {!loading && rows.map((r) => {
+            {!loading && filteredRows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search || typeFilter ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>}
+            {!loading && filteredRows.map((r) => {
               const typeKey = TYPES.find((t) => t.value === r.type)?.key ?? 'other';
               const isPending = r.approved == null;
               return (

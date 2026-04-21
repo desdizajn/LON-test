@@ -347,7 +347,9 @@
       "parental": "Prindërore",
       "unpaid": "Pa pagesë",
       "other": "Tjetër"
-    }
+    },
+    "searchPlaceholder": "Kërko sipas punonjësit / arsyes...",
+    "typeAll": "Të gjithë llojet"
   },
   "assignments": {
     "title": "Operator ↔ makineri",
@@ -386,7 +388,9 @@
       "down": "Ndalim",
       "setUp": "Rregullim",
       "maintenance": "Mirëmbajtje"
-    }
+    },
+    "searchPlaceholder": "Kërko sipas kodit / emrit / qendrës së punës...",
+    "stateAll": "Të gjitha gjendjet"
   },
   "downtime": {
     "title": "Regjistri i ndërprerjeve",
@@ -1569,6 +1573,7 @@
     "invoicing": {
       "title": "Faturimi",
       "subtitle": "Draft → Issued → Paid. Draft mund të gjenerohet nga PO me kontratë aktive + rate.",
+      "searchPlaceholder": "Kërko sipas numrit / partnerit / kontratës...",
       "listTitle": "Faturat",
       "number": "Numri",
       "partner": "Partneri",
