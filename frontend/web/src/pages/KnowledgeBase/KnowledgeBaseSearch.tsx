@@ -20,7 +20,7 @@ import { api } from '../../services/api';
 import { showError } from '../../utils/toast';
 
 /**
- * P6.38 — Semantic search over Knowledge Base (Правилник + SAD guidance).
+ * P6.38 — Semantic search over Knowledge Base (Правилник + ЕЦД guidance).
  * Distinct from KnowledgeBaseChat which is the conversational RAG flow;
  * this page surfaces raw chunk hits with similarity scores for operators
  * that want to "find the rule" rather than "ask the assistant".
@@ -39,7 +39,7 @@ interface ChunkHit {
   similarityScore: number;
 }
 
-const DOC_TYPES = ['', 'Правилник', 'SADка Упатство'];
+const DOC_TYPES = ['', 'Правилник', 'ЕЦД Упатство'];
 
 const KnowledgeBaseSearch: React.FC = () => {
   const { t } = useTranslation();

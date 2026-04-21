@@ -8,7 +8,7 @@ namespace LON.Domain.Entities.MasterData;
 public class KnowledgeDocument : BaseEntity
 {
     /// <summary>
-    /// Тип на документ (Правилник, Упатство, SADка Упатство...)
+    /// Тип на документ (Правилник, Упатство, ЕЦД Упатство...)
     /// </summary>
     public string DocumentType { get; set; } = string.Empty;
     

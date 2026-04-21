@@ -15,9 +15,9 @@ public static class DocumentSeeder
     {
         Console.WriteLine("🔄 Starting Document seeding...");
 
-        // Always runs a box→рубрика patch even if docs already exist, so
-        // running against an older database upgrades the Macedonian copy.
-        await BackfillBoxToRubrikaAsync(context);
+        // Always runs the Macedonian-terminology patches even if docs already
+        // exist, so an older database picks up terminology changes on upgrade.
+        await BackfillMacedonianTerminologyAsync(context);
 
         // Провери дали веќе има документи
         if (await context.KnowledgeDocuments.AnyAsync())
@@ -29,7 +29,7 @@ public static class DocumentSeeder
         // Seed Правилник за примена на царинска тарифа
         await SeedPravilnikAsync(context, chunkingService, embeddingService);
 
-        // Seed SADка Упатство
+        // Seed ЕЦД Упатство
         await SeedSADInstructionsAsync(context, chunkingService, embeddingService);
         
         Console.WriteLine("✅ Document seeding completed!");
@@ -102,7 +102,7 @@ public static class DocumentSeeder
 
     private static async Task SeedSADInstructionsAsync(ApplicationDbContext context, IDocumentChunkingService chunkingService, IEmbeddingService embeddingService)
     {
-        Console.WriteLine("📄 Seeding SADка упатства...");
+        Console.WriteLine("📄 Seeding ЕЦД упатства...");
         
         // Пример упатства за рубриките на декларацијата
         var sadInstructions = new[]
@@ -119,7 +119,7 @@ public static class DocumentSeeder
             var document = new KnowledgeDocument
             {
                 Id = Guid.NewGuid(),
-                DocumentType = "SADка Упатство",
+                DocumentType = "ЕЦД Упатство",
                 TitleMK = $"Упатство за пополнување на {instruction.BoxNumber}",
                 TitleEN = $"Instructions for filling {instruction.BoxNumber}",
                 Reference = instruction.BoxNumber,
@@ -156,43 +156,61 @@ public static class DocumentSeeder
         }
 
         await context.SaveChangesAsync();
-        Console.WriteLine($"   ✓ Seeded {sadInstructions.Length} SADка упатства");
+        Console.WriteLine($"   ✓ Seeded {sadInstructions.Length} ЕЦД упатства");
     }
 
     /// <summary>
-    /// Idempotent patch: replaces the English loan-word "Box" with the
-    /// Macedonian term "Рубрика" in any already-seeded SAD instruction
-    /// documents + their chunks. Runs on every startup so upgrading an
-    /// older database picks up the terminology change without requiring
-    /// a fresh re-seed.
+    /// Idempotent Macedonian-terminology patch. Runs on every startup so an
+    /// older database picks up the current vocabulary without a fresh re-seed:
+    ///   • "Box N"           → "Рубрика N" (user-visible SAD field label)
+    ///   • "SADка Упатство"  → "ЕЦД Упатство" (DocumentType + filter value)
+    ///   • "SADка" / "SAD"   → "ЕЦД" (titles / content)
+    /// Covers Reference, TitleMK, TitleEN, Content and every chunk.Content.
     /// </summary>
-    private static async Task BackfillBoxToRubrikaAsync(ApplicationDbContext context)
+    private static async Task BackfillMacedonianTerminologyAsync(ApplicationDbContext context)
     {
+        // Match both legacy + current DocumentType + any row whose body still
+        // carries an old term, so a half-migrated database converges cleanly.
+        var legacyType = "SADка Упатство";
+        var currentType = "ЕЦД Упатство";
+
         var docs = await context.KnowledgeDocuments
-            .Where(d => d.DocumentType == "SADка Упатство" &&
-                (d.Reference != null && d.Reference.StartsWith("Box ") ||
-                 d.TitleMK.Contains("Box ") || d.Content.Contains("Box ")))
+            .Where(d => d.DocumentType == legacyType || d.DocumentType == currentType)
+            .Where(d => d.DocumentType == legacyType
+                     || (d.Reference != null && d.Reference.StartsWith("Box "))
+                     || d.TitleMK.Contains("Box ")
+                     || d.TitleMK.Contains("SADка")
+                     || d.TitleMK.Contains("SAD ")
+                     || d.Content.Contains("Box ")
+                     || d.Content.Contains("SADка")
+                     || d.Content.Contains("SAD "))
             .Include(d => d.Chunks)
             .ToListAsync();
 
         if (docs.Count == 0) return;
 
+        static string Patch(string? s) => (s ?? string.Empty)
+            .Replace("Box ", "Рубрика ")
+            .Replace("SADка", "ЕЦД")
+            .Replace("SAD ", "ЕЦД ");
+
         foreach (var d in docs)
         {
+            if (d.DocumentType == legacyType) d.DocumentType = currentType;
             if (d.Reference != null && d.Reference.StartsWith("Box "))
                 d.Reference = "Рубрика " + d.Reference.Substring(4);
-            d.TitleMK = d.TitleMK.Replace("Box ", "Рубрика ");
-            if (d.TitleEN is not null) d.TitleEN = d.TitleEN.Replace("Box ", "Рубрика ");
-            d.Content = d.Content.Replace("Box ", "Рубрика ");
+            d.TitleMK = Patch(d.TitleMK);
+            if (d.TitleEN is not null) d.TitleEN = Patch(d.TitleEN);
+            d.Content = Patch(d.Content);
             d.ModifiedAt = DateTime.UtcNow;
-            d.ModifiedBy = "DocumentSeeder.BackfillBoxToRubrika";
+            d.ModifiedBy = "DocumentSeeder.BackfillMacedonianTerminology";
             foreach (var chunk in d.Chunks)
             {
-                chunk.Content = chunk.Content.Replace("Box ", "Рубрика ");
+                chunk.Content = Patch(chunk.Content);
             }
         }
 
         await context.SaveChangesAsync();
-        Console.WriteLine($"   ✓ Backfilled Box→Рубрика on {docs.Count} document(s)");
+        Console.WriteLine($"   ✓ Backfilled Macedonian terminology (Box→Рубрика, SADка→ЕЦД) on {docs.Count} document(s)");
     }
 }
