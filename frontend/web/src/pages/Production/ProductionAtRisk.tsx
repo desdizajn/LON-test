@@ -52,6 +52,8 @@ const ProductionAtRisk: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [riskFilter, setRiskFilter] = useState<'all' | 'red' | 'amber'>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +93,16 @@ const ProductionAtRisk: React.FC = () => {
     return out.sort((a, b) => b.gap - a.gap);
   }, [orders]);
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (riskFilter !== 'all' && r.risk !== riskFilter) return false;
+      if (!q) return true;
+      const hay = `${r.order.orderNumber} ${r.order.item?.code ?? ''} ${r.order.item?.name ?? ''} ${r.order.customerOrderNumber ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [rows, search, riskFilter]);
+
   const redCount = rows.filter((r) => r.risk === 'red').length;
   const amberCount = rows.filter((r) => r.risk === 'amber').length;
 
@@ -99,16 +111,24 @@ const ProductionAtRisk: React.FC = () => {
       <h1>{t('productionAtRisk.title')}</h1>
       <p style={{ color: '#666' }}>{t('productionAtRisk.subtitle')}</p>
 
-      <div style={{ display: 'flex', gap: 24, marginBottom: 12, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
-        <div><small>{t('productionAtRisk.red')}</small><div style={{ fontWeight: 600, color: '#c62828' }}>{redCount}</div></div>
-        <div><small>{t('productionAtRisk.amber')}</small><div style={{ fontWeight: 600, color: '#f9a825' }}>{amberCount}</div></div>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 12, padding: 12, background: '#f5f5f5', borderRadius: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button onClick={() => setRiskFilter('all')} style={{ padding: '6px 12px', fontWeight: riskFilter === 'all' ? 'bold' : 'normal' }}>{t('productionAtRisk.all')} ({rows.length})</button>
+        <button onClick={() => setRiskFilter('red')} style={{ padding: '6px 12px', fontWeight: riskFilter === 'red' ? 'bold' : 'normal', color: '#c62828' }}>{t('productionAtRisk.red')} ({redCount})</button>
+        <button onClick={() => setRiskFilter('amber')} style={{ padding: '6px 12px', fontWeight: riskFilter === 'amber' ? 'bold' : 'normal', color: '#f9a825' }}>{t('productionAtRisk.amber')} ({amberCount})</button>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('productionToday.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <span style={{ color: '#888', marginLeft: 'auto' }}>
-          {t('productionAtRisk.rowCount', { count: rows.length })}
+          {t('productionAtRisk.rowCount', { count: filteredRows.length })}
         </span>
         <button
           onClick={() =>
             exportToCsv(
-              rows,
+              filteredRows,
               [
                 { key: 'orderNumber', label: 'Order', get: (r) => r.order.orderNumber },
                 { key: 'item', label: 'Item', get: (r) => `${r.order.item?.code ?? ''} ${r.order.item?.name ?? ''}`.trim() },
@@ -122,7 +142,7 @@ const ProductionAtRisk: React.FC = () => {
               'production-at-risk'
             )
           }
-          disabled={rows.length === 0}
+          disabled={filteredRows.length === 0}
           style={{ padding: '6px 12px' }}
         >
           {t('common.exportExcel')}
@@ -152,10 +172,10 @@ const ProductionAtRisk: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('productionAtRisk.noneAtRisk')}</td></tr>
+            {!loading && filteredRows.length === 0 && (
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search || riskFilter !== 'all' ? t('inventory.filters.noResults') : t('productionAtRisk.noneAtRisk')}</td></tr>
             )}
-            {!loading && rows.map((r) => {
+            {!loading && filteredRows.map((r) => {
               const o = r.order;
               const color = r.risk === 'red' ? '#c62828' : '#f9a825';
               const uom = o.uoM?.code ?? '';

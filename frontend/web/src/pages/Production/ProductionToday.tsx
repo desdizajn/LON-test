@@ -49,6 +49,8 @@ const ProductionToday: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -73,15 +75,22 @@ const ProductionToday: React.FC = () => {
   }, []);
 
   const todayOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return orders.filter((o) => {
       if (o.status === 5 || o.status === 6) return false;
       const s = new Date(o.plannedStartDate);
       const e = new Date(o.plannedEndDate);
       s.setHours(0, 0, 0, 0);
       e.setHours(23, 59, 59, 999);
-      return s.getTime() <= today.getTime() && today.getTime() <= e.getTime();
+      if (!(s.getTime() <= today.getTime() && today.getTime() <= e.getTime())) return false;
+      if (statusFilter && String(o.status) !== statusFilter) return false;
+      if (q) {
+        const hay = `${o.orderNumber} ${o.item?.code ?? ''} ${o.item?.name ?? ''} ${o.customerOrderNumber ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
-  }, [orders, today]);
+  }, [orders, today, search, statusFilter]);
 
   const progress = (o: Order) =>
     o.orderQuantity > 0 ? o.producedQuantity / o.orderQuantity : 0;
@@ -91,7 +100,21 @@ const ProductionToday: React.FC = () => {
       <h1>{t('productionToday.title')}</h1>
       <p style={{ color: '#666' }}>{t('productionToday.subtitle', { date: formatDate(isoDay(today)) })}</p>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('productionToday.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 260 }}
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: 6 }}>
+          <option value="">{t('productionToday.statusAll')}</option>
+          <option value="1">{t('production.status.draft')}</option>
+          <option value="2">{t('production.status.released')}</option>
+          <option value="3">{t('production.status.inProgress')}</option>
+          <option value="4">{t('production.status.completed')}</option>
+        </select>
         <span style={{ color: '#888', marginLeft: 'auto' }}>
           {t('productionToday.rowCount', { count: todayOrders.length })}
         </span>

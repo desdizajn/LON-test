@@ -210,7 +210,9 @@
     "progress": "Progress",
     "status": "Status",
     "plannedStart": "Start",
-    "plannedEnd": "End"
+    "plannedEnd": "End",
+    "searchPlaceholder": "Search by order / item / customer order...",
+    "statusAll": "All statuses"
   },
   "productionWip": {
     "title": "Work in progress (WIP)",
@@ -227,7 +229,8 @@
     "stockItem": "Item",
     "stockLocation": "Location",
     "stockBatch": "Batch",
-    "stockQty": "Qty"
+    "stockQty": "Qty",
+    "stockSearchPlaceholder": "Search item / location / batch / MRN..."
   },
   "productionCompleted": {
     "title": "Completed orders",
@@ -251,6 +254,7 @@
   "productionAtRisk": {
     "title": "Orders at risk",
     "subtitle": "Heuristic: schedule_used% − progress% ≥ 10% (amber) or ≥ 25% and ≤ 7 days to end (red).",
+    "all": "All",
     "red": "Red",
     "amber": "Amber",
     "rowCount": "{{count}} at risk",
@@ -464,7 +468,8 @@
     "required": "Required",
     "available": "Available",
     "deficit": "Deficit",
-    "affectedPOs": "Affected POs"
+    "affectedPOs": "Affected POs",
+    "searchPlaceholder": "Search material / order..."
   },
   "lonAuthorizations": {
     "title": "Inward processing authorizations",

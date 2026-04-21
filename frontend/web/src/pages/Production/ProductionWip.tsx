@@ -49,6 +49,8 @@ const ProductionWip: React.FC = () => {
   const [balances, setBalances] = useState<Balance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [stockSearch, setStockSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +73,24 @@ const ProductionWip: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const wipBalances = useMemo(
-    () => balances.filter((b) => b.lonProcessState === LON_IN_PRODUCTION && b.quantity > 0),
-    [balances]
-  );
+  const wipBalances = useMemo(() => {
+    const q = stockSearch.trim().toLowerCase();
+    return balances.filter((b) => {
+      if (b.lonProcessState !== LON_IN_PRODUCTION || b.quantity <= 0) return false;
+      if (!q) return true;
+      const hay = `${b.item?.code ?? ''} ${b.item?.name ?? ''} ${b.location?.code ?? ''} ${b.batchNumber ?? ''} ${b.mrn ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [balances, stockSearch]);
+
+  const filteredOrders = useMemo(() => {
+    const q = orderSearch.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter((o) => {
+      const hay = `${o.orderNumber} ${o.item?.code ?? ''} ${o.item?.name ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [orders, orderSearch]);
 
   const totalWipQty = useMemo(
     () => wipBalances.reduce((acc, b) => acc + (b.quantity || 0), 0),
@@ -92,12 +108,19 @@ const ProductionWip: React.FC = () => {
         </div>
       )}
 
-      <h2 style={{ marginTop: 24 }}>{t('productionWip.ordersSection', { count: orders.length })}</h2>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+      <h2 style={{ marginTop: 24 }}>{t('productionWip.ordersSection', { count: filteredOrders.length })}</h2>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        <input
+          type="text"
+          value={orderSearch}
+          onChange={(e) => setOrderSearch(e.target.value)}
+          placeholder={t('productionToday.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <button
           onClick={() =>
             exportToCsv(
-              orders,
+              filteredOrders,
               [
                 { key: 'orderNumber', label: 'Order' },
                 { key: 'item', label: 'Item', get: (o) => `${o.item?.code ?? ''} ${o.item?.name ?? ''}`.trim() },
@@ -128,10 +151,10 @@ const ProductionWip: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && orders.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>
+            {!loading && filteredOrders.length === 0 && (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{orderSearch ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>
             )}
-            {!loading && orders.map((o) => {
+            {!loading && filteredOrders.map((o) => {
               const pct = o.orderQuantity > 0 ? o.producedQuantity / o.orderQuantity : 0;
               const uom = o.uoM?.code ?? '';
               return (
@@ -155,7 +178,14 @@ const ProductionWip: React.FC = () => {
       <p style={{ color: '#666', marginTop: -8 }}>
         {t('productionWip.wipStockHint', { total: formatQuantity(totalWipQty) })}
       </p>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        <input
+          type="text"
+          value={stockSearch}
+          onChange={(e) => setStockSearch(e.target.value)}
+          placeholder={t('productionWip.stockSearchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <button
           onClick={() =>
             exportToCsv(

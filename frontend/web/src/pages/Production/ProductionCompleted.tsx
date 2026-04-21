@@ -43,6 +43,7 @@ const ProductionCompleted: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [periodDays, setPeriodDays] = useState<number>(30);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -68,18 +69,24 @@ const ProductionCompleted: React.FC = () => {
   }, [periodDays]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return orders
       .filter((o) => {
         const effective = o.actualEndDate ?? o.plannedEndDate;
         if (!effective) return false;
-        return new Date(effective).getTime() >= cutoff.getTime();
+        if (new Date(effective).getTime() < cutoff.getTime()) return false;
+        if (q) {
+          const hay = `${o.orderNumber} ${o.item?.code ?? ''} ${o.item?.name ?? ''} ${o.customerOrderNumber ?? ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
       })
       .sort((a, b) => {
         const ea = new Date(a.actualEndDate ?? a.plannedEndDate).getTime();
         const eb = new Date(b.actualEndDate ?? b.plannedEndDate).getTime();
         return eb - ea;
       });
-  }, [orders, cutoff]);
+  }, [orders, cutoff, search]);
 
   const totals = useMemo(() => {
     return filtered.reduce(
@@ -98,13 +105,20 @@ const ProductionCompleted: React.FC = () => {
       <h1>{t('productionCompleted.title')}</h1>
       <p style={{ color: '#666' }}>{t('productionCompleted.subtitle')}</p>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <label>{t('productionCompleted.period')}:</label>
         <select value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))} style={{ padding: '4px 8px' }}>
           {PERIOD_OPTIONS.map((p) => (
             <option key={p.key} value={p.days}>{t(`productionCompleted.period${p.key}`)}</option>
           ))}
         </select>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('productionToday.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <span style={{ color: '#888', marginLeft: 'auto' }}>
           {t('productionCompleted.rowCount', { count: filtered.length })}
         </span>

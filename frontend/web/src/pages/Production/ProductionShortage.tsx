@@ -48,6 +48,7 @@ const ProductionShortage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +68,16 @@ const ProductionShortage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const rows = useMemo(() => report?.rows ?? [], [report]);
+  const rows = useMemo(() => {
+    const all = report?.rows ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((r) => {
+      const hay = `${r.itemCode} ${r.itemName}`.toLowerCase();
+      if (hay.includes(q)) return true;
+      return r.affectedOrders.some((p) => p.orderNumber.toLowerCase().includes(q));
+    });
+  }, [report, search]);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -99,6 +109,13 @@ const ProductionShortage: React.FC = () => {
         <div><small>{t('productionShortage.activeOrders')}</small><div style={{ fontWeight: 600 }}>{report?.totalActiveOrders ?? 0}</div></div>
         <div><small>{t('productionShortage.materialsShort')}</small><div style={{ fontWeight: 600, color: rows.length > 0 ? '#c62828' : '#2e7d32' }}>{rows.length}</div></div>
         <div><small>{t('productionShortage.totalDeficit')}</small><div style={{ fontWeight: 600, color: '#c62828' }}>{formatQuantity(totals.deficit)}</div></div>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('productionShortage.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
         <button
           onClick={() =>
             exportToCsv(

@@ -210,7 +210,9 @@
     "progress": "Напредак",
     "status": "Статус",
     "plannedStart": "Почетак",
-    "plannedEnd": "Крај"
+    "plannedEnd": "Крај",
+    "searchPlaceholder": "Претрага по налогу / артиклу / налогу купца...",
+    "statusAll": "Сви статуси"
   },
   "productionWip": {
     "title": "Рад у току (WIP)",
@@ -227,7 +229,8 @@
     "stockItem": "Артикал",
     "stockLocation": "Локација",
     "stockBatch": "Батч",
-    "stockQty": "Количина"
+    "stockQty": "Количина",
+    "stockSearchPlaceholder": "Претрага артикла / локације / batch-а / MRN..."
   },
   "productionCompleted": {
     "title": "Завршени налози",
@@ -251,6 +254,7 @@
   "productionAtRisk": {
     "title": "Налози у ризику",
     "subtitle": "Хеуристика: schedule_used% − progress% ≥ 10% (жуто) или ≥ 25% и ≤ 7 дана до краја (црвено).",
+    "all": "Сви",
     "red": "Црвени",
     "amber": "Жути",
     "rowCount": "{{count}} у ризику",
@@ -464,7 +468,8 @@
     "required": "Потребно",
     "available": "Расположиво",
     "deficit": "Дефицит",
-    "affectedPOs": "Погођени налози"
+    "affectedPOs": "Погођени налози",
+    "searchPlaceholder": "Претрага материјала / налога..."
   },
   "lonAuthorizations": {
     "title": "Царинске дозволе за оплеменљивање",

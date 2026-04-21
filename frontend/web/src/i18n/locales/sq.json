@@ -210,7 +210,9 @@
     "progress": "Përparimi",
     "status": "Statusi",
     "plannedStart": "Fillimi",
-    "plannedEnd": "Mbarimi"
+    "plannedEnd": "Mbarimi",
+    "searchPlaceholder": "Kërko sipas porosisë / artikullit / porosisë së klientit...",
+    "statusAll": "Të gjithë statuset"
   },
   "productionWip": {
     "title": "Puna në vazhdim (WIP)",
@@ -227,7 +229,8 @@
     "stockItem": "Artikull",
     "stockLocation": "Vendndodhja",
     "stockBatch": "Batch",
-    "stockQty": "Sasia"
+    "stockQty": "Sasia",
+    "stockSearchPlaceholder": "Kërko artikull / vendndodhje / batch / MRN..."
   },
   "productionCompleted": {
     "title": "Porositë e përfunduara",
@@ -251,6 +254,7 @@
   "productionAtRisk": {
     "title": "Porositë në rrezik",
     "subtitle": "Heuristikë: schedule_used% − progress% ≥ 10% (e verdhë) ose ≥ 25% dhe ≤ 7 ditë deri në mbarim (e kuqe).",
+    "all": "Të gjitha",
     "red": "Të kuqe",
     "amber": "Të verdha",
     "rowCount": "{{count}} në rrezik",
@@ -464,7 +468,8 @@
     "required": "Kërkuar",
     "available": "Disponueshëm",
     "deficit": "Deficit",
-    "affectedPOs": "Porositë e prekura"
+    "affectedPOs": "Porositë e prekura",
+    "searchPlaceholder": "Kërko material / porosi..."
   },
   "lonAuthorizations": {
     "title": "Autorizimet doganore për përpunim",

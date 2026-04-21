@@ -210,7 +210,9 @@
     "progress": "Напредок",
     "status": "Статус",
     "plannedStart": "Почеток",
-    "plannedEnd": "Краj"
+    "plannedEnd": "Краj",
+    "searchPlaceholder": "Пребарај по налог / артикл / клиентски налог...",
+    "statusAll": "Сите статуси"
   },
   "productionWip": {
     "title": "Работа во тек (WIP)",
@@ -227,7 +229,8 @@
     "stockItem": "Артикл",
     "stockLocation": "Локација",
     "stockBatch": "Партија",
-    "stockQty": "Количина"
+    "stockQty": "Количина",
+    "stockSearchPlaceholder": "Пребарај артикл / локација / партија / MRN..."
   },
   "productionCompleted": {
     "title": "Завршени налози",
@@ -251,6 +254,7 @@
   "productionAtRisk": {
     "title": "Налози во ризик",
     "subtitle": "Heuristika: schedule_used% − progress% ≥ 10% (amber) или ≥ 25% и ≤ 7 дена до краj (red).",
+    "all": "Сите",
     "red": "Црвени",
     "amber": "Жолти",
     "rowCount": "{{count}} во ризик",
@@ -464,7 +468,8 @@
     "required": "Потребно",
     "available": "Расположливо",
     "deficit": "Недостаток",
-    "affectedPOs": "Погодени налози"
+    "affectedPOs": "Погодени налози",
+    "searchPlaceholder": "Пребарај материјал / налог..."
   },
   "lonAuthorizations": {
     "title": "Царински дозволи за облагородување",
