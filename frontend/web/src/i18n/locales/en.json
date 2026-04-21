@@ -62,7 +62,16 @@
     "all": "All",
     "select": "select",
     "generate": "Generate",
-    "exportCsv": "Export CSV"
+    "exportCsv": "Export CSV",
+    "searchPlaceholder": "Search...",
+    "noResults": "No results",
+    "clear": "Clear"
+  },
+  "bulkActions": {
+    "selected": "{{count}} selected",
+    "clear": "Clear selection",
+    "selectAll": "Select all",
+    "selectRow": "Select row"
   },
   "kbSearch": {
     "title": "Knowledge base search",
@@ -458,7 +467,16 @@
     "guaranteeAmount": "Guarantee",
     "status": "Status",
     "customsOffice": "Customs office",
-    "expired": "expired"
+    "expired": "expired",
+    "clickToOpen": "Click for details",
+    "authType": "Authorization type",
+    "systemType": "System",
+    "operationType": "Operation",
+    "partnerCode": "Partner code",
+    "guaranteeReference": "Guarantee reference",
+    "guaranteePctOverride": "Percentage (override)",
+    "supervisingOffice": "Supervising customs office",
+    "notes": "Notes"
   },
   "declarationsByType": {
     "importTitle": "Import documents",
@@ -474,7 +492,22 @@
     "customsValue": "Customs value",
     "duty": "Duty",
     "vat": "VAT",
-    "status": "Status"
+    "status": "Status",
+    "clickToOpen": "Click for details",
+    "linesTitle": "Lines ({{count}})",
+    "noLines": "No lines.",
+    "partnerCode": "Partner code",
+    "zaverkaNumber": "Certification number",
+    "zaverkaDate": "Certification date",
+    "notes": "Notes",
+    "line": {
+      "item": "Article",
+      "batch": "Batch",
+      "qty": "Quantity",
+      "sourceMrn": "Source MRN",
+      "discharge": "Discharge",
+      "customsValue": "Customs value"
+    }
   },
   "mrnDeadlines": {
     "title": "Deadlines & open MRN positions",
@@ -508,8 +541,8 @@
     "requiredMissing": "Declaration and warehouse are required."
   },
   "bulkShipment": {
-    "title": "Bulk shipment from FG selection",
-    "subtitle": "Filter finished goods and create a Shipment + (optionally) an EX declaration in one click.",
+    "title": "Mass shipment from FG selection",
+    "subtitle": "One filter → N FG rows → one shipment. Preview the rows before committing.",
     "filterLegend": "Finished-goods filter",
     "customerLegend": "Customer / reference",
     "customsLegend": "Customs",
@@ -518,18 +551,45 @@
     "mrn": "MRN",
     "sourceWarehouse": "Source warehouse",
     "sourceLocation": "Source location",
-    "partner": "Partner",
+    "partner": "Partner (customer)",
     "reference": "Reference",
     "createEx": "Create EX declaration atomically",
     "procedure": "Customs procedure",
     "procedureRequired": "Customs procedure is required when creating EX.",
     "declarationNumber": "Declaration number",
     "commit": "Create shipment",
-    "successHeading": "Bulk shipment created.",
+    "commitWithCount": "Create shipment ({{count}} rows)",
+    "aboutToShip": "About to ship {{count}} FG rows, {{qty}} total.",
+    "successHeading": "Mass shipment created.",
     "shipmentNumber": "Shipment number",
     "linesCreated": "Lines created",
     "totalQuantity": "Total quantity",
-    "exportDeclarationId": "EX declaration id"
+    "exportDeclarationId": "EX declaration id",
+    "refreshStock": "Refresh stock",
+    "batchPlaceholder": "Pick a batch",
+    "mrnPlaceholder": "Pick an MRN",
+    "partnerPlaceholder": "Pick a customer",
+    "warehousePlaceholder": "Pick a warehouse",
+    "locationPlaceholder": "Pick a location",
+    "procedurePlaceholder": "Pick a procedure",
+    "referencePlaceholder": "External reference (optional)",
+    "mrnHint": "{{count}} in stock",
+    "noBatches": "No batches in stock.",
+    "noMrns": "No MRNs in stock.",
+    "noMatches": "No FG rows match the filter.",
+    "exportMultiMrn": "EX declaration requires exactly 1 MRN; the selection covers {{count}}. Narrow the MRN filter.",
+    "previewTitle": "Preview",
+    "previewEmpty": "Set at least one filter to see matching rows.",
+    "previewCount": "{{count}} FG rows will be shipped",
+    "previewTotal": "Total: {{qty}}",
+    "previewMrns": "{{count}} MRN",
+    "previewTruncated": "+{{count}} more (truncated)",
+    "preview": {
+      "item": "Article",
+      "location": "Location",
+      "batch": "Batch",
+      "qty": "Qty"
+    }
   },
   "articlePicker": {
     "placeholder": "Search article (code or name)…",
@@ -839,6 +899,29 @@
       "mrn": "MRN",
       "quantity": "Quantity",
       "qualityStatus": "Quality Status"
+    },
+    "filters": {
+      "itemPlaceholder": "Item code or name...",
+      "locationPlaceholder": "Location",
+      "batchPlaceholder": "Batch",
+      "mrnPlaceholder": "MRN",
+      "qcAll": "All QC statuses",
+      "showing": "{{count}} of {{total}} rows",
+      "clear": "Clear filters",
+      "noResults": "No records match the filter."
+    },
+    "bulkSummary": "Total quantity: {{qty}}",
+    "bulkQc": {
+      "blockAction": "Block (QC)",
+      "releaseAction": "Release (QC OK)",
+      "blockTitle": "Bulk quality block",
+      "releaseTitle": "Bulk release (QC OK)",
+      "intro": "QC status will change for {{count}} rows ({{qty}} total).",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Mandatory business reason (written to audit log).",
+      "confirm": "Confirm",
+      "successAll": "Change applied to {{count}} rows.",
+      "partial": "Succeeded: {{ok}}. Failed: {{failed}}. First error: {{first}}"
     }
   },
   "pickTasks": {

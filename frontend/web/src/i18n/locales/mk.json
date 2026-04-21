@@ -62,7 +62,16 @@
     "all": "Сите",
     "select": "избери",
     "generate": "Генерирај",
-    "exportCsv": "Извоз во CSV"
+    "exportCsv": "Извоз во CSV",
+    "searchPlaceholder": "Пребарај...",
+    "noResults": "Нема резултати",
+    "clear": "Исчисти"
+  },
+  "bulkActions": {
+    "selected": "{{count}} означени",
+    "clear": "Отстрани селекција",
+    "selectAll": "Означи сè",
+    "selectRow": "Означи ред"
   },
   "kbSearch": {
     "title": "Пребарај во базата на знаење",
@@ -458,7 +467,16 @@
     "guaranteeAmount": "Гаранција",
     "status": "Статус",
     "customsOffice": "Царинарница",
-    "expired": "истечено"
+    "expired": "истечено",
+    "clickToOpen": "Кликнете за детали",
+    "authType": "Тип на дозвола",
+    "systemType": "Систем",
+    "operationType": "Операција",
+    "partnerCode": "Шифра на партнер",
+    "guaranteeReference": "Референца на гаранција",
+    "guaranteePctOverride": "Процент (override)",
+    "supervisingOffice": "Надлежна царинарница (supervise)",
+    "notes": "Белешки"
   },
   "declarationsByType": {
     "importTitle": "Увозни документи",
@@ -474,7 +492,22 @@
     "customsValue": "Царинска вредност",
     "duty": "Царина",
     "vat": "ДДВ",
-    "status": "Статус"
+    "status": "Статус",
+    "clickToOpen": "Кликнете за детали",
+    "linesTitle": "Линии ({{count}})",
+    "noLines": "Нема линии.",
+    "partnerCode": "Шифра на партнер",
+    "zaverkaNumber": "Заверка",
+    "zaverkaDate": "Датум на заверка",
+    "notes": "Белешки",
+    "line": {
+      "item": "Артикл",
+      "batch": "Партија",
+      "qty": "Количина",
+      "sourceMrn": "Изворен MRN",
+      "discharge": "Раздолжено",
+      "customsValue": "Царинска вредност"
+    }
   },
   "mrnDeadlines": {
     "title": "Рокови и нераздолжени MRN позиции",
@@ -508,8 +541,8 @@
     "requiredMissing": "Декларацијата и складот се задолжителни."
   },
   "bulkShipment": {
-    "title": "Bulk испратница од FG селекција",
-    "subtitle": "Филтрирајте финален производ и автоматски креирајте Shipment + (опционално) EX декларација.",
+    "title": "Масовна испратница од FG селекција",
+    "subtitle": "Еден филтер → N FG редови → една испратница. Прегледајте ги редовите пред потврдување.",
     "filterLegend": "Филтер за финален производ",
     "customerLegend": "Купувач / референца",
     "customsLegend": "Царина",
@@ -518,18 +551,45 @@
     "mrn": "MRN",
     "sourceWarehouse": "Изворен склад",
     "sourceLocation": "Изворна локација",
-    "partner": "Партнер",
+    "partner": "Партнер (купувач)",
     "reference": "Референца",
     "createEx": "Создај EX декларација атомично",
     "procedure": "Царинска постапка",
     "procedureRequired": "Царинска постапка е задолжителна кога се создава EX.",
     "declarationNumber": "Број на декларација",
     "commit": "Создај испратница",
-    "successHeading": "Bulk испратницата е успешно создадена.",
+    "commitWithCount": "Создај испратница ({{count}} редови)",
+    "aboutToShip": "Ќе се испратат {{count}} FG редови, вкупно {{qty}}.",
+    "successHeading": "Масовната испратница е успешно создадена.",
     "shipmentNumber": "Број на испратница",
     "linesCreated": "Создадени линии",
     "totalQuantity": "Вкупна количина",
-    "exportDeclarationId": "EX декларација ID"
+    "exportDeclarationId": "EX декларација ID",
+    "refreshStock": "Освежи залихи",
+    "batchPlaceholder": "Изберете партија",
+    "mrnPlaceholder": "Изберете MRN",
+    "partnerPlaceholder": "Изберете купувач",
+    "warehousePlaceholder": "Изберете склад",
+    "locationPlaceholder": "Изберете локација",
+    "procedurePlaceholder": "Изберете постапка",
+    "referencePlaceholder": "Надворешна референца (опц.)",
+    "mrnHint": "{{count}} на залиха",
+    "noBatches": "Нема партии со залиха.",
+    "noMrns": "Нема MRN со залиха.",
+    "noMatches": "Нема FG редови што одговараат на филтерот.",
+    "exportMultiMrn": "EX декларацијата бара точно 1 MRN, селекцијата покрива {{count}}. Стеснете го MRN филтерот.",
+    "previewTitle": "Преглед",
+    "previewEmpty": "Внесете барем еден филтер за да се прикажат редови.",
+    "previewCount": "{{count}} FG редови ќе се испратат",
+    "previewTotal": "Вкупно: {{qty}}",
+    "previewMrns": "{{count}} MRN",
+    "previewTruncated": "+{{count}} уште (скратено)",
+    "preview": {
+      "item": "Артикл",
+      "location": "Локација",
+      "batch": "Партија",
+      "qty": "Количина"
+    }
   },
   "articlePicker": {
     "placeholder": "Пребарај артикл (шифра или име)...",
@@ -839,6 +899,29 @@
       "mrn": "MRN",
       "quantity": "Количина",
       "qualityStatus": "Статус на квалитет"
+    },
+    "filters": {
+      "itemPlaceholder": "Шифра или име на артикл...",
+      "locationPlaceholder": "Локација",
+      "batchPlaceholder": "Партија",
+      "mrnPlaceholder": "MRN",
+      "qcAll": "Сите QC статуси",
+      "showing": "{{count}} од {{total}} редови",
+      "clear": "Исчисти филтри",
+      "noResults": "Нема записи што одговараат на филтерот."
+    },
+    "bulkSummary": "Вкупна количина: {{qty}}",
+    "bulkQc": {
+      "blockAction": "Блокирај (QC)",
+      "releaseAction": "Пушти (QC OK)",
+      "blockTitle": "Bulk блокирање на квалитет",
+      "releaseTitle": "Bulk пуштање (QC OK)",
+      "intro": "Ќе се смени QC статусот за {{count}} редови (вкупно {{qty}}).",
+      "reasonLabel": "Причина",
+      "reasonPlaceholder": "Задолжителна бизнис причина (ќе се запише во audit log).",
+      "confirm": "Потврди",
+      "successAll": "Смената е извршена за {{count}} редови.",
+      "partial": "Успешни: {{ok}}. Грешки: {{failed}}. Прва грешка: {{first}}"
     }
   },
   "pickTasks": {

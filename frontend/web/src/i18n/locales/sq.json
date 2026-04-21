@@ -62,7 +62,16 @@
     "all": "Të gjitha",
     "select": "zgjidh",
     "generate": "Gjenero",
-    "exportCsv": "Eksporto në CSV"
+    "exportCsv": "Eksporto në CSV",
+    "searchPlaceholder": "Kërko...",
+    "noResults": "Nuk ka rezultate",
+    "clear": "Pastro"
+  },
+  "bulkActions": {
+    "selected": "{{count}} të zgjedhura",
+    "clear": "Hiq zgjedhjen",
+    "selectAll": "Zgjidh të gjitha",
+    "selectRow": "Zgjidh rreshtin"
   },
   "kbSearch": {
     "title": "Kërkim në bazën e njohurive",
@@ -458,7 +467,16 @@
     "guaranteeAmount": "Garancia",
     "status": "Statusi",
     "customsOffice": "Zyra doganore",
-    "expired": "skaduar"
+    "expired": "skaduar",
+    "clickToOpen": "Kliko për detaje",
+    "authType": "Lloji i autorizimit",
+    "systemType": "Sistemi",
+    "operationType": "Operacioni",
+    "partnerCode": "Kodi i partnerit",
+    "guaranteeReference": "Referenca e garancisë",
+    "guaranteePctOverride": "Përqindja (override)",
+    "supervisingOffice": "Zyra mbikëqyrëse doganore",
+    "notes": "Shënime"
   },
   "declarationsByType": {
     "importTitle": "Dokumente importi",
@@ -474,7 +492,22 @@
     "customsValue": "Vlera doganore",
     "duty": "Dogana",
     "vat": "TVSH",
-    "status": "Statusi"
+    "status": "Statusi",
+    "clickToOpen": "Kliko për detaje",
+    "linesTitle": "Rreshtat ({{count}})",
+    "noLines": "Nuk ka rreshta.",
+    "partnerCode": "Kodi i partnerit",
+    "zaverkaNumber": "Vërtetimi",
+    "zaverkaDate": "Data e vërtetimit",
+    "notes": "Shënime",
+    "line": {
+      "item": "Artikulli",
+      "batch": "Partia",
+      "qty": "Sasia",
+      "sourceMrn": "MRN burim",
+      "discharge": "Shkarkimi",
+      "customsValue": "Vlera doganore"
+    }
   },
   "mrnDeadlines": {
     "title": "Afatet & pozicionet MRN të hapura",
@@ -508,8 +541,8 @@
     "requiredMissing": "Deklarata dhe magazina janë të detyrueshme."
   },
   "bulkShipment": {
-    "title": "Dërgesë bulk nga përzgjedhja FG",
-    "subtitle": "Filtroni mallin e gatshëm dhe me një klik krijoni Shipment + (opsionalisht) deklaratë EX.",
+    "title": "Dërgesë masive nga përzgjedhja FG",
+    "subtitle": "Një filtër → N rreshta FG → një dërgesë. Shikoni rreshtat para konfirmimit.",
     "filterLegend": "Filtri i mallit të gatshëm",
     "customerLegend": "Klient / referencë",
     "customsLegend": "Dogana",
@@ -518,18 +551,45 @@
     "mrn": "MRN",
     "sourceWarehouse": "Magazina burimore",
     "sourceLocation": "Lokacioni burimor",
-    "partner": "Partneri",
+    "partner": "Partneri (blerësi)",
     "reference": "Referenca",
     "createEx": "Krijo atomikisht deklaratë EX",
     "procedure": "Procedura doganore",
     "procedureRequired": "Procedura doganore kërkohet kur krijohet EX.",
     "declarationNumber": "Numri i deklaratës",
     "commit": "Krijo dërgesë",
-    "successHeading": "Dërgesa bulk u krijua.",
+    "commitWithCount": "Krijo dërgesë ({{count}} rreshta)",
+    "aboutToShip": "Do të dërgohen {{count}} rreshta FG, gjithsej {{qty}}.",
+    "successHeading": "Dërgesa masive u krijua me sukses.",
     "shipmentNumber": "Numri i dërgesës",
     "linesCreated": "Rreshta të krijuar",
     "totalQuantity": "Sasia totale",
-    "exportDeclarationId": "ID e deklaratës EX"
+    "exportDeclarationId": "ID e deklaratës EX",
+    "refreshStock": "Rifresko stokun",
+    "batchPlaceholder": "Zgjidhni partinë",
+    "mrnPlaceholder": "Zgjidhni MRN",
+    "partnerPlaceholder": "Zgjidhni blerësin",
+    "warehousePlaceholder": "Zgjidhni magazinën",
+    "locationPlaceholder": "Zgjidhni lokacionin",
+    "procedurePlaceholder": "Zgjidhni procedurën",
+    "referencePlaceholder": "Referencë e jashtme (opc.)",
+    "mrnHint": "{{count}} në stok",
+    "noBatches": "Nuk ka parti në stok.",
+    "noMrns": "Nuk ka MRN në stok.",
+    "noMatches": "Nuk ka rreshta FG që përputhen me filtrin.",
+    "exportMultiMrn": "Deklarata EX kërkon saktësisht 1 MRN, përzgjedhja mbulon {{count}}. Ngushtoni filtrin MRN.",
+    "previewTitle": "Pamja paraprake",
+    "previewEmpty": "Vendosni të paktën një filtër që të shfaqen rreshtat.",
+    "previewCount": "{{count}} rreshta FG do të dërgohen",
+    "previewTotal": "Gjithsej: {{qty}}",
+    "previewMrns": "{{count}} MRN",
+    "previewTruncated": "+{{count}} më shumë (i shkurtuar)",
+    "preview": {
+      "item": "Artikulli",
+      "location": "Lokacioni",
+      "batch": "Partia",
+      "qty": "Sasia"
+    }
   },
   "articlePicker": {
     "placeholder": "Kërko artikull (kod ose emër)…",
@@ -839,6 +899,29 @@
       "mrn": "MRN",
       "quantity": "Sasia",
       "qualityStatus": "Statusi i cilësisë"
+    },
+    "filters": {
+      "itemPlaceholder": "Kodi ose emri i artikullit...",
+      "locationPlaceholder": "Vendndodhja",
+      "batchPlaceholder": "Partia",
+      "mrnPlaceholder": "MRN",
+      "qcAll": "Të gjithë statuset QC",
+      "showing": "{{count}} nga {{total}} rreshta",
+      "clear": "Pastro filtrat",
+      "noResults": "Nuk ka rekorde që përputhen me filtrin."
+    },
+    "bulkSummary": "Sasia totale: {{qty}}",
+    "bulkQc": {
+      "blockAction": "Blloko (QC)",
+      "releaseAction": "Liro (QC OK)",
+      "blockTitle": "Bllokim bulk i cilësisë",
+      "releaseTitle": "Lirim bulk (QC OK)",
+      "intro": "Statusi QC do të ndryshojë për {{count}} rreshta (gjithsej {{qty}}).",
+      "reasonLabel": "Arsyeja",
+      "reasonPlaceholder": "Arsye biznesi e detyrueshme (regjistrohet në audit log).",
+      "confirm": "Konfirmo",
+      "successAll": "Ndryshimi u krye për {{count}} rreshta.",
+      "partial": "Të suksesshme: {{ok}}. Dështime: {{failed}}. Gabimi i parë: {{first}}"
     }
   },
   "pickTasks": {

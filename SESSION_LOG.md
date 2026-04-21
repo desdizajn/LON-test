@@ -2,6 +2,72 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-21 — UX Cross-cutting wave 1: P14.1–P14.5 (list primitives + 4 screens)
+
+**Status:** [x] shipped (frontend-only, zero backend). HEAD pending commit. Build green; deploy to VPS следи.
+
+**User feedback (4 screenshots, Macedonian):**
+1. „Документите не може да се видат или да се менуваат" — Увозни документи (`DeclarationsByType`) и Царински предмети (`LONAuthorizationsList`) редовите беа display-only.
+2. „MRN, Партија и Референца треба да се во dropdown листа да се одбираат со search" — на BulkShipmentFromFG овие беа plain text inputs.
+3. „Bulk испратница од FG селекција — како е bulk ако се бира само еден производ?" — концептот на „еден филтер → N редови" не беше видлив.
+4. „Секаде каде што има листи треба да има филтри. Секаде каде што има акции, треба да има можност за селектирање" — пример: Магацин и залихи (`Inventory`).
+
+**Scope decision:** градам 3 reusable компоненти + 1 hook, потоа ги апликирам на 4-те hot-path screens. Rollout на останатите ~30 list pages остава за постепено усвојување (P14.6 deferred).
+
+**Shipped:**
+- **P14.1 Reusable primitives:**
+  - `components/common/SearchableSelect.tsx` — generic controlled search dropdown (value + label + optional hint, loading state, clearable, emptyMessage). Bez item-dependency, за разлика од `ArticlePicker`.
+  - `components/common/DetailDrawer.tsx` — right-side drawer со scrim, Esc close, body scroll-lock, optional footer slot.
+  - `components/common/BulkActionBar.tsx` — sticky bar, action variant default/primary/danger, count + summary + clear-selection.
+  - `hooks/useRowSelection.ts` — Set-based, пруни при filter промена, select-all со indeterminate state.
+
+- **P14.2 BulkShipmentFromFG redesign** (`pages/Warehouse/BulkShipmentFromFG.tsx`):
+  - MRN + Batch dropdowns се деривираат од *live* inventory (GET /WMS/inventory, клиентски side agg) — само вредности со реална залиха се појавуваат.
+  - Партнер / Склад / Локација / Постапка сите SearchableSelect.
+  - **Preview panel** — central UX fix. Кога има филтер, ги сумира FG редовите што ќе се испратат: count + total qty + MRN count + table (first 50 rows со item, location, batch, MRN, qty). Ова одговара на коришницата забелешка зошто е „bulk".
+  - Export-EX guard inline: ако createExportDecl=true и selection покрие ≠ 1 MRN, warning box блокира submit.
+  - Submit button динамично се ажурира „Создај испратница (N редови)" + about-to-ship helper text.
+  - Title + subtitle преименувани на „Масовна испратница" + „еден филтер → N FG редови → една испратница".
+
+- **P14.3 Detail drawers на 2 read-only customs listings:**
+  - `pages/Customs/DeclarationsByType.tsx` — row-click → `customsApi.getDeclaration(id)` → drawer со declaration header (procedure + partner + dates + customs value + duty + VAT + zaverka) + lines табела (#, item, batch, qty+uom, source MRN, discharge, customs value) + notes.
+  - `pages/Customs/LONAuthorizationsList.tsx` — row-click → drawer со сите authorization полиња (auth type / system type / operation type / partner+code / issue+expiry dates / guarantee amount+currency+ref+%override / competent + supervising customs offices / notes). Нема фетч — данните се во листата.
+  - И двата cursor:pointer + title attribute со тајп „Кликнете за детали".
+
+- **P14.4 Inventory page refactor** (`pages/Inventory.tsx`):
+  - Filter bar: item text search (code+name), location / batch / MRN SearchableSelect (derived од живи балансници), QC status native select, clear filters button, „{count} од {total} редови".
+  - Row checkboxes + header checkbox со indeterminate state (преку `useRowSelection`).
+  - BulkActionBar: 3 акции — Export CSV (selected rows → `utils/export.exportToCsv`), Bulk Block QC (danger), Bulk Release QC (primary).
+  - Bulk QC modal: собира reason (задолжителен, audit log), loop-а `wmsApi.updateQualityStatus` per row; toast success-all или partial (ok/failed + first error); selection clear; reload inventory.
+  - Постоечки single-row Премести button и 6-те top-level actions (Receipt/Transfer/Shipment/CycleCount/Adjustment/QualityChange) оставени.
+
+- **P14.5 i18n × 4 locales (mk/sr/sq/en):**
+  - `common`: `searchPlaceholder`, `noResults`, `clear`.
+  - `bulkActions`: `selected` (count var), `clear`, `selectAll`, `selectRow`.
+  - `bulkShipment`: проширен со `preview*`, `noMatches`, `exportMultiMrn` (count var), `commitWithCount`, `aboutToShip`, `refreshStock`, placeholder keys за сите dropdowns, `mrnHint`, `noBatches`, `noMrns`, nested `preview.{item,location,batch,qty}`.
+  - `declarationsByType`: `clickToOpen`, `linesTitle`, `noLines`, `partnerCode`, `zaverkaNumber`, `zaverkaDate`, `notes`, nested `line.{item,batch,qty,sourceMrn,discharge,customsValue}`.
+  - `lonAuthorizations`: `clickToOpen`, `authType`, `systemType`, `operationType`, `partnerCode`, `guaranteeReference`, `guaranteePctOverride`, `supervisingOffice`, `notes`.
+  - `inventory`: `filters.{itemPlaceholder,locationPlaceholder,batchPlaceholder,mrnPlaceholder,qcAll,showing,clear,noResults}`, `bulkSummary`, `bulkQc.{blockAction,releaseAction,blockTitle,releaseTitle,intro,reasonLabel,reasonPlaceholder,confirm,successAll,partial}`.
+
+**Verification:**
+- JSON parse × 4 files: OK (Node.js `JSON.parse`).
+- `npm run build` поминува; grep за touched files (SearchableSelect, DetailDrawer, BulkActionBar, BulkShipmentFromFG, LONAuthorizationsList, DeclarationsByType, Inventory, useRowSelection) во build log не покажа нови errors/warnings.
+- Type fix: `mrnHint` параметарот бараше number за count (i18n typed); `Number(qty.toFixed(2))`.
+
+**Не-верификувано:** Preview browser smoke (`preview_start` / `preview_fill` / `preview_click`) не е извршено за оваа сесија — производството ќе биде на VPS. Рисик: реален behaviour може да открие styling glitches не visible in build.
+
+**Gotcha:**
+1. Windows path со Cyrillic: `Write` tool ја одби `БобанКozaров` (mixed scripts) — треба да се внимава на coping path кога скриптираш.
+
+**Commits:** pending (ќе биде folow-up message).
+
+**Next:**
+- Deploy на VPS (git push → git pull → rebuild frontend).
+- User smoke на 4-те screens; feedback → follow-up session.
+- P14.6 rollout plan: почни со Warehouse/* listings (`ShipmentsByStatus`, `StockByCustomer`, `IncomingShipments`, `VarianceReport`) потоа Customs/* (`MrnDeadlines`), потоа Production/* и Finance/*.
+
+---
+
 ## 2026-04-20 — UX: Taris LON management brand + design system + responsive + i18n wave 1+2
 
 **Status:** [x] done (waves 1+2 deployed; wave 3 long-tail queued). HEAD `03d7013`, VPS green.

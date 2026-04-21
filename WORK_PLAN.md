@@ -339,6 +339,40 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-21 — Cross-cutting UX wave 1: reusable list patterns (P14.1–P14.4) — VPS green**
+>
+> ### 🎯 Handoff за следна сесија
+>
+> **Корисник feedback (2026-04-21):** 4 UX болки на hot-path screens:
+> 1. Увозни документи + Царински предмети — ред не се отвора, не може да се види детал.
+> 2. BulkShipmentFromFG — MRN/Партија/Референца како plain text input; не е јасно зошто се вика „bulk".
+> 3. Магацин и залихи — нема филтри, нема checkbox / bulk акции.
+> 4. Принцип: секаде каде листа → филтри; секаде каде акции → row selection.
+>
+> **Shipped (frontend-only, zero backend changes):**
+> - **P14.1 Reusable list primitives** — 3 нови компоненти + 1 hook за да се одбегне повторување кога се рол-аут-ува на останатите ~60 placeholder + существувачки screens:
+>   - `components/common/SearchableSelect.tsx` — generic dropdown со search (MRN, batch, partner, warehouse, location, custom procedure). Controlled value, clearable, loading state, optional hint per option.
+>   - `components/common/DetailDrawer.tsx` — right-side slide-in drawer (scrim + Esc close + body scroll-lock) за row detail/edit без navigation loss.
+>   - `components/common/BulkActionBar.tsx` — sticky bar over the table кога има select-аn redova; конфигурабилен action array (variant default/primary/danger).
+>   - `hooks/useRowSelection.ts` — Set-based selection прунира automatski kога филтери се менуваат; expose select-all + indeterminate.
+> - **P14.2 BulkShipmentFromFG redesign** (`Warehouse/BulkShipmentFromFG.tsx`) — MRN/Партија/Партнер/Склад/Локација/Постапка сите SearchableSelect (MRN + Batch options derived од живи inventory balances, со qty hint). Нов **preview panel** ги покажува FG редовите кои филтер ги допира со count + total qty + MRN count + table (first 50 rows, truncated badge). Export blocker прикажан inline кога createEx=true но selection покрива ≠ 1 MRN. Button label меняет на „Создај испратница (N редови)" + about-to-ship summary. Насловот и subtitle-от преименувани на „Масовна испратница" + објаснување „еден филтер → N FG редови → една испратница" за да одговара на корисничката забелешка. Client-side preview ги избегнува backend round-trips; bulk command неменет.
+> - **P14.3 DetailDrawer на read-only customs listings** — `Customs/DeclarationsByType.tsx` row-click → fetch `GET /Customs/declarations/{id}` → drawer со header fields grid + lines табела + zaverka + notes. `Customs/LONAuthorizationsList.tsx` row-click → drawer со сите полиња (auth type, system, operation, partner, issue/expiry, guarantee amount+currency+ref+pct-override, customs offices, notes).
+> - **P14.4 Inventory page refactor** (`Inventory.tsx`) — filter bar (item text + SearchableSelect за location/batch/MRN + QC status dropdown + clear button + showing-count), row checkboxes (header with indeterminate state) и BulkActionBar со 3 акции: Export selected CSV, Bulk Block QC (со задолжителна reason + audit log), Bulk Release QC. Bulk QC endpoint го повикува `POST /WMS/inventory/quality-status` per selected row — локална loop; на крај toast успех/delimičen failure со first error. Row `Премести` е задржана на single-row level (bulk move cross-location е deferred).
+> - **P14.5 i18n coverage (4 locales mk/sr/sq/en)** — нови keys: `common.{searchPlaceholder,noResults,clear}`, `bulkActions.{selected,clear,selectAll,selectRow}`, proširен `bulkShipment.{preview*,noMatches,exportMultiMrn,commitWithCount,aboutToShip,*Placeholder,refreshStock,mrnHint,noBatches,noMrns,preview.{item,location,batch,qty}}`, проширен `declarationsByType.{clickToOpen,linesTitle,noLines,partnerCode,zaverkaNumber,zaverkaDate,notes,line.*}`, проширен `lonAuthorizations.{clickToOpen,authType,systemType,operationType,partnerCode,guaranteeReference,guaranteePctOverride,supervisingOffice,notes}`, проширен `inventory.{filters.*,bulkSummary,bulkQc.*}`.
+> - **Build green** — `npm run build` поминува. Zero нови lint warnings на touched фajlови; JSON валидност потврдена преку Node.
+>
+> **Deferred (follow-up sessions):**
+> - **P14.6 Rollout** — апликирај истиот pattern (filter bar + row selection + BulkActionBar + DetailDrawer) на 30+ останати list pages (Warehouse/*, Production/*, Finished Goods, Finance/Invoicing, etc.) — incremental.
+> - **P14.7 Bulk move-across-location** — денешниот BulkActionBar на Inventory не поддржува масовно преместување кога селекцијата е на различни локации (non-trivial UX + server op, потребен е нов batch endpoint или повторувач на `/WMS/transfers`).
+> - **P14.8 Declaration detail EDIT** — drawer моментално read-only; inline edit (status, zaverka, notes) треба да се врзе со постоечки `updateDeclaration` endpoint.
+>
+> ### 🧰 Quick facts
+> - HEAD: (commit pending после овој SESSION_LOG запис).
+> - VPS: `root@173.212.254.216` → `cd /opt/apps/LON/LON-test && git pull && docker compose build frontend && docker compose up -d frontend`.
+> - Components паттерн е spread-ready: било кое наредно list screen може да adopts без backend промени.
+>
+> ---
+
 > **>>>** **2026-04-20 (latest) — Sprint 7: Phase 13.1 on-time + 13.3 by-customer + 13.5 exception alerts — HEAD `951eaa1`, VPS green**
 >
 > ### 🎯 Handoff за следна сесија

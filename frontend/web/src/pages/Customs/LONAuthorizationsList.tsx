@@ -4,11 +4,16 @@ import { customsApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate, formatQuantity } from '../../utils/format';
 import { exportToCsv } from '../../utils/export';
+import DetailDrawer from '../../components/common/DetailDrawer';
 
 /**
  * P6.37 — real page for "Царински предмети" (LON authorizations).
  * Consumes the existing GET /api/Customs/lon-authorizations endpoint.
  * Filter: active-only toggle + text search (authorization number / partner).
+ *
+ * Row click opens a right-side drawer with all fields — the list itself only
+ * surfaces the hot columns, but operators frequently need the guarantee
+ * reference / customs office / notes without jumping to another page.
  */
 
 type Authorization = {
@@ -21,9 +26,14 @@ type Authorization = {
   expiryDate?: string | null;
   guaranteeAmount?: number | null;
   guaranteeReference?: string | null;
+  guaranteeCurrency?: string | null;
+  guaranteePercentageOverride?: number | null;
   competentCustomsOffice?: string | null;
+  supervisingCustomsOffice?: string | null;
   status?: string | null;
   partnerName?: string | null;
+  partnerCode?: string | null;
+  notes?: string | null;
 };
 
 const LONAuthorizationsList: React.FC = () => {
@@ -33,6 +43,7 @@ const LONAuthorizationsList: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Authorization | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,7 +161,12 @@ const LONAuthorizationsList: React.FC = () => {
                 const urgency =
                   left === null ? '#888' : left < 0 ? '#c00' : left < 14 ? '#e67e22' : left < 30 ? '#f1c40f' : '#27ae60';
                 return (
-                  <tr key={r.id}>
+                  <tr
+                    key={r.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setDetail(r)}
+                    title={t('lonAuthorizations.clickToOpen') as string}
+                  >
                     <td><strong>{r.authorizationNumber}</strong></td>
                     <td>{r.partnerName ?? '-'}</td>
                     <td>{formatDate(r.issueDate)}</td>
@@ -167,8 +183,60 @@ const LONAuthorizationsList: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <DetailDrawer
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        title={detail?.authorizationNumber ?? ''}
+        subtitle={detail?.partnerName ?? undefined}
+        width={560}
+      >
+        {detail && (
+          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label={t('lonAuthorizations.partner') as string} value={detail.partnerName ?? '-'} />
+            <Field label={t('lonAuthorizations.partnerCode') as string} value={detail.partnerCode ?? '-'} />
+            <Field label={t('lonAuthorizations.authType') as string} value={detail.authorizationType ?? '-'} />
+            <Field label={t('lonAuthorizations.systemType') as string} value={detail.systemType ?? '-'} />
+            <Field label={t('lonAuthorizations.operationType') as string} value={detail.operationType ?? '-'} />
+            <Field label={t('lonAuthorizations.status') as string} value={detail.status ?? '-'} />
+            <Field label={t('lonAuthorizations.issueDate') as string} value={formatDate(detail.issueDate)} />
+            <Field label={t('lonAuthorizations.expiryDate') as string} value={formatDate(detail.expiryDate)} />
+            <Field
+              label={t('lonAuthorizations.guaranteeAmount') as string}
+              value={
+                detail.guaranteeAmount !== null && detail.guaranteeAmount !== undefined
+                  ? `${formatQuantity(detail.guaranteeAmount)} ${detail.guaranteeCurrency ?? ''}`
+                  : '-'
+              }
+            />
+            <Field label={t('lonAuthorizations.guaranteeReference') as string} value={detail.guaranteeReference ?? '-'} />
+            <Field
+              label={t('lonAuthorizations.guaranteePctOverride') as string}
+              value={
+                detail.guaranteePercentageOverride !== null && detail.guaranteePercentageOverride !== undefined
+                  ? `${detail.guaranteePercentageOverride}%`
+                  : '-'
+              }
+            />
+            <Field label={t('lonAuthorizations.customsOffice') as string} value={detail.competentCustomsOffice ?? '-'} />
+            <Field label={t('lonAuthorizations.supervisingOffice') as string} value={detail.supervisingCustomsOffice ?? '-'} />
+            {detail.notes && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <Field label={t('lonAuthorizations.notes') as string} value={<span style={{ whiteSpace: 'pre-wrap' }}>{detail.notes}</span>} />
+              </div>
+            )}
+          </section>
+        )}
+      </DetailDrawer>
     </div>
   );
 };
+
+const Field: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div>
+    <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
+    <div style={{ fontSize: 14 }}>{value ?? '-'}</div>
+  </div>
+);
 
 export default LONAuthorizationsList;
