@@ -339,6 +339,46 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-21 (later) — Cross-cutting UX waves 2–5: P14.6 rollout to 10 more list pages — HEAD `ad591bf`, VPS green**
+>
+> ### 🎯 Handoff за следна сесија
+>
+> Wave-1 примитивите (`SearchableSelect`, `DetailDrawer`, `BulkActionBar`, `useRowSelection`) се сега инсталирани на **14 list pages вкупно**:
+>
+> **Wave 2** (commit `e30e448`) — 6 warehouse + customs:
+> - `IncomingShipments` (search + declaration drawer)
+> - `QcHold` (filters + row select + bulk release modal)
+> - `ShipmentsByStatus` (drawer)
+> - `StockByCustomer` (text search + min qty)
+> - `VarianceReport` (count + item search)
+> - `MrnDeadlines` (text search + drawer)
+>
+> **Wave 3** (`5e18c4f`) — 5 production:
+> - `ProductionToday` (search + status dropdown)
+> - `ProductionWip` (двосекциски search)
+> - `ProductionCompleted` (search + period)
+> - `ProductionAtRisk` (red/amber buckets + search)
+> - `ProductionShortage` (material + PO search)
+>
+> **Wave 4** (`5de3188`) — Machines + HR + Finance:
+> - `MachineStatus`, `Absences`, `Invoicing` — search + categorical dropdowns.
+>
+> **Wave 5** (`ad591bf`) — `ClientContracts` text search.
+>
+> ### 🧭 Следно за P14:
+> - **P14.6 Reports pass** — `BlockedInventory`, `MovementReports`, `CycleCountAccuracy`, `WarehouseUtilization`, `WMSDashboard`. `InventoryByLocation/Batch/MRN` веќе имаат богати филтри — провери и пресекни ако се покрива.
+> - **P14.6 MasterData consolidation** — Partners/Items/Warehouses користат стариот `DataTable` (има built-in search). Размисли дали да ги мигрираш на новиот pattern за визуелна конзистентност, или да живеат paralelno (DataTable е acceptable for admin pages).
+> - **P14.7 Bulk move-across-location** на Inventory (deferred since wave 1).
+> - **P14.8 Declaration drawer EDIT** (deferred).
+> - **Maintenance/Downtime/MaintenancePlan/MaintenanceHistory** — еще не е тажурано; check next session.
+>
+> ### 🧰 Quick facts
+> - HEAD: `ad591bf` (main). VPS deployed.
+> - Components паттерн: `SearchableSelect` за dropdown + search, `DetailDrawer` за row-click drilling, `BulkActionBar` за multi-row actions, `useRowSelection` hook за checkbox state.
+> - i18n: секоја нова page додава search placeholder + статус-dropdown labels во сите 4 локали (mk/sr/sq/en).
+>
+> ---
+
 > **>>>** **2026-04-21 — Cross-cutting UX wave 1: reusable list patterns (P14.1–P14.4) — VPS green**
 >
 > ### 🎯 Handoff за следна сесија

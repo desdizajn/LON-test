@@ -2,6 +2,53 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-21 — UX Cross-cutting waves 2-5: P14.6 rollout to 13 list pages
+
+**Status:** [x] all 4 waves shipped + deployed (HEAD `ad591bf`, VPS green).
+
+**Continuation од wave 1.** User feedback (2026-04-21): „Продолжи и те молам не престанувај со задачите." — продолжив автономно со примена на wave-1 примитивите на сите hot-path list pages.
+
+**Wave 2 (HEAD `e30e448`):** 6 warehouse + customs listings.
+- `Warehouse/IncomingShipments` — text search; row click → declaration drawer (header + lines + customs value).
+- `Warehouse/QcHold` — item text + location/batch/MRN SearchableSelect filters + checkbox row selection + bulk release with mandatory reason modal (loops `updateQualityStatus`, toast on partial failure).
+- `Warehouse/ShipmentsByStatus` — row click → drawer with customer/carrier/tracking + lines (item, batch, MRN, qty) + notes.
+- `Warehouse/StockByCustomer` — partner + item + MRN text search + minimum quantity filter; filteredGroups drives display + CSV.
+- `Warehouse/VarianceReport` — count-number + item text search alongside existing shortage/surplus buckets.
+- `Customs/MrnDeadlines` — MRN + declaration + partner text search; row click → source declaration drawer.
+
+**Wave 3 (HEAD `5e18c4f`):** 5 production listings.
+- `Production/ProductionToday` — order/item/customer text search + status dropdown.
+- `Production/ProductionWip` — independent search bars per section (orders / WIP stock).
+- `Production/ProductionCompleted` — text search alongside period dropdown.
+- `Production/ProductionAtRisk` — all/red/amber quick buckets + text search.
+- `Production/ProductionShortage` — material + order-number text search across affected POs.
+
+**Wave 4 (HEAD `5de3188`):** Machines + HR + Finance.
+- `Machines/MachineStatus` — text search (code/name/work-center) + state dropdown (running/idle/down/setUp/maintenance/unknown).
+- `Hr/Absences` — text search + type dropdown alongside existing pendingOnly toggle.
+- `Finance/Invoicing` — text search across invoice number, partner name, contract number; summary totals + CSV reflect filtered view.
+
+**Wave 5 (HEAD `ad591bf`):** Finance contracts.
+- `Finance/ClientContracts` — number + partnerName text search to the contract list pane.
+
+**Pages still to evaluate (next session):** Reports/* (`InventoryByLocation` already has rich filters; `BlockedInventory`, `MovementReports`, `CycleCountAccuracy`, `WarehouseUtilization`, `WMSDashboard` may need lighter passes). MasterData/Partners + Items + Warehouses use the existing `DataTable` component which already provides built-in search (no work needed). `Hr/AttendanceToday` already had search.
+
+**i18n × 4 locales:** added per wave — search placeholders, statusAll/typeAll/stateAll dropdown labels, linesTitle keys.
+
+**Verification per wave:** JSON × 4 valid; `npm run build` green; zero new lint warnings on touched files; deployed to VPS via SSH; `https://elon.elbosoft.click/` HTTP 200.
+
+**Pattern is now load-bearing across 14 list pages** (4 from wave 1 + 10 from waves 2-5). The reusable `SearchableSelect` / `DetailDrawer` / `BulkActionBar` / `useRowSelection` primitives have proved compatible with mixed list styles (group-by, period-driven, status-bucketed, split-pane). Future placeholder-to-real conversions can adopt the same pattern in seconds.
+
+**Deferred for follow-up:**
+- **P14.7 Bulk move-across-location** on Inventory (still single-row Move only).
+- **P14.8 Declaration EDIT inside drawer** (drawer is read-only; existing `updateDeclaration` endpoint is wired but not exposed in UI).
+- **Reports/*** pass — most already have decent filters; targeted tweaks rather than wholesale refactor.
+- **MasterData/* `DataTable`** consolidation — current pages use a different table component; consider migrating to the new pattern for visual consistency.
+
+**Commits:** `e30e448`, `5e18c4f`, `5de3188`, `ad591bf` on main.
+
+---
+
 ## 2026-04-21 — UX Cross-cutting wave 1: P14.1–P14.5 (list primitives + 4 screens)
 
 **Status:** [x] shipped (frontend-only, zero backend). HEAD pending commit. Build green; deploy to VPS следи.
