@@ -441,7 +441,11 @@
     "daysUntilDue": "Days until",
     "active": "Active",
     "addSchedule": "Add schedule",
-    "invalid": "Machine + task + interval are required."
+    "invalid": "Machine + task + interval are required.",
+    "searchPlaceholder": "Search by machine / task...",
+    "riskAll": "All",
+    "riskOverdue": "Overdue",
+    "riskSoon": "≤ 7 days"
   },
   "maintenanceHistory": {
     "title": "Maintenance history",

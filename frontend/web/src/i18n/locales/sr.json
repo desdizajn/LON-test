@@ -441,7 +441,11 @@
     "daysUntilDue": "Дана до",
     "active": "Активан",
     "addSchedule": "Додај план",
-    "invalid": "Машина + задатак + интервал су обавезни."
+    "invalid": "Машина + задатак + интервал су обавезни.",
+    "searchPlaceholder": "Претрага по машини / задатку...",
+    "riskAll": "Сви",
+    "riskOverdue": "Прошао рок",
+    "riskSoon": "≤ 7 дана"
   },
   "maintenanceHistory": {
     "title": "Историја одржавања",

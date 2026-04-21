@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { machinesApi, masterDataApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
@@ -42,6 +42,8 @@ const MaintenancePlan: React.FC = () => {
   const [nextDue, setNextDue] = useState<string>('');
   const [lastDone, setLastDone] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [riskFilter, setRiskFilter] = useState<'all' | 'overdue' | 'soon'>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,6 +103,19 @@ const MaintenancePlan: React.FC = () => {
 
   const riskColor = (d: number) => d < 0 ? '#c62828' : d <= 7 ? '#f9a825' : '#2e7d32';
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (riskFilter === 'overdue' && r.daysUntilDue >= 0) return false;
+      if (riskFilter === 'soon' && (r.daysUntilDue < 0 || r.daysUntilDue > 7)) return false;
+      if (q) {
+        const hay = `${r.machineCode} ${r.machineName} ${r.taskDescription}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, search, riskFilter]);
+
   return (
     <div style={{ padding: 16 }}>
       <h1>{t('maintenancePlan.title')}</h1>
@@ -138,11 +153,23 @@ const MaintenancePlan: React.FC = () => {
 
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 
-      <div style={{ display: 'flex', marginBottom: 8 }}>
-        <span style={{ color: '#888' }}>{t('maintenancePlan.rowCount', { count: rows.length })}</span>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('maintenancePlan.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 200 }}
+        />
+        <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value as typeof riskFilter)} style={{ padding: 6 }}>
+          <option value="all">{t('maintenancePlan.riskAll')}</option>
+          <option value="overdue">{t('maintenancePlan.riskOverdue')}</option>
+          <option value="soon">{t('maintenancePlan.riskSoon')}</option>
+        </select>
+        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('maintenancePlan.rowCount', { count: filteredRows.length })}</span>
         <button
           onClick={() => exportToCsv(
-            rows,
+            filteredRows,
             [
               { key: 'machineCode', label: 'Machine' },
               { key: 'taskDescription', label: 'Task' },
@@ -154,8 +181,8 @@ const MaintenancePlan: React.FC = () => {
             ],
             'maintenance-plan'
           )}
-          disabled={rows.length === 0}
-          style={{ padding: '4px 10px', marginLeft: 'auto' }}
+          disabled={filteredRows.length === 0}
+          style={{ padding: '4px 10px' }}
         >
           {t('common.exportExcel')}
         </button>
@@ -176,8 +203,8 @@ const MaintenancePlan: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>}
-            {!loading && rows.map((r) => (
+            {!loading && filteredRows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search || riskFilter !== 'all' ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>}
+            {!loading && filteredRows.map((r) => (
               <tr key={r.id}>
                 <td><code>{r.machineCode}</code> {r.machineName}</td>
                 <td style={{ fontSize: 13 }}>{r.taskDescription}</td>

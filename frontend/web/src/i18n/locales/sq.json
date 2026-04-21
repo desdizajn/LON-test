@@ -441,7 +441,11 @@
     "daysUntilDue": "Ditë deri",
     "active": "Aktiv",
     "addSchedule": "Shto plan",
-    "invalid": "Makineria + detyra + intervali janë të detyrueshme."
+    "invalid": "Makineria + detyra + intervali janë të detyrueshme.",
+    "searchPlaceholder": "Kërko sipas makinerisë / detyrës...",
+    "riskAll": "Të gjitha",
+    "riskOverdue": "Afati kaluar",
+    "riskSoon": "≤ 7 ditë"
   },
   "maintenanceHistory": {
     "title": "Historiku i mirëmbajtjes",
