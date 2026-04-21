@@ -423,7 +423,10 @@
       "quality": "Квалитет",
       "powerOrUtility": "Електрика / комунала",
       "other": "Друго"
-    }
+    },
+    "searchPlaceholder": "Пребарај по машина / причина...",
+    "categoryAll": "Сите категории",
+    "openOnly": "Само отворени"
   },
   "maintenancePlan": {
     "title": "План за превентивно одржување",
@@ -458,7 +461,8 @@
     "confirmComplete": "Да означиш оваа интервенција како завршена сега? NextDue на планот ќе се помести.",
     "open": "Отворени",
     "completed": "Завршени",
-    "totalCost": "Вкупно трошок"
+    "totalCost": "Вкупно трошок",
+    "searchPlaceholder": "Пребарај по машина / задача..."
   },
   "productionShortage": {
     "title": "Материјален недостаток",

@@ -423,7 +423,10 @@
       "quality": "Квалитет",
       "powerOrUtility": "Струја / комуналије",
       "other": "Друго"
-    }
+    },
+    "searchPlaceholder": "Претрага по машини / разлогу...",
+    "categoryAll": "Све категорије",
+    "openOnly": "Само отворени"
   },
   "maintenancePlan": {
     "title": "План превентивног одржавања",
@@ -458,7 +461,8 @@
     "confirmComplete": "Означити ову интервенцију као завршену? NextDue плана ће се померити.",
     "open": "Отворени",
     "completed": "Завршени",
-    "totalCost": "Укупан трошак"
+    "totalCost": "Укупан трошак",
+    "searchPlaceholder": "Претрага по машини / задатку..."
   },
   "productionShortage": {
     "title": "Недостатак материјала",

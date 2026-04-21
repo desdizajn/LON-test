@@ -59,6 +59,9 @@ const MachineDowntime: React.FC = () => {
   const [reason, setReason] = useState<string>('');
   const [costImpact, setCostImpact] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [openOnly, setOpenOnly] = useState<boolean>(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,6 +136,19 @@ const MachineDowntime: React.FC = () => {
 
   const openCount = useMemo(() => events.filter((e) => !e.end).length, [events]);
   const totalMinutes = useMemo(() => pareto.reduce((acc, b) => acc + (b.totalMinutes || 0), 0), [pareto]);
+
+  const filteredEvents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return events.filter((e) => {
+      if (openOnly && e.end) return false;
+      if (categoryFilter && String(e.category) !== categoryFilter) return false;
+      if (q) {
+        const hay = `${e.machineCode} ${e.machineName} ${e.reason ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [events, search, categoryFilter, openOnly]);
 
   return (
     <div style={{ padding: 16 }}>
@@ -215,11 +231,26 @@ const MachineDowntime: React.FC = () => {
       </div>
 
       {/* Event list */}
-      <h2 style={{ marginTop: 24 }}>{t('downtime.eventsSection', { count: events.length, open: openCount })}</h2>
-      <div style={{ display: 'flex', marginBottom: 8 }}>
+      <h2 style={{ marginTop: 24 }}>{t('downtime.eventsSection', { count: filteredEvents.length, open: openCount })}</h2>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('downtime.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 200 }}
+        />
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: 6 }}>
+          <option value="">{t('downtime.categoryAll')}</option>
+          {CATEGORIES.map((c) => <option key={c.value} value={String(c.value)}>{t(`downtime.categories.${c.key}`)}</option>)}
+        </select>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
+          {t('downtime.openOnly')}
+        </label>
         <button
           onClick={() => exportToCsv(
-            events,
+            filteredEvents,
             [
               { key: 'machineCode', label: 'Machine' },
               { key: 'start', label: 'Start', type: 'date' },
@@ -231,7 +262,7 @@ const MachineDowntime: React.FC = () => {
             ],
             'downtime-events'
           )}
-          disabled={events.length === 0}
+          disabled={filteredEvents.length === 0}
           style={{ padding: '4px 10px', marginLeft: 'auto' }}
         >
           {t('common.exportExcel')}
@@ -253,8 +284,8 @@ const MachineDowntime: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && events.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>}
-            {!loading && events.map((e) => {
+            {!loading && filteredEvents.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search || categoryFilter || openOnly ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>}
+            {!loading && filteredEvents.map((e) => {
               const key = CATEGORIES.find((c) => c.value === e.category)?.key ?? 'other';
               const isOpen = !e.end;
               return (

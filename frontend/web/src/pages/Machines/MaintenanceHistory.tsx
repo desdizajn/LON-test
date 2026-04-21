@@ -37,6 +37,7 @@ const MaintenanceHistory: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [machineFilter, setMachineFilter] = useState<string>('');
   const [openOnly, setOpenOnly] = useState<boolean>(false);
+  const [search, setSearch] = useState('');
 
   // Ad-hoc create
   const [showForm, setShowForm] = useState<boolean>(false);
@@ -111,11 +112,20 @@ const MaintenanceHistory: React.FC = () => {
     }
   };
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => {
+      const hay = `${r.machineCode} ${r.machineName} ${r.taskDescription ?? ''} ${r.notes ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [rows, search]);
+
   const summary = useMemo(() => ({
-    open: rows.filter((r) => !r.completedAt).length,
-    completed: rows.filter((r) => r.completedAt).length,
-    totalCost: rows.reduce((acc, r) => acc + (r.costImpact || 0), 0),
-  }), [rows]);
+    open: filteredRows.filter((r) => !r.completedAt).length,
+    completed: filteredRows.filter((r) => r.completedAt).length,
+    totalCost: filteredRows.reduce((acc, r) => acc + (r.costImpact || 0), 0),
+  }), [filteredRows]);
 
   return (
     <div style={{ padding: 16 }}>
@@ -132,6 +142,13 @@ const MaintenanceHistory: React.FC = () => {
           <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
           {t('maintenanceHistory.openOnly')}
         </label>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('maintenanceHistory.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 200 }}
+        />
 
         <span style={{ marginLeft: 'auto' }}>
           <small>{t('maintenanceHistory.open')}: <strong style={{ color: '#ef6c00' }}>{summary.open}</strong></small>
@@ -145,7 +162,7 @@ const MaintenanceHistory: React.FC = () => {
         </button>
         <button
           onClick={() => exportToCsv(
-            rows,
+            filteredRows,
             [
               { key: 'machineCode', label: 'Machine' },
               { key: 'scheduledDate', label: 'Scheduled', type: 'date' },
@@ -156,7 +173,7 @@ const MaintenanceHistory: React.FC = () => {
             ],
             'maintenance-history'
           )}
-          disabled={rows.length === 0}
+          disabled={filteredRows.length === 0}
           style={{ padding: '4px 10px' }}
         >
           {t('common.exportExcel')}
@@ -207,8 +224,8 @@ const MaintenanceHistory: React.FC = () => {
           </thead>
           <tbody>
             {loading && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('common.noData')}</td></tr>}
-            {!loading && rows.map((w) => {
+            {!loading && filteredRows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{search ? t('inventory.filters.noResults') : t('common.noData')}</td></tr>}
+            {!loading && filteredRows.map((w) => {
               const isOpen = !w.completedAt;
               return (
                 <tr key={w.id} style={isOpen ? { background: '#fff8e1' } : undefined}>

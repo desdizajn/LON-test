@@ -423,7 +423,10 @@
       "quality": "Quality",
       "powerOrUtility": "Power / utility",
       "other": "Other"
-    }
+    },
+    "searchPlaceholder": "Search by machine / reason...",
+    "categoryAll": "All categories",
+    "openOnly": "Open only"
   },
   "maintenancePlan": {
     "title": "Preventive maintenance plan",
@@ -458,7 +461,8 @@
     "confirmComplete": "Mark this work order completed now? Linked schedule's NextDue will advance.",
     "open": "Open",
     "completed": "Completed",
-    "totalCost": "Total cost"
+    "totalCost": "Total cost",
+    "searchPlaceholder": "Search by machine / task..."
   },
   "productionShortage": {
     "title": "Material shortage",

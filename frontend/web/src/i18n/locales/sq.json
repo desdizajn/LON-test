@@ -423,7 +423,10 @@
       "quality": "Cilësia",
       "powerOrUtility": "Rrymë / shërbime",
       "other": "Tjetër"
-    }
+    },
+    "searchPlaceholder": "Kërko sipas makinerisë / arsyes...",
+    "categoryAll": "Të gjitha kategoritë",
+    "openOnly": "Vetëm të hapura"
   },
   "maintenancePlan": {
     "title": "Plan i mirëmbajtjes preventive",
@@ -458,7 +461,8 @@
     "confirmComplete": "Shëno këtë intervenim si të përfunduar? NextDue i planit do të lëvizë.",
     "open": "Të hapura",
     "completed": "Të përfunduara",
-    "totalCost": "Kosto totale"
+    "totalCost": "Kosto totale",
+    "searchPlaceholder": "Kërko sipas makinerisë / detyrës..."
   },
   "productionShortage": {
     "title": "Mungesë materialesh",
