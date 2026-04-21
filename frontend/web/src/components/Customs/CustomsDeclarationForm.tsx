@@ -314,8 +314,8 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
       summary.push('Декларацискиот број е задолжителен');
     }
     if (!formData.senderName.trim()) {
-      errs.senderName = 'Box 02: Испраќач е задолжителен';
-      summary.push('Box 02: Испраќач / извозник е задолжителен');
+      errs.senderName = 'Рубрика 02: Испраќач е задолжителен';
+      summary.push('Рубрика 02: Испраќач / извозник е задолжителен');
     }
     if (!formData.customsProcedureId) {
       errs.customsProcedureId = 'Царинската процедура е задолжителна';
@@ -609,9 +609,9 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
               />
             </div>
 
-            {/* Box 02 Sender */}
+            {/* Рубрика 02 Sender */}
             <div className="form-group">
-              <label>Box 02 — Испраќач *</label>
+              <label>Рубрика 02 — Испраќач *</label>
               <input
                 type="text"
                 value={formData.senderName}
@@ -623,7 +623,7 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
             </div>
 
             <div className="form-group">
-              <label>Box 02 — Земја на испраќач</label>
+              <label>Рубрика 02 — Земја на испраќач</label>
               <input
                 type="text"
                 maxLength={2}
@@ -633,9 +633,9 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
               />
             </div>
 
-            {/* Box 15 Country of dispatch */}
+            {/* Рубрика 15 Country of dispatch */}
             <div className="form-group">
-              <label>Box 15 — Земја на испраќање</label>
+              <label>Рубрика 15 — Земја на испраќање</label>
               <input
                 type="text"
                 maxLength={2}
@@ -645,9 +645,9 @@ const CustomsDeclarationForm: React.FC<CustomsDeclarationFormProps> = ({
               />
             </div>
 
-            {/* Box 17 Country of destination */}
+            {/* Рубрика 17 Country of destination */}
             <div className="form-group">
-              <label>Box 17 — Земја на дестинација</label>
+              <label>Рубрика 17 — Земја на дестинација</label>
               <input
                 type="text"
                 maxLength={2}

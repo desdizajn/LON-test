@@ -67,7 +67,7 @@
   "kbSearch": {
     "title": "Kërkim në bazën e njohurive",
     "subtitle": "Kërkim semantik në Rregulloren + udhëzimet SAD — rezultatet renditen sipas ngjashmërisë.",
-    "queryPlaceholder": "P.sh. Box 33 kod tarifor, zbatimi i tarifës doganore...",
+    "queryPlaceholder": "P.sh. Rubrika 33 kod tarifor, zbatimi i tarifës doganore...",
     "topK": "Numri i rezultateve",
     "documentType": "Lloji i dokumentit",
     "allTypes": "Të gjitha",

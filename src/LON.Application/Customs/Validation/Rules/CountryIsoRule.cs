@@ -38,13 +38,13 @@ public class CountryIsoRule : IDeclarationRule
                 invalid.Add($"{box} '{code}'");
         }
 
-        Check(declaration.CountryOfDispatch, "Box 15 CountryOfDispatch");
-        Check(declaration.CountryOfDestination, "Box 17 CountryOfDestination");
-        Check(declaration.SenderCountry, "Box 02 SenderCountry");
+        Check(declaration.CountryOfDispatch, "Рубрика 15 CountryOfDispatch");
+        Check(declaration.CountryOfDestination, "Рубрика 17 CountryOfDestination");
+        Check(declaration.SenderCountry, "Рубрика 02 SenderCountry");
 
         foreach (var line in declaration.Lines)
         {
-            Check(line.CountryOfOrigin, $"Line {line.LineNumber} Box 34 CountryOfOrigin");
+            Check(line.CountryOfOrigin, $"Линија {line.LineNumber} Рубрика 34 CountryOfOrigin");
         }
 
         if (invalid.Count > 0)

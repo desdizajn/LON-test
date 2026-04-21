@@ -26,7 +26,7 @@ public class SadFieldAdvisoriesRule : IDeclarationRule
         {
             result.Warnings.Add(new ValidationWarning
             {
-                Message = "Box 30: Место на стока не е пополнето. Пополни пред submit на царина.",
+                Message = "Рубрика 30: Место на стока не е пополнето. Пополни пред submit на царина.",
                 ReferenceDocument = "Правилник, Член 12"
             });
         }
@@ -37,7 +37,7 @@ public class SadFieldAdvisoriesRule : IDeclarationRule
             {
                 result.Warnings.Add(new ValidationWarning
                 {
-                    Message = $"Box 35 (Линија {line.LineNumber}): Бруто маса не е пополнета.",
+                    Message = $"Рубрика 35 (Линија {line.LineNumber}): Бруто маса не е пополнета.",
                     ReferenceDocument = "Правилник, Член 15"
                 });
             }
@@ -54,7 +54,7 @@ public class SadFieldAdvisoriesRule : IDeclarationRule
             {
                 result.Warnings.Add(new ValidationWarning
                 {
-                    Message = $"Box 47 (Линија {line.LineNumber}): Начин на пресметка не е означен.",
+                    Message = $"Рубрика 47 (Линија {line.LineNumber}): Начин на пресметка не е означен.",
                     ReferenceDocument = "Правилник, Член 17"
                 });
             }

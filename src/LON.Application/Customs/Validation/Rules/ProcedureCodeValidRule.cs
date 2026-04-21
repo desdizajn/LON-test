@@ -28,7 +28,7 @@ public class ProcedureCodeValidRule : IDeclarationRule
             return ValidationRuleResult.Failure(
                 RuleCode,
                 fieldName,
-                "Box 37: Процедурниот код е задолжителен",
+                "Рубрика 37: Процедурниот код е задолжителен",
                 "Правилник, Член 19"
             );
         }
@@ -62,7 +62,7 @@ public class ProcedureCodeValidRule : IDeclarationRule
         return ValidationRuleResult.Failure(
             RuleCode,
             fieldName,
-            $"Box 37: Процедурниот код '{declaration.ProcedureCode}' не е валиден{suggestions}",
+            $"Рубрика 37: Процедурниот код '{declaration.ProcedureCode}' не е валиден{suggestions}",
             "Правилник, Член 19"
         );
     }

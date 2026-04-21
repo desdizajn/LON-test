@@ -55,7 +55,7 @@ public class TariffCodeExistsRule : IDeclarationRule
                 result.IsValid = false;
                 result.Errors.Add(new ValidationError
                 {
-                    Message = $"Box 33 (Линија {line.LineNumber}): Тарифната ознака '{line.TariffCode}' не постои во TARIC базата{suggestions}",
+                    Message = $"Рубрика 33 (Линија {line.LineNumber}): Тарифната ознака '{line.TariffCode}' не постои во TARIC базата{suggestions}",
                     ReferenceDocument = "TARIC база"
                 });
             }

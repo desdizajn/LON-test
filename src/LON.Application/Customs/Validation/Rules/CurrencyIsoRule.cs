@@ -33,7 +33,7 @@ public class CurrencyIsoRule : IDeclarationRule
         {
             return Task.FromResult(ValidationRuleResult.Failure(
                 RuleCode, fieldName,
-                "Box 22: Валутата е задолжителна.",
+                "Рубрика 22: Валутата е задолжителна.",
                 "Правилник, Член 19"));
         }
 
@@ -41,7 +41,7 @@ public class CurrencyIsoRule : IDeclarationRule
         {
             return Task.FromResult(ValidationRuleResult.Failure(
                 RuleCode, fieldName,
-                $"Box 22: Валутата '{declaration.Currency}' не е од дозволените ISO 4217 кодови (пример: EUR, USD).",
+                $"Рубрика 22: Валутата '{declaration.Currency}' не е од дозволените ISO 4217 кодови (пример: EUR, USD).",
                 "Правилник, Прилог — listType=Currency"));
         }
 

@@ -40,7 +40,7 @@ public class TariffCodeFormatRule : IDeclarationRule
                 result.IsValid = false;
                 result.Errors.Add(new ValidationError
                 {
-                    Message = $"Box 33 (Линија {line.LineNumber}): Тарифната ознака '{line.TariffCode}' мора да биде точно 10 цифри",
+                    Message = $"Рубрика 33 (Линија {line.LineNumber}): Тарифната ознака '{line.TariffCode}' мора да биде точно 10 цифри",
                     ReferenceDocument = "Правилник, Член 15"
                 });
             }

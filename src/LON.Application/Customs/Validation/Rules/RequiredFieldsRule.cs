@@ -33,7 +33,7 @@ public class RequiredFieldsRule : IDeclarationRule
             result.IsValid = false;
             result.Errors.Add(new ValidationError
             {
-                Message = "Box 01: Вид на декларација е задолжителен",
+                Message = "Рубрика 01: Вид на декларација е задолжителен",
                 ReferenceDocument = "Правилник, Член 7"
             });
         }
@@ -44,7 +44,7 @@ public class RequiredFieldsRule : IDeclarationRule
             result.IsValid = false;
             result.Errors.Add(new ValidationError
             {
-                Message = "Box 02: Испраќач/Извозник е задолжителен",
+                Message = "Рубрика 02: Испраќач/Извозник е задолжителен",
                 ReferenceDocument = "Правилник, Член 8"
             });
         }
@@ -67,7 +67,7 @@ public class RequiredFieldsRule : IDeclarationRule
                 result.IsValid = false;
                 result.Errors.Add(new ValidationError
                 {
-                    Message = $"Box 33 (Линија {line.LineNumber}): Тарифна ознака е задолжителна",
+                    Message = $"Рубрика 33 (Линија {line.LineNumber}): Тарифна ознака е задолжителна",
                     ReferenceDocument = "Правилник, Член 15"
                 });
             }
@@ -82,7 +82,7 @@ public class RequiredFieldsRule : IDeclarationRule
                 result.IsValid = false;
                 result.Errors.Add(new ValidationError
                 {
-                    Message = $"Box 38 (Линија {line.LineNumber}): Нето маса е задолжителна и мора да биде > 0.",
+                    Message = $"Рубрика 38 (Линија {line.LineNumber}): Нето маса е задолжителна и мора да биде > 0.",
                     ReferenceDocument = "Правилник, Член 15"
                 });
             }

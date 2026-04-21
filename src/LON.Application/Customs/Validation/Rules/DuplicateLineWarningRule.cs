@@ -36,7 +36,7 @@ public class DuplicateLineWarningRule : IDeclarationRule
             var lineNumbers = string.Join(", ", g.Select(l => l.LineNumber).OrderBy(n => n));
             result.Warnings.Add(new ValidationWarning
             {
-                Message = $"Линии {lineNumbers}: ист Item + Box 33 + Box 34. Провери дали се дупликати.",
+                Message = $"Линии {lineNumbers}: ист Item + Рубрика 33 + Рубрика 34. Провери дали се дупликати.",
                 ReferenceDocument = "Правилник"
             });
         }

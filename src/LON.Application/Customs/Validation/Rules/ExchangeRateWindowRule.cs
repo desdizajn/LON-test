@@ -51,7 +51,7 @@ public class ExchangeRateWindowRule : IDeclarationRule
             result.Errors.Add(new ValidationError
             {
                 Message =
-                    $"Box 23: Курс {declaration.ExchangeRate.Value} отстапува {deviation:0.##}% " +
+                    $"Рубрика 23: Курс {declaration.ExchangeRate.Value} отстапува {deviation:0.##}% " +
                     $"од референтниот НБРМ курс {reference.Value} за {declaration.DeclarationDate:yyyy-MM-dd} " +
                     $"(дозволено ±{TolerancePercent}%).",
                 ReferenceDocument = "НБРМ реферeнтен курс"
