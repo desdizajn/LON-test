@@ -7,6 +7,7 @@ const BlockedInventory: React.FC = () => {
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<number>(2);
+  const [search, setSearch] = useState('');
 
   useEffect(() => { loadInventory(); }, []);
 
@@ -39,7 +40,13 @@ const BlockedInventory: React.FC = () => {
     }
   };
 
-  const filteredInventory = inventory.filter((inv: any) => inv.qualityStatus === filterStatus);
+  const filteredInventory = inventory.filter((inv: any) => {
+    if (inv.qualityStatus !== filterStatus) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    const hay = `${inv.item?.code ?? ''} ${inv.item?.name ?? ''} ${inv.location?.name ?? ''} ${inv.batchNumber ?? ''} ${inv.mrn ?? ''}`.toLowerCase();
+    return hay.includes(q);
+  });
 
   const calculateAging = (lastMovementDate?: string, createdAt?: string) => {
     const date = lastMovementDate || createdAt;
@@ -101,16 +108,24 @@ const BlockedInventory: React.FC = () => {
         {t('blockedInventory.warningBody')}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ marginRight: 10 }}>{t('reports.common.qualityStatus')}:</label>
-        <select
-          style={{ width: 220, display: 'inline-block' }}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(parseInt(e.target.value))}
-        >
-          <option value="2">{t('qualityStatus.blocked')}</option>
-          <option value="3">{t('qualityStatus.quarantine')}</option>
-        </select>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <label>{t('reports.common.qualityStatus')}:&nbsp;
+          <select
+            style={{ width: 220 }}
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(parseInt(e.target.value))}
+          >
+            <option value="2">{t('qualityStatus.blocked')}</option>
+            <option value="3">{t('qualityStatus.quarantine')}</option>
+          </select>
+        </label>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('blockedInventory.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240 }}
+        />
       </div>
 
       <div className="card-grid">

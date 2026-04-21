@@ -1100,7 +1100,9 @@
     "tracking": "Tracking #",
     "statusHeader": "Status",
     "noReceipts": "No receipts in the selected range.",
-    "noShipments": "No shipments in the selected range."
+    "noShipments": "No shipments in the selected range.",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Number / partner / carrier / tracking..."
   },
   "shipmentStatus": {
     "draft": "Draft",
@@ -1128,6 +1130,7 @@
     "confirmRelease": "Release this inventory to OK status?",
     "releasedReason": "Released from QC hold",
     "releasedNotes": "Released via Blocked Inventory report",
+    "searchPlaceholder": "Search by code / name / location / batch / MRN...",
     "summary": {
       "onHold": "Total on hold",
       "over30": "Older than 30d",

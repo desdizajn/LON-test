@@ -1100,7 +1100,9 @@
     "tracking": "Tracking #",
     "statusHeader": "Statusi",
     "noReceipts": "Nuk ka pranime në intervalin e zgjedhur.",
-    "noShipments": "Nuk ka dërgesa në intervalin e zgjedhur."
+    "noShipments": "Nuk ka dërgesa në intervalin e zgjedhur.",
+    "searchLabel": "Kërko",
+    "searchPlaceholder": "Numri / partner / transportues / tracking..."
   },
   "shipmentStatus": {
     "draft": "Draft",
@@ -1128,6 +1130,7 @@
     "confirmRelease": "Ta lironi këtë stok në statusin OK?",
     "releasedReason": "Liruar nga QC hold",
     "releasedNotes": "Liruar përmes raportit „Stoqe të bllokuara“",
+    "searchPlaceholder": "Kërko sipas kodit / emrit / lokacionit / batch / MRN...",
     "summary": {
       "onHold": "Gjithsej on hold",
       "over30": "Më të vjetra se 30 ditë",

@@ -14,6 +14,7 @@ const MovementReports: React.FC = () => {
     return date.toISOString().split('T')[0];
   });
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
+  const [search, setSearch] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -39,8 +40,20 @@ const MovementReports: React.FC = () => {
       return itemDate >= fromDate && itemDate <= toDate;
     });
 
-  const filteredReceipts = filterByDate(receipts, 'receiptDate');
-  const filteredShipments = filterByDate(shipments, 'shipmentDate');
+  const q = search.trim().toLowerCase();
+  const matchesSearchReceipt = (r: any) => {
+    if (!q) return true;
+    return [r.receiptNumber, r.supplier?.name, r.warehouse?.name, r.referenceNumber]
+      .some((v) => (v ?? '').toLowerCase().includes(q));
+  };
+  const matchesSearchShipment = (s: any) => {
+    if (!q) return true;
+    return [s.shipmentNumber, s.customer?.name, s.customerName, s.carrier?.name, s.carrierName, s.trackingNumber, s.salesOrderNumber]
+      .some((v) => (v ?? '').toLowerCase().includes(q));
+  };
+
+  const filteredReceipts = filterByDate(receipts, 'receiptDate').filter(matchesSearchReceipt);
+  const filteredShipments = filterByDate(shipments, 'shipmentDate').filter(matchesSearchShipment);
 
   const totalReceipts = filteredReceipts.length;
   const totalReceiptQty = filteredReceipts.reduce((sum, r) =>
@@ -117,7 +130,7 @@ const MovementReports: React.FC = () => {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: 12, alignItems: 'end' }}>
           <div>
             <label>{t('reports.common.from')}</label>
             <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -125,6 +138,16 @@ const MovementReports: React.FC = () => {
           <div>
             <label>{t('reports.common.to')}</label>
             <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </div>
+          <div>
+            <label>{t('movements.searchLabel')}</label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('movements.searchPlaceholder') as string}
+              style={{ width: '100%' }}
+            />
           </div>
           <div>
             <button className="btn-primary" onClick={loadData}>{t('reports.common.apply')}</button>

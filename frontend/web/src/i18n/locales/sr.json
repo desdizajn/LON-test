@@ -1100,7 +1100,9 @@
     "tracking": "Tracking #",
     "statusHeader": "Статус",
     "noReceipts": "Нема пријема у изабраном периоду.",
-    "noShipments": "Нема отпремница у изабраном периоду."
+    "noShipments": "Нема отпремница у изабраном периоду.",
+    "searchLabel": "Претрага",
+    "searchPlaceholder": "Број / партнер / превозник / tracking..."
   },
   "shipmentStatus": {
     "draft": "Draft",
@@ -1128,6 +1130,7 @@
     "confirmRelease": "Ослободити ову залиху у OK статус?",
     "releasedReason": "Ослобођено из QC hold",
     "releasedNotes": "Ослобођено кроз извештај „Блокиране залихе“",
+    "searchPlaceholder": "Претрага по шифри / називу / локацији / batch / MRN...",
     "summary": {
       "onHold": "Укупно на hold",
       "over30": "Старије од 30 дана",
