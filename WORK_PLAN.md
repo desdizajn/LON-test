@@ -339,6 +339,24 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-21 (latest) — UX waves 6-8: P14.6 rollout extended to Maintenance + Reports — HEAD `7a3b44b`, VPS green**
+>
+> ### 🎯 Handoff
+>
+> **Wave 6** (`7e5c1dd`) — `MaintenanceHistory` (search) + `MachineDowntime` (search + category + open-only).
+> **Wave 7** (`ca5a8af`) — `MaintenancePlan` (search + risk bucket dropdown).
+> **Wave 8** (`7a3b44b`) — `Reports/BlockedInventory` (search alongside QC dropdown) + `Reports/MovementReports` (shared text search across receipts + shipments).
+>
+> **Total list pages touched in P14: 24** (4 wave-1 hot screens + 10 waves-2-5 + 5 waves-6-8 + helpers).
+>
+> ### 🧭 Followup опционо:
+> - `Reports/CycleCountAccuracy`, `Reports/WarehouseUtilization`, `Reports/WMSDashboard` — small dashboards, light pass.
+> - `Reports/InventoryByLocation/Batch/MRN` — already filter-rich; consider migrating to SearchableSelect for visual consistency.
+> - MasterData migration to new pattern (currently `DataTable` based — works но визуелно различно).
+> - **P14.7** Bulk move-across-location + **P14.8** Declaration drawer EDIT mode (still deferred since wave 1).
+>
+> ---
+
 > **>>>** **2026-04-21 (later) — Cross-cutting UX waves 2–5: P14.6 rollout to 10 more list pages — HEAD `ad591bf`, VPS green**
 >
 > ### 🎯 Handoff за следна сесија

@@ -2,6 +2,49 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-21 — UX Cross-cutting waves 6-8: P14.6 rollout (Maintenance + Reports)
+
+**Status:** [x] all 3 additional waves shipped + deployed (HEAD `7a3b44b`, VPS green).
+
+Continuation после WORK_PLAN sync. Адресирани следните уште-неосвоени list pages:
+
+**Wave 6 (HEAD `7e5c1dd`):**
+- `Machines/MaintenanceHistory` — text search (machine code/name + task description + notes); existing machine + open-only filters preserved.
+- `Machines/MachineDowntime` — text search + category dropdown + open-only toggle on the events section; section header + CSV reflect filtered set; Pareto rollup intentionally untouched (always shows full picture).
+
+**Wave 7 (HEAD `ca5a8af`):**
+- `Machines/MaintenancePlan` — machine + task text search + risk-bucket dropdown (All / Overdue / ≤ 7 days). Filtered set drives row display + count header + CSV.
+
+**Wave 8 (HEAD `7a3b44b`):**
+- `Reports/BlockedInventory` — text search across item code/name, location, batch, MRN — combined with the existing quality status dropdown.
+- `Reports/MovementReports` — shared text search across receipts (number, supplier, warehouse, reference) and shipments (number, customer, carrier, tracking, SO #) — combined with the existing date range + tabs.
+
+**Cumulative scoreboard (всички P14 waves):**
+| Wave | Pages | Notes |
+|---|---|---|
+| 1 | 4 | + 4 reusable primitives (SearchableSelect, DetailDrawer, BulkActionBar, useRowSelection) |
+| 2 | 6 | Warehouse + customs |
+| 3 | 5 | Production |
+| 4 | 3 | Machines + HR + Finance/Invoicing |
+| 5 | 1 | Finance/ClientContracts |
+| 6 | 2 | Maintenance/Downtime |
+| 7 | 1 | MaintenancePlan |
+| 8 | 2 | Reports/BlockedInventory + MovementReports |
+| **Total** | **24** | i18n × 4 локали за секоја страница |
+
+**Сè уште непокриено** (deferred to следна сесија):
+- `Reports/CycleCountAccuracy`, `Reports/WarehouseUtilization`, `Reports/WMSDashboard` — мали dashboard-style страници, веројатно треба light pass.
+- `Reports/InventoryByLocation` — веќе има богат filter set; може да се размисли за консолидација со SearchableSelect компонента.
+- `Hr/AttendanceToday` — веќе има search.
+- `Hr/OperatorAssignment` + Machine maintenance plan — checked, имаа партиен fund.
+- MasterData (`PartnersList`, `ItemsList`, `BOMsList`, `RoutingsList`) — користат стариот `DataTable` со built-in search; можат да живеат paralellno или да се мигрираат во иднина.
+
+**P14.7 Bulk move-across-location** + **P14.8 Declaration EDIT inside drawer** остануваат deferred од wave 1.
+
+**Commits oваа сесија:** `7e5c1dd`, `ca5a8af`, `7a3b44b` (плус сите од waves 1-5).
+
+---
+
 ## 2026-04-21 — UX Cross-cutting waves 2-5: P14.6 rollout to 13 list pages
 
 **Status:** [x] all 4 waves shipped + deployed (HEAD `ad591bf`, VPS green).
