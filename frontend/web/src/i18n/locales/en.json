@@ -1534,6 +1534,7 @@
     "contracts": {
       "title": "Client contracts",
       "subtitle": "Partner contracts + rate cards (per-piece / per-minute). Authoritative source for invoicing.",
+      "searchPlaceholder": "Search by number / partner...",
       "listTitle": "Contracts",
       "number": "Number",
       "partner": "Partner",

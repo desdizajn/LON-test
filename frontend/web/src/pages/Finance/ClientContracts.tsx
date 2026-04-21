@@ -72,6 +72,7 @@ const ClientContracts: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeOnly, setActiveOnly] = useState<boolean>(true);
   const [partnerFilter, setPartnerFilter] = useState<string>('');
+  const [search, setSearch] = useState('');
 
   // New contract draft
   const [draftOpen, setDraftOpen] = useState(false);
@@ -227,6 +228,13 @@ const ClientContracts: React.FC = () => {
       )}
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('finance.contracts.searchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 220 }}
+        />
         <label>
           {t('finance.contracts.filterPartner')}:{' '}
           <select value={partnerFilter} onChange={(e) => setPartnerFilter(e.target.value)}>
@@ -284,14 +292,21 @@ const ClientContracts: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16 }}>
         <div>
-          <h3>{t('finance.contracts.listTitle')} ({contracts.length})</h3>
+          {(() => {
+            const q = search.trim().toLowerCase();
+            const filteredContracts = q
+              ? contracts.filter((c) => c.number.toLowerCase().includes(q) || c.partnerName.toLowerCase().includes(q))
+              : contracts;
+            return (
+          <>
+          <h3>{t('finance.contracts.listTitle')} ({filteredContracts.length})</h3>
           {loading ? <div>{t('common.loading')}</div> : (
             <table style={{ width: '100%', fontSize: 13 }}>
               <thead>
                 <tr><th>{t('finance.contracts.number')}</th><th>{t('finance.contracts.partner')}</th><th>{t('finance.contracts.validity')}</th><th></th></tr>
               </thead>
               <tbody>
-                {contracts.map((c) => (
+                {filteredContracts.map((c) => (
                   <tr key={c.id}
                       onClick={() => setSelectedId(c.id)}
                       style={{ background: selectedId === c.id ? '#e3f2fd' : undefined, cursor: 'pointer' }}>
@@ -312,6 +327,9 @@ const ClientContracts: React.FC = () => {
               </tbody>
             </table>
           )}
+          </>
+            );
+          })()}
         </div>
 
         <div>

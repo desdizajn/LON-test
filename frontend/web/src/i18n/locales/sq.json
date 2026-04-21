@@ -1534,6 +1534,7 @@
     "contracts": {
       "title": "Kontratat e klientit",
       "subtitle": "Kontrata me partnerë + rate karta (për copë / për minutë). Burim autoritativ për faturim.",
+      "searchPlaceholder": "Kërko sipas numrit / partnerit...",
       "listTitle": "Kontratat",
       "number": "Numri",
       "partner": "Partneri",
