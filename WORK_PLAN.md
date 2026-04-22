@@ -339,6 +339,24 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-22 — UX wave 9: dashboard-style Reports filters — HEAD `12675ff`, VPS green**
+>
+> ### 🎯 Handoff
+>
+> **Wave 9** (`12675ff`) затвора 3 dashboard страници:
+> - `Reports/CycleCountAccuracy` — accuracy bucket quick filter (≥98% / 95-98% / <95%) врз date+employee+location set.
+> - `Reports/WarehouseUtilization` — zone + occupied/empty + text search; layout collapse кога user одбира една половина.
+> - `Reports/WMSDashboard` — period selector (7/30/90/365) за movement aggregates + table-search across top items + locations.
+>
+> **Кумулативно: 27 list pages** со wave-1 пристап или native filters.
+>
+> ### 🧭 Преостанува за P14:
+> - **P14.7** Bulk move-across-location на Inventory (deferred since wave 1).
+> - **P14.8** Declaration drawer EDIT mode (deferred since wave 1).
+> - MasterData миграција (`PartnersList/ItemsList/BOMsList/RoutingsList`) од стариот `DataTable` на нов pattern — функционално веќе има search, само за визуелна конзистентност.
+>
+> ---
+
 > **>>>** **2026-04-21 (latest) — UX waves 6-8: P14.6 rollout extended to Maintenance + Reports — HEAD `7a3b44b`, VPS green**
 >
 > ### 🎯 Handoff

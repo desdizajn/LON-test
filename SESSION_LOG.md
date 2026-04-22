@@ -2,6 +2,32 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-22 — UX wave 9: filters on the 3 dashboard-style Reports pages
+
+**Status:** [x] shipped + deployed. HEAD `12675ff`, VPS green (HTTP 200).
+
+User: „Продолжи ги сите три сега" — продолжен rollout на wave-1 пристапот на трите преостанати dashboard страници.
+
+**Pages:**
+- `Reports/CycleCountAccuracy` — додаден accuracy bucket quick-filter (All / ≥98% / 95-98% / <95%) врз постоечкиот date+employee+location set. Bucket филтерот филтрира `accuracyMetricsAll` пред да се составят employee+location rollup-ите и detail табелата, така што целата страница реагира на изборот.
+- `Reports/WarehouseUtilization` — zone dropdown (derived од distinct location.zone-ови) + статус бактон (All / Occupied / Empty) + free-text search преку location/warehouse/zone. Кога user одбере само Occupied или само Empty, split-pane се претвора во full-width (`gridTemplateColumns: showOccupied && showEmpty ? '1fr 1fr' : '1fr'`).
+- `Reports/WMSDashboard` — period selector (7/30/90/365 дена) кој влече во `recentReceipts/Shipments` aggregates, и table-search кој филтрира top-items + top-locations panel-ите. Movement card header е dynamic („Movement (30 days)").
+
+**i18n × 4 локали (mk/sr/sq/en):** trite single-title stub-ови во `reports.*` се преведени во полни filter dictionaries — `cycleCountAccuracy.{bucket,bucketAll}`, `warehouseUtilization.{filterWarehouse,allWarehouses,filterZone,allZones,filterStatus,statusAll,statusOccupied,statusEmpty,searchPlaceholder}`, `wmsDashboard.{movementPeriod,movementHeader,tableSearchPlaceholder}`.
+
+**Verification:** JSON × 4 валидни; `npm run build` зелено; VPS deploy + smoke (HTTP 200).
+
+**Кумулативно после wave 9:** 27 list pages со wave-1 примитиви или native filters (4 hot screens + 6 warehouse/customs + 5 production + 3 machines/HR/finance + 1 contracts + 2 maintenance + 1 plan + 2 reports + 3 dashboards). MasterData (`PartnersList/ItemsList/BOMsList/RoutingsList`) намерно остануваат на стариот `DataTable` со built-in search — функционално покриени, визуелна консолидација во иднина ако е приоритет.
+
+**Сè уште deferred:**
+- **P14.7 Bulk move-across-location** на Inventory.
+- **P14.8 Declaration drawer EDIT** mode.
+- MasterData миграција од `DataTable` на нов pattern (visual consistency).
+
+**Commit:** `12675ff` на main.
+
+---
+
 ## 2026-04-21 — UX Cross-cutting waves 6-8: P14.6 rollout (Maintenance + Reports)
 
 **Status:** [x] all 3 additional waves shipped + deployed (HEAD `7a3b44b`, VPS green).
