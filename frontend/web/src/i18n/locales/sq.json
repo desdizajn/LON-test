@@ -537,7 +537,13 @@
       "sourceMrn": "MRN burim",
       "discharge": "Shkarkimi",
       "customsValue": "Vlera doganore"
-    }
+    },
+    "editAction": "Modifiko",
+    "editPanel": "Modifiko detajet (Draft)",
+    "editLockedAfterDraft": "Nuk mund të modifikohet pas Registered.",
+    "editSuccess": "Deklarata u përditësua me sukses.",
+    "specialRemarks": "Shënime të veçanta",
+    "dueDate": "Skadon"
   },
   "mrnDeadlines": {
     "title": "Afatet & pozicionet MRN të hapura",
@@ -942,6 +948,17 @@
       "noResults": "Nuk ka rekorde që përputhen me filtrin."
     },
     "bulkSummary": "Sasia totale: {{qty}}",
+    "bulkMove": {
+      "action": "Lëviz në lokacion",
+      "title": "Lëvizje bulk në lokacion të ri",
+      "intro": "Do të lëvizen {{count}} rreshta (gjithsej {{qty}}) në lokacionin e zgjedhur.",
+      "targetLabel": "Lokacioni i destinuar",
+      "targetPlaceholder": "Zgjidhni lokacionin",
+      "reasonLabel": "Arsyeja (opsionale)",
+      "reasonPlaceholder": "Arsye biznesi për audit log",
+      "confirm": "Lëviz",
+      "success": "U lëvizën {{moved}} rreshta ({{qty}} gjithsej). U anashkaluan: {{skipped}}."
+    },
     "bulkQc": {
       "blockAction": "Blloko (QC)",
       "releaseAction": "Liro (QC OK)",

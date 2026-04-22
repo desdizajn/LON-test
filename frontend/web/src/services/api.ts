@@ -69,6 +69,14 @@ export const wmsApi = {
     targetLocationId?: string | null;
   }) => api.post('/WMS/inventory/mass-transfer/preview', payload),
 
+  // P14.7 — bulk move N selected balances to a single target location.
+  // Selection-based companion to massTransfer (which is predicate-based).
+  bulkMoveBalances: (payload: {
+    balanceIds: string[];
+    targetLocationId: string;
+    reason?: string | null;
+  }) => api.post('/WMS/inventory/bulk-move-balances', payload),
+
   // P5.2.7 — bulk transfer every inventory row matching the filter to
   // a single explicit target location in one atomic call.
   massTransfer: (payload: {

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { wmsApi } from '../services/api';
+import { wmsApi, masterDataApi } from '../services/api';
 import ReceiptForm from '../components/WMS/ReceiptForm';
 import TransferForm from '../components/WMS/TransferForm';
 import ShipmentForm from '../components/WMS/ShipmentForm';
@@ -49,6 +49,21 @@ const Inventory: React.FC = () => {
   // Bulk QC modal
   const [bulkQcModal, setBulkQcModal] = useState<null | { target: number; reason: string }>(null);
   const [bulkRunning, setBulkRunning] = useState(false);
+
+  // Bulk move modal
+  const [bulkMoveModal, setBulkMoveModal] = useState<null | { targetLocationId: string; reason: string }>(null);
+  const [allLocations, setAllLocations] = useState<Array<{ id: string; code: string; name: string; warehouseId: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await masterDataApi.getLocations();
+        if (!cancelled) setAllLocations((resp.data as any[]) ?? []);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     loadInventory();
@@ -135,6 +150,39 @@ const Inventory: React.FC = () => {
 
   const hasAnyFilter = !!fItem || !!fLocation || !!fBatch || !!fMrn || !!fQc;
 
+  async function runBulkMove(targetLocationId: string, reason: string) {
+    const ids = selection.selectedRows.map((r) => r.id);
+    if (ids.length === 0) return;
+    setBulkRunning(true);
+    try {
+      const resp = await wmsApi.bulkMoveBalances({
+        balanceIds: ids,
+        targetLocationId,
+        reason: reason || null,
+      });
+      const env = resp.data as { isSuccess?: boolean; data?: { balancesMoved: number; balancesSkipped: number; totalQuantityMoved: number }; errorMessage?: string; errorCode?: string };
+      if (env && env.isSuccess === false) {
+        toast.error(translateError(env));
+      } else {
+        const data = env.data ?? (resp.data as any);
+        toast.success(
+          t('inventory.bulkMove.success', {
+            moved: data.balancesMoved,
+            skipped: data.balancesSkipped ?? 0,
+            qty: Number((data.totalQuantityMoved ?? 0).toFixed(2)),
+          }) as string
+        );
+      }
+    } catch (err: any) {
+      toast.error(translateError(err));
+    } finally {
+      setBulkRunning(false);
+      setBulkMoveModal(null);
+      selection.clear();
+      await loadInventory();
+    }
+  }
+
   async function runBulkQc(target: number, reason: string) {
     const rows = selection.selectedRows;
     if (rows.length === 0) return;
@@ -196,6 +244,12 @@ const Inventory: React.FC = () => {
 
   const bulkActions: BulkAction[] = [
     {
+      key: 'move',
+      label: t('inventory.bulkMove.action') as string,
+      variant: 'primary',
+      onClick: () => setBulkMoveModal({ targetLocationId: '', reason: '' }),
+    },
+    {
       key: 'export',
       label: t('common.exportExcel') as string,
       onClick: () => exportSelectedCsv(selection.selectedRows),
@@ -209,10 +263,15 @@ const Inventory: React.FC = () => {
     {
       key: 'qc-ok',
       label: t('inventory.bulkQc.releaseAction') as string,
-      variant: 'primary',
       onClick: () => setBulkQcModal({ target: QC_OK, reason: '' }),
     },
   ];
+
+  const moveLocationOptions = useMemo<SearchableOption[]>(() => {
+    return allLocations
+      .map((l) => ({ value: l.id, label: l.name, hint: l.code }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [allLocations]);
 
   // Render active form (full-page mode)
   if (activeForm === 'receipt') {
@@ -433,6 +492,90 @@ const Inventory: React.FC = () => {
             loadInventory();
           }}
         />
+      )}
+
+      {bulkMoveModal && (
+        <div
+          onClick={() => !bulkRunning && setBulkMoveModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.4)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: 20,
+              minWidth: 420,
+              maxWidth: 520,
+              boxShadow: '0 10px 30px rgba(15,23,42,0.2)',
+            }}
+          >
+            <h3 style={{ marginTop: 0 }}>{t('inventory.bulkMove.title')}</h3>
+            <p style={{ color: '#555' }}>
+              {t('inventory.bulkMove.intro', {
+                count: selection.count,
+                qty: selectedQty.toFixed(2),
+              })}
+            </p>
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                {t('inventory.bulkMove.targetLabel')}
+              </div>
+              <SearchableSelect
+                value={bulkMoveModal.targetLocationId}
+                onChange={(v) => setBulkMoveModal({ ...bulkMoveModal, targetLocationId: v })}
+                options={moveLocationOptions}
+                placeholder={t('inventory.bulkMove.targetPlaceholder') as string}
+                disabled={bulkRunning}
+              />
+            </label>
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                {t('inventory.bulkMove.reasonLabel')}
+              </div>
+              <textarea
+                value={bulkMoveModal.reason}
+                onChange={(e) => setBulkMoveModal({ ...bulkMoveModal, reason: e.target.value })}
+                rows={2}
+                style={{ width: '100%', padding: 6 }}
+                placeholder={t('inventory.bulkMove.reasonPlaceholder') as string}
+                disabled={bulkRunning}
+              />
+            </label>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => setBulkMoveModal(null)}
+                disabled={bulkRunning}
+                style={{ padding: '6px 14px' }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => runBulkMove(bulkMoveModal.targetLocationId, bulkMoveModal.reason.trim())}
+                disabled={bulkRunning || !bulkMoveModal.targetLocationId}
+                style={{
+                  padding: '6px 14px',
+                  background: 'var(--taris-blue-500, #1e88e5)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 4,
+                }}
+              >
+                {bulkRunning ? t('common.saving') : t('inventory.bulkMove.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {bulkQcModal && (

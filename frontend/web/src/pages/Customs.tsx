@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { customsApi } from '../services/api';
 import CustomsDeclarationForm from '../components/Customs/CustomsDeclarationForm';
@@ -21,6 +21,9 @@ const Customs: React.FC = () => {
   const [showWaste, setShowWaste] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showReturn, setShowReturn] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'cleared' | 'pending'>('all');
+  const [procedureFilter, setProcedureFilter] = useState('');
 
   useEffect(() => {
     loadDeclarations();
@@ -94,6 +97,44 @@ const Customs: React.FC = () => {
         </div>
       </div>
 
+      {(() => {
+        const distinctProcedures = Array.from(
+          new Set(declarations.map((d) => d.customsProcedure?.code).filter(Boolean))
+        ).sort();
+        return (
+          <div style={{
+            display: 'flex',
+            gap: 8,
+            margin: '12px 0',
+            padding: 10,
+            background: 'var(--ink-50, #f8fafc)',
+            border: '1px solid var(--border, #e5e7eb)',
+            borderRadius: 6,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('customs.searchPlaceholder', 'Пребарај по број / MRN / постапка...') as string}
+              style={{ padding: 6, minWidth: 240 }}
+            />
+            <select value={procedureFilter} onChange={(e) => setProcedureFilter(e.target.value)} style={{ padding: 6 }}>
+              <option value="">{t('customs.procedureAll', 'Сите постапки')}</option>
+              {distinctProcedures.map((p) => (
+                <option key={p as string} value={p as string}>{p as string}</option>
+              ))}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} style={{ padding: 6 }}>
+              <option value="all">{t('customs.statusAll', 'Сите статуси')}</option>
+              <option value="pending">{t('customs.statusPending', 'Pending')}</option>
+              <option value="cleared">{t('customs.statusCleared', 'Cleared')}</option>
+            </select>
+          </div>
+        );
+      })()}
+
       <div className="table-container">
         <table>
           <thead>
@@ -110,7 +151,19 @@ const Customs: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {declarations.map((decl, idx) => (
+            {(() => {
+              const q = search.trim().toLowerCase();
+              return declarations.filter((decl) => {
+                if (statusFilter === 'cleared' && !decl.isCleared) return false;
+                if (statusFilter === 'pending' && decl.isCleared) return false;
+                if (procedureFilter && decl.customsProcedure?.code !== procedureFilter) return false;
+                if (q) {
+                  const hay = `${decl.declarationNumber ?? ''} ${decl.mrn ?? ''} ${decl.customsProcedure?.code ?? ''} ${decl.customsProcedure?.name ?? ''}`.toLowerCase();
+                  if (!hay.includes(q)) return false;
+                }
+                return true;
+              });
+            })().map((decl, idx) => (
               <tr key={idx}>
                 <td><strong>{decl.declarationNumber}</strong></td>
                 <td>

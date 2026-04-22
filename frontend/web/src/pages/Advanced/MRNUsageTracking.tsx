@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { wmsApi, customsApi } from '../../services/api';
+import { wmsApi } from '../../services/api';
 
 const MRNUsageTracking: React.FC = () => {
   const [mrns, setMRNs] = useState<any[]>([]);
@@ -7,6 +7,8 @@ const MRNUsageTracking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMRN, setSelectedMRN] = useState<string>('');
   const [mrnDetails, setMRNDetails] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Depleted'>('all');
 
   useEffect(() => {
     loadData();
@@ -252,6 +254,22 @@ const MRNUsageTracking: React.FC = () => {
       {/* MRN List */}
       <div className="card" style={{ padding: '15px', marginBottom: '30px' }}>
         <h5>📋 All MRNs Overview</h5>
+
+        <div style={{ display: 'flex', gap: 8, margin: '12px 0', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Пребарај MRN / batch / локација..."
+            style={{ padding: 6, minWidth: 240 }}
+          />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} style={{ padding: 6 }}>
+            <option value="all">Сите статуси</option>
+            <option value="Active">Активни</option>
+            <option value="Depleted">Потрошени</option>
+          </select>
+        </div>
+
         <div className="table-container" style={{ marginTop: '15px' }}>
           <table>
             <thead>
@@ -267,8 +285,17 @@ const MRNUsageTracking: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {mrns
-                .sort((a, b) => new Date(b.importDate).getTime() - new Date(a.importDate).getTime())
+              {(() => {
+                const q = search.trim().toLowerCase();
+                return mrns
+                  .filter((m) => {
+                    if (statusFilter !== 'all' && m.status !== statusFilter) return false;
+                    if (!q) return true;
+                    const hay = `${m.mrn} ${(m.batches ?? []).join(' ')} ${(m.locations ?? []).join(' ')}`.toLowerCase();
+                    return hay.includes(q);
+                  })
+                  .sort((a, b) => new Date(b.importDate).getTime() - new Date(a.importDate).getTime());
+              })()
                 .map((mrn, idx) => (
                   <tr key={idx} style={{
                     background: mrn.status === 'Active' ? '#d4edda' : '#f8d7da'

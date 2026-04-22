@@ -537,7 +537,13 @@
       "sourceMrn": "Изворни MRN",
       "discharge": "Раздужено",
       "customsValue": "Царинска вредност"
-    }
+    },
+    "editAction": "Измени",
+    "editPanel": "Измени детаље (Draft)",
+    "editLockedAfterDraft": "Не може се мењати након што је Registered.",
+    "editSuccess": "Декларација је успешно ажурирана.",
+    "specialRemarks": "Посебне напомене",
+    "dueDate": "Доспева"
   },
   "mrnDeadlines": {
     "title": "Рокови и неразудужене MRN позиције",
@@ -942,6 +948,17 @@
       "noResults": "Нема записа који одговарају филтеру."
     },
     "bulkSummary": "Укупна количина: {{qty}}",
+    "bulkMove": {
+      "action": "Премести на локацију",
+      "title": "Bulk премештање на нову локацију",
+      "intro": "Биће премештено {{count}} редова (укупно {{qty}}) на изабрану локацију.",
+      "targetLabel": "Циљна локација",
+      "targetPlaceholder": "Изаберите циљну локацију",
+      "reasonLabel": "Разлог (опционо)",
+      "reasonPlaceholder": "Пословни разлог за audit log",
+      "confirm": "Премести",
+      "success": "Премештено {{moved}} редова ({{qty}} укупно). Прескочено: {{skipped}}."
+    },
     "bulkQc": {
       "blockAction": "Блокирај (QC)",
       "releaseAction": "Пусти (QC OK)",

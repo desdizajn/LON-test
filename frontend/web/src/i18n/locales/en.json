@@ -537,7 +537,13 @@
       "sourceMrn": "Source MRN",
       "discharge": "Discharge",
       "customsValue": "Customs value"
-    }
+    },
+    "editAction": "Edit",
+    "editPanel": "Edit details (Draft)",
+    "editLockedAfterDraft": "Cannot edit after the declaration is Registered.",
+    "editSuccess": "Declaration updated.",
+    "specialRemarks": "Special remarks",
+    "dueDate": "Due date"
   },
   "mrnDeadlines": {
     "title": "Deadlines & open MRN positions",
@@ -942,6 +948,17 @@
       "noResults": "No records match the filter."
     },
     "bulkSummary": "Total quantity: {{qty}}",
+    "bulkMove": {
+      "action": "Move to location",
+      "title": "Bulk move to new location",
+      "intro": "Will move {{count}} rows ({{qty}} total) to the selected location.",
+      "targetLabel": "Target location",
+      "targetPlaceholder": "Pick a target location",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Business reason for audit log",
+      "confirm": "Move",
+      "success": "Moved {{moved}} rows ({{qty}} total). Skipped: {{skipped}}."
+    },
     "bulkQc": {
       "blockAction": "Block (QC)",
       "releaseAction": "Release (QC OK)",

@@ -144,6 +144,19 @@ public class WMSController : BaseController
         return Ok(result);
     }
 
+    /// <summary>
+    /// P14.7 — bulk move N selected InventoryBalance rows to one target
+    /// location atomically. Selection-based companion to mass-transfer.
+    /// </summary>
+    [HttpPost("inventory/bulk-move-balances")]
+    public async Task<IActionResult> BulkMoveBalances(
+        [FromBody] LON.Application.WMS.Commands.BulkMoveBalances.BulkMoveBalancesCommand command)
+    {
+        var result = await Mediator.Send(command);
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
     [HttpGet("shipments")]
     public async Task<IActionResult> GetShipments([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {

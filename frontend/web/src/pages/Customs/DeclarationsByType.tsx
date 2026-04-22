@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
 import { customsApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate, formatQuantity } from '../../utils/format';
@@ -54,8 +55,12 @@ type Declaration = {
   zaverkaNumber?: string | null;
   zaverkaDate?: string | null;
   notes?: string | null;
+  specialRemarks?: string | null;
+  dueDate?: string | null;
   lines?: Line[];
 };
+
+const STATUS_DRAFT = 0;
 
 type Props = { type: 'import' | 'export' };
 
@@ -68,6 +73,11 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Declaration | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
+  const [editing, setEditing] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<{ declarationNumber: string; notes: string; specialRemarks: string; dueDate: string }>({
+    declarationNumber: '', notes: '', specialRemarks: '', dueDate: '',
+  });
+  const [savingEdit, setSavingEdit] = useState<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +108,7 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
   useEffect(() => {
     if (!detailId) {
       setDetail(null);
+      setEditing(false);
       return;
     }
     let cancelled = false;
@@ -105,7 +116,17 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
       setDetailLoading(true);
       try {
         const resp = await customsApi.getDeclaration(detailId);
-        if (!cancelled) setDetail(resp.data as Declaration);
+        if (!cancelled) {
+          const d = resp.data as Declaration;
+          setDetail(d);
+          setEditForm({
+            declarationNumber: d.declarationNumber ?? '',
+            notes: d.notes ?? '',
+            specialRemarks: d.specialRemarks ?? '',
+            dueDate: d.dueDate ? d.dueDate.slice(0, 10) : '',
+          });
+          setEditing(false);
+        }
       } catch (err) {
         if (!cancelled) setError(translateError(err));
       } finally {
@@ -116,6 +137,38 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
       cancelled = true;
     };
   }, [detailId]);
+
+  const isDraft = (s: Declaration['status']) => {
+    if (s === null || s === undefined) return false;
+    if (typeof s === 'number') return s === STATUS_DRAFT;
+    return String(s).toLowerCase() === 'draft' || String(s) === String(STATUS_DRAFT);
+  };
+
+  async function saveEdit() {
+    if (!detailId || !detail) return;
+    setSavingEdit(true);
+    try {
+      await customsApi.updateDeclaration(detailId, {
+        id: detailId,
+        declarationNumber: editForm.declarationNumber.trim() || null,
+        notes: editForm.notes.trim() || null,
+        specialRemarks: editForm.specialRemarks.trim() || null,
+        dueDate: editForm.dueDate || null,
+      });
+      toast.success(t('declarationsByType.editSuccess') as string);
+      // Refresh detail + list row
+      const resp = await customsApi.getDeclaration(detailId);
+      const d = resp.data as Declaration;
+      setDetail(d);
+      setEditing(false);
+      // Patch list row in-place
+      setRows((prev) => prev.map((r) => (r.id === detailId ? { ...r, ...d } : r)));
+    } catch (err) {
+      toast.error(translateError(err));
+    } finally {
+      setSavingEdit(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -232,6 +285,40 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
         title={detail?.declarationNumber ?? (t('common.loading') as string)}
         subtitle={detail?.mrn ?? undefined}
         width={680}
+        footer={
+          detail && isDraft(detail.status) ? (
+            editing ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  disabled={savingEdit}
+                  style={{ padding: '6px 14px' }}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  disabled={savingEdit}
+                  style={{ padding: '6px 14px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}
+                >
+                  {savingEdit ? t('common.saving') : t('common.save')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                style={{ padding: '6px 14px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}
+              >
+                ✏️ {t('declarationsByType.editAction')}
+              </button>
+            )
+          ) : detail ? (
+            <span style={{ color: '#888', fontSize: 12 }}>{t('declarationsByType.editLockedAfterDraft')}</span>
+          ) : null
+        }
       >
         {detailLoading && <div>{t('common.loading')}</div>}
         {!detailLoading && detail && (
@@ -290,10 +377,60 @@ const DeclarationsByType: React.FC<Props> = ({ type }) => {
               </div>
             )}
 
-            {detail.notes && (
+            {!editing && detail.notes && (
               <section style={{ marginTop: 18 }}>
                 <h3 style={{ fontSize: 14, margin: '0 0 6px' }}>{t('declarationsByType.notes')}</h3>
                 <div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{detail.notes}</div>
+              </section>
+            )}
+            {!editing && detail.specialRemarks && (
+              <section style={{ marginTop: 14 }}>
+                <h3 style={{ fontSize: 14, margin: '0 0 6px' }}>{t('declarationsByType.specialRemarks')}</h3>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{detail.specialRemarks}</div>
+              </section>
+            )}
+
+            {editing && (
+              <section style={{ marginTop: 18, padding: 12, background: 'var(--ink-50, #f8fafc)', border: '1px solid var(--border, #e5e7eb)', borderRadius: 6 }}>
+                <h3 style={{ fontSize: 14, margin: '0 0 10px' }}>{t('declarationsByType.editPanel')}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <label style={{ fontSize: 12, color: '#666' }}>
+                    {t('declarationsByType.number')}
+                    <input
+                      type="text"
+                      value={editForm.declarationNumber}
+                      onChange={(e) => setEditForm({ ...editForm, declarationNumber: e.target.value })}
+                      style={{ width: '100%', padding: 6, marginTop: 2, fontSize: 13 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 12, color: '#666' }}>
+                    {t('declarationsByType.dueDate')}
+                    <input
+                      type="date"
+                      value={editForm.dueDate}
+                      onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                      style={{ width: '100%', padding: 6, marginTop: 2, fontSize: 13 }}
+                    />
+                  </label>
+                </div>
+                <label style={{ display: 'block', fontSize: 12, color: '#666', marginTop: 10 }}>
+                  {t('declarationsByType.notes')}
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                    rows={3}
+                    style={{ width: '100%', padding: 6, marginTop: 2, fontSize: 13 }}
+                  />
+                </label>
+                <label style={{ display: 'block', fontSize: 12, color: '#666', marginTop: 10 }}>
+                  {t('declarationsByType.specialRemarks')}
+                  <textarea
+                    value={editForm.specialRemarks}
+                    onChange={(e) => setEditForm({ ...editForm, specialRemarks: e.target.value })}
+                    rows={2}
+                    style={{ width: '100%', padding: 6, marginTop: 2, fontSize: 13 }}
+                  />
+                </label>
               </section>
             )}
           </>

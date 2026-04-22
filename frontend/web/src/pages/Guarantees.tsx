@@ -24,6 +24,9 @@ const Guarantees: React.FC = () => {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<GuaranteeAccount | null>(null);
+  const [accountSearch, setAccountSearch] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [activeMrnFilter, setActiveMrnFilter] = useState('');
 
   const [accountFormData, setAccountFormData] = useState({
     accountNumber: '', accountName: '', bankPartnerId: '',
@@ -122,8 +125,23 @@ const Guarantees: React.FC = () => {
       <TrafficLightGuarantees />
 
       <h3 style={{ marginBottom: 12, marginTop: 24 }}>{t('guarantees.accountsTitle')}</h3>
+      <div style={{ marginBottom: 12 }}>
+        <input
+          type="text"
+          value={accountSearch}
+          onChange={(e) => setAccountSearch(e.target.value)}
+          placeholder={t('guarantees.accountSearchPlaceholder', 'Пребарај по број / име / банка...') as string}
+          style={{ padding: 6, minWidth: 280 }}
+        />
+      </div>
       <div className="card-grid" style={{ marginBottom: 24 }}>
-        {accounts.map((acc) => (
+        {accounts
+          .filter((acc) => {
+            const q = accountSearch.trim().toLowerCase();
+            if (!q) return true;
+            return `${acc.accountNumber} ${acc.accountName} ${acc.bankName ?? ''}`.toLowerCase().includes(q);
+          })
+          .map((acc) => (
           <div key={acc.id} className="card" onClick={() => handleEditAccount(acc)} style={{ cursor: 'pointer' }}>
             <h3>{acc.accountName}</h3>
             <div style={{ fontSize: 12, color: 'var(--ink-500)', marginBottom: 8 }}>{acc.accountNumber}</div>
@@ -151,6 +169,26 @@ const Guarantees: React.FC = () => {
       </div>
 
       <h3 style={{ marginBottom: 12 }}>{t('guarantees.activeTitle')}</h3>
+      {(() => {
+        const distinctActiveMrns = Array.from(new Set(activeGuarantees.map((g: any) => g.mrn).filter(Boolean))).sort();
+        return (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={activeSearch}
+              onChange={(e) => setActiveSearch(e.target.value)}
+              placeholder={t('guarantees.activeSearchPlaceholder', 'Пребарај по опис / MRN...') as string}
+              style={{ padding: 6, minWidth: 240 }}
+            />
+            <select value={activeMrnFilter} onChange={(e) => setActiveMrnFilter(e.target.value)} style={{ padding: 6 }}>
+              <option value="">{t('guarantees.allMrns', 'Сите MRN')}</option>
+              {distinctActiveMrns.map((m) => (
+                <option key={m as string} value={m as string}>{m as string}</option>
+              ))}
+            </select>
+          </div>
+        );
+      })()}
       <div className="table-container">
         <table>
           <thead>
@@ -164,7 +202,14 @@ const Guarantees: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {activeGuarantees.map((g, idx) => (
+            {activeGuarantees
+              .filter((g: any) => {
+                if (activeMrnFilter && g.mrn !== activeMrnFilter) return false;
+                const q = activeSearch.trim().toLowerCase();
+                if (!q) return true;
+                return `${g.description ?? ''} ${g.mrn ?? ''}`.toLowerCase().includes(q);
+              })
+              .map((g, idx) => (
               <tr key={idx}>
                 <td>{formatDate(g.entryDate)}</td>
                 <td><strong>{formatQuantity(g.amount)}</strong></td>

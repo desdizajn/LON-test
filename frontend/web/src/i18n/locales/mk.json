@@ -537,7 +537,13 @@
       "sourceMrn": "Изворен MRN",
       "discharge": "Раздолжено",
       "customsValue": "Царинска вредност"
-    }
+    },
+    "editAction": "Измени",
+    "editPanel": "Измени детали (Draft)",
+    "editLockedAfterDraft": "Не може да се менува откако е Registered.",
+    "editSuccess": "Декларацијата е успешно ажурирана.",
+    "specialRemarks": "Специјални напомени",
+    "dueDate": "Доспева"
   },
   "mrnDeadlines": {
     "title": "Рокови и нераздолжени MRN позиции",
@@ -942,6 +948,17 @@
       "noResults": "Нема записи што одговараат на филтерот."
     },
     "bulkSummary": "Вкупна количина: {{qty}}",
+    "bulkMove": {
+      "action": "Премести на локација",
+      "title": "Bulk преместување на нова локација",
+      "intro": "Ќе се преместат {{count}} редови (вкупно {{qty}}) на избраната локација.",
+      "targetLabel": "Целна локација",
+      "targetPlaceholder": "Изберете целна локација",
+      "reasonLabel": "Причина (опционо)",
+      "reasonPlaceholder": "Бизнис причина за audit log",
+      "confirm": "Премести",
+      "success": "Преместени {{moved}} редови ({{qty}} вкупно). Прескокнати: {{skipped}}."
+    },
     "bulkQc": {
       "blockAction": "Блокирај (QC)",
       "releaseAction": "Пушти (QC OK)",

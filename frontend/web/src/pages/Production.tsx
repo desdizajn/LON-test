@@ -15,6 +15,8 @@ const Production: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
 
   useEffect(() => {
     loadOrders();
@@ -78,8 +80,17 @@ const Production: React.FC = () => {
   // Group: one bucket per MainOrderNumber (or full OrderNumber when no parent chain).
   // A bucket with >1 row becomes an expandable parent + child list.
   const grouped = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const matched = orders.filter((o) => {
+      if (statusFilter && String(o.status) !== statusFilter) return false;
+      if (q) {
+        const hay = `${o.orderNumber ?? ''} ${o.mainOrderNumber ?? ''} ${o.subOrderNumber ?? ''} ${o.item?.code ?? ''} ${o.item?.name ?? ''} ${o.customerOrderNumber ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
     const by: Record<string, { main?: any; children: any[] }> = {};
-    for (const o of orders) {
+    for (const o of matched) {
       const key = o.mainOrderNumber || o.orderNumber;
       if (!by[key]) by[key] = { children: [] };
       if (!o.subOrderNumber && o.parentOrderId == null) by[key].main = o;
@@ -88,7 +99,7 @@ const Production: React.FC = () => {
     return Object.entries(by)
       .map(([key, v]) => ({ key, main: v.main, children: v.children.sort((a: any, b: any) => (a.subOrderNumber || '').localeCompare(b.subOrderNumber || '')) }))
       .sort((a, b) => a.key.localeCompare(b.key));
-  }, [orders]);
+  }, [orders, search, statusFilter]);
 
   const toggle = (k: string) => {
     setExpanded(prev => {
@@ -142,6 +153,36 @@ const Production: React.FC = () => {
       <div className="header">
         <h2>Production Orders (LON)</h2>
         <button className="btn btn-success" onClick={() => setShowOrderForm(true)}>+ New Production Order</button>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        gap: 8,
+        margin: '12px 0',
+        padding: 10,
+        background: 'var(--ink-50, #f8fafc)',
+        border: '1px solid var(--border, #e5e7eb)',
+        borderRadius: 6,
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('production.searchPlaceholder', 'Пребарај по број / артикл / клиентски налог...') as string}
+          style={{ padding: 6, minWidth: 280 }}
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: 6 }}>
+          <option value="">{t('production.statusAll', 'Сите статуси')}</option>
+          <option value="0">Draft</option>
+          <option value="1">Draft</option>
+          <option value="2">Released</option>
+          <option value="3">In Progress</option>
+          <option value="4">Completed</option>
+          <option value="5">Closed</option>
+          <option value="6">Cancelled</option>
+        </select>
       </div>
 
       <div className="table-container">
