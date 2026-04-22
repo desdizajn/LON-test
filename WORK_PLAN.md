@@ -825,7 +825,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 ### Wave A — Quick wins
 
-- [/] **P15.1** ArtKatBrStara (partner SKU) explicit field on `Item` + lookup helper + import-mapping integration
+- [x] **P15.1** ✅ *2026-04-23 (commit `13fc741`)* — `Item.PartnerSKU` (legacy ArtKatBrStara) + normalize helper + ItemRequest/Command/Response wiring + search-by-SKU + ItemsImportExecutor column + ItemForm input + migration + 2 integration tests. VPS verified: " tek-xyz-99 " POST → "TEK-XYZ-99" normalized + searchable.
 - [ ] **P15.2** Traffic light UI component за guarantee balance (Red ≥ limit, Yellow ≤ 10% available, Green > 10%)
 - [ ] **P15.3** `Skart` entity + flow (defective-on-intake) — legacy `FakturiU5Skart` еквивалент. Reduces available IM qty пред Normativi распределба.
 - [ ] **P15.4** NaimU5 rollup query — `GET /api/customs/declarations/{id}/naim` group by (TarBr, EdMerCar, ZemjaPoteklo) за PEE XML + reports.
@@ -868,6 +868,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 ## Current Active Task
 
-**P15.1** — ArtKatBrStara (partner SKU) explicit field.
+**P15.2** — Traffic light UI component за guarantee balance (Red ≥ limit, Yellow ≤ 10% available, Green > 10%). Backend `GuaranteeAccount.GetAvailableLimit()` веќе постои; треба само frontend component + интеграција во `/finance/guarantees` + dashboard widget.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

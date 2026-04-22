@@ -2,6 +2,48 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — Phase 15 kickoff + P15.1: legacy-parity closure begins
+
+**Status:** [x] shipped, HEAD `13fc741`, VPS HTTP 200. End-to-end VPS verified.
+
+**User directive (2026-04-23):**
+> „Сакам да ги затвориме прво сите гапови, па потоа упатство. Нема поента да правиме упатство за нешто што ќе се менува."
+
+Сесијата започна со пресек на legacy ELON vs. сегашна LON по 6 процесни модули (master data → IM → normatives → production → EX/Return/Waste → guarantees → PEE XML → reports). Deliverable: [`docs/LEGACY_COVERAGE_ANALYSIS.md`](docs/LEGACY_COVERAGE_ANALYSIS.md) — 16 домен-области маркирани еквивалент / партиал / гап / by-design преку логика, податок, математика, плус explicit mapping ELON форма → LON страница.
+
+**Phase 15 план внесен во WORK_PLAN** — 15 таскови распоредени во 5 wave-а:
+- Wave A (quick wins): P15.1 ArtKatBrStara, P15.2 traffic light, P15.3 Skart, P15.4 NaimU5 rollup, P15.5 guarantee snapshots.
+- Wave B (waste + templates): P15.6 4 waste slots + Zaguba, P15.7 NormativTemplate auto-apply.
+- Wave C (multi-producer): P15.8 Podelba + ProducerAssignment, P15.9 Izdatnica/Ispratnica/EXA3.
+- Wave D (certification + reports): P15.10 Zaverka state-machine, P15.11 legacy reports.
+- Wave E (PEE XML): P15.12–P15.15 PEE010/020/040/050.
+
+**P15.1 — PartnerSKU (legacy `tblArtikli.ArtKatBrStara`):**
+
+- `Item.PartnerSKU` (nullable string) додаден во domain. Normalize helper (`ItemMappers.NormalizeSku`): trim + ToUpperInvariant; whitespace-only → null. Legacy ELON go стругаше како " " (single space); LON normalize во null за чиста lookup семантика.
+- `ItemRequest`, `CreateItemCommand`, `UpdateItemCommand`, `ItemResponse` пренесуваат новото поле. `GetItemsQuery.Search` проширен: Code/Name/PartnerSKU — picker може да го најде артиклот преку кодот на партнерот.
+- `ItemsImportExecutor` прима `partnerSku` колона на bulk upload: на create пишува нормализирано, на soft-delete restore препишува нова вредност, на active upsert **не ја препишува** постоечката (operator disambiguation > file data).
+- `ItemsTargetSchema` ја рекламира новата колона на generic importer.
+- Миграција `20260422234615_P15_1_ItemPartnerSKU` — едноставен AddColumn nullable `nvarchar(max)`.
+- Frontend: `Item` + `ItemFormData` типови носат `partnerSKU`; `ItemForm.tsx` има input по HSCode со placeholder „Partner / supplier's own code".
+- Integration tests (во `ItemsMediatrTests.cs`):
+  - `Create_WithPartnerSku_NormalizesAndRoundTrips` — " abc-XYZ-42 " → "ABC-XYZ-42"; search by "ABC-XY" наоѓа.
+  - `Update_ClearingPartnerSku_PersistsNull` — whitespace on update → null (операторот може да го исчисти).
+
+**Verification:**
+- `dotnet build src/LON.API` — 0 warnings, 0 errors.
+- `dotnet build tests/LON.IntegrationTests` — 0 errors (pre-existing CS8602/CS8604 warnings во други test files, не во touched).
+- `npm run build` — Compiled successfully, 0 warnings.
+- `dotnet ef migrations add` — миграција генерирана.
+- VPS: `git push` → `ssh root@...` → `git pull && docker compose build api frontend && docker compose up -d`. Миграцијата се применила на startup.
+- Live smoke test: POST `/api/MasterData/items` со `"partnerSKU":"  tek-xyz-99  "` → response вратил `"partnerSKU":"TEK-XYZ-99"`. GET `/api/MasterData/items` враќа 2391 items, секој има `partnerSKU` клуч.
+
+**Cumulative после P15.1:** 1/15 Phase 15 таскови затворени. 14 преостануваат.
+
+**Commit:** `13fc741` на main.
+
+---
+
 ## 2026-04-22 — P14.9: 29 placeholder pages → real + warning backlog cleanup
 
 **Status:** [x] shipped, HEAD `dccd0b9`, VPS HTTP 200.
