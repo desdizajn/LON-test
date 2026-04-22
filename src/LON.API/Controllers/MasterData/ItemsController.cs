@@ -43,7 +43,8 @@ public class ItemsController : BaseController
             request.CountryOfOrigin,
             request.HSCode,
             request.IsActive,
-            request.StandardCost));
+            request.StandardCost,
+            request.PartnerSKU));
         return Ok(item);
     }
 
@@ -62,7 +63,8 @@ public class ItemsController : BaseController
             request.CountryOfOrigin,
             request.HSCode,
             request.IsActive,
-            request.StandardCost));
+            request.StandardCost,
+            request.PartnerSKU));
         return item is null ? NotFound() : Ok(item);
     }
 

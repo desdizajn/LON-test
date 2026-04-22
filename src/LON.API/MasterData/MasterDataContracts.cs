@@ -16,7 +16,8 @@ public record ItemRequest(
     string? CountryOfOrigin,
     string? HSCode,
     bool IsActive,
-    decimal? StandardCost
+    decimal? StandardCost,
+    string? PartnerSKU = null
 );
 
 public record PartnerRequest(

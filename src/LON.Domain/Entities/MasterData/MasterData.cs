@@ -48,6 +48,18 @@ public class Item : BaseEntity, ITenantScoped
     public virtual Item? Parent { get; set; }
     public virtual ICollection<Item> Variants { get; set; } = new List<Item>();
 
+    /// <summary>
+    /// P15.1 — legacy <c>tblArtikli.ArtKatBrStara</c>. The partner's own SKU
+    /// (customer or supplier code) for this item; used during bulk invoice
+    /// import to disambiguate an incoming line that references the partner's
+    /// code instead of our internal <see cref="Code"/>. Null when the item
+    /// has no external crosswalk. Nonunique: two different internal items
+    /// CAN share the same partner SKU when the partner reused the code, so
+    /// the import path falls back to an interactive disambiguation UI when
+    /// multiple matches exist (legacy <c>frmArtKatBrStara</c>).
+    /// </summary>
+    public string? PartnerSKU { get; set; }
+
     public virtual ICollection<ItemUoMConversion> UoMConversions { get; set; } = new List<ItemUoMConversion>();
     public virtual ICollection<BOM> BOMs { get; set; } = new List<BOM>();
 }

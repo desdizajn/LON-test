@@ -814,3 +814,60 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 **Следен sprint (по sprint план во ROADMAP.md):** ~~Phase 7~~ ✅ · ~~Sprint 2 Phase 8.1–8.5~~ ✅ · ~~Sprint 3 Phase 11.1/11.2/11.4/11.5~~ ✅ · ~~Sprint 4 Phase 10.1/10.2/10.5~~ ✅ · ~~Sprint 5 Phase 9.1/9.3/9.6~~ ✅ · ~~Sprint 6 Phase 12.3 + 12.2~~ ✅ · ~~Sprint 7 Phase 13.1 + 13.3 + 13.5~~ ✅ (2026-04-20; zero new entities, aggregates only. VPS шоу real TEKSPORT insights: LON auth 2691 expired, Конец Арамид short 429,764 M across 126 POs, Firma-100 132 open KW12 POs). Sprint 8+ → long-tail per ROADMAP: P8.6–P8.9, P9.2/5/7, P10.3–P10.7, P11.3/7/8, P12.4–P12.10, P13.2/4/6–10.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
+
+---
+
+## Phase 15 — Legacy Parity Closure (pre-manual gate)
+
+> **Контекст:** после `docs/LEGACY_COVERAGE_ANALYSIS.md` (2026-04-23), корисникот одлучи да ги затвориме сите legacy gaps пред да се пишува end-to-end упатство. Reason: „Нема поента да правиме упатство за нешто што ќе се менува".
+>
+> **Принцип на редослед:** small wins прво за momentum, потоа medium, потоа XL. Секој таск оди преку Verification Protocol (CLAUDE.md §3).
+
+### Wave A — Quick wins
+
+- [/] **P15.1** ArtKatBrStara (partner SKU) explicit field on `Item` + lookup helper + import-mapping integration
+- [ ] **P15.2** Traffic light UI component за guarantee balance (Red ≥ limit, Yellow ≤ 10% available, Green > 10%)
+- [ ] **P15.3** `Skart` entity + flow (defective-on-intake) — legacy `FakturiU5Skart` еквивалент. Reduces available IM qty пред Normativi распределба.
+- [ ] **P15.4** NaimU5 rollup query — `GET /api/customs/declarations/{id}/naim` group by (TarBr, EdMerCar, ZemjaPoteklo) за PEE XML + reports.
+- [ ] **P15.5** `GuaranteeBalanceSnapshot` entity + background job за monthly snapshot (legacy `tblSostojbaNaGarancija`).
+
+### Wave B — Waste + production templates
+
+- [ ] **P15.6** 4 waste slots + Zaguba on `Item` (ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba + %s) + cascade на `BOMLine` + `ProductionOrderMaterial` + inventory waste tracking per-slot.
+- [ ] **P15.7** `NormativTemplate` (O/S) entity + auto-apply на PO release (per-partner templates за LEARGV/DELPHI/GENTHERM-style shortcut).
+
+### Wave C — Multi-producer distribution
+
+- [ ] **P15.8** `ProducerAssignment` entity + `CreatePodelbaCommand` што атомично сплити еден Receipt на N inventory balances по producer. Frontend: `/warehouse/podelba` со bulk-split UI.
+- [ ] **P15.9** `Izdatnica` + `Ispratnica` entities + PDF/XML form generation (EXA3 за EX; VS7 за Vrakanje).
+
+### Wave D — Certification + reports
+
+- [ ] **P15.10** Zaverka state machine на `CustomsDeclaration` (Draft → Registered → Submitted → Certified → Released) + guard за guarantee credit (credit activates только после Certified).
+- [ ] **P15.11** Legacy reports parity:
+  - `rptRazdolzuvanje` — per-closure release summary
+  - `rptG20-G30Mesecno` — monthly customs register
+  - `rptOtpad` — waste register (зависи од P15.6)
+
+### Wave E — PEE XML communications
+
+- [ ] **P15.12** PEE010 XML (IM submission envelope)
+- [ ] **P15.13** PEE020 XML / response parser (IM clearance response — auto-populate ZaverkaBroj/Datum)
+- [ ] **P15.14** PEE040 XML (waste declaration — depends on P15.6)
+- [ ] **P15.15** PEE050 XML (EX submission)
+
+### DoD за Phase 15
+
+(a) Сите Wave A–E таскови `[x]` со SESSION_LOG запис + доказ (screenshot / curl output).
+(b) Интеграциски тест за секоја нова команда (POST → GET → DB-assert).
+(c) VPS deploy verified на `https://elon.elbosoft.click/`.
+(d) `docs/LEGACY_COVERAGE_ANALYSIS.md` обновен со `[x]` на затворени gaps.
+(e) **После P15 DoD** → пишување на end-to-end user manual (`docs/USER_MANUAL.md`).
+
+---
+
+## Current Active Task
+
+**P15.1** — ArtKatBrStara (partner SKU) explicit field.
+
+*Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

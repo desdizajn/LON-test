@@ -66,6 +66,8 @@ export interface Item {
   createdBy: string;
   updatedAt?: string;
   updatedBy?: string;
+  /** P15.1 — legacy ArtKatBrStara; partner's own SKU for this item. */
+  partnerSKU?: string | null;
 }
 
 export interface ItemFormData {
@@ -79,6 +81,8 @@ export interface ItemFormData {
   countryOfOrigin?: string;
   hsCode?: string;
   isActive: boolean;
+  /** P15.1 — partner / supplier SKU. Optional; empty string treated as null. */
+  partnerSKU?: string;
 }
 
 export interface Partner {

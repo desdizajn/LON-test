@@ -171,9 +171,23 @@ public class ItemsImportExecutor : IImportTargetExecutor
                 existing.ColorCode ??= colorCode;
                 existing.SizeCode ??= sizeCode;
                 existing.ParentItemId ??= parentItemId;
+                // P15.1 — only fill PartnerSKU if currently empty; never overwrite
+                // an already-set crosswalk (operator may have disambiguated it).
+                var rawSku = row.GetOrDefault<string>("partnerSku");
+                var skuNorm = string.IsNullOrWhiteSpace(rawSku) ? null : rawSku.Trim().ToUpperInvariant();
+                existing.PartnerSKU ??= skuNorm;
                 created++;
                 continue;
             }
+            // P15.1 — legacy ArtKatBrStara crosswalk. Accept `partnerSku` column
+            // during bulk import so TEKSPORT-style invoice feeds that reference
+            // the supplier's own SKU can disambiguate against our internal Code.
+            // Normalized to trim+upper; empty → null.
+            var rawPartnerSku = row.GetOrDefault<string>("partnerSku");
+            var partnerSku = string.IsNullOrWhiteSpace(rawPartnerSku)
+                ? null
+                : rawPartnerSku.Trim().ToUpperInvariant();
+
             if (existing is not null && existing.IsDeleted)
             {
                 existing.IsDeleted = false;
@@ -190,6 +204,7 @@ public class ItemsImportExecutor : IImportTargetExecutor
                 existing.ColorCode = colorCode;
                 existing.SizeCode = sizeCode;
                 existing.ParentItemId = parentItemId;
+                existing.PartnerSKU = partnerSku ?? existing.PartnerSKU;
                 created++;
                 continue;
             }
@@ -210,7 +225,8 @@ public class ItemsImportExecutor : IImportTargetExecutor
                 BaseCode = baseCode,
                 ColorCode = colorCode,
                 SizeCode = sizeCode,
-                ParentItemId = parentItemId
+                ParentItemId = parentItemId,
+                PartnerSKU = partnerSku
             };
             await context.Items.AddAsync(item, cancellationToken);
             created++;

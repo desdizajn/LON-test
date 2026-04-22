@@ -36,6 +36,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
       countryOfOrigin: item?.countryOfOrigin || '',
       hsCode: item?.hsCode || '',
       isActive: item?.isActive !== false,
+      partnerSKU: item?.partnerSKU || '',
     },
   });
 
@@ -56,6 +57,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
         countryOfOrigin: item.countryOfOrigin || '',
         hsCode: item.hsCode || '',
         isActive: item.isActive,
+        partnerSKU: item.partnerSKU || '',
       });
     }
   }, [item, reset]);
@@ -172,6 +174,14 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
               control={control}
               label="HS Code"
               placeholder="e.g. 8471.30.00.00"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormInput
+              name="partnerSKU"
+              control={control}
+              label="Partner SKU (ArtKatBrStara)"
+              placeholder="Partner / supplier's own code"
             />
           </Grid>
           <Grid item xs={12} sm={4}>

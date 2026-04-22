@@ -34,7 +34,8 @@ public record ItemResponse(
     string? BaseCode,
     string? ColorCode,
     string? SizeCode,
-    Guid? ParentItemId);
+    Guid? ParentItemId,
+    string? PartnerSKU);
 
 public record UoMResponseShort(
     Guid Id,
@@ -49,6 +50,17 @@ public record UoMResponseShort(
 
 internal static class ItemMappers
 {
+    /// <summary>
+    /// Trim + uppercase + collapse empty → null for <see cref="Item.PartnerSKU"/>.
+    /// Legacy ELON stored " " (single space) for empty — we normalize to null
+    /// so lookups don't collide on whitespace variants.
+    /// </summary>
+    public static string? NormalizeSku(string? sku)
+    {
+        if (string.IsNullOrWhiteSpace(sku)) return null;
+        return sku.Trim().ToUpperInvariant();
+    }
+
     public static ItemResponse Map(Item item) => new(
         item.Id,
         item.Code,
@@ -80,7 +92,8 @@ internal static class ItemMappers
         item.BaseCode,
         item.ColorCode,
         item.SizeCode,
-        item.ParentItemId);
+        item.ParentItemId,
+        item.PartnerSKU);
 }
 
 // -----------------------------------------------------------------------------
@@ -104,7 +117,9 @@ public sealed class GetItemsQueryHandler : IQueryHandler<GetItemsQuery, List<Ite
         if (!string.IsNullOrEmpty(request.Search))
         {
             var s = request.Search;
-            query = query.Where(i => i.Code.Contains(s) || i.Name.Contains(s));
+            query = query.Where(i => i.Code.Contains(s)
+                                      || i.Name.Contains(s)
+                                      || (i.PartnerSKU != null && i.PartnerSKU.Contains(s)));
         }
 
         var items = await query.ToListAsync(ct);
@@ -148,7 +163,8 @@ public sealed record CreateItemCommand(
     string? CountryOfOrigin,
     string? HSCode,
     bool IsActive,
-    decimal? StandardCost) : ICommand<ItemResponse>;
+    decimal? StandardCost,
+    string? PartnerSKU = null) : ICommand<ItemResponse>;
 
 public sealed class CreateItemCommandHandler : ICommandHandler<CreateItemCommand, ItemResponse>
 {
@@ -171,6 +187,7 @@ public sealed class CreateItemCommandHandler : ICommandHandler<CreateItemCommand
             CountryOfOrigin = request.CountryOfOrigin,
             BaseUoMId = request.UoMId,
             StandardCost = request.StandardCost ?? 0m,
+            PartnerSKU = ItemMappers.NormalizeSku(request.PartnerSKU),
             IsDeleted = !request.IsActive
         };
 
@@ -200,7 +217,8 @@ public sealed record UpdateItemCommand(
     string? CountryOfOrigin,
     string? HSCode,
     bool IsActive,
-    decimal? StandardCost) : ICommand<ItemResponse?>;
+    decimal? StandardCost,
+    string? PartnerSKU = null) : ICommand<ItemResponse?>;
 
 public sealed class UpdateItemCommandHandler : ICommandHandler<UpdateItemCommand, ItemResponse?>
 {
@@ -223,6 +241,7 @@ public sealed class UpdateItemCommandHandler : ICommandHandler<UpdateItemCommand
         item.CountryOfOrigin = request.CountryOfOrigin;
         item.BaseUoMId = request.UoMId;
         item.StandardCost = request.StandardCost ?? item.StandardCost;
+        item.PartnerSKU = ItemMappers.NormalizeSku(request.PartnerSKU);
         item.IsDeleted = !request.IsActive;
 
         await _context.SaveChangesAsync(ct);

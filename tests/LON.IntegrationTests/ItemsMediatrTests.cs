@@ -139,7 +139,92 @@ public class ItemsMediatrTests : IClassFixture<LonApiFactory>
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    /// <summary>
+    /// P15.1 — partner SKU (legacy ArtKatBrStara) round-trip. Creates an item
+    /// with a mixed-case / whitespace-padded partnerSKU and asserts the
+    /// handler normalizes to trimmed + upper-cased on write and round-trips
+    /// on read. Also verifies the list-search picks it up.
+    /// </summary>
+    [Fact]
+    public async Task Create_WithPartnerSku_NormalizesAndRoundTrips()
+    {
+        var client = await AuthedAsync();
+        var uoms = await client.GetFromJsonAsync<List<UoMRow>>("/api/MasterData/uom");
+        var uom = uoms!.First(u => u.IsActive).Id;
+
+        var code = $"P15-1-SKU-{Guid.NewGuid():N}".Substring(0, 20);
+        var rawSku = "  abc-XYZ-42  ";
+        var expectedSku = "ABC-XYZ-42"; // trimmed + upper-cased
+        var create = await client.PostAsJsonAsync("/api/MasterData/items", new
+        {
+            code,
+            name = "partner sku roundtrip",
+            itemType = ItemType.RawMaterial,
+            uoMId = uom,
+            isBatchRequired = false,
+            isMRNRequired = false,
+            isActive = true,
+            partnerSKU = rawSku
+        });
+        create.StatusCode.Should().Be(HttpStatusCode.OK);
+        var created = await create.Content.ReadFromJsonAsync<ItemWithSkuRow>();
+        created!.PartnerSKU.Should().Be(expectedSku);
+
+        // Re-fetch hits a fresh handler + fresh EF query → verifies persisted state.
+        var refetch = await client.GetFromJsonAsync<ItemWithSkuRow>($"/api/MasterData/items/{created.Id}");
+        refetch!.PartnerSKU.Should().Be(expectedSku);
+
+        // Search by partial partner SKU surfaces the item (P15.1 added to GetItemsQuery).
+        var list = await client.GetFromJsonAsync<List<ItemWithSkuRow>>(
+            $"/api/MasterData/items?search={expectedSku.Substring(0, 6)}");
+        list!.Should().Contain(r => r.Id == created.Id);
+    }
+
+    /// <summary>
+    /// P15.1 — update flow must clear PartnerSKU when operator removes it,
+    /// not persist the previous value. Empty string normalizes to null.
+    /// </summary>
+    [Fact]
+    public async Task Update_ClearingPartnerSku_PersistsNull()
+    {
+        var client = await AuthedAsync();
+        var uoms = await client.GetFromJsonAsync<List<UoMRow>>("/api/MasterData/uom");
+        var uom = uoms!.First(u => u.IsActive).Id;
+
+        var code = $"P15-1-CLR-{Guid.NewGuid():N}".Substring(0, 20);
+        var create = await client.PostAsJsonAsync("/api/MasterData/items", new
+        {
+            code,
+            name = "initial with sku",
+            itemType = ItemType.RawMaterial,
+            uoMId = uom,
+            isBatchRequired = false,
+            isMRNRequired = false,
+            isActive = true,
+            partnerSKU = "INITIAL-SKU"
+        });
+        var created = await create.Content.ReadFromJsonAsync<ItemWithSkuRow>();
+        created!.PartnerSKU.Should().Be("INITIAL-SKU");
+
+        // Clear the SKU on update (empty string → null)
+        var update = await client.PutAsJsonAsync($"/api/MasterData/items/{created.Id}", new
+        {
+            code = created.Code,
+            name = created.Name,
+            itemType = ItemType.RawMaterial,
+            uoMId = uom,
+            isBatchRequired = false,
+            isMRNRequired = false,
+            isActive = true,
+            partnerSKU = "   " // whitespace → null
+        });
+        update.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await update.Content.ReadFromJsonAsync<ItemWithSkuRow>();
+        updated!.PartnerSKU.Should().BeNull();
+    }
+
     private sealed record LoginResponse(string AccessToken);
     private sealed record UoMRow(Guid Id, string Code, string Name, bool IsActive);
     private sealed record ItemRow(Guid Id, string Code, string Name, bool IsActive);
+    private sealed record ItemWithSkuRow(Guid Id, string Code, string Name, bool IsActive, string? PartnerSKU);
 }

@@ -37,5 +37,13 @@ public class ItemsTargetSchema : IImportTargetSchema
             Notes: "From e.g. column R (materials) or auto-parsed (FG)."),
         new("sizeCode", "Size / dimension", ImportTargetFieldType.String, Required: false, Scope: ImportTargetFieldScope.Row,
             Notes: "From e.g. column S (materials) or auto-parsed (FG)."),
+
+        // P15.1 — legacy ArtKatBrStara (partner / supplier SKU crosswalk).
+        // Populates Item.PartnerSKU so future bulk-invoice imports that
+        // reference the supplier's own code can resolve back to this item
+        // without manual disambiguation.
+        new("partnerSku", "Partner SKU (ArtKatBrStara)", ImportTargetFieldType.String, Required: false,
+            Scope: ImportTargetFieldScope.Row,
+            Notes: "Partner's own code for this item. Trimmed + upper-cased; empty treated as null."),
     };
 }
