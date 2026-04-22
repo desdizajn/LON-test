@@ -9,6 +9,9 @@ const WarehouseUtilization: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const [search, setSearch] = useState('');
+  const [zoneFilter, setZoneFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'occupied' | 'empty'>('all');
 
   useEffect(() => {
     loadData();
@@ -118,15 +121,29 @@ const WarehouseUtilization: React.FC = () => {
     };
   });
 
-  const topOccupiedLocations = locationDetails
+  const q = search.trim().toLowerCase();
+  const matchesSearch = (loc: typeof locationDetails[number]) => {
+    if (!q) return true;
+    const hay = `${loc.code} ${loc.name} ${loc.warehouseName} ${loc.zone}`.toLowerCase();
+    return hay.includes(q);
+  };
+  const matchesZone = (loc: typeof locationDetails[number]) => !zoneFilter || loc.zone === zoneFilter;
+
+  const matchedLocations = locationDetails.filter((loc) => matchesSearch(loc) && matchesZone(loc));
+
+  const topOccupiedLocations = matchedLocations
     .filter(loc => loc.isOccupied)
     .sort((a, b) => b.itemCount - a.itemCount)
     .slice(0, 20);
 
-  const emptyLocationsList = locationDetails
+  const emptyLocationsList = matchedLocations
     .filter(loc => !loc.isOccupied)
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 20);
+
+  const distinctZones = Array.from(new Set(locationDetails.map((l) => l.zone).filter((z) => z && z !== '-'))).sort();
+  const showOccupied = statusFilter !== 'empty';
+  const showEmpty = statusFilter !== 'occupied';
 
   // Export to Excel
   const exportToExcel = () => {
@@ -172,18 +189,55 @@ const WarehouseUtilization: React.FC = () => {
 
       {/* Filter */}
       <div className="card" style={{ padding: '15px', marginBottom: '20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '10px', alignItems: 'center' }}>
-          <label>Filter by Warehouse:</label>
-          <select
-            className="form-control"
-            value={selectedWarehouse}
-            onChange={(e) => setSelectedWarehouse(e.target.value)}
-          >
-            <option value="">All Warehouses</option>
-            {warehouses.map(wh => (
-              <option key={wh.id} value={wh.id}>{wh.name}</option>
-            ))}
-          </select>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', alignItems: 'end' }}>
+          <div>
+            <label>{t('reports.warehouseUtilization.filterWarehouse')}:</label>
+            <select
+              className="form-control"
+              value={selectedWarehouse}
+              onChange={(e) => setSelectedWarehouse(e.target.value)}
+            >
+              <option value="">{t('reports.warehouseUtilization.allWarehouses')}</option>
+              {warehouses.map(wh => (
+                <option key={wh.id} value={wh.id}>{wh.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>{t('reports.warehouseUtilization.filterZone')}:</label>
+            <select
+              className="form-control"
+              value={zoneFilter}
+              onChange={(e) => setZoneFilter(e.target.value)}
+            >
+              <option value="">{t('reports.warehouseUtilization.allZones')}</option>
+              {distinctZones.map((z) => (
+                <option key={z} value={z}>{z}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>{t('reports.warehouseUtilization.filterStatus')}:</label>
+            <select
+              className="form-control"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            >
+              <option value="all">{t('reports.warehouseUtilization.statusAll')}</option>
+              <option value="occupied">{t('reports.warehouseUtilization.statusOccupied')}</option>
+              <option value="empty">{t('reports.warehouseUtilization.statusEmpty')}</option>
+            </select>
+          </div>
+          <div>
+            <label>{t('common.search')}:</label>
+            <input
+              type="text"
+              className="form-control"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('reports.warehouseUtilization.searchPlaceholder') as string}
+            />
+          </div>
         </div>
       </div>
 
@@ -327,8 +381,9 @@ const WarehouseUtilization: React.FC = () => {
       )}
 
       {/* Top Occupied Locations & Empty Locations */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: showOccupied && showEmpty ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '30px' }}>
         {/* Top Occupied Locations */}
+        {showOccupied && (
         <div className="card" style={{ padding: '15px' }}>
           <h5>📦 Top 20 Occupied Locations (by Item Count)</h5>
           <div className="table-container" style={{ marginTop: '15px', maxHeight: '500px', overflowY: 'auto' }}>
@@ -358,8 +413,10 @@ const WarehouseUtilization: React.FC = () => {
             </table>
           </div>
         </div>
+        )}
 
         {/* Empty Locations */}
+        {showEmpty && (
         <div className="card" style={{ padding: '15px' }}>
           <h5>📭 Empty Locations (First 20)</h5>
           <div className="table-container" style={{ marginTop: '15px', maxHeight: '500px', overflowY: 'auto' }}>
@@ -387,6 +444,7 @@ const WarehouseUtilization: React.FC = () => {
             </table>
           </div>
         </div>
+        )}
       </div>
 
       {/* Recommendations */}

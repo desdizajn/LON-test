@@ -1037,9 +1037,29 @@
     "inventoryByMrn": { "title": "Inventory by MRN" },
     "blockedInventory": { "title": "Blocked Inventory" },
     "movements": { "title": "Movement Report" },
-    "cycleCountAccuracy": { "title": "Cycle Count Accuracy" },
-    "warehouseUtilization": { "title": "Warehouse Utilization" },
-    "wmsDashboard": { "title": "WMS Dashboard" }
+    "cycleCountAccuracy": {
+      "title": "Cycle Count Accuracy",
+      "bucket": "Quick filter",
+      "bucketAll": "All"
+    },
+    "warehouseUtilization": {
+      "title": "Warehouse Utilization",
+      "filterWarehouse": "Warehouse",
+      "allWarehouses": "All warehouses",
+      "filterZone": "Zone",
+      "allZones": "All zones",
+      "filterStatus": "Status",
+      "statusAll": "All",
+      "statusOccupied": "Occupied",
+      "statusEmpty": "Empty",
+      "searchPlaceholder": "Search location / warehouse / zone..."
+    },
+    "wmsDashboard": {
+      "title": "WMS Dashboard",
+      "movementPeriod": "Movement period",
+      "movementHeader": "Movement ({{days}} days)",
+      "tableSearchPlaceholder": "Search item / location in tables..."
+    }
   },
   "inventoryByMrn": {
     "criticalHeader": "Critical for customs compliance!",

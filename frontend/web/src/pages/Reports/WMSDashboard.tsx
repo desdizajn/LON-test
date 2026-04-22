@@ -9,6 +9,8 @@ const WMSDashboard: React.FC = () => {
   const [shipments, setShipments] = useState<any[]>([]);
   const [pickTasks, setPickTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [movementPeriod, setMovementPeriod] = useState<number>(30);
+  const [tableSearch, setTableSearch] = useState('');
 
   useEffect(() => {
     loadData();
@@ -51,12 +53,12 @@ const WMSDashboard: React.FC = () => {
   const completedPickTasks = pickTasks.filter(pt => pt.status === 4).length;
   const pickTaskCompletionRate = pickTasks.length > 0 ? (completedPickTasks / pickTasks.length * 100).toFixed(1) : 0;
 
-  // Movement Metrics (Last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const recentReceipts = receipts.filter(r => new Date(r.receiptDate) >= thirtyDaysAgo);
-  const recentShipments = shipments.filter(s => new Date(s.shipmentDate) >= thirtyDaysAgo);
+  // Movement Metrics (selectable period)
+  const periodCutoff = new Date();
+  periodCutoff.setDate(periodCutoff.getDate() - movementPeriod);
+
+  const recentReceipts = receipts.filter(r => new Date(r.receiptDate) >= periodCutoff);
+  const recentShipments = shipments.filter(s => new Date(s.shipmentDate) >= periodCutoff);
 
   // Top Items by Quantity
   const itemQuantities = inventory.reduce((acc: any, inv: any) => {
@@ -68,7 +70,9 @@ const WMSDashboard: React.FC = () => {
     acc[itemCode].quantity += inv.quantity;
     return acc;
   }, {});
+  const q = tableSearch.trim().toLowerCase();
   const topItems = Object.values(itemQuantities)
+    .filter((it: any) => !q || `${it.code} ${it.name}`.toLowerCase().includes(q))
     .sort((a: any, b: any) => b.quantity - a.quantity)
     .slice(0, 10);
 
@@ -83,6 +87,7 @@ const WMSDashboard: React.FC = () => {
     return acc;
   }, {});
   const topLocations = Object.values(locationQuantities)
+    .filter((loc: any) => !q || loc.name.toLowerCase().includes(q))
     .sort((a: any, b: any) => b.items - a.items)
     .slice(0, 10);
 
@@ -110,8 +115,26 @@ const WMSDashboard: React.FC = () => {
       <div className="header">
         <h2>📊 {t('reports.wmsDashboard.title')}</h2>
         <button className="btn btn-primary" onClick={loadData}>
-          🔄 Refresh
+          🔄 {t('common.refresh')}
         </button>
+      </div>
+
+      <div className="card" style={{ padding: '12px', marginBottom: '20px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <label>{t('reports.wmsDashboard.movementPeriod')}:&nbsp;
+          <select className="form-control" value={movementPeriod} onChange={(e) => setMovementPeriod(Number(e.target.value))} style={{ display: 'inline-block', width: 'auto' }}>
+            <option value={7}>{t('productionCompleted.period7')}</option>
+            <option value={30}>{t('productionCompleted.period30')}</option>
+            <option value={90}>{t('productionCompleted.period90')}</option>
+            <option value={365}>{t('productionCompleted.period365')}</option>
+          </select>
+        </label>
+        <input
+          type="text"
+          value={tableSearch}
+          onChange={(e) => setTableSearch(e.target.value)}
+          placeholder={t('reports.wmsDashboard.tableSearchPlaceholder') as string}
+          style={{ padding: 6, minWidth: 240, marginLeft: 'auto' }}
+        />
       </div>
 
       {/* Main KPI Cards */}
@@ -185,7 +208,7 @@ const WMSDashboard: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '15px' }}>
-          <h5>📈 Movement (Last 30 Days)</h5>
+          <h5>📈 {t('reports.wmsDashboard.movementHeader', { days: movementPeriod })}</h5>
           <div style={{ marginTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
               <span>📥 Receipts</span>

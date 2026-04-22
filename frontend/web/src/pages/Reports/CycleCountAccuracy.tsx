@@ -18,6 +18,7 @@ const CycleCountAccuracy: React.FC = () => {
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [accuracyBucket, setAccuracyBucket] = useState<'all' | 'excellent' | 'good' | 'poor'>('all');
 
   useEffect(() => {
     loadData();
@@ -68,14 +69,21 @@ const CycleCountAccuracy: React.FC = () => {
   const totalCounts = filteredCounts.length;
   const completedCounts = filteredCounts.filter(cc => cc.status === 2).length; // Assuming 2 = Completed
   
-  const accuracyMetrics = filteredCounts
+  const accuracyMetricsAll = filteredCounts
     .filter(cc => cc.status === 2)
     .map(cc => ({
       ...cc,
       accuracy: calculateAccuracy(cc),
-      totalVariance: cc.lines?.reduce((sum: number, line: any) => 
+      totalVariance: cc.lines?.reduce((sum: number, line: any) =>
         sum + Math.abs(line.countedQuantity - line.systemQuantity), 0) || 0,
     }));
+
+  const accuracyMetrics = accuracyMetricsAll.filter((cc) => {
+    if (accuracyBucket === 'excellent') return cc.accuracy >= 98;
+    if (accuracyBucket === 'good') return cc.accuracy >= 95 && cc.accuracy < 98;
+    if (accuracyBucket === 'poor') return cc.accuracy < 95;
+    return true;
+  });
 
   const averageAccuracy = accuracyMetrics.length > 0
     ? accuracyMetrics.reduce((sum, cc) => sum + cc.accuracy, 0) / accuracyMetrics.length
@@ -250,6 +258,21 @@ const CycleCountAccuracy: React.FC = () => {
               ))}
             </select>
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <strong style={{ fontSize: 12, color: '#666' }}>{t('reports.cycleCountAccuracy.bucket')}:</strong>
+          <button onClick={() => setAccuracyBucket('all')} style={{ padding: '4px 10px', fontWeight: accuracyBucket === 'all' ? 'bold' : 'normal' }}>
+            {t('reports.cycleCountAccuracy.bucketAll')} ({accuracyMetricsAll.length})
+          </button>
+          <button onClick={() => setAccuracyBucket('excellent')} style={{ padding: '4px 10px', fontWeight: accuracyBucket === 'excellent' ? 'bold' : 'normal', color: '#28a745' }}>
+            ≥98% ({accuracyMetricsAll.filter(x => x.accuracy >= 98).length})
+          </button>
+          <button onClick={() => setAccuracyBucket('good')} style={{ padding: '4px 10px', fontWeight: accuracyBucket === 'good' ? 'bold' : 'normal', color: '#ffc107' }}>
+            95–98% ({accuracyMetricsAll.filter(x => x.accuracy >= 95 && x.accuracy < 98).length})
+          </button>
+          <button onClick={() => setAccuracyBucket('poor')} style={{ padding: '4px 10px', fontWeight: accuracyBucket === 'poor' ? 'bold' : 'normal', color: '#dc3545' }}>
+            &lt;95% ({accuracyMetricsAll.filter(x => x.accuracy < 95).length})
+          </button>
         </div>
       </div>
 

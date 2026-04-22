@@ -1037,9 +1037,29 @@
     "inventoryByMrn": { "title": "Stoqet sipas MRN" },
     "blockedInventory": { "title": "Stoqe të bllokuara" },
     "movements": { "title": "Raporti i lëvizjeve" },
-    "cycleCountAccuracy": { "title": "Saktësia e inventarizimit" },
-    "warehouseUtilization": { "title": "Shfrytëzimi i magazinës" },
-    "wmsDashboard": { "title": "Paneli WMS" }
+    "cycleCountAccuracy": {
+      "title": "Saktësia e inventarizimit",
+      "bucket": "Filtër i shpejtë",
+      "bucketAll": "Të gjitha"
+    },
+    "warehouseUtilization": {
+      "title": "Shfrytëzimi i magazinës",
+      "filterWarehouse": "Magazina",
+      "allWarehouses": "Të gjitha magazinat",
+      "filterZone": "Zona",
+      "allZones": "Të gjitha zonat",
+      "filterStatus": "Statusi",
+      "statusAll": "Të gjitha",
+      "statusOccupied": "Të zëna",
+      "statusEmpty": "Të zbrazëta",
+      "searchPlaceholder": "Kërko lokacion / magazinë / zonë..."
+    },
+    "wmsDashboard": {
+      "title": "Paneli WMS",
+      "movementPeriod": "Periudha e lëvizjeve",
+      "movementHeader": "Lëvizje ({{days}} ditë)",
+      "tableSearchPlaceholder": "Kërko artikull / lokacion në tabela..."
+    }
   },
   "inventoryByMrn": {
     "criticalHeader": "Kritike për përputhshmëri doganore!",

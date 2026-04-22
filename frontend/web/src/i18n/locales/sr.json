@@ -1037,9 +1037,29 @@
     "inventoryByMrn": { "title": "Залихе по MRN" },
     "blockedInventory": { "title": "Блокиране залихе" },
     "movements": { "title": "Извештај покрета" },
-    "cycleCountAccuracy": { "title": "Тачност пописа" },
-    "warehouseUtilization": { "title": "Искоришћеност магацина" },
-    "wmsDashboard": { "title": "WMS контролна табла" }
+    "cycleCountAccuracy": {
+      "title": "Тачност пописа",
+      "bucket": "Брзи филтер",
+      "bucketAll": "Сви"
+    },
+    "warehouseUtilization": {
+      "title": "Искоришћеност магацина",
+      "filterWarehouse": "Магацин",
+      "allWarehouses": "Сви магацини",
+      "filterZone": "Зона",
+      "allZones": "Све зоне",
+      "filterStatus": "Статус",
+      "statusAll": "Сви",
+      "statusOccupied": "Заузети",
+      "statusEmpty": "Празни",
+      "searchPlaceholder": "Претрага локације / магацина / зоне..."
+    },
+    "wmsDashboard": {
+      "title": "WMS контролна табла",
+      "movementPeriod": "Период за покрете",
+      "movementHeader": "Покрети ({{days}} дана)",
+      "tableSearchPlaceholder": "Претрага артикла / локације у табелама..."
+    }
   },
   "inventoryByMrn": {
     "criticalHeader": "Критично за царинску усаглашеност!",
