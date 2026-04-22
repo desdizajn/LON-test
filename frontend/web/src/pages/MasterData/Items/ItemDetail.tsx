@@ -27,6 +27,7 @@ const ItemDetail: React.FC = () => {
 
   useEffect(() => {
     loadItem();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadItem = async () => {

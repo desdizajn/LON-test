@@ -248,7 +248,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.cuttingQueue',
         icon: '✂️',
         path: '/production/cutting-queue',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — cutting queue',
         plannedBehavior:
           'Queue на налози чекаат кроење: prioritet, required material (со shortage flags), estimated minutes, allotted machine. Со drag-to-reorder приоритизација.',
@@ -258,7 +258,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.sewingQueue',
         icon: '🧵',
         path: '/production/sewing-queue',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — sewing queue',
         plannedBehavior:
           'Queue на налози во шиење: по линија / оператор / машина. WIP visibility, required operations per route, capacity check.',
@@ -292,7 +292,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.minutesVariance',
         icon: '⏱️',
         path: '/production/minutes-variance',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — standard vs actual minutes',
         plannedBehavior:
           'Routing standard минути vs actual time log: отклони по налог / оператор / линија. Критично за billing (фабриката продава минути).',
@@ -302,7 +302,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.production.rework',
         icon: '🔁',
         path: '/production/rework',
-        backendStatus: 'partial',
+        backendStatus: 'exists',
         workPlanRef: 'P4.6 — waste slots (backend exists)',
         plannedBehavior:
           'Rework и waste парчиња: причина, cost impact, responsible operator/machine. P4.6 backend постои; UI недостасува.',
@@ -352,7 +352,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.packing',
         icon: '📦',
         path: '/finished/packing',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P4.X — packing in progress',
         plannedBehavior:
           'Налози во тек на пакување: % complete, pack station, оператор. Real-time update како парчињата се пакуваат.',
@@ -378,7 +378,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.packLists',
         icon: '📋',
         path: '/finished/pack-lists',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P4.X — pack list / label generation',
         plannedBehavior:
           'Генерирање на pack lists + етикети во клиентски формат. Templates per клиент.',
@@ -396,7 +396,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finishedGoods.returns',
         icon: '↩️',
         path: '/finished/returns',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P4.X — RMA flow',
         plannedBehavior:
           'Враќања и рекламации од клиент: причина, qty, action (rework / replace / credit note). Со царински импликации.',
@@ -469,7 +469,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.overtime',
         icon: '⏰',
         path: '/hr/overtime',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — overtime tracking',
         plannedBehavior:
           'Overtime по оператор: колку, причина, approved / pending. Кумулативно за месецот за плата.',
@@ -479,7 +479,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.performance',
         icon: '📈',
         path: '/hr/performance',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — operator performance metrics',
         plannedBehavior:
           'Учин по оператор: минути искористени vs стандардни, парчиња произведени, quality score. Ranking и тренд низ време.',
@@ -497,7 +497,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.training',
         icon: '🎓',
         path: '/hr/training',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — training & certifications',
         plannedBehavior:
           'Сертификати на вработени per machine type / operation. Рок на важност, предупредувања пред истек.',
@@ -507,7 +507,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.payrollExport',
         icon: '💳',
         path: '/hr/payroll-export',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — payroll hours aggregation',
         plannedBehavior:
           'Export на вкупни часови за плата: регуларни + overtime + bonus. Export формат компатибилен со надворешен payroll систем.',
@@ -556,7 +556,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.oee',
         icon: '📊',
         path: '/machines/oee',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — OEE calculation',
         plannedBehavior:
           'OEE (Availability × Performance × Quality) по машина / линија / смена. Benchmark vs target + тренд низ време.',
@@ -582,7 +582,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.capacity',
         icon: '📈',
         path: '/machines/capacity',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — capacity utilization',
         plannedBehavior:
           'Искористеност: планиран vs actual часови per машина / линија / смена. Daily / weekly / monthly rollup.',
@@ -592,7 +592,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.setupTime',
         icon: '⏱️',
         path: '/machines/setup-time',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — setup time analysis',
         plannedBehavior:
           'Changeover минути per машина: колку време се троши на setup/switchover. Идентификација на bottleneck setup-и.',
@@ -602,7 +602,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.machines.bottleneck',
         icon: '🚧',
         path: '/machines/bottleneck',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — bottleneck analysis',
         plannedBehavior:
           'Constraint view за денешниот план: која машина е bottleneck? Што чекаат нејзе? Предложени corrective actions.',
@@ -656,7 +656,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.costAccounting',
         icon: '🧮',
         path: '/finance/cost-accounting',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — cost per minute',
         plannedBehavior:
           'Cost accounting: чинење на минута на машина × оператор × shift. Support за pricing decisions.',
@@ -666,7 +666,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.margin',
         icon: '📈',
         path: '/finance/margin',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — margin analysis',
         plannedBehavior:
           'Маржа по клиент / налог: revenue (invoiced rate × qty) минус cost (actual minutes × cost rate). Preview пред endgame.',
@@ -676,7 +676,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.ap',
         icon: '📤',
         path: '/finance/ap',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — accounts payable',
         plannedBehavior:
           'Добавувач invoices: packaging, energy, spare parts. Отворени / платени, due dates.',
@@ -686,7 +686,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.payroll',
         icon: '💳',
         path: '/finance/payroll',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — payroll aggregate from HR',
         plannedBehavior:
           'Aggregate плати за месецот: вкупно часови регуларни + overtime + bonus × шифри. Feed од /hr/payroll-export.',
@@ -696,7 +696,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.pnl',
         icon: '📊',
         path: '/finance/pnl',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — P&L preview',
         plannedBehavior:
           'Месечен P&L preview: revenue, direct cost, overhead, margin. Со compare to target.',
@@ -706,7 +706,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.cashFlow',
         icon: '💸',
         path: '/finance/cash-flow',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — cash flow forecast',
         plannedBehavior:
           '30 / 60 / 90 day forecast: expected AR inflow, AP outflow, пресек. Risk flags.',
@@ -716,7 +716,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.reports',
         icon: '📋',
         path: '/finance/reports',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — financial reports',
         plannedBehavior:
           'Сметководствени извештаи за управа, ревизор, финансиско: BS, IS, CF, статутарни формати.',
@@ -759,7 +759,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.capacity',
         icon: '📈',
         path: '/management/capacity',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P3.X — capacity rollup',
         plannedBehavior:
           'Capacity utilization: машини + оператори. Planned hours vs actual hours. Weekly / monthly.',
@@ -779,7 +779,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.margin',
         icon: '💹',
         path: '/management/margin',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — margin per customer (mgr lens)',
         plannedBehavior:
           'Management lens на margin: не detailed financial но trend + alerts за клиенти со падната маржа.',
@@ -799,7 +799,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.risks',
         icon: '⚠️',
         path: '/management/risks',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P6.X — open risks register',
         plannedBehavior:
           'Отворени ризици: царински (деадлине), operational (машина, кадар), финансиски (клиент overdue), legal.',
@@ -809,7 +809,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.trends',
         icon: '📉',
         path: '/management/trends',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P6.X — 3M / 6M / 12M trends',
         plannedBehavior:
           'Тренд analysis на ключни metrics: production volume, margin, on-time, headcount. Compare year-over-year.',
@@ -819,7 +819,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.escalations',
         icon: '🔥',
         path: '/management/escalations',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P6.X — escalations',
         plannedBehavior:
           'Налози што бараат управувачка одлука: доцнат, клиент тражи extension, legal issue, budget override.',
@@ -829,7 +829,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.clientScorecard',
         icon: '📇',
         path: '/management/client-scorecard',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P5.X — per-client scorecard',
         plannedBehavior:
           'Client scorecard: volume, margin, on-time, payment behavior, риск rating. Помага за renewal / expansion одлуки.',
@@ -839,7 +839,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.monthlyPack',
         icon: '📰',
         path: '/management/monthly-pack',
-        backendStatus: 'missing',
+        backendStatus: 'exists',
         workPlanRef: 'P6.X — monthly review pack',
         plannedBehavior:
           'Printable / exportable pack: exec summary, key metrics, wins/losses, next month focus. За board meetings.',

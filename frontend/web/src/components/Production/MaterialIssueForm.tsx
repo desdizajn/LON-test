@@ -36,6 +36,7 @@ const MaterialIssueForm: React.FC<MaterialIssueFormProps> = ({ productionOrderId
   useEffect(() => {
     loadOrders();
     loadUoms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadOrders = async () => {

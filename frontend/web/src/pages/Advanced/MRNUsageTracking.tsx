@@ -3,9 +3,9 @@ import { wmsApi } from '../../services/api';
 
 const MRNUsageTracking: React.FC = () => {
   const [mrns, setMRNs] = useState<any[]>([]);
-  const [inventory, setInventory] = useState<any[]>([]);
+  const [, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMRN, setSelectedMRN] = useState<string>('');
+  const [, setSelectedMRN] = useState<string>('');
   const [mrnDetails, setMRNDetails] = useState<any>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Depleted'>('all');

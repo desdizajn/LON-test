@@ -51,6 +51,7 @@ const Dashboard: React.FC = () => {
     }
     hasLoadedRef.current = true;
     loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   const loadDashboard = async () => {

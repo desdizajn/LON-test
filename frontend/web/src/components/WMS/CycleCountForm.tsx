@@ -37,7 +37,7 @@ const CycleCountForm: React.FC<CycleCountFormProps> = ({ onSuccess, onCancel }) 
 
   const [locations, setLocations] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [inventoryBalances, setInventoryBalances] = useState<any[]>([]);
+  const [, setInventoryBalances] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingInventory, setLoadingInventory] = useState(false);
   const [error, setError] = useState('');

@@ -24,7 +24,7 @@ const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel }) => {
   const [items, setItems] = useState<any[]>([]);
   const [fromLocations, setFromLocations] = useState<any[]>([]);
   const [toLocations, setToLocations] = useState<any[]>([]);
-  const [uoms, setUoms] = useState<any[]>([]);
+  const [, setUoms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

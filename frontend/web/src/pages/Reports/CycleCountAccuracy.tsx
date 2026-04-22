@@ -66,7 +66,6 @@ const CycleCountAccuracy: React.FC = () => {
   };
 
   // Overall metrics
-  const totalCounts = filteredCounts.length;
   const completedCounts = filteredCounts.filter(cc => cc.status === 2).length; // Assuming 2 = Completed
   
   const accuracyMetricsAll = filteredCounts

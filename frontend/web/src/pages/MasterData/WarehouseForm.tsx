@@ -27,6 +27,7 @@ const WarehouseForm: React.FC = () => {
     if (isEditMode) {
       loadWarehouse();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadWarehouse = async () => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { wmsApi, masterDataApi } from '../../services/api';
-import { PickTaskStatus } from '../../types/wms';
 
 interface PickTaskFormProps {
   onSuccess: () => void;

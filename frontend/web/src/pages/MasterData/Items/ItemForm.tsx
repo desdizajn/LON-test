@@ -9,7 +9,7 @@ import FormAutocomplete from '../../../components/forms/FormAutocomplete';
 import { itemsApi, uomApi } from '../../../services/masterDataApi';
 import { useMasterDataStore } from '../../../store/useMasterDataStore';
 import { showSuccess, showError } from '../../../utils/toast';
-import type { Item, ItemFormData, ItemType, UoM } from '../../../types/masterData';
+import type { Item, ItemFormData, UoM } from '../../../types/masterData';
 
 interface ItemFormProps {
   open: boolean;

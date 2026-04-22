@@ -41,6 +41,7 @@ const ItemsList: React.FC = () => {
 
   useEffect(() => {
     loadItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleEdit = (item: Item) => {

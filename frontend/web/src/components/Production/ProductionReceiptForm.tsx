@@ -33,6 +33,7 @@ const ProductionReceiptForm: React.FC<ProductionReceiptFormProps> = ({ productio
   useEffect(() => {
     loadOrders();
     loadLocations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadOrders = async () => {

@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Production from './pages/Production';
-import Customs from './pages/Customs';
 import Guarantees from './pages/Guarantees';
 import Traceability from './pages/Traceability';
 import Sidebar from './components/Sidebar';
@@ -65,8 +64,6 @@ import MRNUsageTracking from './pages/Advanced/MRNUsageTracking';
 import LocationInquiry from './pages/Advanced/LocationInquiry';
 import ItemInquiry from './pages/Advanced/ItemInquiry';
 
-// P6.37 IA — placeholder component for unbuilt views
-import PlaceholderPage from './components/common/PlaceholderPage';
 
 // P5.2.7 — mass location change
 import MassTransfer from './pages/Warehouse/MassTransfer';
@@ -115,11 +112,47 @@ import AuditLog from './pages/Admin/AuditLog';
 // P12.2 / P12.3 — Finance
 import ClientContracts from './pages/Finance/ClientContracts';
 import Invoicing from './pages/Finance/Invoicing';
+// P12.4–P12.10 — Finance extensions (placeholder-to-real conversion)
+import FinanceMargin from './pages/Finance/FinanceMargin';
+import FinanceReports from './pages/Finance/FinanceReports';
+import PnLPreview from './pages/Finance/PnLPreview';
+import CashFlow from './pages/Finance/CashFlow';
+import CostAccounting from './pages/Finance/CostAccounting';
+import SupplierInvoices from './pages/Finance/SupplierInvoices';
+import PayrollAggregate from './pages/Finance/PayrollAggregate';
 
 // P13.1 / P13.3 / P13.5 — Management KPIs
 import OnTimeDelivery from './pages/Management/OnTimeDelivery';
 import ByCustomer from './pages/Management/ByCustomer';
 import Alerts from './pages/Management/Alerts';
+// P13.2 / P13.4 / P13.6–P13.10 — Management extensions
+import CapacityUtilization from './pages/Management/CapacityUtilization';
+import MarginByCustomer from './pages/Management/MarginByCustomer';
+import OpenRisks from './pages/Management/OpenRisks';
+import Trends from './pages/Management/Trends';
+import Escalations from './pages/Management/Escalations';
+import ClientScorecard from './pages/Management/ClientScorecard';
+import MonthlyPack from './pages/Management/MonthlyPack';
+
+// HR extensions
+import Overtime from './pages/Hr/Overtime';
+import Performance from './pages/Hr/Performance';
+import Training from './pages/Hr/Training';
+import PayrollExport from './pages/Hr/PayrollExport';
+
+// Machines extensions
+import MachineOEE from './pages/Machines/MachineOEE';
+import MachineCapacity from './pages/Machines/MachineCapacity';
+import SetupTime from './pages/Machines/SetupTime';
+import Bottleneck from './pages/Machines/Bottleneck';
+
+// Production + Finished Goods extensions
+import OperationQueue from './pages/Production/CuttingQueue';
+import MinutesVariance from './pages/Production/MinutesVariance';
+import Rework from './pages/Production/Rework';
+import Packing from './pages/FinishedGoods/Packing';
+import PackLists from './pages/FinishedGoods/PackLists';
+import Returns from './pages/FinishedGoods/Returns';
 
 import { LayoutProvider } from './components/layout/LayoutContext';
 
@@ -325,74 +358,19 @@ const App: React.FC = () => {
             {/* ───────── P6.37.7 — ✂️ Production group ───────── */}
             <Route path="/production/today" element={<ProductionToday />} />
             <Route path="/production/orders" element={<Production />} />
-            <Route
-              path="/production/cutting-queue"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.cuttingQueue"
-                  workPlanRef="P8.6 — cutting queue"
-                  backendStatus="missing"
-                  plannedBehavior="Queue на налози чекаат кроење: приоритет, required material (со shortage flags), estimated minutes, allotted machine. Drag-to-reorder приоритизација."
-                />
-              }
-            />
-            <Route
-              path="/production/sewing-queue"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.sewingQueue"
-                  workPlanRef="P8.7 — sewing queue"
-                  backendStatus="missing"
-                  plannedBehavior="Queue на налози во шиење: по линија / оператор / машина. WIP visibility, required operations per route, capacity check."
-                />
-              }
-            />
+            <Route path="/production/cutting-queue" element={<OperationQueue operationType="cutting" />} />
+            <Route path="/production/sewing-queue" element={<OperationQueue operationType="sewing" />} />
             <Route path="/production/wip" element={<ProductionWip />} />
             <Route path="/production/at-risk" element={<ProductionAtRisk />} />
             <Route path="/production/shortage" element={<ProductionShortage />} />
-            <Route
-              path="/production/minutes-variance"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.minutesVariance"
-                  workPlanRef="P8.9 — standard vs actual minutes (needs piece-level time log)"
-                  backendStatus="missing"
-                  plannedBehavior="Routing standard минути vs actual time log: отклони по налог / оператор / линија. Критично за billing (фабриката продава минути)."
-                />
-              }
-            />
-            <Route
-              path="/production/rework"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.production"
-                  titleKey="nav.production.rework"
-                  workPlanRef="P8.8 — rework + waste (backend exists, UI missing)"
-                  backendStatus="partial"
-                  plannedBehavior="Rework и waste парчиња: причина, cost impact, responsible operator/machine. P4.6 backend постои; UI недостасува."
-                />
-              }
-            />
+            <Route path="/production/minutes-variance" element={<MinutesVariance />} />
+            <Route path="/production/rework" element={<Rework />} />
             <Route path="/production/completed" element={<ProductionCompleted />} />
             <Route path="/production/search" element={<ScopedSearch scope="production" />} />
 
             {/* ───────── P6.37.8 — 📦 Finished Goods group ───────── */}
             <Route path="/finished/awaiting-pack" element={<AwaitingPack />} />
-            <Route
-              path="/finished/packing"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.packing"
-                  workPlanRef="P4.X — packing in progress"
-                  backendStatus="missing"
-                  plannedBehavior="Налози во тек на пакување: % complete, pack station, оператор. Real-time update како парчињата се пакуваат."
-                />
-              }
-            />
+            <Route path="/finished/packing" element={<Packing />} />
             <Route
               path="/finished/ready-to-ship"
               element={
@@ -413,31 +391,9 @@ const App: React.FC = () => {
                 />
               }
             />
-            <Route
-              path="/finished/pack-lists"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.packLists"
-                  workPlanRef="P4.X — pack list / label generation"
-                  backendStatus="missing"
-                  plannedBehavior="Генерирање на pack lists + етикети во клиентски формат. Templates per клиент."
-                />
-              }
-            />
+            <Route path="/finished/pack-lists" element={<PackLists />} />
             <Route path="/finished/packaging-stock" element={<PackagingStock />} />
-            <Route
-              path="/finished/returns"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finishedGoods"
-                  titleKey="nav.finishedGoods.returns"
-                  workPlanRef="P4.X — RMA flow"
-                  backendStatus="missing"
-                  plannedBehavior="Враќања и рекламации од клиент: причина, qty, action (rework / replace / credit note). Со царински импликации."
-                />
-              }
-            />
+            <Route path="/finished/returns" element={<Returns />} />
             <Route path="/finished/history-by-customer" element={<ShipmentsHistoryByCustomer />} />
             <Route path="/finished/traceability" element={<Navigate to="/customs/traceability" replace />}
             />
@@ -447,110 +403,22 @@ const App: React.FC = () => {
             <Route path="/hr/attendance-today" element={<AttendanceToday />} />
             <Route path="/hr/shifts" element={<ShiftManagement />} />
             <Route path="/hr/absences" element={<Absences />} />
-            <Route
-              path="/hr/overtime"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.overtime"
-                  workPlanRef="P3.X — overtime tracking"
-                  backendStatus="missing"
-                  plannedBehavior="Overtime по оператор: колку, причина, approved / pending. Кумулативно за месецот за плата."
-                />
-              }
-            />
-            <Route
-              path="/hr/performance"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.performance"
-                  workPlanRef="P3.X — operator performance metrics"
-                  backendStatus="missing"
-                  plannedBehavior="Учин по оператор: минути искористени vs стандардни, парчиња произведени, quality score. Ranking и тренд низ време."
-                />
-              }
-            />
+            <Route path="/hr/overtime" element={<Overtime />} />
+            <Route path="/hr/performance" element={<Performance />} />
             <Route path="/hr/assignment" element={<OperatorAssignment />} />
-            <Route
-              path="/hr/training"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.training"
-                  workPlanRef="P3.X — training & certifications"
-                  backendStatus="missing"
-                  plannedBehavior="Сертификати на вработени per machine type / operation. Рок на важност, предупредувања пред истек."
-                />
-              }
-            />
-            <Route
-              path="/hr/payroll-export"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.hr"
-                  titleKey="nav.hr.payrollExport"
-                  workPlanRef="P3.X — payroll hours aggregation"
-                  backendStatus="missing"
-                  plannedBehavior="Export на вкупни часови за плата: регуларни + overtime + bonus. Export формат компатибилен со надворешен payroll систем."
-                />
-              }
-            />
+            <Route path="/hr/training" element={<Training />} />
+            <Route path="/hr/payroll-export" element={<PayrollExport />} />
 
             {/* ───────── P6.37.10 — ⚙️ Machines / Work Centers / Efficiency ───────── */}
             <Route path="/machines/status" element={<MachineStatus />} />
             <Route path="/machines/work-centers" element={<WorkCenterList />} />
             <Route path="/machines/downtime" element={<MachineDowntime />} />
-            <Route
-              path="/machines/oee"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.oee"
-                  workPlanRef="P11.3 — OEE (depends on P11.1 + P11.2 + P8.9 time log)"
-                  backendStatus="missing"
-                  plannedBehavior="OEE (Availability × Performance × Quality) по машина / линија / смена. Benchmark vs target + тренд низ време."
-                />
-              }
-            />
+            <Route path="/machines/oee" element={<MachineOEE />} />
             <Route path="/machines/maintenance-plan" element={<MaintenancePlan />} />
             <Route path="/machines/maintenance-history" element={<MaintenanceHistory />} />
-            <Route
-              path="/machines/capacity"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.capacity"
-                  workPlanRef="P3.X — capacity utilization"
-                  backendStatus="missing"
-                  plannedBehavior="Искористеност: планиран vs actual часови per машина / линија / смена. Daily / weekly / monthly rollup."
-                />
-              }
-            />
-            <Route
-              path="/machines/setup-time"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.setupTime"
-                  workPlanRef="P3.X — setup time analysis"
-                  backendStatus="missing"
-                  plannedBehavior="Changeover минути per машина: колку време се троши на setup/switchover. Идентификација на bottleneck setup-и."
-                />
-              }
-            />
-            <Route
-              path="/machines/bottleneck"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.machines"
-                  titleKey="nav.machines.bottleneck"
-                  workPlanRef="P3.X — bottleneck analysis"
-                  backendStatus="missing"
-                  plannedBehavior="Constraint view за денешниот план: која машина е bottleneck? Што чекаат нејзе? Предложени corrective actions."
-                />
-              }
-            />
+            <Route path="/machines/capacity" element={<MachineCapacity />} />
+            <Route path="/machines/setup-time" element={<SetupTime />} />
+            <Route path="/machines/bottleneck" element={<Bottleneck />} />
 
             {/* ───────── P6.37.11 — 💵 Finance group ───────── */}
             {/* P12.2 — invoicing MVP (shipped) */}
@@ -558,180 +426,26 @@ const App: React.FC = () => {
             {/* P12.3 — client contracts + rate cards (shipped) */}
             <Route path="/finance/contracts" element={<ClientContracts />} />
             <Route path="/finance/guarantees" element={<Guarantees />} />
-            <Route
-              path="/finance/cost-accounting"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.costAccounting"
-                  workPlanRef="P5.X — cost per minute"
-                  backendStatus="missing"
-                  plannedBehavior="Cost accounting: чинење на минута на машина × оператор × shift. Support за pricing decisions."
-                />
-              }
-            />
-            <Route
-              path="/finance/margin"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.margin"
-                  workPlanRef="P5.X — margin analysis"
-                  backendStatus="missing"
-                  plannedBehavior="Маржа по клиент / налог: revenue (invoiced rate × qty) минус cost (actual minutes × cost rate). Preview пред endgame."
-                />
-              }
-            />
-            <Route
-              path="/finance/ap"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.ap"
-                  workPlanRef="P5.X — accounts payable"
-                  backendStatus="missing"
-                  plannedBehavior="Добавувач invoices: packaging, energy, spare parts. Отворени / платени, due dates."
-                />
-              }
-            />
-            <Route
-              path="/finance/payroll"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.payroll"
-                  workPlanRef="P3.X — payroll aggregate from HR"
-                  backendStatus="missing"
-                  plannedBehavior="Aggregate плати за месецот: вкупно часови регуларни + overtime + bonus × шифри. Feed од /hr/payroll-export."
-                />
-              }
-            />
-            <Route
-              path="/finance/pnl"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.pnl"
-                  workPlanRef="P5.X — P&L preview"
-                  backendStatus="missing"
-                  plannedBehavior="Месечен P&L preview: revenue, direct cost, overhead, margin. Со compare to target."
-                />
-              }
-            />
-            <Route
-              path="/finance/cash-flow"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.cashFlow"
-                  workPlanRef="P5.X — cash flow forecast"
-                  backendStatus="missing"
-                  plannedBehavior="30 / 60 / 90 day forecast: expected AR inflow, AP outflow, пресек. Risk flags."
-                />
-              }
-            />
-            <Route
-              path="/finance/reports"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.finance"
-                  titleKey="nav.finance.reports"
-                  workPlanRef="P5.X — financial reports"
-                  backendStatus="missing"
-                  plannedBehavior="Сметководствени извештаи за управа, ревизор, финансиско: BS, IS, CF, статутарни формати."
-                />
-              }
-            />
+            <Route path="/finance/cost-accounting" element={<CostAccounting />} />
+            <Route path="/finance/margin" element={<FinanceMargin />} />
+            <Route path="/finance/ap" element={<SupplierInvoices />} />
+            <Route path="/finance/payroll" element={<PayrollAggregate />} />
+            <Route path="/finance/pnl" element={<PnLPreview />} />
+            <Route path="/finance/cash-flow" element={<CashFlow />} />
+            <Route path="/finance/reports" element={<FinanceReports />} />
 
             {/* ───────── P6.37.12 — 🎯 Management (KPI) group ───────── */}
             <Route path="/management/dashboard" element={<Dashboard />} />
             <Route path="/management/on-time" element={<OnTimeDelivery />} />
-            <Route
-              path="/management/capacity"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.capacity"
-                  workPlanRef="P3.X — capacity rollup"
-                  backendStatus="missing"
-                  plannedBehavior="Capacity utilization: машини + оператори. Planned hours vs actual hours. Weekly / monthly."
-                />
-              }
-            />
+            <Route path="/management/capacity" element={<CapacityUtilization />} />
             <Route path="/management/by-customer" element={<ByCustomer />} />
-            <Route
-              path="/management/margin"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.margin"
-                  workPlanRef="P5.X — margin per customer (mgr lens)"
-                  backendStatus="missing"
-                  plannedBehavior="Management lens на margin: не detailed financial но trend + alerts за клиенти со падната маржа."
-                />
-              }
-            />
+            <Route path="/management/margin" element={<MarginByCustomer />} />
             <Route path="/management/alerts" element={<Alerts />} />
-            <Route
-              path="/management/risks"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.risks"
-                  workPlanRef="P6.X — open risks register"
-                  backendStatus="missing"
-                  plannedBehavior="Отворени ризици: царински (деадлине), operational (машина, кадар), финансиски (клиент overdue), legal."
-                />
-              }
-            />
-            <Route
-              path="/management/trends"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.trends"
-                  workPlanRef="P6.X — 3M / 6M / 12M trends"
-                  backendStatus="missing"
-                  plannedBehavior="Тренд analysis на ключни metrics: production volume, margin, on-time, headcount. Compare year-over-year."
-                />
-              }
-            />
-            <Route
-              path="/management/escalations"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.escalations"
-                  workPlanRef="P6.X — escalations"
-                  backendStatus="missing"
-                  plannedBehavior="Налози што бараат управувачка одлука: доцнат, клиент тражи extension, legal issue, budget override."
-                />
-              }
-            />
-            <Route
-              path="/management/client-scorecard"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.clientScorecard"
-                  workPlanRef="P5.X — per-client scorecard"
-                  backendStatus="missing"
-                  plannedBehavior="Client scorecard: volume, margin, on-time, payment behavior, риск rating. Помага за renewal / expansion одлуки."
-                />
-              }
-            />
-            <Route
-              path="/management/monthly-pack"
-              element={
-                <PlaceholderPage
-                  groupKey="nav.groups.management"
-                  titleKey="nav.management.monthlyPack"
-                  workPlanRef="P6.X — monthly review pack"
-                  backendStatus="missing"
-                  plannedBehavior="Printable / exportable pack: exec summary, key metrics, wins/losses, next month focus. За board meetings."
-                />
-              }
-            />
+            <Route path="/management/risks" element={<OpenRisks />} />
+            <Route path="/management/trends" element={<Trends />} />
+            <Route path="/management/escalations" element={<Escalations />} />
+            <Route path="/management/client-scorecard" element={<ClientScorecard />} />
+            <Route path="/management/monthly-pack" element={<MonthlyPack />} />
 
             {/* User Management Routes */}
             <Route path="/admin/users" element={<UserManagement />} />

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Box, Button, Chip, Typography } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import DataTable from '../../../components/common/DataTable';
@@ -11,7 +10,6 @@ import { showSuccess, showError } from '../../../utils/toast';
 import type { Warehouse } from '../../../types/masterData';
 
 const WarehousesList: React.FC = () => {
-  const navigate = useNavigate();
   const { warehouses, setWarehouses, removeWarehouse } = useMasterDataStore();
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -21,6 +19,7 @@ const WarehousesList: React.FC = () => {
 
   useEffect(() => {
     loadWarehouses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadWarehouses = async () => {

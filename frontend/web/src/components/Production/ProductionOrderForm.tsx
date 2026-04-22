@@ -26,7 +26,6 @@ const ProductionOrderForm: React.FC<ProductionOrderFormProps> = ({ onSuccess, on
 
   const [items, setItems] = useState<any[]>([]);
   const [boms, setBoms] = useState<any[]>([]);
-  const [routings, setRoutings] = useState<any[]>([]);
   const [uoms, setUoms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 

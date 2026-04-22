@@ -146,7 +146,7 @@ export const employeesApi = {
   delete: (id: string) => axios.delete(`${API_BASE_URL}/MasterData/employees/${id}`),
 };
 
-export default {
+const masterDataApi = {
   items: itemsApi,
   partners: partnersApi,
   warehouses: warehousesApi,
@@ -157,3 +157,5 @@ export default {
   workCenters: workCentersApi,
   employees: employeesApi,
 };
+
+export default masterDataApi;

@@ -21,7 +21,7 @@ import FormCheckbox from '../../../components/forms/FormCheckbox';
 import FormAutocomplete from '../../../components/forms/FormAutocomplete';
 import { bomsApi, itemsApi, uomApi } from '../../../services/masterDataApi';
 import { showSuccess, showError } from '../../../utils/toast';
-import type { BOM, BOMFormData, BOMLineFormData, Item, UoM } from '../../../types/masterData';
+import type { BOM, BOMFormData, Item, UoM } from '../../../types/masterData';
 
 interface BOMFormProps {
   open: boolean;
@@ -37,7 +37,7 @@ const BOMForm: React.FC<BOMFormProps> = ({ open, onClose, onSuccess, bom }) => {
   const [loadingItems, setLoadingItems] = useState(true);
   const [loadingUoMs, setLoadingUoMs] = useState(true);
 
-  const { control, handleSubmit, reset, watch } = useForm<BOMFormData>({
+  const { control, handleSubmit, reset } = useForm<BOMFormData>({
     defaultValues: {
       itemId: bom?.itemId || '',
       version: bom?.version || '1.0',

@@ -5,7 +5,6 @@ import type { CreateReceiptCommand, ReceiptLineDto } from '../../api';
 import { toast } from 'react-toastify';
 import FormInputSimple from '../forms/FormInputSimple';
 import FormSelectSimple from '../forms/FormSelectSimple';
-import FormAutocomplete from '../forms/FormAutocomplete';
 import '../../pages/MasterData/Items/ItemForm.css';
 
 interface ReceiptFormProps {

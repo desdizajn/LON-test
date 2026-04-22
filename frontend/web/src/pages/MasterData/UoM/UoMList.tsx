@@ -19,6 +19,7 @@ const UoMList: React.FC = () => {
 
   useEffect(() => {
     loadUoMs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadUoMs = async () => {

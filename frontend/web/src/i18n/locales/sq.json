@@ -682,7 +682,18 @@
   "nav": {
     "dashboard": "Paneli kryesor",
     "wmsInventory": "WMS dhe Inventar",
-    "production": "Prodhimi (LON)",
+    "production": {
+      "today": "Plani i sotëm",
+      "cuttingQueue": "Queue për prerje",
+      "sewingQueue": "Queue për qepje",
+      "wip": "WIP sipas porosisë",
+      "atRisk": "Porositë në rrezik",
+      "shortage": "Mungesa për sot",
+      "minutesVariance": "Minuta plan vs aktuale",
+      "rework": "Rework / mbeturina",
+      "completed": "Porositë e përfunduara",
+      "search": "Kërko"
+    },
     "customsMrn": "Dogana dhe MRN",
     "guarantees": "Garancitë",
     "traceability": "Gjurmueshmëria",
@@ -705,7 +716,17 @@
     "boms": "Normativat (BOM)",
     "routings": "Procesi teknologjik",
     "workCenters": "Qendrat e punës",
-    "machines": "Makineritë",
+    "machines": {
+      "status": "Makineritë (live status)",
+      "workCenters": "Work centers / Linjat",
+      "downtime": "Downtime",
+      "oee": "OEE sipas makinerisë / linjës",
+      "maintenancePlan": "Plani i mirëmbajtjes",
+      "maintenanceHistory": "Historiku i mirëmbajtjes",
+      "capacity": "Shfrytëzimi i kapacitetit",
+      "setupTime": "Analiza e setup time",
+      "bottleneck": "Bottleneck për sot"
+    },
     "codeLists": "Listat e kodeve",
     "legacySectionLabel": "⚠️ Në migrim (P6.37)",
     "groupEmpty": "Zërat ende nuk janë plotësuar",
@@ -761,18 +782,6 @@
       "guarantees": "Garancia doganore",
       "search": "Kërko"
     },
-    "production": {
-      "today": "Plani i sotëm",
-      "cuttingQueue": "Queue për prerje",
-      "sewingQueue": "Queue për qepje",
-      "wip": "WIP sipas porosisë",
-      "atRisk": "Porositë në rrezik",
-      "shortage": "Mungesa për sot",
-      "minutesVariance": "Minuta plan vs aktuale",
-      "rework": "Rework / mbeturina",
-      "completed": "Porositë e përfunduara",
-      "search": "Kërko"
-    },
     "finishedGoods": {
       "awaitingPack": "Presin paketimin",
       "packing": "Në paketim",
@@ -794,17 +803,6 @@
       "assignment": "Assignment (operator ↔ makineri)",
       "training": "Trajnime / certifikata",
       "payrollExport": "Orët për pagë"
-    },
-    "machines": {
-      "status": "Makineritë (live status)",
-      "workCenters": "Work centers / Linjat",
-      "downtime": "Downtime",
-      "oee": "OEE sipas makinerisë / linjës",
-      "maintenancePlan": "Plani i mirëmbajtjes",
-      "maintenanceHistory": "Historiku i mirëmbajtjes",
-      "capacity": "Shfrytëzimi i kapacitetit",
-      "setupTime": "Analiza e setup time",
-      "bottleneck": "Bottleneck për sot"
     },
     "finance": {
       "invoicing": "Faturimi",
@@ -1049,11 +1047,21 @@
       "from": "Nga",
       "to": "Deri"
     },
-    "inventoryByLocation": { "title": "Stoqet sipas vendndodhjes" },
-    "inventoryByBatch": { "title": "Stoqet sipas batch" },
-    "inventoryByMrn": { "title": "Stoqet sipas MRN" },
-    "blockedInventory": { "title": "Stoqe të bllokuara" },
-    "movements": { "title": "Raporti i lëvizjeve" },
+    "inventoryByLocation": {
+      "title": "Stoqet sipas vendndodhjes"
+    },
+    "inventoryByBatch": {
+      "title": "Stoqet sipas batch"
+    },
+    "inventoryByMrn": {
+      "title": "Stoqet sipas MRN"
+    },
+    "blockedInventory": {
+      "title": "Stoqe të bllokuara"
+    },
+    "movements": {
+      "title": "Raporti i lëvizjeve"
+    },
     "cycleCountAccuracy": {
       "title": "Saktësia e inventarizimit",
       "bucket": "Filtër i shpejtë",
@@ -1120,7 +1128,10 @@
     }
   },
   "movements": {
-    "tabs": { "receipts": "Pranimet", "shipments": "Dërgesat" },
+    "tabs": {
+      "receipts": "Pranimet",
+      "shipments": "Dërgesat"
+    },
     "totalReceipts": "Totali i pranimeve",
     "totalQtyReceived": "Sasia totale e pranuar",
     "avgQtyPerReceipt": "Sasia mesatare për pranim",
@@ -1658,5 +1669,434 @@
         "unknown": "panjohur"
       }
     }
+  },
+  "financeReports": {
+    "title": "Raportet financiare",
+    "subtitle": "One entry point for every finance report — click a card for detail.",
+    "cards": {
+      "invoicing": {
+        "title": "Invoicing",
+        "subtitle": "Draft → Issued → Paid"
+      },
+      "contracts": {
+        "title": "Client contracts",
+        "subtitle": "Rates + validity"
+      },
+      "guarantees": {
+        "title": "Customs guarantee",
+        "subtitle": "Accounts + active debits"
+      },
+      "margin": {
+        "title": "Margin by customer",
+        "subtitle": "Revenue − estimated cost"
+      },
+      "pnl": {
+        "title": "P&L preview",
+        "subtitle": "Monthly rollup"
+      },
+      "cashFlow": {
+        "title": "Cash flow forecast",
+        "subtitle": "Expected inflow by bucket"
+      },
+      "costAccounting": {
+        "title": "Cost accounting",
+        "subtitle": "Cost / minute × shift"
+      },
+      "ap": {
+        "title": "Supplier invoices",
+        "subtitle": "Open / paid / cancelled"
+      },
+      "payroll": {
+        "title": "Payroll (aggregate)",
+        "subtitle": "Hours × rate × overtime"
+      }
+    }
+  },
+  "financeMargin": {
+    "title": "Marzhi sipas klientit",
+    "subtitle": "Revenue vs produced quantity per customer.",
+    "searchPlaceholder": "Search customer...",
+    "totalRevenue": "Total revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "producedQty": "Produced",
+    "customer": "Customer",
+    "invoices": "Invoices",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "currency": "Currency"
+  },
+  "pnl": {
+    "title": "P&L paraprak",
+    "subtitle": "Monthly rollup — invoice revenue minus estimated cost.",
+    "monthsBack": "Months back",
+    "costPercent": "Cost %",
+    "ytdRevenue": "YTD revenue",
+    "ytdCost": "YTD cost",
+    "ytdNet": "YTD net",
+    "month": "Month",
+    "issued": "Issued",
+    "paid": "Paid",
+    "revenue": "Revenue",
+    "estimatedCost": "Estimated cost",
+    "netMargin": "Net margin"
+  },
+  "cashFlow": {
+    "title": "Parashikimi i cash flow",
+    "subtitle": "Open Issued invoices bucketed by due date.",
+    "buckets": {
+      "overdue": "Overdue",
+      "due0_7": "0-7 days",
+      "due8_30": "8-30 days",
+      "due31_60": "31-60 days",
+      "due61plus": "61+ days"
+    },
+    "totalExpected": "Expected",
+    "invoices": "invoices",
+    "searchPlaceholder": "Search number / customer...",
+    "rowCount": "{{count}} record(s)",
+    "number": "Number",
+    "partner": "Customer",
+    "dueDate": "Due",
+    "daysToDue": "Days",
+    "amount": "Amount",
+    "currency": "Currency",
+    "bucket": "Bucket"
+  },
+  "costAccounting": {
+    "title": "Kontabiliteti i kostos",
+    "subtitle": "Cost per minute per work-center × shift. Stored in browser localStorage until a backend entity lands.",
+    "upsertLegend": "Add / update rate",
+    "workCenter": "Work center",
+    "shift": "Shift",
+    "ratePerMinute": "Rate / minute",
+    "currency": "Currency",
+    "notes": "Notes",
+    "upsert": "Save",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "searchPlaceholder": "Search...",
+    "rowCount": "{{count}} records",
+    "avgRate": "Avg",
+    "minute": "min",
+    "empty": "No rates yet.",
+    "invalid": "Work center + shift + rate are required.",
+    "saved": "Saved."
+  },
+  "supplierInvoices": {
+    "title": "Faturat e furnizuesit (AP)",
+    "subtitle": "Open / paid invoices from suppliers.",
+    "newLegend": "New invoice",
+    "number": "Number",
+    "supplier": "Supplier",
+    "issueDate": "Issue date",
+    "dueDate": "Due date",
+    "daysToDue": "Days",
+    "amount": "Amount",
+    "currency": "Currency",
+    "reference": "Reference",
+    "status": "Status",
+    "add": "Add",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "pending": "Pending",
+    "paid": "Paid",
+    "searchPlaceholder": "Search number / supplier...",
+    "empty": "No invoices.",
+    "invalid": "Number + supplier + amount required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete this invoice?",
+    "statuses": {
+      "Pending": "Pending",
+      "Paid": "Paid",
+      "Cancelled": "Cancelled"
+    }
+  },
+  "payrollAggregate": {
+    "title": "Pagat (aggregate)",
+    "subtitle": "Total hours × rate × overtime multiplier for selected month.",
+    "month": "Month",
+    "standardHours": "Standard hours",
+    "perDay": "/day",
+    "overtimeX": "Overtime ×",
+    "totalHours": "Total hours",
+    "totalPay": "Total pay",
+    "searchPlaceholder": "Search employee...",
+    "fullName": "Full name",
+    "department": "Department",
+    "hours": "Hours",
+    "rate": "Rate",
+    "regularHours": "Regular",
+    "overtimeHours": "Overtime h",
+    "regularPay": "Regular pay",
+    "overtimePay": "OT pay"
+  },
+  "capacityUtilization": {
+    "title": "Shfrytëzimi i kapacitetit",
+    "subtitle": "Machines vs available hours minus downtime.",
+    "periodDays": "Period (days)",
+    "availableMinutes": "Available min.",
+    "totalDowntime": "Total downtime",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "currentState": "State",
+    "downtime": "Downtime",
+    "running": "Running",
+    "utilization": "Utilization"
+  },
+  "trends": {
+    "title": "Tendencat",
+    "subtitle": "Monthly trends of revenue / orders / produced.",
+    "monthsBack": "Months back",
+    "month": "Month",
+    "invoices": "Invoices",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "producedQty": "Produced"
+  },
+  "risks": {
+    "title": "Rreziqe të hapura",
+    "subtitle": "Risk register. Stored in browser localStorage until a backend entity lands.",
+    "newLegend": "New risk",
+    "titleLabel": "Title",
+    "category": "Category",
+    "severity": "Severity",
+    "owner": "Owner",
+    "reviewDate": "Review date",
+    "mitigation": "Mitigation",
+    "add": "Add",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "searchPlaceholder": "Search...",
+    "allSeverities": "All severities",
+    "allStatuses": "All statuses",
+    "rowCount": "{{count}} risks",
+    "statusCol": "Status",
+    "empty": "No risks registered.",
+    "invalid": "Title is required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete this risk?",
+    "severities": {
+      "Low": "Low",
+      "Medium": "Medium",
+      "High": "High",
+      "Critical": "Critical"
+    },
+    "statuses": {
+      "Open": "Open",
+      "Mitigating": "Mitigating",
+      "Closed": "Closed"
+    }
+  },
+  "escalations": {
+    "title": "Eskalime",
+    "subtitle": "Open items needing managerial decision.",
+    "newLegend": "New escalation",
+    "titleLabel": "Title",
+    "party": "Party",
+    "severity": "Severity",
+    "owner": "Owner",
+    "dueDate": "Due date",
+    "description": "Description",
+    "resolution": "Resolution",
+    "add": "Add",
+    "searchPlaceholder": "Search...",
+    "allStatuses": "All statuses",
+    "rowCount": "{{count}} escalations",
+    "statusCol": "Status",
+    "empty": "No escalations.",
+    "invalid": "Title is required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete?",
+    "statuses": {
+      "Open": "Open",
+      "InReview": "In review",
+      "Resolved": "Resolved",
+      "Deferred": "Deferred"
+    }
+  },
+  "clientScorecard": {
+    "title": "Scorecard i klientit",
+    "subtitle": "Composite score per customer — on-time (60%) + paid ratio (40%).",
+    "searchPlaceholder": "Search customer...",
+    "rowCount": "{{count}} customers",
+    "customer": "Customer",
+    "score": "Score",
+    "shipments": "Shipments",
+    "onTimePct": "On-time %",
+    "revenue": "Revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "paidRatio": "Paid ratio"
+  },
+  "monthlyPack": {
+    "title": "Paketa mujore",
+    "subtitle": "Executive snapshot for {{month}}.",
+    "print": "Print",
+    "revenue": "Revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "invoices": "Invoices",
+    "orders": "Orders",
+    "completedOrders": "Completed",
+    "producedQty": "Produced",
+    "onTimePct": "On-time",
+    "alertsTitle": "Alerts (now)",
+    "noAlerts": "No active alerts.",
+    "severities": {
+      "Critical": "Critical",
+      "Warning": "Warning",
+      "Info": "Info"
+    }
+  },
+  "overtime": {
+    "title": "Orët shtesë",
+    "subtitle": "Anything above standard-per-day counts as overtime.",
+    "month": "Month",
+    "standardHours": "Standard",
+    "perDay": "/day",
+    "totalHours": "Total",
+    "regularHours": "Regular",
+    "overtimeHours": "Overtime",
+    "searchPlaceholder": "Search employee...",
+    "name": "Name",
+    "department": "Department",
+    "days": "Days"
+  },
+  "performance": {
+    "title": "Performanca",
+    "subtitle": "Operator performance proxy until P8.9 OperationTimeLog lands.",
+    "month": "Month",
+    "searchPlaceholder": "Search employee / department...",
+    "rowCount": "{{count}} employees",
+    "name": "Name",
+    "department": "Department",
+    "days": "Days",
+    "hours": "Hours",
+    "assignments": "Assignments",
+    "index": "Productivity"
+  },
+  "training": {
+    "title": "Trajnime dhe çertifikata",
+    "subtitle": "Training records per employee.",
+    "newLegend": "New training",
+    "employee": "Employee",
+    "topic": "Topic",
+    "skillArea": "Skill area",
+    "provider": "Provider",
+    "completionDate": "Completed",
+    "expiryDate": "Expires",
+    "certificate": "Certificate",
+    "add": "Add",
+    "searchPlaceholder": "Search topic / employee...",
+    "expiringOnly": "Only expiring soon",
+    "expiring": "{{count}} expiring",
+    "expired": "{{count}} expired",
+    "expiredBadge": "expired",
+    "rowCount": "{{count}} records",
+    "daysLeft": "Days left",
+    "empty": "No records.",
+    "invalid": "Employee + topic required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete?"
+  },
+  "oee": {
+    "title": "OEE (Overall Equipment Effectiveness)",
+    "subtitle": "OEE = Availability × Performance × Quality.",
+    "periodDays": "Period (days)",
+    "performanceProxy": "Performance proxy",
+    "globalQuality": "Global quality",
+    "avgOee": "Avg OEE",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "availability": "Availability",
+    "performance": "Performance",
+    "quality": "Quality"
+  },
+  "setupTime": {
+    "title": "Koha e rregullimit",
+    "subtitle": "Changeover minutes per machine.",
+    "totalEvents": "Setup events",
+    "totalMinutes": "Total minutes",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "count": "Count",
+    "avgMinutes": "Avg min.",
+    "empty": "No setup events."
+  },
+  "bottleneck": {
+    "title": "Analiza e ngushticës",
+    "subtitle": "Ranked by downtime minutes — worst 3 highlighted.",
+    "current": "Current bottleneck",
+    "downtimeSummary": "{{count}} events, {{minutes}} minutes",
+    "rowCount": "{{count}} machines",
+    "rank": "Rank",
+    "machine": "Machine",
+    "events": "Events",
+    "totalDowntime": "Total downtime",
+    "avgDowntime": "Avg"
+  },
+  "cuttingQueue": {
+    "title": "Radha e prerjes",
+    "subtitle": "Orders waiting for cutting (producedQuantity = 0).",
+    "rowCount": "{{count}} in queue",
+    "empty": "No orders in queue."
+  },
+  "sewingQueue": {
+    "title": "Radha e qepjes",
+    "subtitle": "Orders in-progress (producedQuantity > 0 but < ordered)."
+  },
+  "minutesVariance": {
+    "title": "Diferenca në minuta",
+    "subtitle": "Planned minutes vs scheduled window.",
+    "standardMinutes": "Std min./piece",
+    "workingHours": "Working hrs/day",
+    "plannedMinutes": "Planned",
+    "scheduledMinutes": "Scheduled",
+    "variance": "Variance",
+    "variancePct": "Variance %"
+  },
+  "rework": {
+    "title": "Ripunim",
+    "subtitle": "Orders with scrap > 0 — lead indicator of rework activity.",
+    "minScrap": "Min scrap",
+    "totalScrap": "Total scrap",
+    "totalProduced": "Total produced",
+    "scrapRate": "Scrap rate",
+    "scrap": "Scrap",
+    "scrapPct": "Scrap %",
+    "empty": "No orders with scrap."
+  },
+  "packLists": {
+    "title": "Listat e paketimit",
+    "subtitle": "Printable pack list per shipment.",
+    "searchPlaceholder": "Search number / customer...",
+    "rowCount": "{{count}} shipments",
+    "number": "Number",
+    "date": "Date",
+    "customer": "Customer",
+    "carrier": "Carrier",
+    "tracking": "Tracking",
+    "lines": "Lines",
+    "totalQty": "Total qty",
+    "clickToOpen": "Click for printable pack list",
+    "linesTitle": "Lines ({{count}})",
+    "item": "Item",
+    "batch": "Batch",
+    "qty": "Qty",
+    "print": "Print"
+  },
+  "returns": {
+    "title": "Kthesat",
+    "subtitle": "Return declarations (6121) — goods coming back from customer.",
+    "count": "Count",
+    "totalLines": "Total lines",
+    "totalQty": "Total qty",
+    "totalValue": "Total value",
+    "searchPlaceholder": "Search number / MRN / customer...",
+    "number": "Number",
+    "procedure": "Procedure",
+    "partner": "Customer",
+    "date": "Date",
+    "lines": "Lines",
+    "value": "Value",
+    "empty": "No returns."
   }
 }

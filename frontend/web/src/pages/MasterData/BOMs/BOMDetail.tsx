@@ -33,6 +33,7 @@ const BOMDetail: React.FC = () => {
 
   useEffect(() => {
     loadBOM();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadBOM = async () => {

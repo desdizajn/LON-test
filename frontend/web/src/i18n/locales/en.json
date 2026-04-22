@@ -682,7 +682,18 @@
   "nav": {
     "dashboard": "Dashboard",
     "wmsInventory": "WMS & Inventory",
-    "production": "Production (LON)",
+    "production": {
+      "today": "Today's plan",
+      "cuttingQueue": "Cutting queue",
+      "sewingQueue": "Sewing queue",
+      "wip": "WIP by order",
+      "atRisk": "Orders at risk",
+      "shortage": "Shortage for today",
+      "minutesVariance": "Minutes plan vs actual",
+      "rework": "Rework / waste",
+      "completed": "Completed orders",
+      "search": "Search"
+    },
     "customsMrn": "Customs & MRN",
     "guarantees": "Guarantees",
     "traceability": "Traceability",
@@ -705,7 +716,17 @@
     "boms": "BOMs",
     "routings": "Routings",
     "workCenters": "Work Centers",
-    "machines": "Machines",
+    "machines": {
+      "status": "Machines (live status)",
+      "workCenters": "Work centers / Lines",
+      "downtime": "Downtime",
+      "oee": "OEE by machine / line",
+      "maintenancePlan": "Maintenance plan",
+      "maintenanceHistory": "Maintenance history",
+      "capacity": "Capacity utilization",
+      "setupTime": "Setup time analysis",
+      "bottleneck": "Bottleneck for today"
+    },
     "codeLists": "Code Lists",
     "legacySectionLabel": "⚠️ Being migrated (P6.37)",
     "groupEmpty": "Items not wired up yet",
@@ -761,18 +782,6 @@
       "guarantees": "Customs guarantee",
       "search": "Search"
     },
-    "production": {
-      "today": "Today's plan",
-      "cuttingQueue": "Cutting queue",
-      "sewingQueue": "Sewing queue",
-      "wip": "WIP by order",
-      "atRisk": "Orders at risk",
-      "shortage": "Shortage for today",
-      "minutesVariance": "Minutes plan vs actual",
-      "rework": "Rework / waste",
-      "completed": "Completed orders",
-      "search": "Search"
-    },
     "finishedGoods": {
       "awaitingPack": "Awaiting pack",
       "packing": "Packing in progress",
@@ -794,17 +803,6 @@
       "assignment": "Assignment (operator ↔ machine)",
       "training": "Training / certifications",
       "payrollExport": "Hours for payroll"
-    },
-    "machines": {
-      "status": "Machines (live status)",
-      "workCenters": "Work centers / Lines",
-      "downtime": "Downtime",
-      "oee": "OEE by machine / line",
-      "maintenancePlan": "Maintenance plan",
-      "maintenanceHistory": "Maintenance history",
-      "capacity": "Capacity utilization",
-      "setupTime": "Setup time analysis",
-      "bottleneck": "Bottleneck for today"
     },
     "finance": {
       "invoicing": "Invoicing",
@@ -1049,11 +1047,21 @@
       "from": "From",
       "to": "To"
     },
-    "inventoryByLocation": { "title": "Inventory by Location" },
-    "inventoryByBatch": { "title": "Inventory by Batch" },
-    "inventoryByMrn": { "title": "Inventory by MRN" },
-    "blockedInventory": { "title": "Blocked Inventory" },
-    "movements": { "title": "Movement Report" },
+    "inventoryByLocation": {
+      "title": "Inventory by Location"
+    },
+    "inventoryByBatch": {
+      "title": "Inventory by Batch"
+    },
+    "inventoryByMrn": {
+      "title": "Inventory by MRN"
+    },
+    "blockedInventory": {
+      "title": "Blocked Inventory"
+    },
+    "movements": {
+      "title": "Movement Report"
+    },
     "cycleCountAccuracy": {
       "title": "Cycle Count Accuracy",
       "bucket": "Quick filter",
@@ -1120,7 +1128,10 @@
     }
   },
   "movements": {
-    "tabs": { "receipts": "Receipts", "shipments": "Shipments" },
+    "tabs": {
+      "receipts": "Receipts",
+      "shipments": "Shipments"
+    },
     "totalReceipts": "Total Receipts",
     "totalQtyReceived": "Total quantity received",
     "avgQtyPerReceipt": "Avg qty per receipt",
@@ -1658,5 +1669,434 @@
         "unknown": "unknown"
       }
     }
+  },
+  "financeReports": {
+    "title": "Financial reports",
+    "subtitle": "One entry point for every finance report — click a card for detail.",
+    "cards": {
+      "invoicing": {
+        "title": "Invoicing",
+        "subtitle": "Draft → Issued → Paid"
+      },
+      "contracts": {
+        "title": "Client contracts",
+        "subtitle": "Rates + validity"
+      },
+      "guarantees": {
+        "title": "Customs guarantee",
+        "subtitle": "Accounts + active debits"
+      },
+      "margin": {
+        "title": "Margin by customer",
+        "subtitle": "Revenue − estimated cost"
+      },
+      "pnl": {
+        "title": "P&L preview",
+        "subtitle": "Monthly rollup"
+      },
+      "cashFlow": {
+        "title": "Cash flow forecast",
+        "subtitle": "Expected inflow by bucket"
+      },
+      "costAccounting": {
+        "title": "Cost accounting",
+        "subtitle": "Cost / minute × shift"
+      },
+      "ap": {
+        "title": "Supplier invoices",
+        "subtitle": "Open / paid / cancelled"
+      },
+      "payroll": {
+        "title": "Payroll (aggregate)",
+        "subtitle": "Hours × rate × overtime"
+      }
+    }
+  },
+  "financeMargin": {
+    "title": "Margin by customer",
+    "subtitle": "Revenue vs produced quantity per customer.",
+    "searchPlaceholder": "Search customer...",
+    "totalRevenue": "Total revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "producedQty": "Produced",
+    "customer": "Customer",
+    "invoices": "Invoices",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "currency": "Currency"
+  },
+  "pnl": {
+    "title": "P&L preview",
+    "subtitle": "Monthly rollup — invoice revenue minus estimated cost.",
+    "monthsBack": "Months back",
+    "costPercent": "Cost %",
+    "ytdRevenue": "YTD revenue",
+    "ytdCost": "YTD cost",
+    "ytdNet": "YTD net",
+    "month": "Month",
+    "issued": "Issued",
+    "paid": "Paid",
+    "revenue": "Revenue",
+    "estimatedCost": "Estimated cost",
+    "netMargin": "Net margin"
+  },
+  "cashFlow": {
+    "title": "Cash flow forecast",
+    "subtitle": "Open Issued invoices bucketed by due date.",
+    "buckets": {
+      "overdue": "Overdue",
+      "due0_7": "0-7 days",
+      "due8_30": "8-30 days",
+      "due31_60": "31-60 days",
+      "due61plus": "61+ days"
+    },
+    "totalExpected": "Expected",
+    "invoices": "invoices",
+    "searchPlaceholder": "Search number / customer...",
+    "rowCount": "{{count}} record(s)",
+    "number": "Number",
+    "partner": "Customer",
+    "dueDate": "Due",
+    "daysToDue": "Days",
+    "amount": "Amount",
+    "currency": "Currency",
+    "bucket": "Bucket"
+  },
+  "costAccounting": {
+    "title": "Cost accounting",
+    "subtitle": "Cost per minute per work-center × shift. Stored in browser localStorage until a backend entity lands.",
+    "upsertLegend": "Add / update rate",
+    "workCenter": "Work center",
+    "shift": "Shift",
+    "ratePerMinute": "Rate / minute",
+    "currency": "Currency",
+    "notes": "Notes",
+    "upsert": "Save",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "searchPlaceholder": "Search...",
+    "rowCount": "{{count}} records",
+    "avgRate": "Avg",
+    "minute": "min",
+    "empty": "No rates yet.",
+    "invalid": "Work center + shift + rate are required.",
+    "saved": "Saved."
+  },
+  "supplierInvoices": {
+    "title": "Supplier invoices (AP)",
+    "subtitle": "Open / paid invoices from suppliers.",
+    "newLegend": "New invoice",
+    "number": "Number",
+    "supplier": "Supplier",
+    "issueDate": "Issue date",
+    "dueDate": "Due date",
+    "daysToDue": "Days",
+    "amount": "Amount",
+    "currency": "Currency",
+    "reference": "Reference",
+    "status": "Status",
+    "add": "Add",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "pending": "Pending",
+    "paid": "Paid",
+    "searchPlaceholder": "Search number / supplier...",
+    "empty": "No invoices.",
+    "invalid": "Number + supplier + amount required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete this invoice?",
+    "statuses": {
+      "Pending": "Pending",
+      "Paid": "Paid",
+      "Cancelled": "Cancelled"
+    }
+  },
+  "payrollAggregate": {
+    "title": "Payroll (aggregate)",
+    "subtitle": "Total hours × rate × overtime multiplier for selected month.",
+    "month": "Month",
+    "standardHours": "Standard hours",
+    "perDay": "/day",
+    "overtimeX": "Overtime ×",
+    "totalHours": "Total hours",
+    "totalPay": "Total pay",
+    "searchPlaceholder": "Search employee...",
+    "fullName": "Full name",
+    "department": "Department",
+    "hours": "Hours",
+    "rate": "Rate",
+    "regularHours": "Regular",
+    "overtimeHours": "Overtime h",
+    "regularPay": "Regular pay",
+    "overtimePay": "OT pay"
+  },
+  "capacityUtilization": {
+    "title": "Capacity utilization",
+    "subtitle": "Machines vs available hours minus downtime.",
+    "periodDays": "Period (days)",
+    "availableMinutes": "Available min.",
+    "totalDowntime": "Total downtime",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "currentState": "State",
+    "downtime": "Downtime",
+    "running": "Running",
+    "utilization": "Utilization"
+  },
+  "trends": {
+    "title": "Trends",
+    "subtitle": "Monthly trends of revenue / orders / produced.",
+    "monthsBack": "Months back",
+    "month": "Month",
+    "invoices": "Invoices",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "producedQty": "Produced"
+  },
+  "risks": {
+    "title": "Open risks",
+    "subtitle": "Risk register. Stored in browser localStorage until a backend entity lands.",
+    "newLegend": "New risk",
+    "titleLabel": "Title",
+    "category": "Category",
+    "severity": "Severity",
+    "owner": "Owner",
+    "reviewDate": "Review date",
+    "mitigation": "Mitigation",
+    "add": "Add",
+    "storageHint": "Stored in browser localStorage per tenant.",
+    "searchPlaceholder": "Search...",
+    "allSeverities": "All severities",
+    "allStatuses": "All statuses",
+    "rowCount": "{{count}} risks",
+    "statusCol": "Status",
+    "empty": "No risks registered.",
+    "invalid": "Title is required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete this risk?",
+    "severities": {
+      "Low": "Low",
+      "Medium": "Medium",
+      "High": "High",
+      "Critical": "Critical"
+    },
+    "statuses": {
+      "Open": "Open",
+      "Mitigating": "Mitigating",
+      "Closed": "Closed"
+    }
+  },
+  "escalations": {
+    "title": "Escalations",
+    "subtitle": "Open items needing managerial decision.",
+    "newLegend": "New escalation",
+    "titleLabel": "Title",
+    "party": "Party",
+    "severity": "Severity",
+    "owner": "Owner",
+    "dueDate": "Due date",
+    "description": "Description",
+    "resolution": "Resolution",
+    "add": "Add",
+    "searchPlaceholder": "Search...",
+    "allStatuses": "All statuses",
+    "rowCount": "{{count}} escalations",
+    "statusCol": "Status",
+    "empty": "No escalations.",
+    "invalid": "Title is required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete?",
+    "statuses": {
+      "Open": "Open",
+      "InReview": "In review",
+      "Resolved": "Resolved",
+      "Deferred": "Deferred"
+    }
+  },
+  "clientScorecard": {
+    "title": "Client scorecard",
+    "subtitle": "Composite score per customer — on-time (60%) + paid ratio (40%).",
+    "searchPlaceholder": "Search customer...",
+    "rowCount": "{{count}} customers",
+    "customer": "Customer",
+    "score": "Score",
+    "shipments": "Shipments",
+    "onTimePct": "On-time %",
+    "revenue": "Revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "paidRatio": "Paid ratio"
+  },
+  "monthlyPack": {
+    "title": "Monthly review pack",
+    "subtitle": "Executive snapshot for {{month}}.",
+    "print": "Print",
+    "revenue": "Revenue",
+    "paid": "Paid",
+    "outstanding": "Outstanding",
+    "invoices": "Invoices",
+    "orders": "Orders",
+    "completedOrders": "Completed",
+    "producedQty": "Produced",
+    "onTimePct": "On-time",
+    "alertsTitle": "Alerts (now)",
+    "noAlerts": "No active alerts.",
+    "severities": {
+      "Critical": "Critical",
+      "Warning": "Warning",
+      "Info": "Info"
+    }
+  },
+  "overtime": {
+    "title": "Overtime",
+    "subtitle": "Anything above standard-per-day counts as overtime.",
+    "month": "Month",
+    "standardHours": "Standard",
+    "perDay": "/day",
+    "totalHours": "Total",
+    "regularHours": "Regular",
+    "overtimeHours": "Overtime",
+    "searchPlaceholder": "Search employee...",
+    "name": "Name",
+    "department": "Department",
+    "days": "Days"
+  },
+  "performance": {
+    "title": "Performance",
+    "subtitle": "Operator performance proxy until P8.9 OperationTimeLog lands.",
+    "month": "Month",
+    "searchPlaceholder": "Search employee / department...",
+    "rowCount": "{{count}} employees",
+    "name": "Name",
+    "department": "Department",
+    "days": "Days",
+    "hours": "Hours",
+    "assignments": "Assignments",
+    "index": "Productivity"
+  },
+  "training": {
+    "title": "Training & certifications",
+    "subtitle": "Training records per employee.",
+    "newLegend": "New training",
+    "employee": "Employee",
+    "topic": "Topic",
+    "skillArea": "Skill area",
+    "provider": "Provider",
+    "completionDate": "Completed",
+    "expiryDate": "Expires",
+    "certificate": "Certificate",
+    "add": "Add",
+    "searchPlaceholder": "Search topic / employee...",
+    "expiringOnly": "Only expiring soon",
+    "expiring": "{{count}} expiring",
+    "expired": "{{count}} expired",
+    "expiredBadge": "expired",
+    "rowCount": "{{count}} records",
+    "daysLeft": "Days left",
+    "empty": "No records.",
+    "invalid": "Employee + topic required.",
+    "saved": "Saved.",
+    "confirmDelete": "Delete?"
+  },
+  "oee": {
+    "title": "OEE (Overall Equipment Effectiveness)",
+    "subtitle": "OEE = Availability × Performance × Quality.",
+    "periodDays": "Period (days)",
+    "performanceProxy": "Performance proxy",
+    "globalQuality": "Global quality",
+    "avgOee": "Avg OEE",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "availability": "Availability",
+    "performance": "Performance",
+    "quality": "Quality"
+  },
+  "setupTime": {
+    "title": "Setup time",
+    "subtitle": "Changeover minutes per machine.",
+    "totalEvents": "Setup events",
+    "totalMinutes": "Total minutes",
+    "searchPlaceholder": "Search machine...",
+    "machine": "Machine",
+    "count": "Count",
+    "avgMinutes": "Avg min.",
+    "empty": "No setup events."
+  },
+  "bottleneck": {
+    "title": "Bottleneck analysis",
+    "subtitle": "Ranked by downtime minutes — worst 3 highlighted.",
+    "current": "Current bottleneck",
+    "downtimeSummary": "{{count}} events, {{minutes}} minutes",
+    "rowCount": "{{count}} machines",
+    "rank": "Rank",
+    "machine": "Machine",
+    "events": "Events",
+    "totalDowntime": "Total downtime",
+    "avgDowntime": "Avg"
+  },
+  "cuttingQueue": {
+    "title": "Cutting queue",
+    "subtitle": "Orders waiting for cutting (producedQuantity = 0).",
+    "rowCount": "{{count}} in queue",
+    "empty": "No orders in queue."
+  },
+  "sewingQueue": {
+    "title": "Sewing queue",
+    "subtitle": "Orders in-progress (producedQuantity > 0 but < ordered)."
+  },
+  "minutesVariance": {
+    "title": "Minutes variance",
+    "subtitle": "Planned minutes vs scheduled window.",
+    "standardMinutes": "Std min./piece",
+    "workingHours": "Working hrs/day",
+    "plannedMinutes": "Planned",
+    "scheduledMinutes": "Scheduled",
+    "variance": "Variance",
+    "variancePct": "Variance %"
+  },
+  "rework": {
+    "title": "Rework",
+    "subtitle": "Orders with scrap > 0 — lead indicator of rework activity.",
+    "minScrap": "Min scrap",
+    "totalScrap": "Total scrap",
+    "totalProduced": "Total produced",
+    "scrapRate": "Scrap rate",
+    "scrap": "Scrap",
+    "scrapPct": "Scrap %",
+    "empty": "No orders with scrap."
+  },
+  "packLists": {
+    "title": "Pack lists",
+    "subtitle": "Printable pack list per shipment.",
+    "searchPlaceholder": "Search number / customer...",
+    "rowCount": "{{count}} shipments",
+    "number": "Number",
+    "date": "Date",
+    "customer": "Customer",
+    "carrier": "Carrier",
+    "tracking": "Tracking",
+    "lines": "Lines",
+    "totalQty": "Total qty",
+    "clickToOpen": "Click for printable pack list",
+    "linesTitle": "Lines ({{count}})",
+    "item": "Item",
+    "batch": "Batch",
+    "qty": "Qty",
+    "print": "Print"
+  },
+  "returns": {
+    "title": "Returns",
+    "subtitle": "Return declarations (6121) — goods coming back from customer.",
+    "count": "Count",
+    "totalLines": "Total lines",
+    "totalQty": "Total qty",
+    "totalValue": "Total value",
+    "searchPlaceholder": "Search number / MRN / customer...",
+    "number": "Number",
+    "procedure": "Procedure",
+    "partner": "Customer",
+    "date": "Date",
+    "lines": "Lines",
+    "value": "Value",
+    "empty": "No returns."
   }
 }

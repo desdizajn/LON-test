@@ -29,6 +29,7 @@ const LocationForm: React.FC = () => {
 
   useEffect(() => {
     loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadInitialData = async () => {

@@ -27,7 +27,7 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({ onSuccess, onCancel }) => {
   const [carriers, setCarriers] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
-  const [uoms, setUoms] = useState<any[]>([]);
+  const [, setUoms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

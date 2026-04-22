@@ -682,7 +682,18 @@
   "nav": {
     "dashboard": "Контролна табла",
     "wmsInventory": "WMS и Инвентар",
-    "production": "Производство (LON)",
+    "production": {
+      "today": "Денешен план",
+      "cuttingQueue": "Queue за кроење",
+      "sewingQueue": "Queue за шиење",
+      "wip": "WIP по налог",
+      "atRisk": "Налози во ризик",
+      "shortage": "Shortage за денес",
+      "minutesVariance": "Минути план vs стварно",
+      "rework": "Rework / waste",
+      "completed": "Завршени налози",
+      "search": "Пребарување"
+    },
     "customsMrn": "Царина и MRN",
     "guarantees": "Гаранции",
     "traceability": "Следливост",
@@ -705,7 +716,17 @@
     "boms": "Нормативи (BOM)",
     "routings": "Технолошки процес",
     "workCenters": "Работни центри",
-    "machines": "Машини",
+    "machines": {
+      "status": "Машини (live status)",
+      "workCenters": "Work centers / Линии",
+      "downtime": "Downtime",
+      "oee": "OEE по машина / линија",
+      "maintenancePlan": "Maintenance план",
+      "maintenanceHistory": "Maintenance историја",
+      "capacity": "Искористеност на капацитет",
+      "setupTime": "Setup time анализа",
+      "bottleneck": "Bottleneck за денес"
+    },
     "codeLists": "Шифрарници",
     "legacySectionLabel": "⚠️ Во миграција (P6.37)",
     "groupEmpty": "Ставките сè уште не се пополнети",
@@ -761,18 +782,6 @@
       "guarantees": "Царинска гаранција",
       "search": "Пребарување"
     },
-    "production": {
-      "today": "Денешен план",
-      "cuttingQueue": "Queue за кроење",
-      "sewingQueue": "Queue за шиење",
-      "wip": "WIP по налог",
-      "atRisk": "Налози во ризик",
-      "shortage": "Shortage за денес",
-      "minutesVariance": "Минути план vs стварно",
-      "rework": "Rework / waste",
-      "completed": "Завршени налози",
-      "search": "Пребарување"
-    },
     "finishedGoods": {
       "awaitingPack": "Чекаат пакување",
       "packing": "Во тек на пакување",
@@ -794,17 +803,6 @@
       "assignment": "Assignment (оператор ↔ машина)",
       "training": "Тренинзи / сертификати",
       "payrollExport": "Часови за плата"
-    },
-    "machines": {
-      "status": "Машини (live status)",
-      "workCenters": "Work centers / Линии",
-      "downtime": "Downtime",
-      "oee": "OEE по машина / линија",
-      "maintenancePlan": "Maintenance план",
-      "maintenanceHistory": "Maintenance историја",
-      "capacity": "Искористеност на капацитет",
-      "setupTime": "Setup time анализа",
-      "bottleneck": "Bottleneck за денес"
     },
     "finance": {
       "invoicing": "Фактурирање",
@@ -1049,11 +1047,21 @@
       "from": "Од",
       "to": "До"
     },
-    "inventoryByLocation": { "title": "Залихи по локација" },
-    "inventoryByBatch": { "title": "Залихи по batch" },
-    "inventoryByMrn": { "title": "Залихи по MRN" },
-    "blockedInventory": { "title": "Блокирани залихи" },
-    "movements": { "title": "Извештај на движења" },
+    "inventoryByLocation": {
+      "title": "Залихи по локација"
+    },
+    "inventoryByBatch": {
+      "title": "Залихи по batch"
+    },
+    "inventoryByMrn": {
+      "title": "Залихи по MRN"
+    },
+    "blockedInventory": {
+      "title": "Блокирани залихи"
+    },
+    "movements": {
+      "title": "Извештај на движења"
+    },
     "cycleCountAccuracy": {
       "title": "Точност на попис",
       "bucket": "Brzi филтер",
@@ -1120,7 +1128,10 @@
     }
   },
   "movements": {
-    "tabs": { "receipts": "Приеми", "shipments": "Испратници" },
+    "tabs": {
+      "receipts": "Приеми",
+      "shipments": "Испратници"
+    },
     "totalReceipts": "Вкупно приеми",
     "totalQtyReceived": "Вкупна количина приена",
     "avgQtyPerReceipt": "Просек количина по прием",
@@ -1658,5 +1669,434 @@
         "unknown": "непознато"
       }
     }
+  },
+  "financeReports": {
+    "title": "Финансиски извештаи",
+    "subtitle": "Еден влез во сите финансиски извештаи — кликни картичка за детал.",
+    "cards": {
+      "invoicing": {
+        "title": "Фактурирање",
+        "subtitle": "Draft → Issued → Paid"
+      },
+      "contracts": {
+        "title": "Клиентски договори",
+        "subtitle": "Rates + период"
+      },
+      "guarantees": {
+        "title": "Царинска гаранција",
+        "subtitle": "Сметки + активни debits"
+      },
+      "margin": {
+        "title": "Маржа по клиент",
+        "subtitle": "Revenue − estimated cost"
+      },
+      "pnl": {
+        "title": "P&L preview",
+        "subtitle": "Месечен rollup"
+      },
+      "cashFlow": {
+        "title": "Cash flow forecast",
+        "subtitle": "Очекувана наплата по bucket"
+      },
+      "costAccounting": {
+        "title": "Cost accounting",
+        "subtitle": "Чинење / минута × shift"
+      },
+      "ap": {
+        "title": "Добавувач invoices",
+        "subtitle": "Отворени / платени / cancel"
+      },
+      "payroll": {
+        "title": "Плати (aggregate)",
+        "subtitle": "Часови × rate × overtime"
+      }
+    }
+  },
+  "financeMargin": {
+    "title": "Маржа по клиент",
+    "subtitle": "Revenue vs produced quantity per customer. Cost proxy додека cost-accounting feed стигне.",
+    "searchPlaceholder": "Пребарај клиент...",
+    "totalRevenue": "Вкупен приход",
+    "paid": "Платено",
+    "outstanding": "Не платено",
+    "producedQty": "Произведено",
+    "customer": "Клиент",
+    "invoices": "Фактури",
+    "revenue": "Приход",
+    "orders": "Налози",
+    "currency": "Валута"
+  },
+  "pnl": {
+    "title": "P&L preview",
+    "subtitle": "Месечен rollup: invoice revenue − estimated cost × cost%. Пред одделен cost feed.",
+    "monthsBack": "Месеци назад",
+    "costPercent": "Cost %",
+    "ytdRevenue": "YTD приход",
+    "ytdCost": "YTD cost",
+    "ytdNet": "YTD net",
+    "month": "Месец",
+    "issued": "Issued",
+    "paid": "Paid",
+    "revenue": "Приход",
+    "estimatedCost": "Проценет cost",
+    "netMargin": "Нето маржа"
+  },
+  "cashFlow": {
+    "title": "Cash flow forecast",
+    "subtitle": "Отворени Issued invoices распределени по due-date bucket.",
+    "buckets": {
+      "overdue": "Задоцнето",
+      "due0_7": "Денес - 7 дена",
+      "due8_30": "8 - 30 дена",
+      "due31_60": "31 - 60 дена",
+      "due61plus": "61+ дена"
+    },
+    "totalExpected": "Очекувано",
+    "invoices": "фактури",
+    "searchPlaceholder": "Пребарај број / клиент...",
+    "rowCount": "{{count}} запис(и)",
+    "number": "Број",
+    "partner": "Клиент",
+    "dueDate": "Доспева",
+    "daysToDue": "Дена до",
+    "amount": "Износ",
+    "currency": "Валута",
+    "bucket": "Bucket"
+  },
+  "costAccounting": {
+    "title": "Cost accounting",
+    "subtitle": "Чинење на минута по работен центар × смена. Matrix се сочувува локално до backend entity.",
+    "upsertLegend": "Додај / измени rate",
+    "workCenter": "Работен центар",
+    "shift": "Смена",
+    "ratePerMinute": "Чинење / минута",
+    "currency": "Валута",
+    "notes": "Белешки",
+    "upsert": "Сочувај",
+    "storageHint": "Чува се во browser localStorage per tenant.",
+    "searchPlaceholder": "Пребарај работен центар / смена...",
+    "rowCount": "{{count}} записи",
+    "avgRate": "Просек",
+    "minute": "минута",
+    "empty": "Сè уште нема rates.",
+    "invalid": "Работен центар + смена + rate се задолжителни.",
+    "saved": "Зачувано."
+  },
+  "supplierInvoices": {
+    "title": "Добавувач invoices (AP)",
+    "subtitle": "Отворени / платени invoices од добавувачи. Чува се локално до backend entity.",
+    "newLegend": "Нова invoice",
+    "number": "Број",
+    "supplier": "Добавувач",
+    "issueDate": "Издадена",
+    "dueDate": "Доспева",
+    "daysToDue": "Дена",
+    "amount": "Износ",
+    "currency": "Валута",
+    "reference": "Референца",
+    "status": "Статус",
+    "add": "Додај",
+    "storageHint": "Чува се во browser localStorage per tenant.",
+    "pending": "Pending",
+    "paid": "Paid",
+    "searchPlaceholder": "Пребарај број / добавувач / референца...",
+    "empty": "Нема invoices.",
+    "invalid": "Број + добавувач + износ се задолжителни.",
+    "saved": "Зачувано.",
+    "confirmDelete": "Да ја избришеш оваа invoice?",
+    "statuses": {
+      "Pending": "Pending",
+      "Paid": "Paid",
+      "Cancelled": "Cancelled"
+    }
+  },
+  "payrollAggregate": {
+    "title": "Плати (aggregate)",
+    "subtitle": "Вкупни часови × rate × overtime multiplier за избран месец.",
+    "month": "Месец",
+    "standardHours": "Стандардни часови",
+    "perDay": "/ден",
+    "overtimeX": "Overtime multiplier",
+    "totalHours": "Вкупно часови",
+    "totalPay": "Вкупна плата",
+    "searchPlaceholder": "Пребарај вработен...",
+    "fullName": "Име",
+    "department": "Оддел",
+    "hours": "Часови",
+    "rate": "Rate",
+    "regularHours": "Регуларни",
+    "overtimeHours": "Overtime часови",
+    "regularPay": "Регуларна плата",
+    "overtimePay": "Overtime плата"
+  },
+  "capacityUtilization": {
+    "title": "Capacity utilization",
+    "subtitle": "Машини vs available hours минус downtime. Proxy додека per-machine downtime стигне.",
+    "periodDays": "Период (дена)",
+    "availableMinutes": "Available мин.",
+    "totalDowntime": "Вкупен downtime",
+    "searchPlaceholder": "Пребарај машина...",
+    "machine": "Машина",
+    "currentState": "Состојба",
+    "downtime": "Downtime",
+    "running": "Работи",
+    "utilization": "Utilization"
+  },
+  "trends": {
+    "title": "Трендови",
+    "subtitle": "Месечни трендови на револјушн / налози / произведено.",
+    "monthsBack": "Месеци назад",
+    "month": "Месец",
+    "invoices": "Фактури",
+    "revenue": "Приход",
+    "orders": "Налози",
+    "producedQty": "Произведено"
+  },
+  "risks": {
+    "title": "Open risks",
+    "subtitle": "Регистар на отворени ризици. Чува се локално до backend entity.",
+    "newLegend": "Нов ризик",
+    "titleLabel": "Наслов",
+    "category": "Категорија",
+    "severity": "Сериозност",
+    "owner": "Одговорен",
+    "reviewDate": "Review датум",
+    "mitigation": "Mitigation",
+    "add": "Додај",
+    "storageHint": "Чува се во browser localStorage per tenant.",
+    "searchPlaceholder": "Пребарај...",
+    "allSeverities": "Сите сериозности",
+    "allStatuses": "Сите статуси",
+    "rowCount": "{{count}} ризици",
+    "statusCol": "Статус",
+    "empty": "Нема ризици регистрирани.",
+    "invalid": "Наслов е задолжителен.",
+    "saved": "Зачувано.",
+    "confirmDelete": "Да го избришеш овој ризик?",
+    "severities": {
+      "Low": "Низок",
+      "Medium": "Среден",
+      "High": "Висок",
+      "Critical": "Критичен"
+    },
+    "statuses": {
+      "Open": "Open",
+      "Mitigating": "Mitigating",
+      "Closed": "Closed"
+    }
+  },
+  "escalations": {
+    "title": "Escalations",
+    "subtitle": "Отворени прашања кои бараат managerial одлука. Чува се локално до backend entity.",
+    "newLegend": "Нова escalation",
+    "titleLabel": "Наслов",
+    "party": "Страна",
+    "severity": "Сериозност",
+    "owner": "Одговорен",
+    "dueDate": "Due дата",
+    "description": "Опис",
+    "resolution": "Resolution",
+    "add": "Додај",
+    "searchPlaceholder": "Пребарај...",
+    "allStatuses": "Сите статуси",
+    "rowCount": "{{count}} escalations",
+    "statusCol": "Статус",
+    "empty": "Нема escalations.",
+    "invalid": "Наслов е задолжителен.",
+    "saved": "Зачувано.",
+    "confirmDelete": "Да ја избришеш?",
+    "statuses": {
+      "Open": "Open",
+      "InReview": "Во review",
+      "Resolved": "Resolved",
+      "Deferred": "Deferred"
+    }
+  },
+  "clientScorecard": {
+    "title": "Client scorecard",
+    "subtitle": "Композитна оценка по клиент: on-time (60%) + paid ratio (40%).",
+    "searchPlaceholder": "Пребарај клиент...",
+    "rowCount": "{{count}} клиенти",
+    "customer": "Клиент",
+    "score": "Score",
+    "shipments": "Shipments",
+    "onTimePct": "On-time %",
+    "revenue": "Приход",
+    "paid": "Платено",
+    "outstanding": "Не платено",
+    "paidRatio": "Paid ratio"
+  },
+  "monthlyPack": {
+    "title": "Месечен review pack",
+    "subtitle": "Executive snapshot за {{month}}. Print → PDF за board meeting.",
+    "print": "Принт",
+    "revenue": "Приход",
+    "paid": "Платено",
+    "outstanding": "Не платено",
+    "invoices": "Фактури",
+    "orders": "Налози",
+    "completedOrders": "Завршени налози",
+    "producedQty": "Произведено",
+    "onTimePct": "On-time",
+    "alertsTitle": "Alerts (сега)",
+    "noAlerts": "Нема активни alerts.",
+    "severities": {
+      "Critical": "Critical",
+      "Warning": "Warning",
+      "Info": "Info"
+    }
+  },
+  "overtime": {
+    "title": "Overtime",
+    "subtitle": "Сè над стандардни часови се брои како overtime.",
+    "month": "Месец",
+    "standardHours": "Стандардни",
+    "perDay": "/ден",
+    "totalHours": "Вкупно",
+    "regularHours": "Регуларни",
+    "overtimeHours": "Overtime",
+    "searchPlaceholder": "Пребарај вработен / оддел...",
+    "name": "Име",
+    "department": "Оддел",
+    "days": "Денови"
+  },
+  "performance": {
+    "title": "Performance",
+    "subtitle": "Проxy учин на оператори: часови × assignments. Детален per-piece учин после P8.9.",
+    "month": "Месец",
+    "searchPlaceholder": "Пребарај вработен / оддел...",
+    "rowCount": "{{count}} вработени",
+    "name": "Име",
+    "department": "Оддел",
+    "days": "Денови",
+    "hours": "Часови",
+    "assignments": "Активни",
+    "index": "Productivity"
+  },
+  "training": {
+    "title": "Обуки и сертификати",
+    "subtitle": "Training records per вработен. Чува се локално до backend entity.",
+    "newLegend": "Нова обука",
+    "employee": "Вработен",
+    "topic": "Тема",
+    "skillArea": "Skill area",
+    "provider": "Провајдер",
+    "completionDate": "Завршена",
+    "expiryDate": "Истекува",
+    "certificate": "Сертификат",
+    "add": "Додај",
+    "searchPlaceholder": "Пребарај тема / вработен...",
+    "expiringOnly": "Само со блиска експирација",
+    "expiring": "{{count}} блиску до експирација",
+    "expired": "{{count}} истечени",
+    "expiredBadge": "истекло",
+    "rowCount": "{{count}} records",
+    "daysLeft": "Дена",
+    "empty": "Нема records.",
+    "invalid": "Вработен + тема се задолжителни.",
+    "saved": "Зачувано.",
+    "confirmDelete": "Избриши?"
+  },
+  "oee": {
+    "title": "OEE (Overall Equipment Effectiveness)",
+    "subtitle": "OEE = Availability × Performance × Quality.",
+    "periodDays": "Период (дена)",
+    "performanceProxy": "Performance proxy",
+    "globalQuality": "Global quality",
+    "avgOee": "Просечен OEE",
+    "searchPlaceholder": "Пребарај машина...",
+    "machine": "Машина",
+    "availability": "Availability",
+    "performance": "Performance",
+    "quality": "Quality"
+  },
+  "setupTime": {
+    "title": "Setup time",
+    "subtitle": "Changeover минути по машина — од downtime events со category=Changeover.",
+    "totalEvents": "Setup events",
+    "totalMinutes": "Вкупно мин.",
+    "searchPlaceholder": "Пребарај машина...",
+    "machine": "Машина",
+    "count": "Бр.",
+    "avgMinutes": "Просек мин.",
+    "empty": "Нема setup events."
+  },
+  "bottleneck": {
+    "title": "Bottleneck analysis",
+    "subtitle": "Ранкирано по downtime минути. Најлошите 3 подобрени.",
+    "current": "Тековен bottleneck",
+    "downtimeSummary": "{{count}} downtime events, {{minutes}} минути",
+    "rowCount": "{{count}} машини",
+    "rank": "Ранк",
+    "machine": "Машина",
+    "events": "Events",
+    "totalDowntime": "Вкупен downtime",
+    "avgDowntime": "Просек"
+  },
+  "cuttingQueue": {
+    "title": "Cutting queue",
+    "subtitle": "Налози чекаат кроење (producedQuantity = 0).",
+    "rowCount": "{{count}} во ред",
+    "empty": "Нема налози во ред."
+  },
+  "sewingQueue": {
+    "title": "Sewing queue",
+    "subtitle": "Налози во тек на шиење (producedQuantity > 0 но < ordered)."
+  },
+  "minutesVariance": {
+    "title": "Минути variance",
+    "subtitle": "Планирани минути (orderQty × std) vs scheduled минути од planned window.",
+    "standardMinutes": "Std мин./парче",
+    "workingHours": "Работни часови/ден",
+    "plannedMinutes": "Планирани",
+    "scheduledMinutes": "Scheduled",
+    "variance": "Разлика",
+    "variancePct": "Разлика %"
+  },
+  "rework": {
+    "title": "Rework",
+    "subtitle": "Налози со scrap > 0 — индикатор за rework активност.",
+    "minScrap": "Мин. scrap",
+    "totalScrap": "Вкупен scrap",
+    "totalProduced": "Вкупно произведено",
+    "scrapRate": "Scrap rate",
+    "scrap": "Scrap",
+    "scrapPct": "Scrap %",
+    "empty": "Нема налози со scrap."
+  },
+  "packLists": {
+    "title": "Pack lists",
+    "subtitle": "Испратници со Status=Packed или Shipped — printable pack list per shipment.",
+    "searchPlaceholder": "Пребарај број / клиент...",
+    "rowCount": "{{count}} испратници",
+    "number": "Број",
+    "date": "Датум",
+    "customer": "Клиент",
+    "carrier": "Превозник",
+    "tracking": "Tracking",
+    "lines": "Ставки",
+    "totalQty": "Вкупна количина",
+    "clickToOpen": "Клик за printable pack list",
+    "linesTitle": "Линии ({{count}})",
+    "item": "Артикл",
+    "batch": "Партија",
+    "qty": "Кол.",
+    "print": "Принт"
+  },
+  "returns": {
+    "title": "Враќања",
+    "subtitle": "Return declarations (6121) — goods што се враќаат од клиент.",
+    "count": "Бр.",
+    "totalLines": "Вкупно линии",
+    "totalQty": "Вкупна кол.",
+    "totalValue": "Вкупна вредност",
+    "searchPlaceholder": "Пребарај број / MRN / клиент...",
+    "number": "Број",
+    "procedure": "Постапка",
+    "partner": "Клиент",
+    "date": "Датум",
+    "lines": "Линии",
+    "value": "Вредност",
+    "empty": "Нема враќања."
   }
 }

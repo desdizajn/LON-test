@@ -26,6 +26,7 @@ const PartnerDetail: React.FC = () => {
 
   useEffect(() => {
     loadPartner();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadPartner = async () => {
