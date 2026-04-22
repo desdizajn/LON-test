@@ -339,6 +339,45 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-22 (latest) — P14.9: 29 placeholder pages → real + warning backlog clean — HEAD `dccd0b9`, VPS green**
+>
+> ### 🎯 Completed in this pass
+>
+> User directive: „Те молам да ги направиме сите placeholder страници за да биде комплетна платформата." + „решавај ги сите Pre-existing warnings." Memory saved to `feedback_fix_all_warnings.md`.
+>
+> **Warnings:** 22 files cleaned; build exits `Compiled successfully` (0 warnings).
+>
+> **29 placeholders → real (navGroups backendStatus = exists):**
+>
+> | Group | Pages |
+> |---|---|
+> | Finance | cost-accounting · margin · ap · payroll · pnl · cash-flow · reports |
+> | Management | capacity · margin · risks · trends · escalations · client-scorecard · monthly-pack |
+> | HR | overtime · performance · training · payroll-export |
+> | Machines | oee · capacity · setup-time · bottleneck |
+> | Production | cutting-queue · sewing-queue · minutes-variance · rework |
+> | Finished Goods | packing · pack-lists · returns |
+>
+> **Total pages on new pattern: 60** (up from 31).
+>
+> **LocalStorage-backed registers** (MVP persistence until EF entities land): cost rates, supplier invoices, payroll rates, risks, escalations, training.
+>
+> **i18n × 4 locales:** +25 top-level key groups each (mk / sr / sq / en).
+>
+> ### 🧭 Next session: backend migration of the 5 localStorage stores
+>
+> Simple tenant-scoped CRUD entities (1 session):
+> 1. `CostRate` (WorkCenterId × ShiftId → RatePerMinute)
+> 2. `SupplierInvoice` (Number, SupplierId, IssueDate, DueDate, Amount, Status)
+> 3. `EmployeePayrollRate` (EmployeeId, RatePerHour, Currency)
+> 4. `RiskRegisterItem` (Title, Category, Severity, Status, Owner, Mitigation)
+> 5. `Escalation` (Title, Party, Severity, Status, Owner, DueDate, Resolution)
+> 6. `TrainingRecord` (EmployeeId, Topic, SkillArea, Provider, CompletionDate, ExpiryDate, Certificate)
+>
+> UI swap is mechanical — replace localStorage helpers with API calls.
+>
+> ---
+
 > **>>>** **2026-04-22 — P14.7 + P14.8 + Wave-10 — HEAD `53c7799`, VPS green (api + frontend)**
 >
 > ### 🎯 Затворени deferred items + final hub-page audit
