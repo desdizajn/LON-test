@@ -2,6 +2,61 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-22 — P14.7 + P14.8 + Wave-10: bulk move + drawer EDIT + hub-page filters
+
+**Status:** [x] shipped (api + frontend) on VPS. HEAD `53c7799`. `/api/health/live` 200, `/` 200.
+
+User: „Продолжи со преостанатите таскови. Тестови ќе правам кога се ќе биде готово. Сакам на фронтенд да имам се што треба за да правам тест." — затворен ост-листи од wave 1 + audit pass на hub pages.
+
+**P14.7 — Bulk move N selected balances:**
+- Backend: `BulkMoveBalancesCommand` + handler во `src/LON.Application/WMS/Commands/BulkMoveBalances/` — selection-based companion на `MassLocationTransferCommand`. Истите target-consolidation правила: DbSet.Local first → DB lookup → нов red на natural key (Item, Location, Batch, MRN, UoM, QualityStatus). Skip-ува redove кои се веќе на target. Drained sources на `Quantity = 0` за audit.
+- Endpoint `POST /api/WMS/inventory/bulk-move-balances` со payload `{balanceIds[], targetLocationId, reason?}`.
+- Frontend: додаден „Премести на локација" во `Inventory` BulkActionBar; модал со SearchableSelect за target + textarea за reason; toast `moved/skipped/qty`. `loadInventory` re-fetch + selection clear после успех.
+
+**P14.8 — Declaration drawer EDIT mode:**
+- `Customs/DeclarationsByType` drawer footer: за Draft декларации — Edit/Save/Cancel buttons; за non-Draft — locked badge.
+- Inline editor: `declarationNumber`, `dueDate`, `notes`, `specialRemarks` (полини за кои постоечкиот `UpdateCustomsDeclarationCommand` дозволува).
+- Save повикува `customsApi.updateDeclaration(id, payload)`, ре-фетчува detail, patch-ира list row in-place. Toast on success/error.
+
+**Wave 10 — filters на hub pages:**
+- `Customs.tsx` (главна): text search + procedure dropdown (derived) + status (Cleared/Pending) над declarations листа.
+- `Production.tsx` (главна): search across order/main/sub/item/customer-order + status dropdown threaded преку `grouped` дерево.
+- `Guarantees.tsx`: account-card search bar + active-guarantee search + MRN dropdown над ledger entries.
+- `Advanced/MRNUsageTracking`: text search + Active/Depleted status filter над MRN overview.
+
+**i18n × 4 локали:** `inventory.bulkMove.*` (action/title/intro/targetLabel/targetPlaceholder/reasonLabel/reasonPlaceholder/confirm/success), `declarationsByType.{editAction,editPanel,editLockedAfterDraft,editSuccess,specialRemarks,dueDate}`. Hub-page placeholders фали со fallback `t('key', 'default')` за да не паднат пред да се додаде целосен dict.
+
+**Verification:**
+- `dotnet build src/LON.API` — 0 warnings, 0 errors.
+- `npm run build` — Compiled with warnings (само pre-existing `inventory`+`selectedMRN` во MRNUsageTracking, нема нови во touched файлови).
+- VPS: `git pull` → `docker compose build api frontend` → `docker compose up -d` → `/api/health/live` HTTP 200, `/` HTTP 200.
+
+**Кумулативно после P14:**
+- 27 list pages со wave-1 пристап (filters / detail drawers / row selection / bulk actions).
+- 4 hub pages со top-bar filters (Customs, Production, Guarantees, MRNUsageTracking).
+- Total: **31 страници** на новиот UX pattern.
+- 2 reusable backend commands (BulkShipmentFromFG + BulkMoveBalances) + 4 reusable frontend primitives (SearchableSelect, DetailDrawer, BulkActionBar, useRowSelection hook).
+
+**Што не е допрено** (свесна одлука — функционално веќе покриено):
+- MasterData листи (`PartnersList`, `ItemsList`, `BOMsList`, `RoutingsList`, etc.) — користат стариот `DataTable` со built-in search + edit/delete actions. Визуелна миграција може да чека одделен sprint.
+- Admin страници (`UserManagement`, `RoleManagement`, `ShiftManagement`, `EmployeeManagement`, `CodeListManagement`) — не сум ги допрел. Не се hot-path; може да се испазарат во иднина.
+- Hr/AttendanceToday + Hr/OperatorAssignment — веќе имаа filters.
+
+**Commit:** `53c7799` на main.
+
+**Готово за UAT од корисникот.** Целосна листа на ново функционалното:
+
+1. ✅ Detail drawers на read-only листи — кликни на ред за детали.
+2. ✅ Searchable dropdowns секаде каде имаше plain text inputs.
+3. ✅ Filter bars на сите hot-path страници.
+4. ✅ Row selection + bulk actions (export, QC change, move на Inventory; QC release на QcHold).
+5. ✅ Drawer EDIT mode за Draft customs declarations.
+6. ✅ Bulk move-across-location (нов endpoint + UI).
+7. ✅ Hub-page filters на Customs/Production/Guarantees/MRNUsageTracking.
+8. ✅ i18n × 4 локали за сè ново.
+
+---
+
 ## 2026-04-22 — UX wave 9: filters on the 3 dashboard-style Reports pages
 
 **Status:** [x] shipped + deployed. HEAD `12675ff`, VPS green (HTTP 200).

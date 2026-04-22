@@ -339,6 +339,24 @@
 
 ## Current Active Task
 
+> **>>>** **2026-04-22 — P14.7 + P14.8 + Wave-10 — HEAD `53c7799`, VPS green (api + frontend)**
+>
+> ### 🎯 Затворени deferred items + final hub-page audit
+>
+> **P14.7** — Bulk move N selected balances → нов backend `BulkMoveBalancesCommand` + endpoint `POST /api/WMS/inventory/bulk-move-balances` + UI акција во Inventory BulkActionBar (модал со SearchableSelect target + reason).
+> **P14.8** — Declaration drawer EDIT mode — Draft декларациите имаат inline editor за `declarationNumber` + `dueDate` + `notes` + `specialRemarks`; non-Draft се locked.
+> **Wave 10** — filters на главните hub pages: Customs (search + procedure + status), Production (search + status), Guarantees (account search + active search + MRN dropdown), MRNUsageTracking (search + Active/Depleted).
+>
+> **Кумулативно: 31 страници со нов UX pattern** + 2 backend bulk commands + 4 reusable frontend primitives.
+>
+> ### 🧭 Свесно недопрено (за иден sprint, ако стане приоритет):
+> - MasterData CRUD листи (Partners/Items/BOMs/Routings/Warehouses/Locations/UoMs/Machines/WorkCenters) — користат стариот `DataTable` component со built-in search + actions; функционално покриени.
+> - Admin pages (User/Role/Shift/Employee/CodeList management) — не се hot-path.
+>
+> **Готово за корисник UAT.**
+>
+> ---
+
 > **>>>** **2026-04-22 — UX wave 9: dashboard-style Reports filters — HEAD `12675ff`, VPS green**
 >
 > ### 🎯 Handoff
