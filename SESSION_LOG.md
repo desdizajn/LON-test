@@ -2,6 +2,46 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — Tariff browser + duty calculator + P15.16.1 + P15.17
+
+**Status:** [x] 3 features shipped (commit `d23c04c`), VPS verified end-to-end.
+
+**User ask:** „Не видов никаде царинска тарифа. Мислам дека треба да ја има табелата со пребарување и приказ. Дури и да направиме „што ако" калкулатор... Од овие „неважните", те молам направи ги P15.16.1 и P15.17."
+
+**1. Tariff browser + what-if duty calculator**
+- Page `/master-data/tariff-codes` (`TariffBrowser.tsx`) — paginated searchable list (GET `/api/KnowledgeBase/tariff-codes`; 10,306 TARIC entries in seed) + sticky right-side calculator panel.
+- Calculator inputs: CustomsValue / Currency / ExchangeRate / Date / Quantity / Country / Preferential flag.
+- New endpoint `POST /api/customs/duty-calculator` (`DutyWhatIfQuery`) replicates legacy `PresmetajDavackiPoNaim`:
+  ```
+  CarOsn = CustomsValue × Kurs          (MKD)
+  Carina = Rate × CarOsn / 100
+  DanOsn = CarOsn + Carina
+  Danok  = VATRate × DanOsn / 100
+  Vkupno = Carina + Danok
+  ```
+- Rate resolution order: year-indexed `TariffCodeRate` (P4.7) → base `TariffCode` with warning. Preferential flag sets DutyRate=0 (simplified MK rule) with advisory to consult `CarTarPovlasteniDDV`/`Aneksi` tables.
+- VPS verified: `0102290500` × 1000 EUR × 61.5 MKD → CustomsBase 61,500 · Duty 6150 @ 10% · VAT 3382.5 @ 5% · **Total 9532.5 MKD** + warning „No TariffCodeRate covers 2026-04-23"; with preferential ON → Duty 0, Total 3075 (VAT only).
+- Nav entry `settings-tariff-codes` + i18n × 4.
+
+**2. P15.16.1 — NormativiVelicini UI editor (`/production/size-breakdown`)**
+- Backend: `UpsertMaterialSizesCommand` + `ClearMaterialSizesCommand` + 3 endpoints:
+  - `GET /api/Production/materials/{id}/sizes` — current sizes + PO qty + effective required.
+  - `POST /api/Production/materials/{id}/sizes` — atomic replace (soft-delete + insert). Enforces Σ qty == PO.OrderQuantity; recomputes parent `RequiredQuantity = Σ(qty × normativ)`; sets `HasSizeBreakdown=true`.
+  - `DELETE /api/Production/materials/{id}/sizes` — soft-delete all + revert `HasSizeBreakdown=false`.
+- Frontend: 2-level picker (PO → material) + inline editable table. Live Σ display with red-when-mismatch indicator, „distribute remainder to last row" helper, weighted-avg normativ shown in the totals row. Save button disabled when Σ ≠ PO.OrderQuantity.
+- VPS verified: `GET .../materials/<bad-id>/sizes` → HTTP 404 (route registered).
+
+**3. P15.17 — ProsecnaSTDaNe (average rate override)**
+- `CustomsDeclaration.UseAverageRate` bool + `AverageDutyRate` decimal(18,4).
+- `CreateCustomsDeclarationCommand`: when `UseAverageRate=true`, every line's DutyRate is replaced by `AverageDutyRate`, VATRate forced to 0. Lines bypass per-tariff lookups.
+- VPS verified end-to-end: POST with `useAverageRate=true, averageDutyRate=8, lineDutyRate=15, lineVatRate=18`, GET back line → `DutyRate=8, VATRate=0, DutyAmount=80`, total=80. Per-line inputs correctly overridden.
+
+**Migration:** `20260423121938_P15_17_AverageRateOverride` — 2 AddColumn.
+
+**Cumulative:** P15.x + P15.16 + P15.17 + P15.16.1 + P14.x + earlier all live. Platform is feature-complete for UAT including the tariff lookup / duty calculator surface the user asked for.
+
+---
+
 ## 2026-04-23 — P15.16: ELON_Research audit — 4 legacy gaps closed
 
 After user moved `docs/ELON_Research/` into the repo, I did a systematic re-read and found 4 gaps not covered by P15.1–P15.15 + the P15.x.1 follow-ups. All closed in commit `39dde0f`.
