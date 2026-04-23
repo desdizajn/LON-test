@@ -136,7 +136,15 @@ public static class MasterDataMappings
                 line.UoMId,
                 line.UoM == null ? null : MapUoM(line.UoM),
                 line.ScrapPercentage,
-                line.LineNumber
+                line.LineNumber,
+                line.PrimaryWasteItemId,
+                line.PrimaryWastePercentage,
+                line.SecondaryWasteItemId,
+                line.SecondaryWastePercentage,
+                line.TertiaryWasteItemId,
+                line.TertiaryWastePercentage,
+                line.ZagubaItemId,
+                line.ZagubaPercentage
             )).ToList(),
             bom.CreatedAt,
             bom.CreatedBy,

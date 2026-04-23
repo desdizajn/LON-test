@@ -41,6 +41,25 @@ public class BOMLine : BaseEntity, ITenantScoped
     public Guid UoMId { get; set; }
     public virtual UnitOfMeasure UoM { get; set; } = null!;
     public decimal ScrapPercentage { get; set; }
+
+    // P15.6b — per-BOM-line waste overrides. Each slot is independent; null = inherit
+    // from the item catalog default. Effective % used by material issue / receipt math is
+    // resolved BOMLine-first, Item-second, zero-last.
+    public Guid? PrimaryWasteItemId { get; set; }
+    public virtual Item? PrimaryWasteItem { get; set; }
+    public decimal? PrimaryWastePercentage { get; set; }
+
+    public Guid? SecondaryWasteItemId { get; set; }
+    public virtual Item? SecondaryWasteItem { get; set; }
+    public decimal? SecondaryWastePercentage { get; set; }
+
+    public Guid? TertiaryWasteItemId { get; set; }
+    public virtual Item? TertiaryWasteItem { get; set; }
+    public decimal? TertiaryWastePercentage { get; set; }
+
+    public Guid? ZagubaItemId { get; set; }
+    public virtual Item? ZagubaItem { get; set; }
+    public decimal? ZagubaPercentage { get; set; }
 }
 
 public class Routing : BaseEntity, ITenantScoped

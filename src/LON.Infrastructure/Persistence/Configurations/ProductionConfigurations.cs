@@ -67,10 +67,21 @@ public class BOMLineConfiguration : IEntityTypeConfiguration<BOMLine>
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.ScrapPercentage).HasColumnType("decimal(18,4)");
-        
+
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
-        
+
+        // P15.6b waste overrides — self-FKs to Item (Restrict to avoid
+        // multi-path cascade). Percentages decimal(18,4) matching Item.
+        builder.Property(e => e.PrimaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.SecondaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.TertiaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.ZagubaPercentage).HasColumnType("decimal(18,4)");
+        builder.HasOne(e => e.PrimaryWasteItem).WithMany().HasForeignKey(e => e.PrimaryWasteItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.SecondaryWasteItem).WithMany().HasForeignKey(e => e.SecondaryWasteItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.TertiaryWasteItem).WithMany().HasForeignKey(e => e.TertiaryWasteItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.ZagubaItem).WithMany().HasForeignKey(e => e.ZagubaItemId).OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => new { e.BOMId, e.LineNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }

@@ -91,7 +91,15 @@ public class BomsController : BaseController
             ItemId = line.ComponentItemId,
             Quantity = line.Quantity,
             UoMId = line.UoMId,
-            ScrapPercentage = line.ScrapFactor
+            ScrapPercentage = line.ScrapFactor,
+            PrimaryWasteItemId = line.PrimaryWasteItemId,
+            PrimaryWastePercentage = line.PrimaryWastePercentage,
+            SecondaryWasteItemId = line.SecondaryWasteItemId,
+            SecondaryWastePercentage = line.SecondaryWastePercentage,
+            TertiaryWasteItemId = line.TertiaryWasteItemId,
+            TertiaryWastePercentage = line.TertiaryWastePercentage,
+            ZagubaItemId = line.ZagubaItemId,
+            ZagubaPercentage = line.ZagubaPercentage
         }).ToList();
 
         _context.BOMs.Add(bom);
@@ -132,7 +140,15 @@ public class BomsController : BaseController
             ItemId = line.ComponentItemId,
             Quantity = line.Quantity,
             UoMId = line.UoMId,
-            ScrapPercentage = line.ScrapFactor
+            ScrapPercentage = line.ScrapFactor,
+            PrimaryWasteItemId = line.PrimaryWasteItemId,
+            PrimaryWastePercentage = line.PrimaryWastePercentage,
+            SecondaryWasteItemId = line.SecondaryWasteItemId,
+            SecondaryWastePercentage = line.SecondaryWastePercentage,
+            TertiaryWasteItemId = line.TertiaryWasteItemId,
+            TertiaryWastePercentage = line.TertiaryWastePercentage,
+            ZagubaItemId = line.ZagubaItemId,
+            ZagubaPercentage = line.ZagubaPercentage
         }).ToList();
 
         await _context.SaveChangesAsync();

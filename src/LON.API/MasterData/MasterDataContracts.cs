@@ -113,7 +113,16 @@ public record BOMLineRequest(
     decimal Quantity,
     Guid UoMId,
     decimal ScrapFactor,
-    int SequenceNumber
+    int SequenceNumber,
+    // P15.6b — per-BOM-line waste overrides. Null = inherit from item default.
+    Guid? PrimaryWasteItemId = null,
+    decimal? PrimaryWastePercentage = null,
+    Guid? SecondaryWasteItemId = null,
+    decimal? SecondaryWastePercentage = null,
+    Guid? TertiaryWasteItemId = null,
+    decimal? TertiaryWastePercentage = null,
+    Guid? ZagubaItemId = null,
+    decimal? ZagubaPercentage = null
 );
 
 public record RoutingRequest(
@@ -266,7 +275,15 @@ public record BomLineDto(
     Guid UoMId,
     UoMDto? UoM,
     decimal ScrapFactor,
-    int SequenceNumber
+    int SequenceNumber,
+    Guid? PrimaryWasteItemId = null,
+    decimal? PrimaryWastePercentage = null,
+    Guid? SecondaryWasteItemId = null,
+    decimal? SecondaryWastePercentage = null,
+    Guid? TertiaryWasteItemId = null,
+    decimal? TertiaryWastePercentage = null,
+    Guid? ZagubaItemId = null,
+    decimal? ZagubaPercentage = null
 );
 
 public record RoutingDto(
