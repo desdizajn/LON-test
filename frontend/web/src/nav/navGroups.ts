@@ -84,7 +84,7 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.warehouse.issuesToday',
         icon: '📤',
         path: '/warehouse/issues-today',
-        backendStatus: 'partial',
+        backendStatus: 'exists',
         workPlanRef: 'P2.X — daily issue plan',
         plannedBehavior:
           'Денешен план за издавање во кројална: материјал × налог × qty × локација од која се издава. Со bulk-pick action.',
@@ -663,11 +663,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.guarantees',
         icon: '💰',
         path: '/finance/guarantees',
-        backendStatus: 'partial',
-        workPlanRef: 'P2.2 — guarantee auto-debit (backend exists)',
-        plannedBehavior:
-          'Finance lens на царинските гаранции: состојба, exposure, movements, кои ослободувања се чекаат.',
-        existingDataHint: '/customs/guarantees е истата data со customs lens.',
+        backendStatus: 'exists',
+        existingDataHint:
+          'Traffic light + ledger + monthly snapshots (P15.5). Истата data како /customs/guarantees со finance lens.',
       },
       {
         key: 'finance-cost-accounting',
@@ -756,11 +754,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.dashboard',
         icon: '📊',
         path: '/management/dashboard',
-        backendStatus: 'partial',
-        workPlanRef: 'P6.X — KPI dashboard expansion',
-        plannedBehavior:
-          'Executive dashboard: on-time %, capacity %, margin %, active risks — со drill-down во секој KPI. Reuse постоечкиот /dashboard како стартна точка, expanded.',
-        existingDataHint: '/dashboard постои; треба додатни KPI widgets.',
+        backendStatus: 'exists',
+        existingDataHint:
+          'Executive dashboard со traffic light на гаранција (P4.4), on-time %, capacity, active risks. Drill-down во секој KPI → специфичните management/* страници.',
       },
       {
         key: 'management-on-time',
@@ -963,10 +959,9 @@ export const SETTINGS_GROUP: NavGroup = {
       key: 'settings-tenants',
       labelKey: 'nav.settings.tenants',
       path: '/admin/tenants',
-      backendStatus: 'partial',
-      workPlanRef: 'P1.1',
-      plannedBehavior:
-        'Листа + CRUD на тенанти. Backend CRUD постои (TenantsController); UI страница е TODO.',
+      backendStatus: 'exists',
+      existingDataHint:
+        'Листа на сите тенанти (Uvoznici) со per-tenant policy flags (InflateImportForWaste, FEFO auto-pick) + метадата. Admin-only.',
     },
     {
       key: 'settings-tenant-policies',
