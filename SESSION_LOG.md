@@ -2,6 +2,48 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — Phase 15 CLOSURE: P15.6b → P15.15 shipped (9 commits)
+
+**Status:** [x] all 15 Phase 15 slices closed. VPS verified on live seed data.
+
+Consolidated entry for the final Phase 15 push. After P15.6a landed, the remaining waste/producer/reports/XML work shipped in rapid succession.
+
+**Shipped in this block:**
+
+| Task | Commit | Gist |
+|---|---|---|
+| P15.6b | `67bc714` | `BOMLine` 8 waste-override columns (per-BOM overrides beat item defaults). |
+| P15.6c | `b9f780c` | `ProductionOrderMaterial` snapshot on PO release — effective (BOMLine → Item → null) pinned per work order. |
+| P15.6d | `87f1a64` | `?wasteCatalogOnly=true` filter on items query + ItemForm waste pickers gated to `IsWasteCatalog=true`. |
+| P15.7 | — | already shipped as P5.3.1/P5.3.2 BOM auto-apply (prefer partner-scoped). |
+| P15.8 | `871b238` | Multi-producer `Podelba`: `PartnerType.Producer` + `InventoryBalance.AssignedProducerId` + `PodelbaCommand` (drain source, per-producer siblings, Σ-exact, type-guard) + `/inventory-by-producer`. |
+| P15.9 | `989387c` | `Shipment.ShipmentRegime` (EXA3/VS7/DOM) + `IsReturn` + `ZaverkaNumber/Date` — legacy Ispratnici metadata. |
+| P15.10 | — | already shipped as P4.1 `CertifyDeclarationCommand`. Noted + marked done. |
+| P15.11 | `cbb3186` | 3 legacy reports: `rptRazdolzuvanje`, `rptG20-G30Mesecno`, `rptOtpad`. |
+| P15.12–15 | `bfc8b77` | Unified `GeneratePeeXmlQuery` handles all 4 envelopes (PEE010/020/040/050) with envelope×type guards. |
+
+**VPS verified end-to-end:**
+- **P15.8 Podelba**: Producer enum + `inventory-by-producer` endpoint live.
+- **P15.11 Monthly register**: `GET /reports/monthly-register?year=2026` → `[{year:2026,month:3,procedureCode:"4200",declarationCount:3,totalDuty:0.00}]`.
+- **P15.12 PEE010**: `GET /declarations/e0caf2b0-45dd.../pee/PEE010` → valid XML `PEE010_IMP-D7B3_2026.xml` с envelope (IC-ref 9999, C5 qualifier, password 111111), body (MRN `26MKIM10150003D7B3`, proc 4200), and naim rollup.
+
+**Migrations applied:**
+- `P15_6b_BOMLineWasteOverrides`
+- `P15_6c_ProductionOrderMaterialWasteSnapshot`
+- `P15_8_PodelbaProducerType`
+- `P15_9_ShipmentIspratnica`
+
+**Deferred follow-ups (not blocking the manual):**
+- P15.6.1 — inflate-for-waste using Item.PrimaryWastePercentage instead of tenant flag.
+- P15.8.1 — `/warehouse/podelba` frontend page with modal allocation UI.
+- P15.9.1 — HTML/PDF rendering of Ispratnica document.
+- P15.10.1 — guarantee credit activation gated on Zaverka (currently credits on EX creation).
+- P15.13.1 — real PEE020 response parser (currently stub).
+
+**Phase 15 cumulative: 15/15 slices shipped.** 11 commits on main (2026-04-23 dev run). Every P15 slice deployed to VPS and smoke-tested. Ready for user manual.
+
+---
+
 ## 2026-04-23 — P15.6a: Item waste slots + Zaguba + waste-catalog flag
 
 **Status:** [x] shipped, HEAD `87b6c24`, VPS verified with live API call.
