@@ -48,6 +48,27 @@ public class GuaranteeLedgerEntry : BaseEntity, ITenantScoped, IAuditable
     public DateTime? ActualReleaseDate { get; set; }
     public bool IsReleased { get; set; }
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// P15.10.1 — legacy ELON parity: bond credit from an EX / return /
+    /// waste declaration only ACTUALLY releases the bond once the declaration
+    /// is stamped by the customs inspector (Zaverka). Before then the credit
+    /// is booked but does NOT reduce the current balance — the bond stays
+    /// reserved. <c>CertifyDeclarationCommand</c> flips this to <c>false</c>
+    /// when the linked EX declaration transitions to Cleared.
+    ///
+    /// <para>Semantics:</para>
+    /// <list type="bullet">
+    ///   <item><c>true</c> = credit is booked for audit but not yet effective;
+    ///         current balance calculations MUST skip this row.</item>
+    ///   <item><c>false</c> = credit is effective (zaverka stamped or row
+    ///         predates the flag).</item>
+    /// </list>
+    ///
+    /// Always <c>false</c> on Debit rows (debits are effective immediately on
+    /// IM creation). Legacy rows default to <c>false</c> for backward compat.
+    /// </summary>
+    public bool PendingOnZaverka { get; set; }
 }
 
 public class DutyCalculation : BaseEntity, ITenantScoped

@@ -372,6 +372,32 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                     .Distinct()
                     .ToList();
                 var itemIds = request.Lines.Select(l => l.ItemId).Distinct().ToList();
+
+                // P15.6.1 — per-item override. An Item with a non-null
+                // PrimaryWastePercentage OVERRIDES the LONAuthorizationItem
+                // waste %. This mirrors legacy ELON where waste on tblArtikli
+                // (material master) trumped the authorization default — the
+                // operator maintained per-material scrap profiles ready to use
+                // across every closure, not re-keyed per authorization. Load
+                // item defaults first; auth-level rows fill the gap.
+                if (itemIds.Count > 0)
+                {
+                    var itemDefaults = await _context.Items
+                        .Where(i => itemIds.Contains(i.Id)
+                                     && i.PrimaryWastePercentage != null
+                                     && i.PrimaryWastePercentage > 0m
+                                     && !i.IsDeleted)
+                        .Select(i => new { i.Id, Pct = i.PrimaryWastePercentage!.Value })
+                        .ToListAsync(ct);
+                    // Key by (authId, itemId) — since item override is
+                    // auth-agnostic, seed the lookup for every distinct auth
+                    // the lines reference so the rate applies regardless of
+                    // which LON authorization the line is filed under.
+                    foreach (var id in itemDefaults)
+                        foreach (var authId in authIds)
+                            wasteLookup[(authId, id.Id)] = id.Pct;
+                }
+
                 if (authIds.Count > 0 && itemIds.Count > 0)
                 {
                     var items = await _context.LONAuthorizationItems
@@ -381,7 +407,13 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                         .Select(ai => new { ai.LONAuthorizationId, ai.ImportItemId, ai.AllowedWastePercentage })
                         .ToListAsync(ct);
                     foreach (var ai in items)
-                        wasteLookup[(ai.LONAuthorizationId, ai.ImportItemId)] = ai.AllowedWastePercentage;
+                    {
+                        // Item-level override (loaded first above) wins; auth
+                        // default only fills the gap.
+                        var key = (ai.LONAuthorizationId, ai.ImportItemId);
+                        if (!wasteLookup.ContainsKey(key))
+                            wasteLookup[key] = ai.AllowedWastePercentage;
+                    }
                 }
             }
         }

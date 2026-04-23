@@ -369,7 +369,7 @@ const ClientContracts: React.FC = () => {
                     <tr key={r.id}>
                       <td>{t(`finance.contracts.rateTypes.${RATE_TYPES.find(x => x.value === r.rateType)?.key ?? 'unknown'}`)}</td>
                       <td>{r.itemCode ? `${r.itemCode} — ${r.itemName}` : r.operationCode}</td>
-                      <td style={{ textAlign: 'right' }}>{r.ratePerUnit.toFixed(4)} {r.currency}</td>
+                      <td style={{ textAlign: 'right' }}>{(r.ratePerUnit ?? 0).toFixed(4)} {r.currency}</td>
                       <td style={{ fontSize: 12, color: '#666' }}>
                         {formatDate(r.validFrom)} → {r.validTo ? formatDate(r.validTo) : '∞'}
                       </td>

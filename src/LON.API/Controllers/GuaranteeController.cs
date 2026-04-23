@@ -290,8 +290,14 @@ public class GuaranteeController : BaseController
 
     private decimal GetAccountBalance(Guid accountId)
     {
+        // P15.10.1 — credits pending zaverka DO NOT count toward the
+        // effective balance. They're booked for audit (EX declaration filed)
+        // but the bond stays reserved until the customs inspector signs off.
         return _context.GuaranteeLedgerEntries
-            .Where(e => e.GuaranteeAccountId == accountId && !e.IsDeleted && !e.IsReleased)
+            .Where(e => e.GuaranteeAccountId == accountId
+                         && !e.IsDeleted
+                         && !e.IsReleased
+                         && !(e.EntryType == LON.Domain.Enums.GuaranteeEntryType.Credit && e.PendingOnZaverka))
             .Sum(e => e.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit ? e.Amount : -e.Amount);
     }
 

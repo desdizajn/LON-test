@@ -64,6 +64,23 @@ public sealed class CertifyDeclarationCommandHandler : IRequestHandler<CertifyDe
         decl.Status = DeclarationStatus.Cleared;
         decl.IsCleared = true;
 
+        // P15.10.1 — activate any bond-credit entries that were booked but
+        // pending zaverka (EX/return/waste declarations set PendingOnZaverka=true
+        // on creation; balance calc treats them as not-yet-effective). Now
+        // that the inspector has stamped the declaration, flip the flag so
+        // the credit actually reduces the outstanding bond.
+        var pendingCredits = await _context.GuaranteeLedgerEntries
+            .Where(e => e.ReferenceId == decl.Id
+                         && e.EntryType == GuaranteeEntryType.Credit
+                         && e.PendingOnZaverka
+                         && !e.IsDeleted)
+            .ToListAsync(cancellationToken);
+        foreach (var c in pendingCredits)
+        {
+            c.PendingOnZaverka = false;
+            c.ActualReleaseDate ??= request.ZaverkaDate;
+        }
+
         decl.AddDomainEvent(new CustomsDeclarationCertifiedEvent(
             decl.Id, decl.MRN, decl.ZaverkaNumber!, decl.ZaverkaDate.Value));
 

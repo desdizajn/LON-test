@@ -345,6 +345,29 @@ public class CustomsController : BaseController
         return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
     }
 
+    /// <summary>
+    /// P15.13.1 — upload a PEE020 response XML from the customs portal. The
+    /// handler parses it, matches the declaration by MRN (or DeclarationNumber
+    /// fallback), and stamps ZaverkaNumber + ZaverkaDate via the shared
+    /// CertifyDeclaration pipeline. One-click automated clearance replaces
+    /// the legacy manual Notepad-copy-paste flow.
+    /// </summary>
+    [HttpPost("pee/020/parse")]
+    public async Task<IActionResult> ParsePee020([FromBody] Pee020Upload request)
+    {
+        var result = await Mediator.Send(
+            new LON.Application.Customs.Commands.ParsePee020.ParsePee020Command
+            {
+                XmlContent = request.XmlContent ?? string.Empty
+            });
+        return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
+    }
+
+    public class Pee020Upload
+    {
+        public string? XmlContent { get; set; }
+    }
+
     [HttpGet("procedures")]
     public async Task<IActionResult> GetProcedures()
     {

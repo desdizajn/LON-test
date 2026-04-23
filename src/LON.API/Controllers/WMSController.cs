@@ -5,6 +5,7 @@ using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
 using LON.Application.WMS.Commands.Podelba;
 using LON.Application.WMS.Commands.ReportSkart;
+using LON.Application.WMS.Queries.GenerateIspratnica;
 using LON.Application.WMS.Queries.GetSkart;
 using LON.Application.WMS.Queries.MassLocationTransferPreview;
 using LON.Application.WMS.Queries.MozniMinusi;
@@ -372,6 +373,32 @@ public class WMSController : BaseController
     {
         var result = await Mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.9.1 — render Ispratnica (shipment document). Returns JSON with
+    /// structured fields + a ready-to-print HTML payload. Frontend can drop
+    /// the HTML into an iframe and call window.print(), or render from the
+    /// structured fields directly.
+    /// </summary>
+    [HttpGet("shipments/{id:guid}/ispratnica")]
+    public async Task<IActionResult> GenerateIspratnica(Guid id)
+    {
+        var result = await Mediator.Send(new GenerateIspratnicaQuery(id));
+        return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.9.1 — same content as JSON endpoint but returns just the HTML
+    /// as `text/html` so a browser can open it directly (right-click
+    /// "Open in new tab" then Ctrl+P).
+    /// </summary>
+    [HttpGet("shipments/{id:guid}/ispratnica.html")]
+    public async Task<IActionResult> GenerateIspratnicaHtml(Guid id)
+    {
+        var result = await Mediator.Send(new GenerateIspratnicaQuery(id));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Content(result.Data!.Html, "text/html; charset=utf-8");
     }
 
     /// <summary>

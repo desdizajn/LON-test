@@ -426,7 +426,7 @@ const Invoicing: React.FC = () => {
                         {l.relatedProductionOrderNumber ?? l.itemCode ?? '—'}
                       </td>
                       <td style={{ textAlign: 'right' }}>{formatQuantity(l.quantity, 2)}</td>
-                      <td style={{ textAlign: 'right' }}>{l.unitPrice.toFixed(4)}</td>
+                      <td style={{ textAlign: 'right' }}>{(l.unitPrice ?? 0).toFixed(4)}</td>
                       <td style={{ textAlign: 'right' }}>{formatQuantity(l.lineTotal, 2)}</td>
                       {detail.status === 1 && (
                         <td style={{ textAlign: 'right' }}>

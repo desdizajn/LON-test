@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Production from './pages/Production';
@@ -263,7 +264,9 @@ const ProtectedLayout: React.FC<{
       <div className="main-content">
         <TopBar />
         <div style={{ flex: 1, overflow: 'auto' }}>
-          <Outlet />
+          <ErrorBoundary routeLabel={location.pathname} key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </div>
     </LayoutProvider>

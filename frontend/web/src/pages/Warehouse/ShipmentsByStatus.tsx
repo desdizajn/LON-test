@@ -190,6 +190,17 @@ const ShipmentsByStatus: React.FC<Props> = ({ title, subtitle, filterStatus }) =
               <Field label="SO #" value={detail.salesOrderNumber ?? '-'} />
               <Field label={t('shipmentsByStatus.totalQty') as string} value={formatQuantity(detailTotal)} />
             </section>
+            <div style={{ marginBottom: 12 }}>
+              <a
+                href={`/api/WMS/shipments/${detail.id}/ispratnica.html`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-sm"
+                style={{ textDecoration: 'none' }}
+              >
+                📄 {t('shipmentsByStatus.printIspratnica', 'Печати Ispratnica')}
+              </a>
+            </div>
             <h3 style={{ fontSize: 14, margin: '0 0 8px' }}>
               {t('shipmentsByStatus.linesTitle', { count: detail.lines?.length ?? 0 })}
             </h3>

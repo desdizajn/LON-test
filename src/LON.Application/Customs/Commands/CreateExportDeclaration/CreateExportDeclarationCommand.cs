@@ -472,6 +472,13 @@ public class CreateExportDeclarationCommandHandler
 
         if (creditAmount <= 0m) return CreditResult.Ok();
 
+        // P15.10.1 — credit is booked but pending until the EX declaration
+        // is stamped by the customs inspector (Zaverka). If the declaration
+        // is already Cleared (legacy skip-to-Cleared path, or explicitly
+        // pre-cleared for internal test), treat as zaverka-done.
+        var zaverkaDone = exDeclaration.Status == DeclarationStatus.Cleared
+                          || exDeclaration.ZaverkaNumber != null;
+
         var credit = new GuaranteeLedgerEntry
         {
             Id = Guid.NewGuid(),
@@ -487,8 +494,9 @@ public class CreateExportDeclarationCommandHandler
             ReferenceId = exDeclaration.Id,
             MRN = reg.MRN,
             CustomsDeclarationId = reg.CustomsDeclarationId,
-            ActualReleaseDate = willBeFullyDischarged ? exDeclaration.DeclarationDate : null,
-            IsReleased = willBeFullyDischarged
+            ActualReleaseDate = willBeFullyDischarged && zaverkaDone ? exDeclaration.DeclarationDate : null,
+            IsReleased = willBeFullyDischarged && zaverkaDone,
+            PendingOnZaverka = !zaverkaDone
         };
 
         credit.AddDomainEvent(new GuaranteeCreditedEvent
