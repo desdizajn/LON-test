@@ -99,6 +99,9 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(e => e.ShipmentNumber).IsRequired().HasMaxLength(50);
         builder.Property(e => e.TrackingNumber).HasMaxLength(100);
         builder.Property(e => e.SalesOrderNumber).HasMaxLength(50);
+        // P15.9 Ispratnica fields (legacy Ispratnici.VidUIS + VrakanjeDaNe + ZaverkaBroj).
+        builder.Property(e => e.ShipmentRegime).HasMaxLength(10);
+        builder.Property(e => e.ZaverkaNumber).HasMaxLength(50);
         
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Customer).WithMany().HasForeignKey(e => e.CustomerId).OnDelete(DeleteBehavior.Restrict);

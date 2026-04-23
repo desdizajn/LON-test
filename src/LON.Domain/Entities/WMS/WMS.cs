@@ -211,6 +211,32 @@ public class Shipment : BaseEntity, ITenantScoped
     public ShipmentStatus Status { get; set; }
     public string? TrackingNumber { get; set; }
     public string? SalesOrderNumber { get; set; }
+
+    /// <summary>
+    /// P15.9 — legacy <c>Ispratnici.VidUIS</c>. Customs regime marker that
+    /// changes how the shipping document prints and which PEE XML envelope
+    /// it belongs to. Typical values:
+    ///   EXA3 — export of LON-processed goods (procedure 31 51).
+    ///   VS7  — return of LON materials (procedure 61 21).
+    ///   DOM  — domestic (non-customs) shipment.
+    /// Null = regime not yet decided (pre-clearance draft).
+    /// </summary>
+    public string? ShipmentRegime { get; set; }
+
+    /// <summary>
+    /// P15.9 — legacy <c>Ispratnici.VrakanjeDaNe</c>. True when this shipment
+    /// is a return of materials (VS7 regime); drives separate document layout
+    /// and guarantee-credit path vs ordinary export.
+    /// </summary>
+    public bool IsReturn { get; set; }
+
+    /// <summary>
+    /// P15.9 — customs zaverka (certification) number stamped by the inspector.
+    /// Null until the shipment is cleared by customs.
+    /// </summary>
+    public string? ZaverkaNumber { get; set; }
+    public DateTime? ZaverkaDate { get; set; }
+
     public virtual ICollection<ShipmentLine> Lines { get; set; } = new List<ShipmentLine>();
 }
 
