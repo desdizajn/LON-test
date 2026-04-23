@@ -51,7 +51,7 @@ public sealed class ReleaseProductionOrderCommandHandler
         if (po.BOMId.HasValue && po.Materials.Count == 0)
         {
             var bom = await _context.BOMs
-                .Include(b => b.Lines)
+                .Include(b => b.Lines).ThenInclude(l => l.Item)
                 .FirstOrDefaultAsync(b => b.Id == po.BOMId.Value, ct);
             if (bom == null)
                 return Result<Guid>.Failure($"BOM {po.BOMId.Value} not found.");
@@ -64,6 +64,12 @@ public sealed class ReleaseProductionOrderCommandHandler
             {
                 line++;
                 var required = bl.Quantity * scale * (1 + bl.ScrapPercentage / 100m);
+
+                // P15.6c — snapshot the EFFECTIVE waste configuration onto the
+                // PO material row: BOMLine override (if set) beats Item default.
+                // Each slot is resolved independently so a BOM can override
+                // only primary waste and inherit the rest.
+                var it = bl.Item;
                 _context.ProductionOrderMaterials.Add(new ProductionOrderMaterial
                 {
                     Id = Guid.NewGuid(),
@@ -74,6 +80,14 @@ public sealed class ReleaseProductionOrderCommandHandler
                     IssuedQuantity = 0m,
                     ReservedQuantity = Math.Round(required, 4),
                     UoMId = bl.UoMId,
+                    PrimaryWasteItemId = bl.PrimaryWasteItemId ?? it?.PrimaryWasteItemId,
+                    PrimaryWastePercentage = bl.PrimaryWastePercentage ?? it?.PrimaryWastePercentage,
+                    SecondaryWasteItemId = bl.SecondaryWasteItemId ?? it?.SecondaryWasteItemId,
+                    SecondaryWastePercentage = bl.SecondaryWastePercentage ?? it?.SecondaryWastePercentage,
+                    TertiaryWasteItemId = bl.TertiaryWasteItemId ?? it?.TertiaryWasteItemId,
+                    TertiaryWastePercentage = bl.TertiaryWastePercentage ?? it?.TertiaryWastePercentage,
+                    ZagubaItemId = bl.ZagubaItemId ?? it?.ZagubaItemId,
+                    ZagubaPercentage = bl.ZagubaPercentage ?? it?.ZagubaPercentage,
                 });
             }
         }

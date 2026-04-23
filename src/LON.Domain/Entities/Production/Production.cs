@@ -173,6 +173,35 @@ public class ProductionOrderMaterial : BaseEntity, ITenantScoped
     // S5 — KW12 `EFF` field (0.8934 etc). Interpreted as output/input ratio.
     // Null = no efficiency override; issue quantity equals RequiredQuantity.
     public decimal? EfficiencyFactor { get; set; }
+
+    // ===== P15.6c — waste snapshot taken at PO release time =====
+    //
+    // When a PO is released the handler resolves the effective waste
+    // configuration (BOMLine override > Item default > null) and snapshots
+    // it onto the ProductionOrderMaterial row. Later edits to the BOM or
+    // Item don't retroactively change this PO's waste targets; that's the
+    // whole point of a snapshot — each work order stands on its own.
+    //
+    // Consumed by:
+    //   - ProductionReceipt handler (calculates expected waste quantities)
+    //   - Waste declaration flow (per-slot MRN/tariff mapping)
+    //   - PEE040 XML generator (waste declaration report)
+
+    public Guid? PrimaryWasteItemId { get; set; }
+    public virtual Item? PrimaryWasteItem { get; set; }
+    public decimal? PrimaryWastePercentage { get; set; }
+
+    public Guid? SecondaryWasteItemId { get; set; }
+    public virtual Item? SecondaryWasteItem { get; set; }
+    public decimal? SecondaryWastePercentage { get; set; }
+
+    public Guid? TertiaryWasteItemId { get; set; }
+    public virtual Item? TertiaryWasteItem { get; set; }
+    public decimal? TertiaryWastePercentage { get; set; }
+
+    public Guid? ZagubaItemId { get; set; }
+    public virtual Item? ZagubaItem { get; set; }
+    public decimal? ZagubaPercentage { get; set; }
 }
 
 public class ProductionOrderOperation : BaseEntity, ITenantScoped
