@@ -13,13 +13,16 @@ public class InventoryBalanceConfiguration : IEntityTypeConfiguration<InventoryB
         builder.Property(e => e.BatchNumber).HasMaxLength(100);
         builder.Property(e => e.MRN).HasMaxLength(100);
         builder.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
-        
+
         // Avoid cascade delete cycles on SQL Server
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
-        
+        // P15.8 — producer assignment (nullable; Restrict to avoid cascade chain via Partner).
+        builder.HasOne(e => e.AssignedProducer).WithMany().HasForeignKey(e => e.AssignedProducerId).OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => new { e.ItemId, e.LocationId, e.BatchNumber, e.MRN, e.QualityStatus });
+        builder.HasIndex(e => e.AssignedProducerId);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

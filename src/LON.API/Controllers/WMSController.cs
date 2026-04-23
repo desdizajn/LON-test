@@ -3,6 +3,7 @@ using LON.Application.WMS.Commands.BulkShipmentFromFG;
 using LON.Application.WMS.Commands.CreateReceipt;
 using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
+using LON.Application.WMS.Commands.Podelba;
 using LON.Application.WMS.Commands.ReportSkart;
 using LON.Application.WMS.Queries.GetSkart;
 using LON.Application.WMS.Queries.MassLocationTransferPreview;
@@ -358,6 +359,51 @@ public class WMSController : BaseController
         });
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    // ---------- P15.8 Podelba (sub-contract producer distribution) ----------
+
+    /// <summary>
+    /// P15.8 — Distribute one tenant-held InventoryBalance across N producers.
+    /// Atomically drains the source to zero and creates/increments per-producer
+    /// siblings with AssignedProducerId set. Σ allocations must equal source qty.
+    /// </summary>
+    [HttpPost("podelba")]
+    public async Task<IActionResult> Podelba([FromBody] PodelbaCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.8 — aggregated view "how much of what is sitting at which producer".
+    /// </summary>
+    [HttpGet("inventory-by-producer")]
+    public async Task<IActionResult> InventoryByProducer([FromQuery] Guid? producerId = null)
+    {
+        var q = _context.InventoryBalances
+            .Include(b => b.Item)
+            .Include(b => b.AssignedProducer)
+            .Where(b => !b.IsDeleted && b.Quantity > 0 && b.AssignedProducerId != null);
+        if (producerId.HasValue) q = q.Where(b => b.AssignedProducerId == producerId.Value);
+        var rows = await q
+            .Select(b => new
+            {
+                b.Id,
+                ItemCode = b.Item.Code,
+                ItemName = b.Item.Name,
+                b.BatchNumber,
+                b.MRN,
+                b.Quantity,
+                b.QualityStatus,
+                b.LonProcessState,
+                ProducerId = b.AssignedProducerId,
+                ProducerCode = b.AssignedProducer != null ? b.AssignedProducer.Code : null,
+                ProducerName = b.AssignedProducer != null ? b.AssignedProducer.Name : null
+            })
+            .OrderBy(b => b.ProducerCode).ThenBy(b => b.ItemCode)
+            .ToListAsync();
+        return Ok(rows);
+    }
 }
 
 /// <summary>P15.3 — body of POST /skart/{id}/resolve.</summary>
@@ -366,6 +412,7 @@ public class ResolveSkartRequest
     public SkartResolution Resolution { get; set; }
     public string? ResolutionNote { get; set; }
 }
+
 
 // Request DTOs
 public class CreateShipmentRequest

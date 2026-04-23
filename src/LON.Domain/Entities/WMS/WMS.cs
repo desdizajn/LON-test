@@ -60,7 +60,17 @@ public class InventoryBalance : BaseEntity, ITenantScoped
     /// Receipt, transitions on MaterialIssue / Shipment / WasteDeclaration.
     /// </summary>
     public LonProcessState? LonProcessState { get; set; }
-    
+
+    /// <summary>
+    /// P15.8 — producer (sub-contractor) this batch has been distributed to.
+    /// Legacy <c>LagerMaterijali.Proizvoditel</c>. Null = no producer assigned
+    /// (material still at tenant's receiving dock or already shipped). When
+    /// set, must reference a <see cref="Partner"/> row with
+    /// <see cref="Domain.Enums.PartnerType.Producer"/>.
+    /// </summary>
+    public Guid? AssignedProducerId { get; set; }
+    public virtual Partner? AssignedProducer { get; set; }
+
     public void AddQuantity(decimal qty)
     {
         if (qty < 0) throw new InvalidOperationException("Cannot add negative quantity");

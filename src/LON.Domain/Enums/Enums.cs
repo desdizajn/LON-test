@@ -125,7 +125,14 @@ public enum PartnerType
     Customer = 2,
     Carrier = 3,
     CustomsBroker = 4,
-    Bank = 5
+    Bank = 5,
+    /// <summary>
+    /// P15.8 — sub-contract producer (legacy <c>LagerMaterijali.Proizvoditel</c>).
+    /// A factory the tenant ships raw material to for manufacture; distinct from
+    /// Supplier (sells material TO tenant) and Customer (buys finished goods FROM
+    /// tenant). TEKSPORT has 3+ producers per closure.
+    /// </summary>
+    Producer = 6
 }
 
 // LON (Inward Processing) енумерации
