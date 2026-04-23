@@ -77,6 +77,8 @@ import IncomingShipments from './pages/Warehouse/IncomingShipments';
 import QcHold from './pages/Warehouse/QcHold';
 import Skart from './pages/Warehouse/Skart';
 import Podelba from './pages/Warehouse/Podelba';
+import TariffBrowser from './pages/MasterData/TariffCodes/TariffBrowser';
+import SizeBreakdown from './pages/Production/SizeBreakdown';
 import VarianceReport from './pages/Warehouse/VarianceReport';
 import ShipmentsByStatus from './pages/Warehouse/ShipmentsByStatus';
 import StockByCustomer from './pages/Warehouse/StockByCustomer';
@@ -241,6 +243,7 @@ const resolveActiveModule = (path: string) => {
   if (path.startsWith('/master-data/warehouses')) return 'settings-warehouses';
   if (path.startsWith('/master-data/locations')) return 'settings-locations';
   if (path.startsWith('/master-data/uom')) return 'settings-uom';
+  if (path.startsWith('/master-data/tariff-codes')) return 'settings-tariff-codes';
   if (path.startsWith('/master-data/code-lists')) return 'settings-code-lists';
   if (path.startsWith('/master-data/workcenters')) return 'settings-workcenters';
   if (path.startsWith('/master-data/machines')) return 'settings-machines';
@@ -376,6 +379,7 @@ const App: React.FC = () => {
             <Route path="/production/shortage" element={<ProductionShortage />} />
             <Route path="/production/minutes-variance" element={<MinutesVariance />} />
             <Route path="/production/rework" element={<Rework />} />
+            <Route path="/production/size-breakdown" element={<SizeBreakdown />} />
             <Route path="/production/completed" element={<ProductionCompleted />} />
             <Route path="/production/search" element={<ScopedSearch scope="production" />} />
 
@@ -477,6 +481,7 @@ const App: React.FC = () => {
             <Route path="/master-data/workcenters" element={<WorkCenterList />} />
             <Route path="/master-data/machines" element={<MachineList />} />
             <Route path="/master-data/uom" element={<UoMList />} />
+            <Route path="/master-data/tariff-codes" element={<TariffBrowser />} />
             <Route path="/master-data/boms" element={<BOMsList />} />
             <Route path="/master-data/boms/:id" element={<BOMDetail />} />
             <Route path="/master-data/routings" element={<RoutingsList />} />

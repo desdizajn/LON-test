@@ -4,6 +4,7 @@ using LON.Application.Production.Commands.CreateProductionReceipt;
 using LON.Application.Production.Commands.DistributeMaterialAcrossOrders;
 using LON.Application.Production.Commands.IssueAllMaterials;
 using LON.Application.Production.Commands.ReleaseProductionOrder;
+using LON.Application.Production.Commands.UpsertMaterialSizes;
 using LON.Application.Production.Queries.GetProductionShortage;
 using LON.Domain.Enums;
 using LON.Infrastructure.Persistence;
@@ -149,6 +150,68 @@ public class ProductionController : BaseController
     public async Task<IActionResult> DistributeMaterial([FromBody] DistributeMaterialAcrossOrdersCommand command)
     {
         var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.16.1 — list the per-size breakdown for a ProductionOrderMaterial.
+    /// Empty list when HasSizeBreakdown=false. Used by the NormativiVelicini
+    /// subform on the PO detail page.
+    /// </summary>
+    [HttpGet("materials/{materialId:guid}/sizes")]
+    public async Task<IActionResult> GetMaterialSizes(Guid materialId)
+    {
+        var material = await _context.ProductionOrderMaterials
+            .Include(m => m.Sizes.Where(s => !s.IsDeleted))
+            .Include(m => m.ProductionOrder)
+            .FirstOrDefaultAsync(m => m.Id == materialId);
+        if (material == null) return NotFound();
+
+        return Ok(new
+        {
+            material.Id,
+            material.ProductionOrderId,
+            material.ItemId,
+            material.HasSizeBreakdown,
+            material.RequiredQuantity,
+            material.IssuedQuantity,
+            PoQuantity = material.ProductionOrder.OrderQuantity,
+            Sizes = material.Sizes.OrderBy(s => s.SizeOrdinal).Select(s => new
+            {
+                s.Id,
+                s.SizeOrdinal,
+                s.SizeLabel,
+                s.Quantity,
+                s.NormativPerUnit,
+                s.TotalMaterialQuantity
+            })
+        });
+    }
+
+    /// <summary>
+    /// P15.16.1 — upsert the per-size breakdown. Atomically replaces all
+    /// size rows + recomputes parent RequiredQuantity as Σ(Qty × Normativ).
+    /// Enforces Σ Qty == PO.OrderQuantity (legacy ПРЕГОЛЕМА КОЛИЧИНА guard).
+    /// </summary>
+    [HttpPost("materials/{materialId:guid}/sizes")]
+    public async Task<IActionResult> UpsertMaterialSizes(
+        Guid materialId, [FromBody] List<SizeLine> sizes)
+    {
+        var result = await Mediator.Send(new UpsertMaterialSizesCommand
+        {
+            ProductionOrderMaterialId = materialId,
+            Sizes = sizes
+        });
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.16.1 — clear the per-size breakdown, revert to flat-normativ mode.
+    /// </summary>
+    [HttpDelete("materials/{materialId:guid}/sizes")]
+    public async Task<IActionResult> ClearMaterialSizes(Guid materialId)
+    {
+        var result = await Mediator.Send(new ClearMaterialSizesCommand(materialId));
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

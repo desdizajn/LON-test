@@ -326,6 +326,15 @@ export const NAV_GROUPS: NavGroup[] = [
           'Rework и waste парчиња: причина, cost impact, responsible operator/machine. P4.6 backend постои; UI недостасува.',
       },
       {
+        key: 'production-size-breakdown',
+        labelKey: 'nav.production.sizeBreakdown',
+        icon: '📐',
+        path: '/production/size-breakdown',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P15.16.1 — NormativiVelicini: per-size BOM (S/M/L/XXL). Различни големини може да консумираат различно количество материјал.',
+      },
+      {
         key: 'production-completed',
         labelKey: 'nav.production.completed',
         icon: '✅',
@@ -923,6 +932,15 @@ export const SETTINGS_GROUP: NavGroup = {
       labelKey: 'nav.settings.uom',
       path: '/master-data/uom',
       backendStatus: 'exists',
+    },
+    {
+      key: 'settings-tariff-codes',
+      labelKey: 'nav.settings.tariffCodes',
+      icon: '🛃',
+      path: '/master-data/tariff-codes',
+      backendStatus: 'exists',
+      existingDataHint:
+        'Пребарувачка база на 10-цифрените TARIC ознаки + „што ако" калкулатор на давачки (царина + ДДВ) по legacy формула PresmetajDavackiPoNaim.',
     },
     {
       key: 'settings-code-lists',

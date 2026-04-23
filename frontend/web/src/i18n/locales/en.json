@@ -691,6 +691,7 @@
       "shortage": "Shortage for today",
       "minutesVariance": "Minutes plan vs actual",
       "rework": "Rework / waste",
+      "sizeBreakdown": "Size breakdown",
       "completed": "Completed orders",
       "search": "Search"
     },
@@ -750,6 +751,7 @@
       "warehouses": "Warehouses",
       "locations": "Locations",
       "uom": "Units of Measure",
+      "tariffCodes": "Customs tariff (TARIC)",
       "codeLists": "Code Lists",
       "workCenters": "Work Centers",
       "machines": "Machines",

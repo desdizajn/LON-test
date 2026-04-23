@@ -691,6 +691,7 @@
       "shortage": "Shortage за данас",
       "minutesVariance": "Минути план vs стварно",
       "rework": "Rework / отпад",
+      "sizeBreakdown": "Расподела по величинама",
       "completed": "Завршени налози",
       "search": "Претрага"
     },
@@ -750,6 +751,7 @@
       "warehouses": "Магацини",
       "locations": "Локације",
       "uom": "Мерне јединице",
+      "tariffCodes": "Царинска тарифа",
       "codeLists": "Шифарници",
       "workCenters": "Радни центри",
       "machines": "Машине",

@@ -212,6 +212,21 @@ public class CustomsController : BaseController
     }
 
     /// <summary>
+    /// What-if duty calculator. Given a tariff code + customs value + rate +
+    /// date (+ optional preferential flag), returns the full duty + VAT
+    /// breakdown using the legacy PresmetajDavackiPoNaim formula. Uses
+    /// year-indexed TariffCodeRate when available, falls back to base
+    /// TariffCode rates with a warning.
+    /// </summary>
+    [HttpPost("duty-calculator")]
+    public async Task<IActionResult> DutyCalculator(
+        [FromBody] LON.Application.Customs.Queries.DutyWhatIf.DutyWhatIfQuery query)
+    {
+        var result = await Mediator.Send(query);
+        return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
+    }
+
+    /// <summary>
     /// Lookup tariff code information
     /// </summary>
     [HttpGet("tariff-lookup/{tariffCode}")]

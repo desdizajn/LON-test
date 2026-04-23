@@ -64,6 +64,15 @@ public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
     /// <summary>Box 44 — Special remarks / attached documents.</summary>
     public string? SpecialRemarks { get; init; }
 
+    /// <summary>
+    /// P15.17 — legacy <c>ProsecnaSTDaNe</c>. When true, overrides every
+    /// line's DutyRate with <see cref="AverageDutyRate"/> and sets VATRate=0.
+    /// Simplified bulk-rate declaration.
+    /// </summary>
+    public bool UseAverageRate { get; init; }
+    /// <summary>P15.17 — flat duty rate if UseAverageRate=true.</summary>
+    public decimal? AverageDutyRate { get; init; }
+
     /// <summary>Optional pre-set for testing; defaults to Draft or Registered
     /// depending on whether an MRN ends up being present after handling.</summary>
     public DeclarationStatus? Status { get; init; }
@@ -202,9 +211,22 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             CountryOfDispatch = request.CountryOfDispatch,
             CountryOfDestination = request.CountryOfDestination,
             SpecialRemarks = request.SpecialRemarks,
+            // P15.17 — ProsecnaSTDaNe override; persisted on the declaration
+            // so anyone re-reading the record (audit, re-calc, reports) sees
+            // which rate regime was in effect.
+            UseAverageRate = request.UseAverageRate,
+            AverageDutyRate = request.UseAverageRate ? request.AverageDutyRate : null,
             Status = request.Status ?? DeclarationStatus.Registered, // auto-MRN → Registered
             IsCleared = false
         };
+
+        // P15.17 — if ProsecnaSTDaNe active, bypass per-line rate lookups.
+        if (request.UseAverageRate)
+        {
+            if (!request.AverageDutyRate.HasValue || request.AverageDutyRate.Value < 0m)
+                return Result<Guid>.Failure(
+                    "UseAverageRate=true requires a non-negative AverageDutyRate.");
+        }
 
         // I2: landing-cost pro-rata. Net landing = LandingCosts - Discount.
         // Pro-rated across lines by invoice-value weighting (legacy
@@ -232,8 +254,14 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 : 0m;
             var adjustedCustomsValue = lineDto.CustomsValue + landingAdjustment;
 
-            var dutyAmount = Math.Round(adjustedCustomsValue * lineDto.DutyRate / 100m, 2, MidpointRounding.AwayFromZero);
-            var vatAmount = Math.Round((adjustedCustomsValue + dutyAmount) * lineDto.VATRate / 100m, 2, MidpointRounding.AwayFromZero);
+            // P15.17 — ProsecnaSTDaNe: flat rate for ALL lines, VAT=0.
+            var effectiveDutyRate = request.UseAverageRate
+                ? request.AverageDutyRate!.Value
+                : lineDto.DutyRate;
+            var effectiveVatRate = request.UseAverageRate ? 0m : lineDto.VATRate;
+
+            var dutyAmount = Math.Round(adjustedCustomsValue * effectiveDutyRate / 100m, 2, MidpointRounding.AwayFromZero);
+            var vatAmount = Math.Round((adjustedCustomsValue + dutyAmount) * effectiveVatRate / 100m, 2, MidpointRounding.AwayFromZero);
 
             declaration.Lines.Add(new CustomsDeclarationLine
             {
@@ -246,9 +274,9 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
                 UoMId = lineDto.UoMId,
                 CustomsValue = adjustedCustomsValue,
                 CountryOfOrigin = lineDto.CountryOfOrigin,
-                DutyRate = lineDto.DutyRate,
+                DutyRate = effectiveDutyRate,
                 DutyAmount = dutyAmount,
-                VATRate = lineDto.VATRate,
+                VATRate = effectiveVatRate,
                 VATAmount = vatAmount,
                 OtherCharges = 0,
                 // I5: SAD per-line box fields. Null values remain null on the

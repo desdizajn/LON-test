@@ -136,6 +136,30 @@ public class CustomsDeclaration : BaseEntity, ITenantScoped, IAuditable
     public bool IsCleared { get; set; }
 
     /// <summary>
+    /// P15.17 — legacy <c>ProsecnaSTDaNe</c>. When true, the CreateDeclaration
+    /// flow bypasses per-line tariff rate lookups and applies a single
+    /// flat duty rate (<see cref="AverageDutyRate"/>) to every line's
+    /// CustomsValue; VAT is set to 0. Used for simplified bulk-rate
+    /// declarations where all lines share the same customs treatment.
+    ///
+    /// <para>Semantics:</para>
+    /// <list type="bullet">
+    ///   <item><c>true</c> + <c>AverageDutyRate=5</c> → every line's
+    ///         DutyRate overwritten to 5%, DutyAmount = CustomsValue × 5 / 100,
+    ///         VATRate=0, VATAmount=0.</item>
+    ///   <item><c>false</c> (default) → per-line DutyRate/VATRate preserved
+    ///         from the request payload; normal ELON behavior.</item>
+    /// </list>
+    /// </summary>
+    public bool UseAverageRate { get; set; }
+
+    /// <summary>
+    /// P15.17 — flat duty rate applied to every line when
+    /// <see cref="UseAverageRate"/> is true. Ignored otherwise.
+    /// </summary>
+    public decimal? AverageDutyRate { get; set; }
+
+    /// <summary>
     /// Заверка: број на заверка од царинарница (инспекторска сертификација). Се
     /// пополнува при preminot од Submitted → Cleared. Legacy еквивалент:
     /// FakturiU5Z.ZaverkaBroj. Null додека декларацијата не е заверена.

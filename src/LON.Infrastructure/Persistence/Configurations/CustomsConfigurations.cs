@@ -35,6 +35,7 @@ public class CustomsDeclarationConfiguration : IEntityTypeConfiguration<CustomsD
         builder.Property(e => e.TotalDuty).HasColumnType("decimal(18,4)");
         builder.Property(e => e.TotalVAT).HasColumnType("decimal(18,4)");
         builder.Property(e => e.TotalOtherCharges).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.AverageDutyRate).HasColumnType("decimal(18,4)"); // P15.17
         builder.Property(e => e.Notes).HasMaxLength(500);
         
         builder.HasIndex(e => new { e.TenantId, e.DeclarationNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
