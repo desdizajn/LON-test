@@ -2,6 +2,53 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — P15.6a: Item waste slots + Zaguba + waste-catalog flag
+
+**Status:** [x] shipped, HEAD `87b6c24`, VPS verified with live API call.
+
+First of four P15.6 sub-slices. Schema-level addition of the 4 legacy waste slots to `Item`; prepares the foundation for BOM-level overrides (P15.6b), PO snapshot + per-slot receipt (P15.6c), and refined inflate-for-waste math (P15.6d).
+
+**New fields on `Item`:**
+- `PrimaryWasteItemId` + `PrimaryWastePercentage` (legacy `ArtKatBrMatOtpad` + `ArtOtpadProc`)
+- `SecondaryWasteItemId` + `SecondaryWastePercentage` (`ArtKatBrMatOtpad1` + `ArtOtpadProc1`)
+- `TertiaryWasteItemId` + `TertiaryWastePercentage` (`ArtKatBrMatOtpad2` + `ArtOtpadProc2`)
+- `ZagubaItemId` + `ZagubaPercentage` (`ArtKatBrMatZaguba` + `ArtOtpadZaguba`) — non-recoverable loss
+- `WasteTariffCode` (`ArtOtpadTarBr`) — tariff of THIS item when it IS a waste-catalog entry
+- `IsWasteCatalog` bool (`ArtOtpadZao`) — differentiates "waste catalog target" from "material that produces waste"
+
+Each waste slot is a self-referencing FK to another `Item`. All four are configured `OnDelete=NoAction` to avoid multi-path cascade cycles on SQL Server (the parent-variant FK already uses NoAction; five self-FKs on one table is the edge case EF flags). Percentages are decimal(18,4) throughout.
+
+**Ancillary P15.1 cleanup:** `PartnerSKU` length bounded to `nvarchar(100)` (was `nvarchar(max)` from initial ship) + filtered index on `(TenantId, PartnerSKU) WHERE PartnerSKU IS NOT NULL AND IsDeleted = 0` — partner-SKU lookups during bulk import benefit from an index. Legacy SKUs are always < 100 chars so no data loss risk.
+
+**API:** all 4 Item endpoints (POST/GET/GET by id/PUT) pass through the new fields. `ItemRequest`, `CreateItemCommand`, `UpdateItemCommand`, `ItemResponse` extended with 10 new optional params each. `NormalizeSku` helper still centralizes SKU rules from P15.1.
+
+**Frontend:** new collapsible "🗑️ Waste configuration" section at the bottom of `ItemForm.tsx` (closed by default). Four rows (Primary / Secondary / Tertiary / Zaguba) each with:
+- `FormAutocomplete` over all tenant items (loaded once on form open; ~200 KB payload for TEKSPORT's 2391 items) as the target picker.
+- Numeric `%` input.
+
+Plus standalone `wasteTariffCode` input and `isWasteCatalog` checkbox. Filter-to-waste-catalog-only in the pickers deferred to P15.6d.
+
+**Migration `20260423005027_P15_6a_ItemWasteSlots`:**
+- AlterColumn PartnerSKU: nvarchar(max) → nvarchar(100).
+- AddColumn × 10 (4 guid IDs + 4 decimal % + WasteTariffCode + IsWasteCatalog).
+- Index × 5 (4 × waste-item FK support, 1 × PartnerSKU filtered lookup).
+
+**Test** (`ItemsMediatrTests.Create_WithWasteSlots_PersistsAllFields`): seeds 4 waste-target items (each with `IsWasteCatalog=true`), creates a parent material with all 4 slots populated (5.5% / 2.25% / 1.0% / 0.5%) + WasteTariffCode + IsWasteCatalog=false. GET re-fetch asserts all fields. Update path clears TertiaryWaste* + WasteTariffCode to null — GET confirms nulls persist.
+
+**VPS smoke:**
+```
+Parent: P156-PAR-1776905969
+Primary waste: True   pct=5.5
+Waste tariff: 6310100010
+Is waste cat: False (target: True)
+```
+
+**Cumulative after P15.6a:** 6/15 Phase 15 parity slices shipped (P15.1 PartnerSKU, P15.2 Traffic light, P15.3 Skart, P15.4 NaimU5 rollup, P15.5 Guarantee snapshots, P15.6a Item waste slots). Следно — **P15.6b BOMLine overrides**.
+
+**Commit:** `87b6c24` on main.
+
+---
+
 ## 2026-04-23 — P15.4 + P15.5: NaimU5 rollup + Guarantee balance snapshots
 
 **Status:** [x] both shipped, VPS verified on live seed data.

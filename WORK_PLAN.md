@@ -833,7 +833,11 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 ### Wave B — Waste + production templates
 
-- [ ] **P15.6** 4 waste slots + Zaguba on `Item` (ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba + %s) + cascade на `BOMLine` + `ProductionOrderMaterial` + inventory waste tracking per-slot.
+- [/] **P15.6** 4 waste slots + Zaguba — split into 4 sub-slices:
+  - [x] **P15.6a** ✅ *2026-04-23 (commit `87b6c24`)* — `Item` waste slots (PrimaryWasteItemId+Pct, Secondary, Tertiary, Zaguba + WasteTariffCode + IsWasteCatalog). Migration, ItemRequest/Response/Command wiring, ItemForm collapsible "Waste configuration" section, integration test. VPS verified: parent material → primary waste target pct=5.5 + tariff `6310100010` + isWasteCatalog flag distinct.
+  - [ ] **P15.6b** `BOMLine` override columns (per-BOM-line waste % when item default doesn't apply).
+  - [ ] **P15.6c** `ProductionOrderMaterial` snapshot on PO release + per-slot waste quantities on `ProductionReceipt` (replaces single `ScrapQuantity`).
+  - [ ] **P15.6d** Waste-only items picker (filter `IsWasteCatalog=true`) + inflate-for-waste refined to use Item defaults instead of tenant flat flag.
 - [ ] **P15.7** `NormativTemplate` (O/S) entity + auto-apply на PO release (per-partner templates за LEARGV/DELPHI/GENTHERM-style shortcut).
 
 ### Wave C — Multi-producer distribution
@@ -868,6 +872,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 ## Current Active Task
 
-**P15.6** — 4 waste slots + Zaguba model on `Item` / `BOMLine` / `ProductionOrderMaterial`. Legacy ELON's `ArtKatBrMatOtpad/1/2` + `ArtOtpadProc/1/2` + `ArtKatBrMatZaguba` + `ArtOtpadZaguba`. Largest schema change in Phase 15; will touch material-issue math (`inflate-for-waste`) and prepare for PEE040 XML (P15.14). Expected effort L (3–5 days).
+**P15.6b** — BOMLine waste-slot overrides. Same 8-column set on `BOMLine` so a recipe can say "for THIS bill, fabric waste is 7% not the item default 5%". Migration + BOM handlers + BOMForm UI + integration test.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
