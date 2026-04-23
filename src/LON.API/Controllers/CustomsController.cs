@@ -287,6 +287,48 @@ public class CustomsController : BaseController
         return Ok(rows);
     }
 
+    // ---------- P15.11 Legacy reports ----------
+
+    /// <summary>
+    /// P15.11 — legacy rptRazdolzuvanje. Per-LON-authorization release
+    /// summary for a date window: debit (IM), credit (EX/Return/Waste),
+    /// net outstanding per MRN.
+    /// </summary>
+    [HttpGet("reports/razdolzuvanje")]
+    public async Task<IActionResult> RazdolzuvanjeReport(
+        [FromQuery] Guid authorizationId,
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to)
+    {
+        var report = await Mediator.Send(
+            new LON.Application.Customs.Queries.LegacyReports.RazdolzuvanjeReportQuery(authorizationId, from, to));
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// P15.11 — legacy rptG20-G30Mesecno. Monthly customs register grouped
+    /// by (month, procedure code) for a year.
+    /// </summary>
+    [HttpGet("reports/monthly-register")]
+    public async Task<IActionResult> MonthlyCustomsRegister([FromQuery] int year)
+    {
+        var rows = await Mediator.Send(
+            new LON.Application.Customs.Queries.LegacyReports.MonthlyCustomsRegisterQuery(year));
+        return Ok(rows);
+    }
+
+    /// <summary>
+    /// P15.11 — legacy rptOtpad. Waste register for a date window.
+    /// </summary>
+    [HttpGet("reports/waste-register")]
+    public async Task<IActionResult> WasteRegister(
+        [FromQuery] DateTime from, [FromQuery] DateTime to)
+    {
+        var rows = await Mediator.Send(
+            new LON.Application.Customs.Queries.LegacyReports.WasteRegisterQuery(from, to));
+        return Ok(rows);
+    }
+
     [HttpGet("procedures")]
     public async Task<IActionResult> GetProcedures()
     {
