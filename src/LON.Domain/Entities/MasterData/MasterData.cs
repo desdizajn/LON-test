@@ -60,6 +60,61 @@ public class Item : BaseEntity, ITenantScoped
     /// </summary>
     public string? PartnerSKU { get; set; }
 
+    // ===== P15.6 — waste slots (legacy tblArtikli ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba) =====
+    //
+    // Each material carries up to FOUR waste outcomes:
+    //   Primary / Secondary / Tertiary — recoverable by-products that leave
+    //   under their own tariff (sold as scrap, downgraded, or otherwise
+    //   accounted for in inventory).
+    //   Zaguba — non-recoverable loss (mass that evaporates, burns off,
+    //   or is otherwise unreturnable; still must be declared to customs
+    //   but has no physical catalog entry leaving the building).
+    //
+    // Percentages are of the CONSUMED input material. Example: a fabric
+    // with PrimaryWastePercentage=5 means "when you consume 100 kg of this
+    // material, 5 kg becomes PrimaryWasteItem (e.g. fabric-scrap) and
+    // the remaining 95 kg enters the finished product".
+    //
+    // The BOM and ProductionOrderMaterial carry their own overrides; Item
+    // values are DEFAULTS used when a new BOM line is created for this
+    // material and no explicit override is supplied.
+
+    /// <summary>Waste slot 0 — saleable by-product catalog item.</summary>
+    public Guid? PrimaryWasteItemId { get; set; }
+    public virtual Item? PrimaryWasteItem { get; set; }
+    public decimal? PrimaryWastePercentage { get; set; }
+
+    /// <summary>Waste slot 1 — secondary by-product (separate tariff / channel).</summary>
+    public Guid? SecondaryWasteItemId { get; set; }
+    public virtual Item? SecondaryWasteItem { get; set; }
+    public decimal? SecondaryWastePercentage { get; set; }
+
+    /// <summary>Waste slot 2 — tertiary by-product.</summary>
+    public Guid? TertiaryWasteItemId { get; set; }
+    public virtual Item? TertiaryWasteItem { get; set; }
+    public decimal? TertiaryWastePercentage { get; set; }
+
+    /// <summary>Zaguba — non-recoverable loss (dust, vapor, mass unreturnable).</summary>
+    public Guid? ZagubaItemId { get; set; }
+    public virtual Item? ZagubaItem { get; set; }
+    public decimal? ZagubaPercentage { get; set; }
+
+    /// <summary>
+    /// Legacy <c>ArtOtpadTarBr</c> — tariff code of the waste material itself
+    /// when the item IS a waste catalog entry. Distinct from <see cref="HSCode"/>
+    /// (which is this item's tariff as a raw material). Used by waste declarations
+    /// so the outbound waste line gets the correct tariff without a separate lookup.
+    /// </summary>
+    public string? WasteTariffCode { get; set; }
+
+    /// <summary>
+    /// Legacy <c>ArtOtpadZao</c>. True = this item IS a waste-catalog entry
+    /// (i.e. it's what another item's waste slot points at), NOT a product
+    /// that produces waste. Drives UI filtering (waste pickers) and excludes
+    /// these rows from ordinary production BOMs.
+    /// </summary>
+    public bool IsWasteCatalog { get; set; }
+
     public virtual ICollection<ItemUoMConversion> UoMConversions { get; set; } = new List<ItemUoMConversion>();
     public virtual ICollection<BOM> BOMs { get; set; } = new List<BOM>();
 }

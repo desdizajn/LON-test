@@ -11,6 +11,8 @@ import { useMasterDataStore } from '../../../store/useMasterDataStore';
 import { showSuccess, showError } from '../../../utils/toast';
 import type { Item, ItemFormData, UoM } from '../../../types/masterData';
 
+const WasteTariffInfo = '🗑️ Waste configuration (legacy Otpad/Zaguba)';
+
 interface ItemFormProps {
   open: boolean;
   onClose: () => void;
@@ -23,6 +25,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
   const [submitting, setSubmitting] = useState(false);
   const [uoms, setUoms] = useState<UoM[]>([]);
   const [loadingUoMs, setLoadingUoMs] = useState(true);
+  const [items, setItems] = useState<Item[]>([]);
+  const [wasteOpen, setWasteOpen] = useState(false);
 
   const { control, handleSubmit, reset } = useForm<ItemFormData>({
     defaultValues: {
@@ -37,11 +41,28 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
       hsCode: item?.hsCode || '',
       isActive: item?.isActive !== false,
       partnerSKU: item?.partnerSKU || '',
+      primaryWasteItemId: item?.primaryWasteItemId ?? null,
+      primaryWastePercentage: item?.primaryWastePercentage ?? null,
+      secondaryWasteItemId: item?.secondaryWasteItemId ?? null,
+      secondaryWastePercentage: item?.secondaryWastePercentage ?? null,
+      tertiaryWasteItemId: item?.tertiaryWasteItemId ?? null,
+      tertiaryWastePercentage: item?.tertiaryWastePercentage ?? null,
+      zagubaItemId: item?.zagubaItemId ?? null,
+      zagubaPercentage: item?.zagubaPercentage ?? null,
+      wasteTariffCode: item?.wasteTariffCode || '',
+      isWasteCatalog: item?.isWasteCatalog || false,
     },
   });
 
   useEffect(() => {
     loadUoMs();
+    // Load items once for the waste-slot pickers; keeps the modal snappy
+    // for up to ~3k items (~200 KB payload). Heavier tenants should wire
+    // the pickers to the /article-picker endpoint instead (P15.6.1).
+    itemsApi
+      .getAll()
+      .then((r) => setItems(r.data || []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -58,6 +79,16 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
         hsCode: item.hsCode || '',
         isActive: item.isActive,
         partnerSKU: item.partnerSKU || '',
+        primaryWasteItemId: item.primaryWasteItemId ?? null,
+        primaryWastePercentage: item.primaryWastePercentage ?? null,
+        secondaryWasteItemId: item.secondaryWasteItemId ?? null,
+        secondaryWastePercentage: item.secondaryWastePercentage ?? null,
+        tertiaryWasteItemId: item.tertiaryWasteItemId ?? null,
+        tertiaryWastePercentage: item.tertiaryWastePercentage ?? null,
+        zagubaItemId: item.zagubaItemId ?? null,
+        zagubaPercentage: item.zagubaPercentage ?? null,
+        wasteTariffCode: item.wasteTariffCode || '',
+        isWasteCatalog: item.isWasteCatalog || false,
       });
     }
   }, [item, reset]);
@@ -201,6 +232,78 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
           <Grid item xs={12} sm={4}>
             <FormCheckbox name="isActive" control={control} label="Active" />
           </Grid>
+
+          <Grid item xs={12}>
+            <button
+              type="button"
+              onClick={() => setWasteOpen((v) => !v)}
+              style={{
+                marginTop: 10,
+                padding: '8px 14px',
+                border: '1px solid #ccc',
+                borderRadius: 4,
+                background: wasteOpen ? '#fff3e0' : '#f7f7f7',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              {wasteOpen ? '▼' : '▶'} {WasteTariffInfo}
+            </button>
+          </Grid>
+
+          {wasteOpen && (
+            <>
+              <Grid item xs={12}>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 5 }}>
+                  Up to 3 recoverable waste slots + Zaguba (non-recoverable loss). Percentages
+                  are of the CONSUMED input material (legacy ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba).
+                </div>
+              </Grid>
+
+              {([
+                { idKey: 'primaryWasteItemId', pctKey: 'primaryWastePercentage', label: 'Primary waste (Otpad)' },
+                { idKey: 'secondaryWasteItemId', pctKey: 'secondaryWastePercentage', label: 'Secondary waste (Otpad1)' },
+                { idKey: 'tertiaryWasteItemId', pctKey: 'tertiaryWastePercentage', label: 'Tertiary waste (Otpad2)' },
+                { idKey: 'zagubaItemId', pctKey: 'zagubaPercentage', label: 'Zaguba (non-recoverable loss)' },
+              ] as const).map((slot) => (
+                <React.Fragment key={slot.idKey}>
+                  <Grid item xs={12} sm={8}>
+                    <FormAutocomplete
+                      name={slot.idKey as any}
+                      control={control}
+                      label={slot.label + ' — catalog item'}
+                      options={items.map((i) => ({ id: i.id, label: `${i.code} · ${i.name}` }))}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <FormInput
+                      name={slot.pctKey as any}
+                      control={control}
+                      label="%"
+                      type="number"
+                      placeholder="0 – 100"
+                    />
+                  </Grid>
+                </React.Fragment>
+              ))}
+
+              <Grid item xs={12} sm={6}>
+                <FormInput
+                  name="wasteTariffCode"
+                  control={control}
+                  label="Waste tariff code (ArtOtpadTarBr)"
+                  placeholder="10-digit HS — used when THIS item IS a waste catalog entry"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormCheckbox
+                  name="isWasteCatalog"
+                  control={control}
+                  label="Is waste catalog entry (ArtOtpadZao)"
+                />
+              </Grid>
+            </>
+          )}
         </Grid>
       </Box>
     </FormDialog>

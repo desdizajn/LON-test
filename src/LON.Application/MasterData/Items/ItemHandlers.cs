@@ -35,7 +35,17 @@ public record ItemResponse(
     string? ColorCode,
     string? SizeCode,
     Guid? ParentItemId,
-    string? PartnerSKU);
+    string? PartnerSKU,
+    Guid? PrimaryWasteItemId,
+    decimal? PrimaryWastePercentage,
+    Guid? SecondaryWasteItemId,
+    decimal? SecondaryWastePercentage,
+    Guid? TertiaryWasteItemId,
+    decimal? TertiaryWastePercentage,
+    Guid? ZagubaItemId,
+    decimal? ZagubaPercentage,
+    string? WasteTariffCode,
+    bool IsWasteCatalog);
 
 public record UoMResponseShort(
     Guid Id,
@@ -93,7 +103,17 @@ internal static class ItemMappers
         item.ColorCode,
         item.SizeCode,
         item.ParentItemId,
-        item.PartnerSKU);
+        item.PartnerSKU,
+        item.PrimaryWasteItemId,
+        item.PrimaryWastePercentage,
+        item.SecondaryWasteItemId,
+        item.SecondaryWastePercentage,
+        item.TertiaryWasteItemId,
+        item.TertiaryWastePercentage,
+        item.ZagubaItemId,
+        item.ZagubaPercentage,
+        item.WasteTariffCode,
+        item.IsWasteCatalog);
 }
 
 // -----------------------------------------------------------------------------
@@ -164,7 +184,17 @@ public sealed record CreateItemCommand(
     string? HSCode,
     bool IsActive,
     decimal? StandardCost,
-    string? PartnerSKU = null) : ICommand<ItemResponse>;
+    string? PartnerSKU = null,
+    Guid? PrimaryWasteItemId = null,
+    decimal? PrimaryWastePercentage = null,
+    Guid? SecondaryWasteItemId = null,
+    decimal? SecondaryWastePercentage = null,
+    Guid? TertiaryWasteItemId = null,
+    decimal? TertiaryWastePercentage = null,
+    Guid? ZagubaItemId = null,
+    decimal? ZagubaPercentage = null,
+    string? WasteTariffCode = null,
+    bool IsWasteCatalog = false) : ICommand<ItemResponse>;
 
 public sealed class CreateItemCommandHandler : ICommandHandler<CreateItemCommand, ItemResponse>
 {
@@ -188,6 +218,16 @@ public sealed class CreateItemCommandHandler : ICommandHandler<CreateItemCommand
             BaseUoMId = request.UoMId,
             StandardCost = request.StandardCost ?? 0m,
             PartnerSKU = ItemMappers.NormalizeSku(request.PartnerSKU),
+            PrimaryWasteItemId = request.PrimaryWasteItemId,
+            PrimaryWastePercentage = request.PrimaryWastePercentage,
+            SecondaryWasteItemId = request.SecondaryWasteItemId,
+            SecondaryWastePercentage = request.SecondaryWastePercentage,
+            TertiaryWasteItemId = request.TertiaryWasteItemId,
+            TertiaryWastePercentage = request.TertiaryWastePercentage,
+            ZagubaItemId = request.ZagubaItemId,
+            ZagubaPercentage = request.ZagubaPercentage,
+            WasteTariffCode = string.IsNullOrWhiteSpace(request.WasteTariffCode) ? null : request.WasteTariffCode.Trim(),
+            IsWasteCatalog = request.IsWasteCatalog,
             IsDeleted = !request.IsActive
         };
 
@@ -218,7 +258,17 @@ public sealed record UpdateItemCommand(
     string? HSCode,
     bool IsActive,
     decimal? StandardCost,
-    string? PartnerSKU = null) : ICommand<ItemResponse?>;
+    string? PartnerSKU = null,
+    Guid? PrimaryWasteItemId = null,
+    decimal? PrimaryWastePercentage = null,
+    Guid? SecondaryWasteItemId = null,
+    decimal? SecondaryWastePercentage = null,
+    Guid? TertiaryWasteItemId = null,
+    decimal? TertiaryWastePercentage = null,
+    Guid? ZagubaItemId = null,
+    decimal? ZagubaPercentage = null,
+    string? WasteTariffCode = null,
+    bool IsWasteCatalog = false) : ICommand<ItemResponse?>;
 
 public sealed class UpdateItemCommandHandler : ICommandHandler<UpdateItemCommand, ItemResponse?>
 {
@@ -242,6 +292,16 @@ public sealed class UpdateItemCommandHandler : ICommandHandler<UpdateItemCommand
         item.BaseUoMId = request.UoMId;
         item.StandardCost = request.StandardCost ?? item.StandardCost;
         item.PartnerSKU = ItemMappers.NormalizeSku(request.PartnerSKU);
+        item.PrimaryWasteItemId = request.PrimaryWasteItemId;
+        item.PrimaryWastePercentage = request.PrimaryWastePercentage;
+        item.SecondaryWasteItemId = request.SecondaryWasteItemId;
+        item.SecondaryWastePercentage = request.SecondaryWastePercentage;
+        item.TertiaryWasteItemId = request.TertiaryWasteItemId;
+        item.TertiaryWastePercentage = request.TertiaryWastePercentage;
+        item.ZagubaItemId = request.ZagubaItemId;
+        item.ZagubaPercentage = request.ZagubaPercentage;
+        item.WasteTariffCode = string.IsNullOrWhiteSpace(request.WasteTariffCode) ? null : request.WasteTariffCode.Trim();
+        item.IsWasteCatalog = request.IsWasteCatalog;
         item.IsDeleted = !request.IsActive;
 
         await _context.SaveChangesAsync(ct);

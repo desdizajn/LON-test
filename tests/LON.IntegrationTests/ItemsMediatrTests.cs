@@ -223,8 +223,123 @@ public class ItemsMediatrTests : IClassFixture<LonApiFactory>
         updated!.PartnerSKU.Should().BeNull();
     }
 
+    /// <summary>
+    /// P15.6a — waste slot round-trip. Creates a material with 3 waste slots
+    /// + Zaguba populated and asserts the persisted values come back through
+    /// GET intact.
+    /// </summary>
+    [Fact]
+    public async Task Create_WithWasteSlots_PersistsAllFields()
+    {
+        var client = await AuthedAsync();
+        var uoms = await client.GetFromJsonAsync<List<UoMRow>>("/api/MasterData/uom");
+        var uom = uoms!.First(u => u.IsActive).Id;
+
+        // Seed four tiny catalog items to reference as waste targets.
+        async Task<Guid> MkItem(string prefix)
+        {
+            var code = $"{prefix}-{Guid.NewGuid():N}".Substring(0, 20);
+            var resp = await client.PostAsJsonAsync("/api/MasterData/items", new
+            {
+                code,
+                name = "waste target",
+                itemType = ItemType.RawMaterial,
+                uoMId = uom,
+                isBatchRequired = false,
+                isMRNRequired = false,
+                isActive = true,
+                isWasteCatalog = true
+            });
+            var created = await resp.Content.ReadFromJsonAsync<ItemWithWasteRow>();
+            return created!.Id;
+        }
+        var p = await MkItem("P156-P");
+        var s = await MkItem("P156-S");
+        var t = await MkItem("P156-T");
+        var z = await MkItem("P156-Z");
+
+        var parentCode = $"P156-PAR-{Guid.NewGuid():N}".Substring(0, 20);
+        var create = await client.PostAsJsonAsync("/api/MasterData/items", new
+        {
+            code = parentCode,
+            name = "material with waste",
+            itemType = ItemType.RawMaterial,
+            uoMId = uom,
+            isBatchRequired = false,
+            isMRNRequired = false,
+            isActive = true,
+            primaryWasteItemId = p,
+            primaryWastePercentage = 5.5m,
+            secondaryWasteItemId = s,
+            secondaryWastePercentage = 2.25m,
+            tertiaryWasteItemId = t,
+            tertiaryWastePercentage = 1.0m,
+            zagubaItemId = z,
+            zagubaPercentage = 0.5m,
+            wasteTariffCode = "6310100010",
+            isWasteCatalog = false
+        });
+        create.StatusCode.Should().Be(HttpStatusCode.OK, await create.Content.ReadAsStringAsync());
+        var parent = await create.Content.ReadFromJsonAsync<ItemWithWasteRow>();
+
+        var refetch = await client.GetFromJsonAsync<ItemWithWasteRow>($"/api/MasterData/items/{parent!.Id}");
+        refetch!.PrimaryWasteItemId.Should().Be(p);
+        refetch.PrimaryWastePercentage.Should().Be(5.5m);
+        refetch.SecondaryWasteItemId.Should().Be(s);
+        refetch.SecondaryWastePercentage.Should().Be(2.25m);
+        refetch.TertiaryWasteItemId.Should().Be(t);
+        refetch.TertiaryWastePercentage.Should().Be(1.0m);
+        refetch.ZagubaItemId.Should().Be(z);
+        refetch.ZagubaPercentage.Should().Be(0.5m);
+        refetch.WasteTariffCode.Should().Be("6310100010");
+        refetch.IsWasteCatalog.Should().BeFalse();
+
+        // Update clears the tertiary slot — nullable fields must persist as null.
+        var upd = await client.PutAsJsonAsync($"/api/MasterData/items/{parent.Id}", new
+        {
+            code = parentCode,
+            name = "material with waste (updated)",
+            itemType = ItemType.RawMaterial,
+            uoMId = uom,
+            isBatchRequired = false,
+            isMRNRequired = false,
+            isActive = true,
+            primaryWasteItemId = p,
+            primaryWastePercentage = 6.0m,
+            secondaryWasteItemId = s,
+            secondaryWastePercentage = 2.25m,
+            tertiaryWasteItemId = (Guid?)null,
+            tertiaryWastePercentage = (decimal?)null,
+            zagubaItemId = z,
+            zagubaPercentage = 0.5m,
+            wasteTariffCode = (string?)null,
+            isWasteCatalog = false
+        });
+        upd.StatusCode.Should().Be(HttpStatusCode.OK);
+        var refetch2 = await client.GetFromJsonAsync<ItemWithWasteRow>($"/api/MasterData/items/{parent.Id}");
+        refetch2!.PrimaryWastePercentage.Should().Be(6.0m);
+        refetch2.TertiaryWasteItemId.Should().BeNull();
+        refetch2.TertiaryWastePercentage.Should().BeNull();
+        refetch2.WasteTariffCode.Should().BeNull();
+    }
+
     private sealed record LoginResponse(string AccessToken);
     private sealed record UoMRow(Guid Id, string Code, string Name, bool IsActive);
     private sealed record ItemRow(Guid Id, string Code, string Name, bool IsActive);
     private sealed record ItemWithSkuRow(Guid Id, string Code, string Name, bool IsActive, string? PartnerSKU);
+    private sealed record ItemWithWasteRow(
+        Guid Id,
+        string Code,
+        string Name,
+        bool IsActive,
+        Guid? PrimaryWasteItemId,
+        decimal? PrimaryWastePercentage,
+        Guid? SecondaryWasteItemId,
+        decimal? SecondaryWastePercentage,
+        Guid? TertiaryWasteItemId,
+        decimal? TertiaryWastePercentage,
+        Guid? ZagubaItemId,
+        decimal? ZagubaPercentage,
+        string? WasteTariffCode,
+        bool IsWasteCatalog);
 }

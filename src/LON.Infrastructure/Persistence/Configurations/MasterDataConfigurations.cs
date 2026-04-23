@@ -33,6 +33,25 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
         // Composite unique: two tenants can each have their own RM-001, FG-001, etc.
         // P6.32: filter on IsDeleted so soft-deleted rows don't block re-insert.
         builder.HasIndex(e => new { e.TenantId, e.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+
+        // P15.1 partner-SKU crosswalk — bounded length + filtered index for lookup-by-SKU.
+        builder.Property(e => e.PartnerSKU).HasMaxLength(100);
+        builder.HasIndex(e => new { e.TenantId, e.PartnerSKU })
+            .HasFilter("[PartnerSKU] IS NOT NULL AND [IsDeleted] = 0");
+
+        // P15.6 waste slots — self-references to Item must be NoAction to avoid
+        // multi-path cascade on SQL Server. Decimal precision matches the rest
+        // of the domain (18,4).
+        builder.Property(e => e.PrimaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.SecondaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.TertiaryWastePercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.ZagubaPercentage).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.WasteTariffCode).HasMaxLength(20);
+        builder.HasOne(e => e.PrimaryWasteItem).WithMany().HasForeignKey(e => e.PrimaryWasteItemId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(e => e.SecondaryWasteItem).WithMany().HasForeignKey(e => e.SecondaryWasteItemId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(e => e.TertiaryWasteItem).WithMany().HasForeignKey(e => e.TertiaryWasteItemId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(e => e.ZagubaItem).WithMany().HasForeignKey(e => e.ZagubaItemId).OnDelete(DeleteBehavior.NoAction);
+
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

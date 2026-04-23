@@ -44,7 +44,17 @@ public class ItemsController : BaseController
             request.HSCode,
             request.IsActive,
             request.StandardCost,
-            request.PartnerSKU));
+            request.PartnerSKU,
+            request.PrimaryWasteItemId,
+            request.PrimaryWastePercentage,
+            request.SecondaryWasteItemId,
+            request.SecondaryWastePercentage,
+            request.TertiaryWasteItemId,
+            request.TertiaryWastePercentage,
+            request.ZagubaItemId,
+            request.ZagubaPercentage,
+            request.WasteTariffCode,
+            request.IsWasteCatalog));
         return Ok(item);
     }
 
@@ -64,7 +74,17 @@ public class ItemsController : BaseController
             request.HSCode,
             request.IsActive,
             request.StandardCost,
-            request.PartnerSKU));
+            request.PartnerSKU,
+            request.PrimaryWasteItemId,
+            request.PrimaryWastePercentage,
+            request.SecondaryWasteItemId,
+            request.SecondaryWastePercentage,
+            request.TertiaryWasteItemId,
+            request.TertiaryWastePercentage,
+            request.ZagubaItemId,
+            request.ZagubaPercentage,
+            request.WasteTariffCode,
+            request.IsWasteCatalog));
         return item is null ? NotFound() : Ok(item);
     }
 

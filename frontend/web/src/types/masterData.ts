@@ -68,6 +68,17 @@ export interface Item {
   updatedBy?: string;
   /** P15.1 — legacy ArtKatBrStara; partner's own SKU for this item. */
   partnerSKU?: string | null;
+  // P15.6 — legacy ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba waste slots.
+  primaryWasteItemId?: string | null;
+  primaryWastePercentage?: number | null;
+  secondaryWasteItemId?: string | null;
+  secondaryWastePercentage?: number | null;
+  tertiaryWasteItemId?: string | null;
+  tertiaryWastePercentage?: number | null;
+  zagubaItemId?: string | null;
+  zagubaPercentage?: number | null;
+  wasteTariffCode?: string | null;
+  isWasteCatalog?: boolean;
 }
 
 export interface ItemFormData {
@@ -83,6 +94,17 @@ export interface ItemFormData {
   isActive: boolean;
   /** P15.1 — partner / supplier SKU. Optional; empty string treated as null. */
   partnerSKU?: string;
+  // P15.6 — waste slots (all optional; null/empty treated as "not set").
+  primaryWasteItemId?: string | null;
+  primaryWastePercentage?: number | null;
+  secondaryWasteItemId?: string | null;
+  secondaryWastePercentage?: number | null;
+  tertiaryWasteItemId?: string | null;
+  tertiaryWastePercentage?: number | null;
+  zagubaItemId?: string | null;
+  zagubaPercentage?: number | null;
+  wasteTariffCode?: string;
+  isWasteCatalog?: boolean;
 }
 
 export interface Partner {

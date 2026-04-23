@@ -17,7 +17,18 @@ public record ItemRequest(
     string? HSCode,
     bool IsActive,
     decimal? StandardCost,
-    string? PartnerSKU = null
+    string? PartnerSKU = null,
+    // P15.6 waste slots (legacy ArtKatBrMatOtpad/1/2 + ArtKatBrMatZaguba)
+    Guid? PrimaryWasteItemId = null,
+    decimal? PrimaryWastePercentage = null,
+    Guid? SecondaryWasteItemId = null,
+    decimal? SecondaryWastePercentage = null,
+    Guid? TertiaryWasteItemId = null,
+    decimal? TertiaryWastePercentage = null,
+    Guid? ZagubaItemId = null,
+    decimal? ZagubaPercentage = null,
+    string? WasteTariffCode = null,
+    bool IsWasteCatalog = false
 );
 
 public record PartnerRequest(
