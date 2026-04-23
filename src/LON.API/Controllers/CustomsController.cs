@@ -329,6 +329,22 @@ public class CustomsController : BaseController
         return Ok(rows);
     }
 
+    // ---------- P15.12 / P15.13 / P15.14 / P15.15 PEE XML family ----------
+
+    /// <summary>
+    /// P15.12+ — generate one of the PEE envelopes (PEE010 / PEE020 / PEE040
+    /// / PEE050) for a given declaration. Returns file name + XML body;
+    /// frontend offers it as a download the operator uploads to the customs
+    /// portal (legacy Notepad-save path).
+    /// </summary>
+    [HttpGet("declarations/{id:guid}/pee/{envelope}")]
+    public async Task<IActionResult> GeneratePeeXml(Guid id, string envelope)
+    {
+        var result = await Mediator.Send(
+            new LON.Application.Customs.Queries.GeneratePeeXml.GeneratePeeXmlQuery(id, envelope));
+        return result.IsSuccess ? Ok(result.Data) : BadRequest(result);
+    }
+
     [HttpGet("procedures")]
     public async Task<IActionResult> GetProcedures()
     {
