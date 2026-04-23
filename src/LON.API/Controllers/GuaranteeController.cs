@@ -1,5 +1,6 @@
 using LON.Application.Guarantee.Commands.DebitGuarantee;
 using LON.Application.Guarantee.Commands.CreditGuarantee;
+using LON.Application.Guarantee.Commands.CreateGuaranteeBalanceSnapshot;
 using LON.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -293,6 +294,54 @@ public class GuaranteeController : BaseController
             .Where(e => e.GuaranteeAccountId == accountId && !e.IsDeleted && !e.IsReleased)
             .Sum(e => e.EntryType == LON.Domain.Enums.GuaranteeEntryType.Debit ? e.Amount : -e.Amount);
     }
+
+    // ---------- P15.5 Balance snapshots (legacy tblSostojbaNaGarancija) ----------
+
+    /// <summary>
+    /// P15.5 — create/refresh balance snapshots for every active guarantee
+    /// account as of the supplied date (default = today UTC). Idempotent:
+    /// re-running for the same date replaces prior snapshot rows. Intended
+    /// for monthly audit cadence.
+    /// </summary>
+    [HttpPost("snapshots/run")]
+    public async Task<IActionResult> RunBalanceSnapshots([FromBody] RunSnapshotRequest? request)
+    {
+        var result = await Mediator.Send(new CreateGuaranteeBalanceSnapshotCommand
+        {
+            SnapshotDate = request?.SnapshotDate ?? DateTime.UtcNow,
+            Notes = request?.Notes
+        });
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.5 — list snapshots, newest first, optionally filtered by account
+    /// or date window.
+    /// </summary>
+    [HttpGet("snapshots")]
+    public async Task<IActionResult> GetSnapshots(
+        [FromQuery] Guid? accountId = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
+    {
+        var q = _context.GuaranteeBalanceSnapshots.AsQueryable();
+        if (accountId.HasValue) q = q.Where(s => s.GuaranteeAccountId == accountId.Value);
+        if (from.HasValue) q = q.Where(s => s.SnapshotDate >= from.Value);
+        if (to.HasValue) q = q.Where(s => s.SnapshotDate <= to.Value);
+
+        var rows = await q
+            .OrderByDescending(s => s.SnapshotDate)
+            .ThenBy(s => s.GuaranteeAccountId)
+            .Take(500)
+            .ToListAsync();
+        return Ok(rows);
+    }
+}
+
+public class RunSnapshotRequest
+{
+    public DateTime? SnapshotDate { get; set; }
+    public string? Notes { get; set; }
 }
 
 // Request DTOs

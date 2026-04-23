@@ -68,3 +68,41 @@ public class DutyCalculation : BaseEntity, ITenantScoped
     public DateTime CalculationDate { get; set; }
     public string? Notes { get; set; }
 }
+
+/// <summary>
+/// P15.5 — legacy <c>tblSostojbaNaGarancija</c>. Point-in-time snapshot of
+/// a <see cref="GuaranteeAccount"/>'s ledger-derived balance. Taken at
+/// month-end (or on-demand via admin trigger) so audit/reporting has an
+/// attested state even if the ledger is later amended (corrections,
+/// reversed Zaverkas etc.).
+///
+/// <para>Balance at snapshot time is stored directly on the row:</para>
+/// <list type="bullet">
+///   <item><c>DebitedAmount</c> = Σ non-released Debit ledger entries at date.</item>
+///   <item><c>CreditedAmount</c> = Σ Credit ledger entries at date.</item>
+///   <item><c>NetBalance</c> = <c>DebitedAmount − CreditedAmount</c>.</item>
+///   <item><c>AvailableLimit</c> = <c>TotalLimit − NetBalance</c>.</item>
+///   <item><c>ActiveDebitCount</c> = count of non-released Debit entries at date (for
+///         traffic-light trend charts).</item>
+/// </list>
+/// </summary>
+public class GuaranteeBalanceSnapshot : BaseEntity, ITenantScoped
+{
+    public Guid TenantId { get; set; }
+    public Guid GuaranteeAccountId { get; set; }
+    public virtual GuaranteeAccount GuaranteeAccount { get; set; } = null!;
+
+    /// <summary>Inclusive date the snapshot covers. Typically end-of-month.</summary>
+    public DateTime SnapshotDate { get; set; }
+
+    public string Currency { get; set; } = "EUR";
+    public decimal TotalLimit { get; set; }
+    public decimal DebitedAmount { get; set; }
+    public decimal CreditedAmount { get; set; }
+    public decimal NetBalance { get; set; }
+    public decimal AvailableLimit { get; set; }
+    public int ActiveDebitCount { get; set; }
+
+    /// <summary>Free-text note: who triggered, purpose (month-end, ad-hoc), gazette ref...</summary>
+    public string? Notes { get; set; }
+}

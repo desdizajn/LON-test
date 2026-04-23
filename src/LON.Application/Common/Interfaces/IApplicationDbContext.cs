@@ -64,6 +64,7 @@ public interface IApplicationDbContext
     DbSet<Shipment> Shipments { get; }
     DbSet<ShipmentLine> ShipmentLines { get; }
     DbSet<Skart> Skarts { get; }
+    DbSet<LON.Domain.Entities.Guarantee.GuaranteeBalanceSnapshot> GuaranteeBalanceSnapshots { get; }
 
     // Production
     DbSet<BOM> BOMs { get; }

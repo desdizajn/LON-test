@@ -43,6 +43,29 @@ public class GuaranteeLedgerEntryConfiguration : IEntityTypeConfiguration<Guaran
     }
 }
 
+public class GuaranteeBalanceSnapshotConfiguration : IEntityTypeConfiguration<GuaranteeBalanceSnapshot>
+{
+    public void Configure(EntityTypeBuilder<GuaranteeBalanceSnapshot> builder)
+    {
+        builder.ToTable("GuaranteeBalanceSnapshots");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Currency).IsRequired().HasMaxLength(3);
+        builder.Property(e => e.TotalLimit).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.DebitedAmount).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.CreditedAmount).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.NetBalance).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.AvailableLimit).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.Notes).HasMaxLength(500);
+
+        builder.HasOne(e => e.GuaranteeAccount).WithMany().HasForeignKey(e => e.GuaranteeAccountId).OnDelete(DeleteBehavior.Restrict);
+
+        // One snapshot per (account, date) — idempotent re-run replaces via soft-delete + insert.
+        builder.HasIndex(e => new { e.GuaranteeAccountId, e.SnapshotDate }).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(e => e.SnapshotDate);
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
 public class DutyCalculationConfiguration : IEntityTypeConfiguration<DutyCalculation>
 {
     public void Configure(EntityTypeBuilder<DutyCalculation> builder)

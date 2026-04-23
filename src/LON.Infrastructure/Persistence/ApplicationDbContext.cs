@@ -68,6 +68,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
     public DbSet<Skart> Skarts => Set<Skart>();
+    public DbSet<Domain.Entities.Guarantee.GuaranteeBalanceSnapshot> GuaranteeBalanceSnapshots =>
+        Set<Domain.Entities.Guarantee.GuaranteeBalanceSnapshot>();
 
     // Production
     public DbSet<BOM> BOMs => Set<BOM>();
