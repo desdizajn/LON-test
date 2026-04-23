@@ -2,6 +2,36 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — P15.4 + P15.5: NaimU5 rollup + Guarantee balance snapshots
+
+**Status:** [x] both shipped, VPS verified on live seed data.
+
+**P15.4 — NaimU5 rollup (commit `ec246ab`):**
+- `GetDeclarationNaimQuery` groups `CustomsDeclarationLine`s по triple (TariffCode, UoMId, CountryOfOrigin) — legacy `cmdVnesiNaim_Click` + `cmdFormiraj_Click` rollup. Per група: sum(qty / customsValue / gross / net / duty / VAT / otherCharges) + weighted-avg rate (`Σ(rate × value) / Σ(value)`, fallback: simple mean when customsValue=0).
+- Ordering: TariffCode → UoM → Country; naimNumber stable 1..N (legacy `NaimRBr`).
+- `GET /api/customs/declarations/{id}/naim` returns `List<NaimRow>` со lineNumbers на агрегатот.
+- Integration test: 3-линија декларација (2 TR + 1 IT) → 2 naim rows; weighted duty `(10×300 + 12×700)/1000 = 11.4`, total duty `114`, IT separate.
+- VPS verified на declaration `e0caf2b0-45dd-402d-8266-76e7e6ae5be9` → 42 naim groups returned.
+- **Unlocks:** PEE010 XML (IM submission), PEE050 XML (EX submission), legacy register printouts (P15.11).
+
+**P15.5 — GuaranteeBalanceSnapshot (commit `dbaea1b`):**
+- `GuaranteeBalanceSnapshot` entity (Tenant-scoped): SnapshotDate, TotalLimit, DebitedAmount, CreditedAmount, NetBalance, AvailableLimit, ActiveDebitCount, Currency, Notes. EF config: decimal(18,4) throughout + filtered unique `(GuaranteeAccountId, SnapshotDate)` + SnapshotDate idx.
+- `CreateGuaranteeBalanceSnapshotCommand` walks every active `GuaranteeAccount`, за секој:
+  - Cutoff = SnapshotDate + 1 day (inclusive); ledger entries filter `EntryDate < cutoff`.
+  - Outstanding debits: `EntryType=Debit AND (!IsReleased OR ActualReleaseDate >= cutoff)` — дебит released AFTER the target date is STILL outstanding at target (legacy `VratiSaldoNaDenDenesenZavereni` semantic).
+  - Credits: `EntryType=Credit` simple sum.
+  - NetBalance = Debit − Credit; AvailableLimit = TotalLimit − Net; ActiveDebitCount = count.
+  - Idempotent: soft-delete prior snapshots for same (account, date), insert fresh.
+- Endpoints: `POST /api/Guarantee/snapshots/run` (body: `snapshotDate` + `notes`), `GET /api/Guarantee/snapshots?accountId&from&to` (top-500 newest-first).
+- Migration `20260423002941_P15_5_GuaranteeBalanceSnapshot`: new table + idx + Restrict FK.
+- Integration test: first run creates; second run soft-deletes prior + inserts fresh; `IgnoreQueryFilters` sees both с exactly one `IsDeleted=true`.
+- VPS verified: `POST snapshots/run` created 2 (EUR + USD), matches existing TrafficLight (EUR 6278.62 net / 493721.38 available ≡ 1.26% utilisation green).
+- **Deferred → P15.5.1:** monthly cron worker (Quartz/Hangfire integration).
+
+**Cumulative after 5/15:** P15.1 PartnerSKU + P15.2 (already-done Traffic light) + P15.3 Skart + P15.4 NaimU5 + P15.5 Guarantee snapshots. Преостануваат 10 таскови; следно **P15.6 4 waste slots + Zaguba** (largest schema change; L effort).
+
+---
+
 ## 2026-04-23 — P15.2 + P15.3: traffic light (already shipped) + Skart register
 
 **Status:** [x] P15.2 marked done (no new code); [x] P15.3 shipped (commit `e5b8b30`). VPS HTTP 200 + end-to-end smoke passed.

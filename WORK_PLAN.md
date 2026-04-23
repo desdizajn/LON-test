@@ -828,8 +828,8 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 - [x] **P15.1** ✅ *2026-04-23 (commit `13fc741`)* — `Item.PartnerSKU` (legacy ArtKatBrStara) + normalize helper + ItemRequest/Command/Response wiring + search-by-SKU + ItemsImportExecutor column + ItemForm input + migration + 2 integration tests. VPS verified: " tek-xyz-99 " POST → "TEK-XYZ-99" normalized + searchable.
 - [x] **P15.2** ✅ *2026-04-23* — already shipped during P4.4. Backend `GET /api/Guarantee/accounts/traffic-light` + frontend `TrafficLightGuarantees.tsx` component already mounted on Dashboard + `/finance/guarantees`. Live VPS verified: 2 accounts (EUR 1.26% green, USD 0% green). Gap analysis was incorrect — component already existed. No further work needed.
 - [x] **P15.3** ✅ *2026-04-23 (commit `e5b8b30`)* — Skart entity + ReportSkartCommand (OK → Blocked split, NetoKol cumulative guard) + ResolveSkartCommand + GetSkartQuery + 3 API endpoints + `/warehouse/skart` register page + nav entry + 3 integration tests + i18n × 4. VPS verified: Receipt qty=30 → Skart 5 → `SKT-20260423-0001`; cumulative overdraw 400; double-resolve 400.
-- [/] **P15.4** NaimU5 rollup query — `GET /api/customs/declarations/{id}/naim` group by (TarBr, EdMerCar, ZemjaPoteklo) за PEE XML + reports.
-- [ ] **P15.5** `GuaranteeBalanceSnapshot` entity + background job за monthly snapshot (legacy `tblSostojbaNaGarancija`).
+- [x] **P15.4** ✅ *2026-04-23 (commit `ec246ab`)* — `GetDeclarationNaimQuery` + `GET /api/customs/declarations/{id}/naim` groups lines by (TariffCode, UoM, CountryOfOrigin) with weighted-avg duty/VAT. VPS verified: real declaration `e0caf2b0...` → 42 naim groups. Unlocks PEE010/050 XML + legacy register reports.
+- [x] **P15.5** ✅ *2026-04-23 (commit `dbaea1b`)* — `GuaranteeBalanceSnapshot` entity + `CreateGuaranteeBalanceSnapshotCommand` + `POST /api/Guarantee/snapshots/run` + `GET /api/Guarantee/snapshots`. Idempotent (same-date re-run soft-deletes + reinserts). VPS verified: 2 snapshots created (EUR 6278.62 net / 493721 avail; USD 0 / 300000). Monthly cron wiring deferred → P15.5.1.
 
 ### Wave B — Waste + production templates
 
@@ -868,6 +868,6 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 
 ## Current Active Task
 
-**P15.4** — NaimU5 rollup query (legacy `NaimU5` from `PresmetajDavackiPoNaim`). Groups CustomsDeclarationLines by (TariffCode, UoM, CountryOfOrigin) → one aggregate row per naimenovanie with summed qty/value/duty/VAT. Needed by PEE060 XML and monthly customs register.
+**P15.6** — 4 waste slots + Zaguba model on `Item` / `BOMLine` / `ProductionOrderMaterial`. Legacy ELON's `ArtKatBrMatOtpad/1/2` + `ArtOtpadProc/1/2` + `ArtKatBrMatZaguba` + `ArtOtpadZaguba`. Largest schema change in Phase 15; will touch material-issue math (`inflate-for-waste`) and prepare for PEE040 XML (P15.14). Expected effort L (3–5 days).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
