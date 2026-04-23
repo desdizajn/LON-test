@@ -273,6 +273,20 @@ public class CustomsController : BaseController
         return Ok(declaration);
     }
 
+    /// <summary>
+    /// P15.4 — NaimU5 rollup. Groups the declaration's lines by
+    /// (TariffCode, UoM, CountryOfOrigin) and returns one aggregate row
+    /// per naimenovanie with summed qty/value/duty/VAT. Used by PEE XML
+    /// + customs register printouts + the declaration-detail UI tab.
+    /// </summary>
+    [HttpGet("declarations/{id:guid}/naim")]
+    public async Task<IActionResult> GetDeclarationNaim(Guid id)
+    {
+        var rows = await Mediator.Send(
+            new LON.Application.Customs.Queries.GetDeclarationNaim.GetDeclarationNaimQuery(id));
+        return Ok(rows);
+    }
+
     [HttpGet("procedures")]
     public async Task<IActionResult> GetProcedures()
     {
