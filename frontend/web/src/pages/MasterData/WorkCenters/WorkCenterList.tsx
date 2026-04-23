@@ -126,8 +126,8 @@ const WorkCenterList: React.FC = () => {
                 <td><strong>{wc.code}</strong></td>
                 <td>{wc.name}</td>
                 <td>{wc.description || '-'}</td>
-                <td>{wc.standardCostPerHour.toFixed(2)}</td>
-                <td>{wc.capacity}</td>
+                <td>{(wc.standardCostPerHour ?? 0).toFixed(2)}</td>
+                <td>{wc.capacity ?? '-'}</td>
                 <td>{wc.machinesCount || 0}</td>
                 <td>
                   <span className={`badge ${wc.isActive ? 'badge-success' : 'badge-danger'}`}>

@@ -71,6 +71,15 @@ export const NAV_GROUPS: NavGroup[] = [
           'P15.3 — legacy FakturiU5Skart еквивалент: шкарт на прием со резолуција (враќање / уништено / попуст).',
       },
       {
+        key: 'warehouse-podelba',
+        labelKey: 'nav.warehouse.podelba',
+        icon: '🔀',
+        path: '/warehouse/podelba',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P15.8 — распределба на примени материјали кон подизведувачи (legacy frmPodeliBaranjaBrz).',
+      },
+      {
         key: 'warehouse-issues-today',
         labelKey: 'nav.warehouse.issuesToday',
         icon: '📤',

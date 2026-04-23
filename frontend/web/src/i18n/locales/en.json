@@ -764,6 +764,7 @@
       "incoming": "Awaiting receipt",
       "qcHold": "On QC hold",
       "skart": "Skart (defective on intake)",
+      "podelba": "Podelba (distribute to producers)",
       "issuesToday": "Issues today",
       "transfers": "Transfers",
       "bulkReceipt": "Bulk receipt",

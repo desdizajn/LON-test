@@ -75,6 +75,7 @@ import MrnDeadlines from './pages/Customs/MrnDeadlines';
 import IncomingShipments from './pages/Warehouse/IncomingShipments';
 import QcHold from './pages/Warehouse/QcHold';
 import Skart from './pages/Warehouse/Skart';
+import Podelba from './pages/Warehouse/Podelba';
 import VarianceReport from './pages/Warehouse/VarianceReport';
 import ShipmentsByStatus from './pages/Warehouse/ShipmentsByStatus';
 import StockByCustomer from './pages/Warehouse/StockByCustomer';
@@ -108,6 +109,7 @@ import QuickEntry from './pages/QuickEntry';
 
 // Admin — tenant policy settings + audit log
 import TenantSettings from './pages/Admin/TenantSettings';
+import TenantList from './pages/Admin/TenantList';
 import AuditLog from './pages/Admin/AuditLog';
 
 // P12.2 / P12.3 — Finance
@@ -175,6 +177,7 @@ const resolveActiveModule = (path: string) => {
   if (path.startsWith('/warehouse/incoming')) return 'warehouse-incoming';
   if (path.startsWith('/warehouse/qc-hold')) return 'warehouse-qc-hold';
   if (path.startsWith('/warehouse/skart')) return 'warehouse-skart';
+  if (path.startsWith('/warehouse/podelba')) return 'warehouse-podelba';
   if (path.startsWith('/warehouse/issues-today') || path.startsWith('/wms/pick-tasks')) return 'warehouse-issues-today';
   if (path.startsWith('/warehouse/transfers')) return 'warehouse-transfers';
   if (path.startsWith('/warehouse/stock-by-customer')) return 'warehouse-stock-by-customer';
@@ -317,6 +320,7 @@ const App: React.FC = () => {
             <Route path="/tools/import" element={<ImportWizard />} />
             <Route path="/tools/quick-entry" element={<QuickEntry />} />
             <Route path="/admin/tenant-settings" element={<TenantSettings />} />
+            <Route path="/admin/tenants" element={<TenantList />} />
             <Route path="/admin/audit-log" element={<AuditLog />} />
 
             {/* Advanced Features Routes */}
@@ -330,6 +334,7 @@ const App: React.FC = () => {
             <Route path="/warehouse/incoming" element={<IncomingShipments />} />
             <Route path="/warehouse/qc-hold" element={<QcHold />} />
             <Route path="/warehouse/skart" element={<Skart />} />
+            <Route path="/warehouse/podelba" element={<Podelba />} />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
             <Route path="/warehouse/transfers" element={<MassTransfer />} />
             <Route path="/warehouse/bulk-receipt" element={<BulkReceiptFromDeclaration />} />

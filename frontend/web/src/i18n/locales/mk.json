@@ -764,6 +764,7 @@
       "incoming": "Чека прием",
       "qcHold": "Блокирано од QC",
       "skart": "Шкарт (дефект на прием)",
+      "podelba": "Podelba (распределба по производител)",
       "issuesToday": "Издавање денес",
       "transfers": "Трансфери",
       "bulkReceipt": "Bulk прием",
