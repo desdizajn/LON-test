@@ -2,6 +2,58 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — P15.16: ELON_Research audit — 4 legacy gaps closed
+
+After user moved `docs/ELON_Research/` into the repo, I did a systematic re-read and found 4 gaps not covered by P15.1–P15.15 + the P15.x.1 follow-ups. All closed in commit `39dde0f`.
+
+**1. PEE envelope semantics were MAPPED WRONG** — critical fix.
+
+Before: PEE010=IM, PEE050=EX, PEE040=Waste. This was my misreading of the `GeneratePeeXml` task. Re-reading `03_Architecture.md §6`, the correct legacy Macedonian customs PEE taxonomy is:
+- **PEE010** — razdolzuvanje po **izvoz** (EX, procedure 31 51)
+- **PEE020** — razdolzuvanje po **konecno uvozno carinenje** (Return / final domestic import, procedure 61 21)
+- **PEE030** — razdolzuvanje po **povtoren izvoz** (alt EX pathway)
+- **PEE040** — razdolzuvanje po **unishtuvanje** (Waste — unchanged)
+- **PEE050** — **glavno dobien proizvod + upotrebeni materijali** (completion report — EX with TraceLink to consumed IM)
+- PEE060 — periodic tariff report (P4.2; unchanged)
+
+`GeneratePeeXmlQueries.cs` updated: envelope × DeclarationType guards match legacy. PEE050 body includes `<UpotrebeniMaterijaliNote>`, PEE020 adds `<KonecnoUvoznoCarinenje>` + `<SourceIMProcedure>`. ParsePee020Command made generic — accepts any `PEE*_Body` shape (customs portal returns zaverka in whichever envelope went out).
+
+VPS smoke: `PEE010` on IM declaration → 400 "PEE010 (razdolzuvanje po izvoz) envelope requires DeclarationType=EX" ✓. `PEE040` on IM → 400 "... requires DeclarationType=Waste" ✓.
+
+**2. NormativiVelicini — per-size BOM (legacy 05 §3).**
+
+New entity `ProductionOrderMaterialSize`: SizeOrdinal / SizeLabel (S/M/L/XXL) / Quantity / NormativPerUnit / TotalMaterialQuantity. Cascade FK to `ProductionOrderMaterial` parent. `ProductionOrderMaterial.HasSizeBreakdown` bool locks parent Normativ when true (legacy `VeliciniDaNe`). Weighted-average back-propagation onto parent is the operator's responsibility for v1 (UI subform deferred → P15.16.1). Migration + EF config shipped.
+
+**3. NormativNalog vs Normativ split (legacy 05 §2).**
+
+`ProductionOrderMaterial.PlannedQuantityPerUnit` captures the per-FG normativ at PO release. `RequiredQuantity` remains the effective (mutable) qty; diverges from plan when operator corrects post-release. Legacy `cmdVratiPlaniran` equivalent: `RequiredQuantity = PlannedQuantityPerUnit × PO.OrderQuantity` (caller-driven; no dedicated endpoint yet, trivial follow-up). `ReleaseProductionOrderCommand` snapshots at release time.
+
+**4. frmDodeluvanjeNormativiOdU5M — distribute U5 material across POs (legacy 05 §6).**
+
+`DistributeMaterialAcrossOrdersCommand` replaces the legacy multi-product distribution form. Operator picks one `CustomsDeclarationLine` + N `ProductionOrderIds` + mode:
+- `NewDistribution` (1): wipe unselected POs' lines for this material, redistribute full KolMatU by `PO.OrderQuantity` weighted-average.
+- `FillGaps` (2): only fill POs without existing line for this material.
+- `DistributeOverAll` (3): add / subtract against existing lines.
+
+Normativ = `importedQty / Σ PO.OrderQuantity`. Per-PO `RequiredQuantity = PO.OrderQuantity × Normativ`, rounded to 2 decimals. **Last row absorbs cumulative rounding drift** so Σ material = imported exactly (legacy quirk). `PlannedQuantityPerUnit` populated on new lines.
+
+`POST /api/Production/distribute-material`. VPS smoke: missing declLine → 400 "CustomsDeclarationLine '...' not found" ✓.
+
+**Migration `20260423112532_P15_16_NormativiVelicini_PlannedNormativ`:**
+- `ProductionOrderMaterials`: `HasSizeBreakdown` bool + `PlannedQuantityPerUnit` decimal(18,6).
+- New `ProductionOrderMaterialSizes` table with cascade FK + unique (MaterialId, SizeOrdinal) filtered index.
+
+**Remaining documented-as-deferred (non-critical for UAT):**
+- P15.16.1 — UI subform for per-size normativ entry (`NormativiVelicini`).
+- P15.17 — `ProsecnaSTDaNe` (average-rate override) on CustomsDeclaration — simplified customs calc variant. Rarely-used.
+- P15.18 — `Zaklucok` / ClosureTag grouping. Current reports filter by LONAuthorizationId + date window, which covers the common case.
+- P15.19 — `FrmPrvaPomos` style per-row edit-by-delta popups. CycleCount + adjustments cover correction needs.
+- P15.20 — Archive module. EF soft-delete + IgnoreQueryFilters already covers read-after-archive.
+
+**Cumulative: 16 Phase 15 slices + 5 P15.x.1 follow-ups + P15.16.** Ready for UAT with user directly.
+
+---
+
 ## 2026-04-23 — Phase 15 CLOSURE: P15.6b → P15.15 shipped (9 commits)
 
 **Status:** [x] all 15 Phase 15 slices closed. VPS verified on live seed data.
