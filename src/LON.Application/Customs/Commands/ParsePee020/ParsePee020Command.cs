@@ -78,11 +78,15 @@ public class ParsePee020CommandHandler : ICommandHandler<ParsePee020Command, Res
             return Result<Pee020Parsed>.Failure($"Invalid PEE020 XML: {ex.Message}");
         }
 
-        // Root can be PEE020 or namespaced; look for the body element first.
+        // Legacy ELON customs portal returns the zaverka response inside
+        // whichever PEE envelope originally went out (PEE010 response for EX,
+        // PEE020 for final-import, PEE040 for waste, etc.). Match any
+        // PEE*_Body descendant rather than hard-coding PEE020.
         var body = doc.Descendants()
-            .FirstOrDefault(e => e.Name.LocalName == "PEE020_Body");
+            .FirstOrDefault(e => e.Name.LocalName.StartsWith("PEE", StringComparison.OrdinalIgnoreCase)
+                                 && e.Name.LocalName.EndsWith("_Body", StringComparison.OrdinalIgnoreCase));
         if (body is null)
-            return Result<Pee020Parsed>.Failure("PEE020_Body element not found.");
+            return Result<Pee020Parsed>.Failure("No PEE*_Body element found — expected PEE010_Body / PEE020_Body / PEE040_Body / PEE050_Body.");
 
         string? Extract(string localName) =>
             body.Elements().FirstOrDefault(e => e.Name.LocalName == localName)?.Value?.Trim();

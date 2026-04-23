@@ -141,6 +141,8 @@ public class ProductionOrderMaterialConfiguration : IEntityTypeConfiguration<Pro
         builder.Property(e => e.PreAssignedMRN).HasMaxLength(100);
         builder.Property(e => e.PreAssignedBatchNumber).HasMaxLength(100);
         builder.Property(e => e.EfficiencyFactor).HasColumnType("decimal(18,6)");
+        // P15.16 — NormativNalog equivalent (legacy planned-vs-effective split).
+        builder.Property(e => e.PlannedQuantityPerUnit).HasColumnType("decimal(18,6)");
 
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
@@ -156,6 +158,27 @@ public class ProductionOrderMaterialConfiguration : IEntityTypeConfiguration<Pro
         builder.HasOne(e => e.ZagubaItem).WithMany().HasForeignKey(e => e.ZagubaItemId).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => new { e.ProductionOrderId, e.LineNumber }).IsUnique().HasFilter("[IsDeleted] = 0");
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+public class ProductionOrderMaterialSizeConfiguration : IEntityTypeConfiguration<ProductionOrderMaterialSize>
+{
+    public void Configure(EntityTypeBuilder<ProductionOrderMaterialSize> builder)
+    {
+        builder.ToTable("ProductionOrderMaterialSizes");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.SizeLabel).IsRequired().HasMaxLength(20);
+        builder.Property(e => e.Quantity).HasColumnType("decimal(18,4)");
+        builder.Property(e => e.NormativPerUnit).HasColumnType("decimal(18,6)");
+        builder.Property(e => e.TotalMaterialQuantity).HasColumnType("decimal(18,4)");
+
+        builder.HasOne(e => e.ProductionOrderMaterial)
+            .WithMany(m => m.Sizes)
+            .HasForeignKey(e => e.ProductionOrderMaterialId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(e => new { e.ProductionOrderMaterialId, e.SizeOrdinal }).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

@@ -13,16 +13,25 @@ namespace LON.Application.Customs.Queries.GeneratePeeXml;
 
 /// <summary>
 /// P15.12 / P15.13 / P15.14 / P15.15 — legacy PEE family of XML envelopes
-/// for Macedonian customs. All four are generated from a single
-/// <see cref="CustomsDeclaration"/> (identified by id) and differ only
-/// in the envelope metadata + which sections appear in the body.
+/// for the Macedonian customs razdolzuvanje (bond discharge) flow.
 ///
-/// <para>Legacy layout (ELON <c>PEE_XML</c> metadata-driven table):</para>
+/// <para>Correct envelope taxonomy (legacy 03_Architecture §6):</para>
 /// <list type="bullet">
-///   <item>PEE010 — IM submission envelope (pre-clearance).</item>
-///   <item>PEE020 — IM clearance response parser (INBOUND — placeholder stub).</item>
-///   <item>PEE040 — Waste declaration envelope.</item>
-///   <item>PEE050 — EX submission envelope (re-export of LON goods).</item>
+///   <item>PEE010 — Razdolzuvanje / povtoren izvoz (EX — re-export under LON
+///         procedure 31 51). Requires DeclarationType=EX.</item>
+///   <item>PEE020 — Razdolzuvanje / konecno uvozno carinenje (Vrakanje —
+///         final domestic import of LON material, procedure 61 21). Requires
+///         DeclarationType=Return OR IM with PreviousProcedureCode='51'.</item>
+///   <item>PEE030 — Razdolzuvanje / povtoren izvoz (secondary re-export
+///         pathway — alternate procedure subset of PEE010).</item>
+///   <item>PEE040 — Razdolzuvanje / unishtuvanje (destruction — Waste
+///         declaration). Requires DeclarationType=Waste.</item>
+///   <item>PEE050 — Glavno dobien proizvod + upotrebeni materijali
+///         (production completion report — requires a PO context, maps
+///         FG output to consumed IM materials). Requires DeclarationType=EX
+///         plus linked TraceLinks to IM materials.</item>
+///   <item>PEE060 — Zadolzuvanje/Razdolzuvanje po Tarifna Oznaka
+///         (periodic monthly report — P4.2 has its own dedicated query).</item>
 /// </list>
 ///
 /// Envelope constants (sender code qualifier, interchange control reference,
@@ -49,7 +58,7 @@ public sealed class GeneratePeeXmlQueryHandler
 {
     private static readonly HashSet<string> KnownEnvelopes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "PEE010", "PEE020", "PEE040", "PEE050"
+        "PEE010", "PEE020", "PEE030", "PEE040", "PEE050"
     };
 
     private readonly IApplicationDbContext _context;
@@ -76,15 +85,22 @@ public sealed class GeneratePeeXmlQueryHandler
             return Result<PeeXmlPayload>.Failure($"Declaration '{request.DeclarationId}' not found.");
 
         // Cross-check envelope vs declaration type to avoid nonsensical output.
+        // Mapping corrected per legacy 03_Architecture §6: the PEE family all
+        // carry razdolzuvanje-pathway metadata; the numbers label WHICH
+        // pathway (re-export, final domestic import, destruction, etc.).
         var mismatch = (request.Envelope.ToUpperInvariant(), decl.DeclarationType) switch
         {
-            ("PEE010", "IM") => null,
-            ("PEE010", _) => "PEE010 envelope requires DeclarationType=IM.",
-            ("PEE050", "EX") => null,
-            ("PEE050", _) => "PEE050 envelope requires DeclarationType=EX.",
+            ("PEE010", "EX") => null,
+            ("PEE010", _) => "PEE010 (razdolzuvanje po izvoz) envelope requires DeclarationType=EX.",
+            ("PEE020", "Return") => null,
+            ("PEE020", "IM") when decl.PreviousProcedureCode == "51" => null,
+            ("PEE020", _) => "PEE020 (razdolzuvanje po konecno uvozno carinenje) envelope requires DeclarationType=Return or IM with PreviousProcedureCode='51'.",
+            ("PEE030", "EX") => null,
+            ("PEE030", _) => "PEE030 (razdolzuvanje po povtoren izvoz) envelope requires DeclarationType=EX.",
             ("PEE040", "Waste") => null,
-            ("PEE040", _) => "PEE040 envelope requires DeclarationType=Waste.",
-            ("PEE020", _) => null, // PEE020 is inbound — envelope is always valid stub
+            ("PEE040", _) => "PEE040 (razdolzuvanje po unishtuvanje) envelope requires DeclarationType=Waste.",
+            ("PEE050", "EX") => null,
+            ("PEE050", _) => "PEE050 (glavno dobien proizvod + upotrebeni materijali) envelope requires DeclarationType=EX.",
             _ => null
         };
         if (mismatch is not null)
@@ -143,12 +159,21 @@ public sealed class GeneratePeeXmlQueryHandler
                     new XElement("VATAmount", n.TotalVATAmount.ToString("0.00", CultureInfo.InvariantCulture))
                 ))));
 
-        // PEE020 is inbound — include a stub <ParseInstructions/> element so the
-        // file round-trips through the customs portal's validation (real clearance
-        // data is written back to the declaration via a separate parser).
+        // Envelope-specific enrichments matching legacy cmdXML_PEE*_Click.vba:
+        // - PEE050 enriches with "UpotrebeniMaterijali" — links from this EX
+        //   back to the IM materials actually consumed (via TraceLink).
+        // - PEE020 carries final-import note so customs can match the
+        //   declaration against the original IM bond entry.
+        // PEE010/030/040 use the standard razdolzuvanje body as-is.
+        if (envelope == "PEE050")
+            body.Add(new XElement("UpotrebeniMaterijaliNote",
+                new XAttribute("note",
+                    "Completion report — source IM MRNs and their consumed qty captured in <Naim> lines above via PreviousMRN chain.")));
         if (envelope == "PEE020")
-            body.Add(new XElement("ParseInstructions",
-                new XAttribute("note", "Inbound response stub — populate ZaverkaNumber/Date on receipt")));
+            body.Add(new XElement("KonecnoUvoznoCarinenje",
+                new XAttribute("note",
+                    "Final domestic import of LON material — bond released on clearance."),
+                new XElement("SourceIMProcedure", decl.PreviousProcedureCode ?? "51")));
 
         var doc = new XDocument(
             new XDeclaration("1.0", "UTF-8", null),

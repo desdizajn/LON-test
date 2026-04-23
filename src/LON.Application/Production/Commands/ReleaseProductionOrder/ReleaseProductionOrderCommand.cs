@@ -70,6 +70,9 @@ public sealed class ReleaseProductionOrderCommandHandler
                 // Each slot is resolved independently so a BOM can override
                 // only primary waste and inherit the rest.
                 var it = bl.Item;
+                // P15.16 — planned-vs-effective. Plan = BOM line × scrap pad,
+                // effective = same on release. Diverges later if operator edits.
+                var plannedPerUnit = bl.Quantity * (1 + bl.ScrapPercentage / 100m);
                 _context.ProductionOrderMaterials.Add(new ProductionOrderMaterial
                 {
                     Id = Guid.NewGuid(),
@@ -80,6 +83,7 @@ public sealed class ReleaseProductionOrderCommandHandler
                     IssuedQuantity = 0m,
                     ReservedQuantity = Math.Round(required, 4),
                     UoMId = bl.UoMId,
+                    PlannedQuantityPerUnit = Math.Round(plannedPerUnit, 6),
                     PrimaryWasteItemId = bl.PrimaryWasteItemId ?? it?.PrimaryWasteItemId,
                     PrimaryWastePercentage = bl.PrimaryWastePercentage ?? it?.PrimaryWastePercentage,
                     SecondaryWasteItemId = bl.SecondaryWasteItemId ?? it?.SecondaryWasteItemId,

@@ -1,6 +1,7 @@
 using LON.Application.Production.Commands.CreateMaterialIssue;
 using LON.Application.Production.Commands.CreateProductionOrder;
 using LON.Application.Production.Commands.CreateProductionReceipt;
+using LON.Application.Production.Commands.DistributeMaterialAcrossOrders;
 using LON.Application.Production.Commands.IssueAllMaterials;
 using LON.Application.Production.Commands.ReleaseProductionOrder;
 using LON.Application.Production.Queries.GetProductionShortage;
@@ -135,6 +136,19 @@ public class ProductionController : BaseController
     public async Task<IActionResult> GetShortage()
     {
         var result = await Mediator.Send(new GetProductionShortageQuery());
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.16 — legacy frmDodeluvanjeNormativiOdU5M. Distribute one imported
+    /// material (declaration line) across N production orders with
+    /// weighted-average normativ. Mode selects legacy fraIzberi semantics:
+    /// NewDistribution (1) / FillGaps (2) / DistributeOverAll (3).
+    /// </summary>
+    [HttpPost("distribute-material")]
+    public async Task<IActionResult> DistributeMaterial([FromBody] DistributeMaterialAcrossOrdersCommand command)
+    {
+        var result = await Mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

@@ -174,6 +174,21 @@ public class ProductionOrderMaterial : BaseEntity, ITenantScoped
     // Null = no efficiency override; issue quantity equals RequiredQuantity.
     public decimal? EfficiencyFactor { get; set; }
 
+    /// <summary>
+    /// P15.16 — legacy <c>Normativi.NormativNalog</c>. The qty-per-FG-unit
+    /// PLANNED at PO release time. <see cref="RequiredQuantity"/> is the
+    /// EFFECTIVE qty that downstream issues draw against — starts equal to
+    /// <c>PlannedQuantityPerUnit * PO.OrderQuantity</c> but diverges when
+    /// the operator edits post-release (e.g. discovered more waste, switched
+    /// BOM mid-flight). <c>cmdVratiPlaniran</c> in legacy restored Normativ
+    /// back from NormativNalog; in LON, a caller can reset
+    /// <c>RequiredQuantity = PlannedQuantityPerUnit * OrderQuantity</c>.
+    ///
+    /// <para>Null for POs created before this field existed — balance to
+    /// RequiredQuantity via migration backfill.</para>
+    /// </summary>
+    public decimal? PlannedQuantityPerUnit { get; set; }
+
     // ===== P15.6c — waste snapshot taken at PO release time =====
     //
     // When a PO is released the handler resolves the effective waste
@@ -202,6 +217,55 @@ public class ProductionOrderMaterial : BaseEntity, ITenantScoped
     public Guid? ZagubaItemId { get; set; }
     public virtual Item? ZagubaItem { get; set; }
     public decimal? ZagubaPercentage { get; set; }
+
+    /// <summary>
+    /// P15.16 — legacy <c>VeliciniDaNe</c>. When true, parent Normativ /
+    /// RequiredQuantity are LOCKED; authoritative split is in per-size
+    /// children (<see cref="ProductionOrderMaterialSize"/>). Parent value
+    /// is a weighted average maintained on child edits.
+    /// </summary>
+    public bool HasSizeBreakdown { get; set; }
+
+    public virtual ICollection<ProductionOrderMaterialSize> Sizes { get; set; } = new List<ProductionOrderMaterialSize>();
+}
+
+/// <summary>
+/// P15.16 — legacy <c>NormativiVelicini</c>. Per-size breakdown of a
+/// material's normative: different sizes can consume different amounts
+/// (e.g. XL shirt uses more fabric than S). Only present when the parent
+/// <see cref="ProductionOrderMaterial.HasSizeBreakdown"/> is true.
+///
+/// <para>Legacy semantics:</para>
+/// <list type="bullet">
+///   <item>Parent's <c>Normativ</c> = Σ(KolMat) / Σ(Kol), weighted average
+///         maintained on every child edit.</item>
+///   <item>Σ Kol over sizes must equal PO.OrderQuantity (last size absorbs
+///         remainder — legacy <c>subVelicini.Form_BeforeInsert</c> seeds
+///         `Kol = GP.Kol − KolVk`).</item>
+///   <item>Overdraw guard: if cumulative `KolVk > GP.Kol` → reject with
+///         "ПРЕГОЛЕМА КОЛИЧИНА!!".</item>
+/// </list>
+/// </summary>
+public class ProductionOrderMaterialSize : BaseEntity, ITenantScoped
+{
+    public Guid TenantId { get; set; }
+    public Guid ProductionOrderMaterialId { get; set; }
+    public virtual ProductionOrderMaterial ProductionOrderMaterial { get; set; } = null!;
+
+    /// <summary>Row sequence 1..N within this material (legacy VelicinaRBr).</summary>
+    public int SizeOrdinal { get; set; }
+
+    /// <summary>Human label — S / M / L / XXL / 40 / 42 ... (legacy VelicinaNaziv).</summary>
+    public string SizeLabel { get; set; } = string.Empty;
+
+    /// <summary>Pieces of the parent FG of this size planned by the PO.</summary>
+    public decimal Quantity { get; set; }
+
+    /// <summary>Material qty per 1 unit of FG at this size.</summary>
+    public decimal NormativPerUnit { get; set; }
+
+    /// <summary>Total material qty = Quantity × NormativPerUnit.</summary>
+    public decimal TotalMaterialQuantity { get; set; }
 }
 
 public class ProductionOrderOperation : BaseEntity, ITenantScoped

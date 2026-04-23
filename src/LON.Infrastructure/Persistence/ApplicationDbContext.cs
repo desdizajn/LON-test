@@ -78,6 +78,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RoutingOperation> RoutingOperations => Set<RoutingOperation>();
     public DbSet<ProductionOrder> ProductionOrders => Set<ProductionOrder>();
     public DbSet<ProductionOrderMaterial> ProductionOrderMaterials => Set<ProductionOrderMaterial>();
+    public DbSet<ProductionOrderMaterialSize> ProductionOrderMaterialSizes => Set<ProductionOrderMaterialSize>();
     public DbSet<ProductionOrderOperation> ProductionOrderOperations => Set<ProductionOrderOperation>();
     public DbSet<MaterialIssue> MaterialIssues => Set<MaterialIssue>();
     public DbSet<ProductionReceipt> ProductionReceipts => Set<ProductionReceipt>();

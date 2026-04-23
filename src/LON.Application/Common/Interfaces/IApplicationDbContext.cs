@@ -73,6 +73,7 @@ public interface IApplicationDbContext
     DbSet<RoutingOperation> RoutingOperations { get; }
     DbSet<ProductionOrder> ProductionOrders { get; }
     DbSet<ProductionOrderMaterial> ProductionOrderMaterials { get; }
+    DbSet<ProductionOrderMaterialSize> ProductionOrderMaterialSizes { get; }
     DbSet<ProductionOrderOperation> ProductionOrderOperations { get; }
     DbSet<MaterialIssue> MaterialIssues { get; }
     DbSet<ProductionReceipt> ProductionReceipts { get; }
