@@ -2,6 +2,39 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-04-23 — P15.2 + P15.3: traffic light (already shipped) + Skart register
+
+**Status:** [x] P15.2 marked done (no new code); [x] P15.3 shipped (commit `e5b8b30`). VPS HTTP 200 + end-to-end smoke passed.
+
+**P15.2 — resolution:** gap analysis was pessimistic. Traffic-light endpoint (`GET /api/Guarantee/accounts/traffic-light`) and `TrafficLightGuarantees.tsx` component were shipped in P4.4. Already mounted on Dashboard (`Dashboard.tsx:153`) and `/finance/guarantees` (`Guarantees.tsx:125`). Live VPS verified: 2 accounts (EUR 1.26% green, USD 0% green). No further work required.
+
+**P15.3 — Skart (defective-on-intake) register:**
+
+- **Domain** — `Skart` entity (Tenant-scoped, IAuditable): SkartNumber auto-gen `SKT-yyyyMMdd-NNNN`, ReceiptLineId FK, denormalised Item/UoM/Batch/MRN snapshot, SkartQuantity decimal(18,4), Reason (required), `SkartResolution` enum (Open / ReturnedToSupplier / Destroyed / AcceptedAtDiscount), ResolvedAt, ResolutionNote.
+- **Application** — `ReportSkartCommand` validates qty > 0 + cumulative ≤ `ReceiptLine.Quantity` (legacy `NetoKol_Exit`); finds OK InventoryBalance by natural key (item/batch/MRN/location/UoM/QualityStatus=OK); decrements OK; creates/increments Blocked sibling at SAME location preserving LonProcessState; writes InventoryMovement `Adjustment` with `ReferenceNumber=Skart:{SkartNumber}` for audit. `ResolveSkartCommand` is terminal-state-only, rejects double-close. `GetSkartQuery` returns newest-first with OpenOnly/ItemId/MRN filters.
+- **API** — `POST /api/WMS/skart`, `GET /api/WMS/skart?openOnly&itemId&mrn`, `POST /api/WMS/skart/{id}/resolve` (body: SkartResolution + note).
+- **Frontend** — `/warehouse/skart` register page с filter (open/all), text search, CSV export, inline Resolve modal. Nav entry under Warehouse group + labels в mk/sr/sq/en. `wmsApi.reportSkart/getSkart/resolveSkart`.
+- **Migration** `20260423000754_P15_3_Skart` — Skarts table + 5 indexes (filtered unique `TenantId+SkartNumber` with `IsDeleted=0` predicate, plus RegDate / Resolution / TenantId / ReceiptLineId / UoMId) + 4 Restrict FKs.
+- **Tests** (`SkartTests.cs` — 3 tests):
+  - `ReportSkart_SplitsBalanceAndRecordsAudit`: receipt qty=100 + skart 15 → OK 85 + Blocked 15 + Adjustment movement.
+  - `ReportSkart_CumulativeOverdraw_Returns400`: 30 then 25 on a 50-qty line → 400.
+  - `ResolveSkart_ClosesAndRejectsDoubleClose`: second resolve on closed skart → 400.
+
+**Verification:**
+- `dotnet build src/LON.API` + `dotnet build tests/LON.IntegrationTests` — 0 errors, 0 new warnings.
+- `npm run build` — Compiled successfully (first attempt had exportToCsv signature mismatch: fixed call to `(rows, columns, filename)`).
+- VPS deploy + migration applied. Live smoke via python script:
+  - Created Receipt qty=30 на seed tenant → line `8b186939...`.
+  - POST skart 5 units → 200, Skart ID `6a3252c5-b3f1-43fc-b190-ab81205aeec1`.
+  - GET /skart → 1 row, `SKT-20260423-0001`, qty=5.
+  - Negative paths: missing reason → 400; qty > remaining → 400 с exact-message "OK balance at location has only X; cannot skart Y".
+
+**Cumulative после P15.3:** 3/15 Phase 15 таскови затворени (P15.1 PartnerSKU, P15.2 Traffic light, P15.3 Skart). 12 преостануваат. Следна: **P15.4 NaimU5 rollup**.
+
+**Commit:** `e5b8b30` на main.
+
+---
+
 ## 2026-04-23 — Phase 15 kickoff + P15.1: legacy-parity closure begins
 
 **Status:** [x] shipped, HEAD `13fc741`, VPS HTTP 200. End-to-end VPS verified.
