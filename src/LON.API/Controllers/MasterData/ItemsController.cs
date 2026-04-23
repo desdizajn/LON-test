@@ -16,9 +16,11 @@ namespace LON.API.Controllers.MasterData;
 public class ItemsController : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> GetItems([FromQuery] string? search = null)
+    public async Task<IActionResult> GetItems(
+        [FromQuery] string? search = null,
+        [FromQuery] bool? wasteCatalogOnly = null)
     {
-        var items = await Mediator.Send(new GetItemsQuery(search));
+        var items = await Mediator.Send(new GetItemsQuery(search, wasteCatalogOnly));
         return Ok(items);
     }
 

@@ -25,7 +25,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
   const [submitting, setSubmitting] = useState(false);
   const [uoms, setUoms] = useState<UoM[]>([]);
   const [loadingUoMs, setLoadingUoMs] = useState(true);
-  const [items, setItems] = useState<Item[]>([]);
+  const [wasteItems, setWasteItems] = useState<Item[]>([]);
   const [wasteOpen, setWasteOpen] = useState(false);
 
   const { control, handleSubmit, reset } = useForm<ItemFormData>({
@@ -56,13 +56,13 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
 
   useEffect(() => {
     loadUoMs();
-    // Load items once for the waste-slot pickers; keeps the modal snappy
-    // for up to ~3k items (~200 KB payload). Heavier tenants should wire
-    // the pickers to the /article-picker endpoint instead (P15.6.1).
+    // P15.6d — load ONLY waste-catalog items for the 4 slot pickers.
+    // Drastically smaller payload than all items and prevents the operator
+    // from accidentally wiring a production material into a waste slot.
     itemsApi
       .getAll()
-      .then((r) => setItems(r.data || []))
-      .catch(() => {});
+      .then((r) => setWasteItems(((r.data || []) as Item[]).filter((i: any) => i.isWasteCatalog)))
+      .catch(() => setWasteItems([]));
   }, []);
 
   useEffect(() => {
@@ -272,7 +272,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onClose, onSuccess, item }) =
                       name={slot.idKey as any}
                       control={control}
                       label={slot.label + ' — catalog item'}
-                      options={items.map((i) => ({ id: i.id, label: `${i.code} · ${i.name}` }))}
+                      options={wasteItems.map((i) => ({ id: i.id, label: `${i.code} · ${i.name}` }))}
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>

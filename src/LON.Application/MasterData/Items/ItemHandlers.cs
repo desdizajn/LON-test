@@ -119,7 +119,8 @@ internal static class ItemMappers
 // -----------------------------------------------------------------------------
 // Query: GetItems (list + optional search on Code/Name)
 // -----------------------------------------------------------------------------
-public sealed record GetItemsQuery(string? Search = null) : IQuery<List<ItemResponse>>;
+public sealed record GetItemsQuery(string? Search = null, bool? WasteCatalogOnly = null)
+    : IQuery<List<ItemResponse>>;
 
 public sealed class GetItemsQueryHandler : IQueryHandler<GetItemsQuery, List<ItemResponse>>
 {
@@ -141,6 +142,11 @@ public sealed class GetItemsQueryHandler : IQueryHandler<GetItemsQuery, List<Ite
                                       || i.Name.Contains(s)
                                       || (i.PartnerSKU != null && i.PartnerSKU.Contains(s)));
         }
+
+        // P15.6d — waste-only filter for the 4 slot pickers on ItemForm /
+        // BOMLineForm. True = only items flagged IsWasteCatalog=true.
+        if (request.WasteCatalogOnly == true)
+            query = query.Where(i => i.IsWasteCatalog);
 
         var items = await query.ToListAsync(ct);
         return items.Select(ItemMappers.Map).ToList();
