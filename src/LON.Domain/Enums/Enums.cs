@@ -102,6 +102,23 @@ public enum CycleCountStatus
     Cancelled = 4
 }
 
+/// <summary>
+/// P15.3 — resolution state for a reported <see cref="Entities.WMS.Skart"/>.
+/// Matches the outcomes the operator and supplier negotiate after a
+/// defective-intake claim is raised.
+/// </summary>
+public enum SkartResolution
+{
+    /// <summary>Default on creation — waiting for supplier decision.</summary>
+    Open = 0,
+    /// <summary>Goods shipped back to supplier with a debit note.</summary>
+    ReturnedToSupplier = 1,
+    /// <summary>Goods destroyed on site (scrappage certificate issued).</summary>
+    Destroyed = 2,
+    /// <summary>Supplier granted a price discount; goods kept.</summary>
+    AcceptedAtDiscount = 3,
+}
+
 public enum PartnerType
 {
     Supplier = 1,

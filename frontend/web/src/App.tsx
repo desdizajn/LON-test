@@ -74,6 +74,7 @@ import DeclarationsByType from './pages/Customs/DeclarationsByType';
 import MrnDeadlines from './pages/Customs/MrnDeadlines';
 import IncomingShipments from './pages/Warehouse/IncomingShipments';
 import QcHold from './pages/Warehouse/QcHold';
+import Skart from './pages/Warehouse/Skart';
 import VarianceReport from './pages/Warehouse/VarianceReport';
 import ShipmentsByStatus from './pages/Warehouse/ShipmentsByStatus';
 import StockByCustomer from './pages/Warehouse/StockByCustomer';
@@ -173,6 +174,7 @@ const resolveActiveModule = (path: string) => {
   if (path.startsWith('/warehouse/receipts') || path.startsWith('/inventory')) return 'warehouse-receipts';
   if (path.startsWith('/warehouse/incoming')) return 'warehouse-incoming';
   if (path.startsWith('/warehouse/qc-hold')) return 'warehouse-qc-hold';
+  if (path.startsWith('/warehouse/skart')) return 'warehouse-skart';
   if (path.startsWith('/warehouse/issues-today') || path.startsWith('/wms/pick-tasks')) return 'warehouse-issues-today';
   if (path.startsWith('/warehouse/transfers')) return 'warehouse-transfers';
   if (path.startsWith('/warehouse/stock-by-customer')) return 'warehouse-stock-by-customer';
@@ -327,6 +329,7 @@ const App: React.FC = () => {
             <Route path="/warehouse/receipts" element={<Inventory />} />
             <Route path="/warehouse/incoming" element={<IncomingShipments />} />
             <Route path="/warehouse/qc-hold" element={<QcHold />} />
+            <Route path="/warehouse/skart" element={<Skart />} />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
             <Route path="/warehouse/transfers" element={<MassTransfer />} />
             <Route path="/warehouse/bulk-receipt" element={<BulkReceiptFromDeclaration />} />

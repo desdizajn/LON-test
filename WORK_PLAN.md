@@ -826,7 +826,7 @@ Two tenants run isolated. Admin can provision users under any tenant; each user'
 ### Wave A — Quick wins
 
 - [x] **P15.1** ✅ *2026-04-23 (commit `13fc741`)* — `Item.PartnerSKU` (legacy ArtKatBrStara) + normalize helper + ItemRequest/Command/Response wiring + search-by-SKU + ItemsImportExecutor column + ItemForm input + migration + 2 integration tests. VPS verified: " tek-xyz-99 " POST → "TEK-XYZ-99" normalized + searchable.
-- [ ] **P15.2** Traffic light UI component за guarantee balance (Red ≥ limit, Yellow ≤ 10% available, Green > 10%)
+- [x] **P15.2** ✅ *2026-04-23* — already shipped during P4.4. Backend `GET /api/Guarantee/accounts/traffic-light` + frontend `TrafficLightGuarantees.tsx` component already mounted on Dashboard + `/finance/guarantees`. Live VPS verified: 2 accounts (EUR 1.26% green, USD 0% green). Gap analysis was incorrect — component already existed. No further work needed.
 - [ ] **P15.3** `Skart` entity + flow (defective-on-intake) — legacy `FakturiU5Skart` еквивалент. Reduces available IM qty пред Normativi распределба.
 - [ ] **P15.4** NaimU5 rollup query — `GET /api/customs/declarations/{id}/naim` group by (TarBr, EdMerCar, ZemjaPoteklo) за PEE XML + reports.
 - [ ] **P15.5** `GuaranteeBalanceSnapshot` entity + background job за monthly snapshot (legacy `tblSostojbaNaGarancija`).

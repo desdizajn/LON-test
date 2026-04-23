@@ -62,6 +62,15 @@ export const NAV_GROUPS: NavGroup[] = [
         existingDataHint: 'P7.2 — QualityStatus ≠ OK со inline release action.',
       },
       {
+        key: 'warehouse-skart',
+        labelKey: 'nav.warehouse.skart',
+        icon: '❌',
+        path: '/warehouse/skart',
+        backendStatus: 'exists',
+        existingDataHint:
+          'P15.3 — legacy FakturiU5Skart еквивалент: шкарт на прием со резолуција (враќање / уништено / попуст).',
+      },
+      {
         key: 'warehouse-issues-today',
         labelKey: 'nav.warehouse.issuesToday',
         icon: '📤',

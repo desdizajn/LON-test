@@ -763,6 +763,7 @@
       "receipts": "Receipts",
       "incoming": "Awaiting receipt",
       "qcHold": "On QC hold",
+      "skart": "Skart (defective on intake)",
       "issuesToday": "Issues today",
       "transfers": "Transfers",
       "bulkReceipt": "Bulk receipt",

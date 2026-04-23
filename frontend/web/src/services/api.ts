@@ -168,10 +168,18 @@ export const wmsApi = {
     api.get(`/WMS/cycle-counts/${id}`),
   
   // Adjustments
-  createAdjustment: (data: any) => 
+  createAdjustment: (data: any) =>
     api.post('/WMS/adjustments', data),
-  getAdjustments: () => 
+  getAdjustments: () =>
     api.get('/WMS/adjustments'),
+
+  // P15.3 — Skart (defective-on-intake) register
+  reportSkart: (data: { receiptLineId: string; skartQuantity: number; reason: string }) =>
+    api.post('/WMS/skart', data),
+  getSkart: (params?: { openOnly?: boolean; itemId?: string; mrn?: string }) =>
+    api.get('/WMS/skart', { params }),
+  resolveSkart: (id: string, data: { resolution: number; resolutionNote?: string }) =>
+    api.post(`/WMS/skart/${id}/resolve`, data),
 };
 
 export const productionApi = {

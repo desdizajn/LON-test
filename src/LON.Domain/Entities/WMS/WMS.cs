@@ -219,3 +219,51 @@ public class ShipmentLine : BaseEntity, ITenantScoped
     public virtual UnitOfMeasure UoM { get; set; } = null!;
     public Guid? CustomsDeclarationId { get; set; }
 }
+
+/// <summary>
+/// P15.3 — legacy <c>FakturiU5Skart</c>. Records the portion of a Receipt
+/// line that turned out to be defective on intake and cannot enter
+/// production. Semantically distinct from Otpad (manufacturing by-product):
+/// Skart is an AVAILABILITY REDUCTION on an import invoice — the qty is
+/// physically blocked at the receiving dock, never released to factories,
+/// and usually leaves as a supplier return, scrappage, or discount claim.
+///
+/// <para>
+/// Reporting a Skart transfers <see cref="SkartQuantity"/> from the OK
+/// <see cref="InventoryBalance"/> at the receipt location into a Blocked
+/// sibling at the same location, creating an <see cref="InventoryMovement"/>
+/// of <see cref="MovementType.Adjustment"/> for audit. The Skart row itself
+/// is the business-level record: operator reason, reporting time, and the
+/// eventual <see cref="Resolution"/> once the supplier claim is settled.
+/// </para>
+/// </summary>
+public class Skart : BaseEntity, ITenantScoped, IAuditable
+{
+    public Guid TenantId { get; set; }
+
+    /// <summary>Auto-numbered SKT-yyyyMMdd-NNNN; unique per tenant.</summary>
+    public string SkartNumber { get; set; } = string.Empty;
+
+    /// <summary>Timestamp the operator pressed "Report skart".</summary>
+    public DateTime ReportedAt { get; set; }
+
+    public Guid ReceiptLineId { get; set; }
+    public virtual ReceiptLine ReceiptLine { get; set; } = null!;
+
+    // Denormalised snapshot for reporting without a join.
+    public Guid ItemId { get; set; }
+    public virtual Item Item { get; set; } = null!;
+    public string? BatchNumber { get; set; }
+    public string? MRN { get; set; }
+
+    public decimal SkartQuantity { get; set; }
+    public Guid UoMId { get; set; }
+    public virtual UnitOfMeasure UoM { get; set; } = null!;
+
+    /// <summary>Free-text reason (torn, wet, wrong colour, ...). Required.</summary>
+    public string Reason { get; set; } = string.Empty;
+
+    public SkartResolution Resolution { get; set; } = SkartResolution.Open;
+    public DateTime? ResolvedAt { get; set; }
+    public string? ResolutionNote { get; set; }
+}

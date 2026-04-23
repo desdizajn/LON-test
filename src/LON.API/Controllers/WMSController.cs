@@ -3,6 +3,8 @@ using LON.Application.WMS.Commands.BulkShipmentFromFG;
 using LON.Application.WMS.Commands.CreateReceipt;
 using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
+using LON.Application.WMS.Commands.ReportSkart;
+using LON.Application.WMS.Queries.GetSkart;
 using LON.Application.WMS.Queries.MassLocationTransferPreview;
 using LON.Application.WMS.Queries.MozniMinusi;
 using LON.Domain.Enums;
@@ -311,6 +313,58 @@ public class WMSController : BaseController
         var count = _context.CycleCounts.Count(r => r.CreatedAt.Date == date.Date) + 1;
         return $"CC-{date:yyyyMMdd}-{count:D4}";
     }
+
+    // ---------- P15.3 Skart (defective-on-intake) ----------
+
+    /// <summary>
+    /// P15.3 — report defective-on-intake qty against a ReceiptLine. Splits
+    /// the OK balance into OK + Blocked siblings at the same location and
+    /// records a Skart audit row.
+    /// </summary>
+    [HttpPost("skart")]
+    public async Task<IActionResult> ReportSkart([FromBody] ReportSkartCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// P15.3 — list Skart reports, newest first. Optional <c>openOnly</c>,
+    /// <c>itemId</c>, <c>mrn</c> filters for the register page.
+    /// </summary>
+    [HttpGet("skart")]
+    public async Task<IActionResult> GetSkart(
+        [FromQuery] bool openOnly = false,
+        [FromQuery] Guid? itemId = null,
+        [FromQuery] string? mrn = null)
+    {
+        var rows = await Mediator.Send(new GetSkartQuery(openOnly, itemId, mrn));
+        return Ok(rows);
+    }
+
+    /// <summary>
+    /// P15.3 — close out a Skart with the settled resolution
+    /// (ReturnedToSupplier / Destroyed / AcceptedAtDiscount). Does not
+    /// move inventory; subsequent shipment/adjustment handles the physical side.
+    /// </summary>
+    [HttpPost("skart/{id}/resolve")]
+    public async Task<IActionResult> ResolveSkart(Guid id, [FromBody] ResolveSkartRequest request)
+    {
+        var result = await Mediator.Send(new ResolveSkartCommand
+        {
+            SkartId = id,
+            Resolution = request.Resolution,
+            ResolutionNote = request.ResolutionNote
+        });
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+}
+
+/// <summary>P15.3 — body of POST /skart/{id}/resolve.</summary>
+public class ResolveSkartRequest
+{
+    public SkartResolution Resolution { get; set; }
+    public string? ResolutionNote { get; set; }
 }
 
 // Request DTOs

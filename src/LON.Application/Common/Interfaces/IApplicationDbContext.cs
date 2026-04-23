@@ -63,6 +63,7 @@ public interface IApplicationDbContext
     DbSet<PickTask> PickTasks { get; }
     DbSet<Shipment> Shipments { get; }
     DbSet<ShipmentLine> ShipmentLines { get; }
+    DbSet<Skart> Skarts { get; }
 
     // Production
     DbSet<BOM> BOMs { get; }

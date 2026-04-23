@@ -230,14 +230,40 @@ public class CycleCountLineConfiguration : IEntityTypeConfiguration<CycleCountLi
         builder.Property(e => e.MRN).HasMaxLength(100);
         builder.Property(e => e.SystemQuantity).HasColumnType("decimal(18,4)");
         builder.Property(e => e.CountedQuantity).HasColumnType("decimal(18,4)");
-        
+
         // Cascade from CycleCount parent only
         builder.HasOne(e => e.CycleCount).WithMany(c => c.Lines).HasForeignKey(e => e.CycleCountId).OnDelete(DeleteBehavior.Cascade);
         // Restrict for all master data references to avoid cycles
         builder.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
-        
+
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+public class SkartConfiguration : IEntityTypeConfiguration<Skart>
+{
+    public void Configure(EntityTypeBuilder<Skart> builder)
+    {
+        builder.ToTable("Skarts");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.SkartNumber).IsRequired().HasMaxLength(50);
+        builder.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+        builder.Property(e => e.ResolutionNote).HasMaxLength(500);
+        builder.Property(e => e.BatchNumber).HasMaxLength(100);
+        builder.Property(e => e.MRN).HasMaxLength(100);
+        builder.Property(e => e.SkartQuantity).HasColumnType("decimal(18,4)");
+
+        builder.HasOne(e => e.ReceiptLine).WithMany().HasForeignKey(e => e.ReceiptLineId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.UoM).WithMany().HasForeignKey(e => e.UoMId).OnDelete(DeleteBehavior.Restrict);
+
+        // Per-tenant SKT-yyyyMMdd-NNNN uniqueness + filtered on soft-delete.
+        builder.HasIndex(e => new { e.TenantId, e.SkartNumber }).IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(e => e.ReportedAt);
+        builder.HasIndex(e => e.Resolution);
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

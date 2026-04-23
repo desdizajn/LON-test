@@ -763,6 +763,7 @@
       "receipts": "Pranimi",
       "incoming": "Pret pranimin",
       "qcHold": "E bllokuar nga QC",
+      "skart": "Skart (defekte në pranim)",
       "issuesToday": "Lëshimi sot",
       "transfers": "Transferet",
       "bulkReceipt": "Pranim bulk",

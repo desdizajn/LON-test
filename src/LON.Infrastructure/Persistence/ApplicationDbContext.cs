@@ -67,6 +67,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PickTask> PickTasks => Set<PickTask>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
+    public DbSet<Skart> Skarts => Set<Skart>();
 
     // Production
     public DbSet<BOM> BOMs => Set<BOM>();
