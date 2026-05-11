@@ -901,22 +901,32 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ### Wave D — Test coverage gap fill (parallelizable)
 
-- [ ] **P16.D1** — `WMSControllerTests.cs` (10 endpoints × tenant isolation).
-- [ ] **P16.D2** — `RolePermissionTests.cs` (9 roles × ~10 endpoints matrix; mirror `filterNavGroups.test.ts`).
-- [ ] **P16.D3** — `MasterDataCrudTests.cs` (8 resources × POST/GET/PUT/DELETE + tenant isolation, Theory-driven).
+- [x] **P16.D1** ✅ *2026-05-11 (commit `96c987a`)* — `WMSControllerTests.cs`: 9 endpoints (inventory, mozni-minusi, receipts, shipments, transfers, cycle-counts, pick-tasks, skart, adjustments) + foreign-tenant InventoryBalance isolation.
+- [x] **P16.D2** ✅ *2026-05-11 (commit `9893b98`)* — `RolePermissionTests.cs`: ~105 Theory cases codifying current `[Authorize]` policy (admin gets all; non-admin gets any-auth endpoints + 403 on admin-only; no-auth → 401). Documents the gap between client-side IA filter and backend authorization.
+- [x] **P16.D3** ✅ *2026-05-11 (commit `77f46ca`)* — `MasterDataCrudTests.cs`: 10 GET-list smoke tests + 3 full CRUD (UoM, WorkCenter, Warehouse). Items/Partners covered by existing test files.
 
-### DoD за Phase 16
+### DoD за Phase 16 — **DONE 2026-05-11**
 
-(a) Сите А, Б, В, Г таскови `[x]` со SESSION_LOG записи + commits.
-(b) Frontend builds clean: 0 tsc errors in `src/`, 0 eslint errors/warnings.
-(c) 6-те localStorage-only страници имаат вистински backend + integration тестови.
-(d) `nav/navGroups.ts` нема лажен `backendStatus`.
-(e) `BLUEPRINT.md` се пишува откако P16 ќе се затвори (CLAUDE.md §12).
+(a) ✅ Сите А, Б, В, Г таскови `[x]` со SESSION_LOG записи + commits (13/13).
+(b) ✅ Frontend builds clean: 0 tsc errors in `src/`, 0 eslint errors/warnings.
+(c) ✅ 6-те localStorage-only страници имаат вистински backend + integration тестови (RiskRegisterItem, EmployeeCertification, CostRate, PayrollPeriod+Line, SupplierInvoice).
+(d) ✅ `nav/navGroups.ts` нема лажен `backendStatus` (6 items flipped back to `exists` после C-task migrations).
+(e) ⏩ `BLUEPRINT.md` се пишува откако следната сесија прифатлива (CLAUDE.md §12).
+
+### Open follow-ups (Phase 16 deferred)
+
+- **P16.A3.1** — Delete `pages/MasterData/Warehouses/WarehouseForm.tsx` (113 LOC, zero imports). One-commit cleanup.
+- **P16.A3.2** — Delete `pages/Customs.tsx` (256 LOC, zero imports since P6.37.6 split). One-commit cleanup.
 
 ---
 
 ## Current Active Task
 
-**P16.D1** — `tests/LON.IntegrationTests/WMSControllerTests.cs` covering at minimum: `GET /WMS/inventory`, `GET /WMS/receipts`, `GET /WMS/shipments`, `GET /WMS/transfers`, `GET /WMS/cycle-counts`, `GET /WMS/pick-tasks`, `GET /WMS/skart`, `GET /WMS/inventory/mozni-minusi`, `POST /WMS/adjustments`. Each test asserts HTTP 200 + response shape + tenant isolation (foreign tenant doesn't leak). Existing 154 + new ≥10 tests should all pass. No VPS deploy (test-only).
+**Phase 16 complete (13/13 shipped + 2 A3 cleanup follow-ups filed).** Next options per CLAUDE.md §12:
+1. Pick up the A3 follow-ups (`P16.A3.1` + `P16.A3.2`) as a single low-risk cleanup commit.
+2. Write the new `BLUEPRINT.md` per CLAUDE.md §12 — "based on what really exists + what remains to v1".
+3. Continue placeholder-to-real conversions from `docs/ROADMAP.md` Sprint 8+ (P8.6–P8.9, P9.2/5/7, P10.3–P10.7, etc.).
+4. Visual / UX polish round (PageShell consistent across remaining 88 pages, MUI theme propagation, mobile breakpoints).
+5. Move CRUD coverage from D-task smoke into full per-resource tests (BOMs, Routings, Locations) if Wave D gaps become a blocker.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

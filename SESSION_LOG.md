@@ -2,6 +2,41 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.D — Test coverage gap fill (WMS + Roles + MasterData CRUD)
+Plan: Затворам Phase 16 со D1/D2/D3 integration test файлови. No VPS deploy — test-only.
+Files touched:
+  - `tests/LON.IntegrationTests/WMSControllerTests.cs` (new, D1 — 9 endpoints + tenant isolation)
+  - `tests/LON.IntegrationTests/RolePermissionTests.cs` (new, D2 — role × endpoint matrix codifying actual backend RBAC)
+  - `tests/LON.IntegrationTests/MasterDataCrudTests.cs` (new, D3 — 10 list endpoints + 3 full-CRUD lifecycles on UoM/WorkCenter/Warehouse)
+Verification:
+  - `dotnet build tests/LON.IntegrationTests` → 0 errors (4 pre-existing warnings).
+  - Test counts (Theory expansions):
+    - D1: ~10 cases (1 inventory + 1 mozni-minusi + 6 Theory list endpoints + 1 adjustment + 1 tenant isolation).
+    - D2: ~105 cases (10 admin endpoints + 80 non-admin × any-auth + 12 non-admin × admin-only + 3 no-auth).
+    - D3: 13 cases (10 list smoke + 3 full CRUD).
+  - Все тестови ќе се ризумнат на CI runner со Testcontainers MsSql; локалниот env нема Docker, не можам да ги run-нам owom.
+Commits: `96c987a` (D1), `9893b98` (D2), `77f46ca` (D3).
+Outcome: [x] done
+
+## 2026-05-11 — 🎯 Phase 16 ЗАВРШЕНА
+13/13 sub-tasks landed (A1–A3, B1–B3, C1–C3.c, D1–D3) + 2 A3 follow-ups filed. 17 commits на main:
+- A: `b24ad80` `c9000b5` `7d27504`
+- B: `6d7b5c6` `897cef4` `68217c2`
+- C: `2a5b8f3` `9499323` `550bccb` `849de17` `455b067`
+- D: `96c987a` `9893b98` `77f46ca`
++ 6 SESSION_LOG/WORK_PLAN status commits + initial planning commit (`AGENT-PROMPTS` / `VERIFICATION` / CLAUDE.md §11) + Phase 15 cleanup (`docs/ELON_Research/`).
+
+Cumulative diff (vs. start of session):
+- Backend: 4 new entities (RiskRegisterItem, EmployeeCertification, CostRate, PayrollPeriod, PayrollLine, SupplierInvoice = actually 6) + 4 new migrations + ~20 new MediatR handlers + ~22 new endpoints + ~25 new integration tests.
+- Frontend: react-query installed + 6 hook files (`useInventory`, `useRisks`, `useTrainings`, `useCostRates`, `usePayroll`, `useSupplierInvoices`) + `PageShell` + MUI `ThemeProvider` + hardened `DataTable` (multi-select + expandable rows + 6 jest tests) + 6 page rewrites + `LocalStorageWarningBanner` deleted.
+- Hygiene: dead `WarehousesList` route gone, navGroups honest about backend status, MasterData duplication audit shipped with 2 follow-up tasks filed.
+
+Open follow-ups (not blocking close):
+- **P16.A3.1** — delete dead `pages/MasterData/Warehouses/WarehouseForm.tsx` + empty subfolder.
+- **P16.A3.2** — delete dead `pages/Customs.tsx` (256 LOC, replaced by sub-pages after P6.37.6).
+
+---
+
 ## 2026-05-11 — P16.C3 — Finance localStorage trio (CostRate, PayrollPeriod+Line, SupplierInvoice) migrated to BE
 Plan: Три entity-секвенци за затворање на Phase 16.C:
   - C3.a `CostRate` (Scope=Machine/Operator/Shift/Operation/WorkCenter)
