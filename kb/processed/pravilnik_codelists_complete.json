@@ -3,11 +3,11 @@
     "source": "ПРАВИЛНИК ЗА НАЧИНОТ НА ПОПОЛНУВАЊЕ НА ЦАРИНСКАТА ДЕКЛАРАЦИЈА - Поглавје II Шифри",
     "extracted_date": "2025-12-28",
     "total_codelists": 15,
-    "note": "Сите шифрарници со Box број, за dropdown со tooltip"
+    "note": "Сите шифрарници со Рубрика број, за dropdown со tooltip"
   },
   "codelists": {
-    "Box01_DeclarationType": {
-      "boxNumber": "1",
+    "Рубрика01_DeclarationType": {
+      "РубрикаNumber": "1",
       "fieldName": "DeclarationType",
       "descriptionMK": "Декларација - Вид",
       "descriptionEN": "Declaration Type",
@@ -98,8 +98,8 @@
         }
       ]
     },
-    "Box14_Declarant": {
-      "boxNumber": "14",
+    "Рубрика14_Declarant": {
+      "РубрикаNumber": "14",
       "fieldName": "DeclarantStatus",
       "descriptionMK": "Декларант/Застапник - Статус",
       "descriptionEN": "Declarant/Representative Status",
@@ -124,8 +124,8 @@
         }
       ]
     },
-    "Box15a_CountryCode": {
-      "boxNumber": "15а",
+    "Рубрика15a_CountryCode": {
+      "РубрикаNumber": "15а",
       "fieldName": "CountryCode",
       "descriptionMK": "Шифра на земја (ISO 3166-1 alpha-2)",
       "descriptionEN": "Country Code (ISO 3166-1 alpha-2)",
@@ -144,10 +144,10 @@
         {"code": "CN", "descriptionMK": "Кина", "descriptionEN": "China"},
         {"code": "TR", "descriptionMK": "Турција", "descriptionEN": "Turkey"}
       ],
-      "usedInBoxes": ["11", "15а", "17а", "18", "21", "34"]
+      "usedInРубрикаes": ["11", "15а", "17а", "18", "21", "34"]
     },
-    "Box19_Container": {
-      "boxNumber": "19",
+    "Рубрика19_Container": {
+      "РубрикаNumber": "19",
       "fieldName": "HasContainer",
       "descriptionMK": "Контејнер",
       "descriptionEN": "Container",
@@ -166,8 +166,8 @@
         }
       ]
     },
-    "Box20_DeliveryTerms": {
-      "boxNumber": "20",
+    "Рубрика20_DeliveryTerms": {
+      "РубрикаNumber": "20",
       "fieldName": "IncoTerms",
       "descriptionMK": "Услови на испорака (Incoterms)",
       "descriptionEN": "Delivery Terms (Incoterms)",
@@ -240,8 +240,8 @@
         }
       ]
     },
-    "Box22_Currency": {
-      "boxNumber": "22",
+    "Рубрика22_Currency": {
+      "РубрикаNumber": "22",
       "fieldName": "Currency",
       "descriptionMK": "Валута во фактура",
       "descriptionEN": "Invoice Currency",
@@ -270,8 +270,8 @@
         {"code": "MKD", "descriptionMK": "Македонски денар", "descriptionEN": "Macedonian Denar"}
       ]
     },
-    "Box24_NatureOfTransaction": {
-      "boxNumber": "24",
+    "Рубрика24_NatureOfTransaction": {
+      "РубрикаNumber": "24",
       "fieldName": "NatureOfTransaction",
       "descriptionMK": "Природа на трансакцијата",
       "descriptionEN": "Nature of Transaction",
@@ -435,8 +435,8 @@
         }
       ]
     },
-    "Box25_TransportMode": {
-      "boxNumber": "25",
+    "Рубрика25_TransportMode": {
+      "РубрикаNumber": "25",
       "fieldName": "TransportMode",
       "descriptionMK": "Вид на транспорт на граница",
       "descriptionEN": "Mode of Transport at Border",
@@ -515,8 +515,8 @@
         }
       ]
     },
-    "Box29_CustomsOffice": {
-      "boxNumber": "29",
+    "Рубрика29_CustomsOffice": {
+      "РубрикаNumber": "29",
       "fieldName": "ExitEntryCustomsOffice",
       "descriptionMK": "Излезен/влезен царински орган",
       "descriptionEN": "Exit/Entry Customs Office",
@@ -536,8 +536,8 @@
         {"code": "MK006010", "descriptionMK": "Царинска испостава Блаце - Стоков промет", "descriptionEN": "Customs Branch Blace - Goods"}
       ]
     },
-    "Box31_PackageType": {
-      "boxNumber": "31",
+    "Рубрика31_PackageType": {
+      "РубрикаNumber": "31",
       "fieldName": "PackageType",
       "descriptionMK": "Вид на пакување",
       "descriptionEN": "Package Type",
@@ -545,7 +545,7 @@
       "sampleCodes": [
         {"code": "CT", "descriptionMK": "Картон", "descriptionEN": "Carton"},
         {"code": "PK", "descriptionMK": "Пакет", "descriptionEN": "Package"},
-        {"code": "BX", "descriptionMK": "Кутија", "descriptionEN": "Box"},
+        {"code": "BX", "descriptionMK": "Кутија", "descriptionEN": "Рубрика"},
         {"code": "PL", "descriptionMK": "Палета", "descriptionEN": "Pallet"},
         {"code": "DR", "descriptionMK": "Буре", "descriptionEN": "Drum"},
         {"code": "CS", "descriptionMK": "Кашон", "descriptionEN": "Case"},
@@ -558,8 +558,8 @@
         {"code": "IC", "descriptionMK": "Амбалажа, составна, пластична", "descriptionEN": "Package, composite, plastic"}
       ]
     },
-    "Box37_ProcedureCode": {
-      "boxNumber": "37",
+    "Рубрика37_ProcedureCode": {
+      "РубрикаNumber": "37",
       "fieldName": "ProcedureCode",
       "descriptionMK": "Процедура (Царинска постапка)",
       "descriptionEN": "Procedure Code",
@@ -633,8 +633,8 @@
         }
       ]
     },
-    "Box44_SpecialMentions": {
-      "boxNumber": "44",
+    "Рубрика44_SpecialMentions": {
+      "РубрикаNumber": "44",
       "fieldName": "SpecialMentions",
       "descriptionMK": "Посебни забелешки/Претставени документи",
       "descriptionEN": "Special Mentions/Documents Presented",
@@ -696,8 +696,8 @@
         }
       ]
     },
-    "Box47_CalculationMethod": {
-      "boxNumber": "47",
+    "Рубрика47_CalculationMethod": {
+      "РубрикаNumber": "47",
       "fieldName": "CalculationMethod",
       "descriptionMK": "Метод на пресметка (Царинска вредност)",
       "descriptionEN": "Calculation Method (Customs Value)",
@@ -740,8 +740,8 @@
         }
       ]
     },
-    "Box33_TariffCode": {
-      "boxNumber": "33",
+    "Рубрика33_TariffCode": {
+      "РубрикаNumber": "33",
       "fieldName": "TariffCode",
       "descriptionMK": "Шифра на стока (TARIC 10-цифрен)",
       "descriptionEN": "Commodity Code (TARIC 10-digit)",
@@ -752,13 +752,13 @@
         {"code": "8471300000", "descriptionMK": "Машини за автоматска обработка на податоци - преносни (до 10 кг)", "descriptionEN": "Automatic data processing machines - portable (up to 10 kg)"}
       ]
     },
-    "Box34_CountryOfOrigin": {
-      "boxNumber": "34",
+    "Рубрика34_CountryOfOrigin": {
+      "РубрикаNumber": "34",
       "fieldName": "CountryOfOrigin",
       "descriptionMK": "Шифра на земја на потекло",
       "descriptionEN": "Country of Origin Code",
-      "note": "Користи ISO 3166-1 alpha-2 кодови (иста листа како Box 15а)",
-      "reference": "Box15a_CountryCode"
+      "note": "Користи ISO 3166-1 alpha-2 кодови (иста листа како Рубрика 15а)",
+      "reference": "Рубрика15a_CountryCode"
     }
   }
 }
