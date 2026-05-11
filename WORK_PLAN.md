@@ -894,7 +894,7 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 ### Wave C — localStorage → backend
 
 - [x] **P16.C1** ✅ *2026-05-11 (commit `2a5b8f3`)* — `RiskRegisterItem` (Kind=Risk|Escalation, 3 enums) + EF migration + 5 MediatR handlers + 5 endpoints + 5 integration tests. Frontend: react-query hooks (`useRisks.ts`), OpenRisks + Escalations rewritten (0 localStorage), navGroups flipped to `exists`. Migration doc shipped. VPS live smoke: POST 200 + GET 200 + tenant correctly scoped to TEKSPORT.
-- [ ] **P16.C2** — `EmployeeCertification` entity + `/api/Hr/certifications` (+ `/expiring`) + migrate `pages/Hr/Training.tsx`.
+- [x] **P16.C2** ✅ *2026-05-11 (commit `9499323`)* — `EmployeeCertification` entity (Employee FK) + migration + 5 MediatR handlers (CRUD + GetExpiring) + 5 endpoints + 5 integration tests. Frontend: `useTrainings.ts` hooks, `Training.tsx` rewritten (field renames documented in migration doc), navGroups flipped. VPS live smoke: POST + GET + expiring filter all green.
 - [ ] **P16.C3.a** — `CostRate` + migrate `pages/Finance/CostAccounting.tsx`.
 - [ ] **P16.C3.b** — `PayrollPeriod` + `PayrollLine` + `/finalize` + `/export` + migrate `pages/Finance/PayrollAggregate.tsx` (sources hours from Attendance + Absence).
 - [ ] **P16.C3.c** — `SupplierInvoice` + derived `Overdue` status + migrate `pages/Finance/SupplierInvoices.tsx`.
@@ -917,6 +917,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.C2** — `EmployeeCertification` entity (Tenant-scoped + FK to Employee) with CertificationName/IssuedDate/ExpiryDate/IssuingAuthority/CertificateNumber/Notes. DbSet + config + migration. MediatR: Create/Update/Delete/Get + GetExpiring (param `withinDays`). Endpoints `/api/Hr/certifications` (+ `/expiring`). `EmployeeCertificationTests.cs` (CRUD + tenant isolation + expiring filter logic). Regenerate OpenAPI. Rewrite `pages/Hr/Training.tsx` (0 localStorage + banner removed). `docs/PHASE16_C2_TRAINING_MIGRATION.md`. Flip navGroups `hr-training` to `exists`. VPS smoke.
+**P16.C3.a** — `CostRate` entity (Scope=Machine|Operator|Shift|Operation, ScopeId nullable Guid, CostPerHour, CostPerUnit, Currency, ValidFrom, ValidTo, Notes). Standard CRUD handlers + endpoints under `/api/Finance/cost-rates`. `CostRateTests.cs` (CRUD + tenant isolation). Regenerate OpenAPI. Rewrite `pages/Finance/CostAccounting.tsx` off localStorage. Migration doc. Flip navGroups `finance-cost-accounting` to `exists`. VPS live smoke.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

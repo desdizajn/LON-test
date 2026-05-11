@@ -2,6 +2,38 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.C2 — EmployeeCertification entity + migrate Training off localStorage
+Plan: `EmployeeCertification` entity (ITenantScoped + Employee FK). 4 CRUD handlers + dedicated `GetExpiringCertificationsQuery` за traffic-light feed. 5 controller endpoints `/api/Hr/certifications` + `/expiring`. 5 integration тестови (CRUD + expiring filter + tenant isolation). React-query hooks (`useTrainings.ts`). Rewrite `Training.tsx` (0 localStorage, banner gone). Migration doc.
+Files touched (backend):
+  - `src/LON.Domain/Entities/MasterData/EmployeeCertification.cs` (new)
+  - `src/LON.Infrastructure/Persistence/Configurations/EmployeeCertificationConfiguration.cs` (new)
+  - `src/LON.Infrastructure/Migrations/20260511104507_P16_C2_AddEmployeeCertification.{cs,Designer.cs}` (new) + snapshot
+  - `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` + `src/LON.Application/Common/Interfaces/IApplicationDbContext.cs` (+DbSet)
+  - `src/LON.Application/Hr/Certifications/{Create,Update,Delete}EmployeeCertificationCommand.cs`, `GetEmployeeCertificationsQuery.cs`, `EmployeeCertificationDtos.cs` (new, 5 files)
+  - `src/LON.API/Controllers/HrOperationsController.cs` (+5 endpoints)
+  - `tests/LON.IntegrationTests/EmployeeCertificationTests.cs` (new, 5 tests)
+Files touched (frontend):
+  - `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` (regenerated)
+  - `frontend/web/src/services/api.ts` (hrApi +5 cert methods)
+  - `frontend/web/src/hooks/queries/useTrainings.ts` (new)
+  - `frontend/web/src/pages/Hr/Training.tsx` (full rewrite)
+  - `frontend/web/src/nav/navGroups.ts` (hr-training → exists)
+  - `docs/PHASE16_C2_TRAINING_MIGRATION.md` (new)
+Verification:
+  - `dotnet build src/LON.API` → 0/0; tests build → 0 errors.
+  - tsc src/ → 0; eslint src/ → 0/0; jest 19/19.
+  - grep localStorage.[sg]etItem на Training.tsx → 0; grep LocalStorageWarningBanner → 0.
+  - VPS deploy: build/recreate → both Started; migration applied на startup.
+  - VPS live smoke: POST `/api/Hr/certifications` за employee Marko Petrovski → 200 + cert id `b3d63435...`; GET list → 1; GET `/expiring?withinDays=400` → 1.
+Commit: `9499323`
+Outcome: [x] done
+Notes:
+  - Legacy field renames: `topic → certificationName`, `provider → issuingAuthority`, `completionDate → issuedDate`, `certificate → certificateNumber`. Migration doc документира мапирањето.
+  - Постоечките локални `lon.training.<tenant>` записи продолжуваат да живеат во browser-от — корисникот ги мигрира со paste-once snippet.
+  - 3 страници остануваат на стариот banner (CostAccounting, PayrollAggregate, SupplierInvoices). C3.a-c се следни.
+
+---
+
 ## 2026-05-11 — P16.C1 — RiskRegisterItem entity + migrate Risks/Escalations off localStorage
 Plan: Унифициран domain entity `RiskRegisterItem` (Kind=Risk|Escalation) + tenant-scoped EF config + миграција. 5 MediatR handlers (Create/Update/Delete/GetList/GetById) + 5 controller endpoints под `/api/Management/risks`. 5 integration тестови (CRUD + tenant isolation + Kind filter). Regenerate OpenAPI → TS schema. Rewrite на двете frontend страници кон react-query hooks; локалните 6-те warning banner-и тргнати од овие 2. navGroups flip `partial → exists`. Migration doc `PHASE16_C1_LOCAL_TO_BE_MIGRATION.md` со browser console snippet.
 Files touched (backend):
