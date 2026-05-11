@@ -10,6 +10,7 @@ import {
   useQualityStatusChange,
   type InventoryRow,
 } from '../hooks/queries/useInventory';
+import PageShell from '../components/layout/PageShell';
 import ReceiptForm from '../components/WMS/ReceiptForm';
 import TransferForm from '../components/WMS/TransferForm';
 import ShipmentForm from '../components/WMS/ShipmentForm';
@@ -267,10 +268,10 @@ const Inventory: React.FC = () => {
   if (loading) return <div className="loading">{t('inventory.loading')}</div>;
 
   return (
-    <div>
-      <div className="header">
-        <h2>📦 {t('inventory.title')}</h2>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+    <PageShell
+      title={<>📦 {t('inventory.title')}</>}
+      actions={
+        <>
           <button onClick={() => setActiveForm('receipt')} style={{ background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}>
             ➕ {t('inventory.actions.receipt')}
           </button>
@@ -289,8 +290,9 @@ const Inventory: React.FC = () => {
           <button onClick={() => setActiveForm('qualitychange')} style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' }}>
             🔒 {t('inventory.actions.qualityStatus')}
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Filter bar */}
       <div
@@ -624,7 +626,7 @@ const Inventory: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 };
 

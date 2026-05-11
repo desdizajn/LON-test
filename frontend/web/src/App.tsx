@@ -4,6 +4,9 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -294,6 +297,8 @@ const App: React.FC = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+    <ThemeProvider theme={theme}>
+    <CssBaseline />
     <Router>
       <div className="app">
         <Routes>
@@ -513,6 +518,7 @@ const App: React.FC = () => {
       </div>
       <ToastContainer position="top-right" autoClose={3000} />
     </Router>
+    </ThemeProvider>
     {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );

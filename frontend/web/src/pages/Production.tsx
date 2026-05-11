@@ -6,6 +6,7 @@ import MaterialIssueForm from '../components/Production/MaterialIssueForm';
 import ProductionReceiptForm from '../components/Production/ProductionReceiptForm';
 import DataTable, { Column } from '../components/common/DataTable';
 import ProductionVariantsSubTable from '../components/Production/ProductionVariantsSubTable';
+import PageShell from '../components/layout/PageShell';
 
 const Production: React.FC = () => {
   const { t } = useTranslation();
@@ -226,11 +227,12 @@ const Production: React.FC = () => {
   if (loading) return <div className="loading">Loading production orders...</div>;
 
   return (
-    <div>
-      <div className="header">
-        <h2>Production Orders (LON)</h2>
+    <PageShell
+      title="Production Orders (LON)"
+      actions={
         <button className="btn btn-success" onClick={() => setShowOrderForm(true)}>+ New Production Order</button>
-      </div>
+      }
+    >
 
       <div style={{
         display: 'flex',
@@ -279,7 +281,7 @@ const Production: React.FC = () => {
         }
         rowClassName={(row) => (row.hasExpandableChildren ? 'group-parent-row' : undefined)}
       />
-    </div>
+    </PageShell>
   );
 };
 

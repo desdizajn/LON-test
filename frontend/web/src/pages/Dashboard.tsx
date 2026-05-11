@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import './Dashboard.css';
 import TrafficLightGuarantees from '../components/common/TrafficLightGuarantees';
 import { formatQuantity } from '../utils/format';
+import PageShell from '../components/layout/PageShell';
 
 interface DashboardData {
   inventory: {
@@ -116,19 +117,16 @@ const Dashboard: React.FC = () => {
   if (!data || !user) return <div>{t('dashboard.noDataAvailable')}</div>;
 
   return (
-    <div className="dashboard-new">
-      <div className="dashboard-header">
-        <div className="welcome-section">
-          <h1>{t('app.welcome', { name: user.fullName })}</h1>
-          <p className="user-info">
-            {user.username} | {user.roles.join(', ')}
-          </p>
-        </div>
+    <PageShell
+      title={t('app.welcome', { name: user.fullName }) as string}
+      subtitle={`${user.username} | ${user.roles.join(', ')}`}
+      actions={
         <button className="btn-logout" onClick={handleLogout}>
           {t('nav.logout')}
         </button>
-      </div>
-
+      }
+    >
+    <div className="dashboard-new">
       <section className="dashboard-section">
         <h2>{t('dashboard.administration')}</h2>
         <div className="modules-grid">
@@ -249,6 +247,7 @@ const Dashboard: React.FC = () => {
       </div>
       </div>
     </div>
+    </PageShell>
   );
 };
 
