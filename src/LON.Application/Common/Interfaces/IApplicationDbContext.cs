@@ -119,6 +119,9 @@ public interface IApplicationDbContext
     // HR (P16.C2)
     DbSet<EmployeeCertification> EmployeeCertifications { get; }
 
+    // Finance — P16.C3 backend replacements for legacy localStorage pages
+    DbSet<CostRate> CostRates { get; }
+
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
     /// during seeders / background jobs / login flow. Exposed so handlers

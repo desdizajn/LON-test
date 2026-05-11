@@ -977,6 +977,71 @@ export interface paths {
       };
     };
   };
+  "/api/Finance/cost-rates": {
+    get: {
+      parameters: {
+        query?: {
+          scope?: components["schemas"]["CostRateScope"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateCostRateCommand"];
+          "text/json": components["schemas"]["CreateCostRateCommand"];
+          "application/*+json": components["schemas"]["CreateCostRateCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/cost-rates/{id}": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateCostRateCommand"];
+          "text/json": components["schemas"]["UpdateCostRateCommand"];
+          "application/*+json": components["schemas"]["UpdateCostRateCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/FinishedGoods/awaiting-pack": {
     get: {
       responses: {
@@ -4287,6 +4352,11 @@ export interface components {
     ConceptRequest: {
       concept?: string | null;
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    CostRateScope: 1 | 2 | 3 | 4 | 5;
     CreateAbsenceBody: {
       /** Format: uuid */
       employeeId?: string;
@@ -4321,6 +4391,21 @@ export interface components {
       currency?: string | null;
       notes?: string | null;
       rateCard?: components["schemas"]["RateCardEntryBody"][] | null;
+    };
+    CreateCostRateCommand: {
+      scope?: components["schemas"]["CostRateScope"];
+      /** Format: uuid */
+      scopeId?: string | null;
+      /** Format: double */
+      costPerHour?: number | null;
+      /** Format: double */
+      costPerUnit?: number | null;
+      currency?: string | null;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
+      notes?: string | null;
     };
     CreateCustomsDeclarationCommand: {
       declarationNumber?: string | null;
@@ -5301,6 +5386,23 @@ export interface components {
       /** Format: int32 */
       paymentTermsDays?: number;
       isActive?: boolean;
+      notes?: string | null;
+    };
+    UpdateCostRateCommand: {
+      /** Format: uuid */
+      id?: string;
+      scope?: components["schemas"]["CostRateScope"];
+      /** Format: uuid */
+      scopeId?: string | null;
+      /** Format: double */
+      costPerHour?: number | null;
+      /** Format: double */
+      costPerUnit?: number | null;
+      currency?: string | null;
+      /** Format: date-time */
+      validFrom?: string;
+      /** Format: date-time */
+      validTo?: string | null;
       notes?: string | null;
     };
     UpdateCustomsDeclarationCommand: {

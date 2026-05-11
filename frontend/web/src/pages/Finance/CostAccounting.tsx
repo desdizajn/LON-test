@@ -4,187 +4,220 @@ import { toast } from 'react-toastify';
 import { masterDataApi, api } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatQuantity } from '../../utils/format';
-import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 import { exportToCsv } from '../../utils/export';
+import {
+  COST_RATE_SCOPE_LABEL,
+  CostRateDto,
+  CostRateScope,
+  useCostRatesQuery,
+  useCreateCostRate,
+  useDeleteCostRate,
+} from '../../hooks/queries/useCostRates';
 
 /**
- * P12.5 — Cost accounting.
- *
- * Cost-per-minute matrix per Work Center × Shift. Used downstream by margin
- * and P&L calculations when a real operation-time feed is available.
- *
- * Persistence: browser localStorage scoped by tenant. When the backend
- * CostRate entity lands, the load/save helpers below will swap to an API.
+ * P16.C3.a — Cost accounting backed by the CostRate entity.
+ * Scope picker (Machine / Operator / Shift / Operation / WorkCenter)
+ * drives a scope-specific dropdown for ScopeId. Replaces the
+ * localStorage-only persistence.
  */
 
-type WorkCenter = { id: string; code: string; name: string };
-type Shift = { id: string; code: string; name: string };
+type Reference = { id: string; code?: string | null; name?: string | null };
 
-type CostRow = {
-  workCenterId: string;
-  shiftId: string;
-  ratePerMinute: number;
+interface DraftState {
+  scope: CostRateScope;
+  scopeId: string;
+  costPerHour: string;
+  costPerUnit: string;
   currency: string;
+  validFrom: string;
   notes: string;
-};
-
-const storageKey = (tenantId: string) => `lon.costAccounting.${tenantId || 'default'}`;
-
-function currentTenantId(): string {
-  try {
-    const raw = localStorage.getItem('token') || '';
-    const part = raw.split('.')[1];
-    if (!part) return 'default';
-    const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
-    return payload['tenant_id'] || 'default';
-  } catch { return 'default'; }
 }
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 const CostAccounting: React.FC = () => {
   const { t } = useTranslation();
-  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [rows, setRows] = useState<CostRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [workCenters, setWorkCenters] = useState<Reference[]>([]);
+  const [machines, setMachines] = useState<Reference[]>([]);
+  const [shifts, setShifts] = useState<Reference[]>([]);
+  const [employees, setEmployees] = useState<Reference[]>([]);
+  const [refError, setRefError] = useState<string | null>(null);
+
+  const { data: rows = [], isLoading } = useCostRatesQuery();
+  const createMut = useCreateCostRate();
+  const deleteMut = useDeleteCostRate();
+
   const [search, setSearch] = useState('');
+  const [scopeFilter, setScopeFilter] = useState<CostRateScope | 'All'>('All');
 
-  // Inline editor
-  const [draft, setDraft] = useState<CostRow>({ workCenterId: '', shiftId: '', ratePerMinute: 0, currency: 'EUR', notes: '' });
-
-  const tenantId = currentTenantId();
+  const [draft, setDraft] = useState<DraftState>({
+    scope: 5, // WorkCenter — closest to legacy default
+    scopeId: '',
+    costPerHour: '',
+    costPerUnit: '',
+    currency: 'EUR',
+    validFrom: today(),
+    notes: '',
+  });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
       try {
-        const [wcResp, shResp] = await Promise.all([
+        const [wcResp, shResp, mResp, empResp] = await Promise.all([
           masterDataApi.getWorkCenters(),
           api.get('/shifts'),
+          masterDataApi.getMachines(),
+          masterDataApi.getEmployees(),
         ]);
         if (cancelled) return;
-        setWorkCenters((wcResp.data as WorkCenter[]) ?? []);
-        setShifts((shResp.data as Shift[]) ?? []);
+        setWorkCenters((wcResp.data as Reference[]) ?? []);
+        setShifts((shResp.data as Reference[]) ?? []);
+        setMachines((mResp.data as Reference[]) ?? []);
+        setEmployees((empResp.data as Reference[]) ?? []);
       } catch (err) {
-        if (!cancelled) setError(translateError(err));
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setRefError(translateError(err));
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    const raw = localStorage.getItem(storageKey(tenantId));
-    if (raw) {
-      try { setRows(JSON.parse(raw)); } catch { /* ignore */ }
+  function scopeOptions(scope: CostRateScope): Reference[] {
+    switch (scope) {
+      case 1: return machines;
+      case 2: return employees;
+      case 3: return shifts;
+      case 4: return []; // operations — free-form / future picker
+      case 5: return workCenters;
     }
-  }, [tenantId]);
-
-  function persist(next: CostRow[]) {
-    setRows(next);
-    localStorage.setItem(storageKey(tenantId), JSON.stringify(next));
   }
 
-  function upsert() {
-    if (!draft.workCenterId || !draft.shiftId || draft.ratePerMinute <= 0) {
+  function resolveScopeName(scope: CostRateScope, scopeId?: string | null): string {
+    if (!scopeId) return t('costAccounting.tenantWide', { defaultValue: '(tenant default)' }) as string;
+    const opts = scopeOptions(scope);
+    const hit = opts.find((o) => o.id === scopeId);
+    if (!hit) return scopeId;
+    return `${hit.code ?? ''} ${hit.name ?? ''}`.trim() || scopeId;
+  }
+
+  async function add() {
+    const cph = draft.costPerHour ? Number(draft.costPerHour) : null;
+    const cpu = draft.costPerUnit ? Number(draft.costPerUnit) : null;
+    if ((!cph || cph <= 0) && (!cpu || cpu <= 0)) {
       toast.error(t('costAccounting.invalid') as string);
       return;
     }
-    const next = rows.filter((r) => !(r.workCenterId === draft.workCenterId && r.shiftId === draft.shiftId));
-    next.push({ ...draft });
-    persist(next);
-    toast.success(t('costAccounting.saved') as string);
-    setDraft({ workCenterId: '', shiftId: '', ratePerMinute: 0, currency: draft.currency, notes: '' });
+    if (!draft.currency || draft.currency.length !== 3) {
+      toast.error(t('costAccounting.currencyInvalid', { defaultValue: 'Currency must be 3 letters' }) as string);
+      return;
+    }
+    try {
+      await createMut.mutateAsync({
+        scope: draft.scope,
+        scopeId: draft.scopeId || null,
+        costPerHour: cph,
+        costPerUnit: cpu,
+        currency: draft.currency.toUpperCase(),
+        validFrom: draft.validFrom,
+        notes: draft.notes || null,
+      });
+      setDraft({ ...draft, scopeId: '', costPerHour: '', costPerUnit: '', notes: '' });
+      toast.success(t('costAccounting.saved') as string);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed');
+    }
   }
 
-  function remove(workCenterId: string, shiftId: string) {
-    persist(rows.filter((r) => !(r.workCenterId === workCenterId && r.shiftId === shiftId)));
+  async function remove(id: string) {
+    if (!window.confirm(t('costAccounting.confirmDelete', { defaultValue: 'Delete this rate?' }) as string)) return;
+    try {
+      await deleteMut.mutateAsync(id);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed');
+    }
   }
-
-  const enriched = useMemo(() => {
-    const wcById = new Map(workCenters.map((w) => [w.id, w]));
-    const shById = new Map(shifts.map((s) => [s.id, s]));
-    return rows.map((r) => ({
-      ...r,
-      workCenterCode: wcById.get(r.workCenterId)?.code ?? r.workCenterId,
-      workCenterName: wcById.get(r.workCenterId)?.name ?? '-',
-      shiftCode: shById.get(r.shiftId)?.code ?? r.shiftId,
-      shiftName: shById.get(r.shiftId)?.name ?? '-',
-    }));
-  }, [rows, workCenters, shifts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return enriched;
-    return enriched.filter((r) => `${r.workCenterCode} ${r.workCenterName} ${r.shiftCode} ${r.shiftName}`.toLowerCase().includes(q));
-  }, [enriched, search]);
-
-  const avgRate = useMemo(() => {
-    if (filtered.length === 0) return 0;
-    return filtered.reduce((s, r) => s + r.ratePerMinute, 0) / filtered.length;
-  }, [filtered]);
+    return rows.filter((r) => {
+      if (scopeFilter !== 'All' && r.scope !== scopeFilter) return false;
+      if (q) {
+        const scopeName = resolveScopeName(r.scope, r.scopeId);
+        const hay = `${COST_RATE_SCOPE_LABEL[r.scope]} ${scopeName} ${r.currency} ${r.notes ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, scopeFilter, search, workCenters, shifts, machines, employees]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{ padding: 16 }}>
       <h1>{t('costAccounting.title')}</h1>
       <p style={{ color: '#666' }}>{t('costAccounting.subtitle')}</p>
 
-      <LocalStorageWarningBanner />
-
-      {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
+      {refError && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{refError}</div>}
 
       <fieldset style={{ border: '1px solid #ddd', borderRadius: 4, padding: 12, marginBottom: 12 }}>
         <legend>{t('costAccounting.upsertLegend')}</legend>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, alignItems: 'end' }}>
-          <label>{t('costAccounting.workCenter')}
-            <select value={draft.workCenterId} onChange={(e) => setDraft({ ...draft, workCenterId: e.target.value })} style={{ padding: 6, width: '100%' }}>
-              <option value="">—</option>
-              {workCenters.map((w) => <option key={w.id} value={w.id}>{w.code} · {w.name}</option>)}
+          <label>{t('costAccounting.scope', { defaultValue: 'Scope' })}
+            <select value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: Number(e.target.value) as CostRateScope, scopeId: '' })} style={{ padding: 6, width: '100%' }}>
+              {(Object.keys(COST_RATE_SCOPE_LABEL) as unknown as CostRateScope[]).map((s) => (
+                <option key={s} value={s}>{COST_RATE_SCOPE_LABEL[s]}</option>
+              ))}
             </select>
           </label>
-          <label>{t('costAccounting.shift')}
-            <select value={draft.shiftId} onChange={(e) => setDraft({ ...draft, shiftId: e.target.value })} style={{ padding: 6, width: '100%' }}>
-              <option value="">—</option>
-              {shifts.map((s) => <option key={s.id} value={s.id}>{s.code} · {s.name}</option>)}
+          <label>{t('costAccounting.scopeId', { defaultValue: 'Scope target' })}
+            <select value={draft.scopeId} onChange={(e) => setDraft({ ...draft, scopeId: e.target.value })} style={{ padding: 6, width: '100%' }}>
+              <option value="">{t('costAccounting.tenantWide', { defaultValue: '(tenant default)' })}</option>
+              {scopeOptions(draft.scope).map((o) => (
+                <option key={o.id} value={o.id}>{(o.code ? `${o.code} · ` : '') + (o.name ?? o.id)}</option>
+              ))}
             </select>
           </label>
-          <label>{t('costAccounting.ratePerMinute')}
-            <input type="number" step="0.01" min={0} value={draft.ratePerMinute} onChange={(e) => setDraft({ ...draft, ratePerMinute: Number(e.target.value) })} style={{ padding: 6, width: '100%' }} />
+          <label>{t('costAccounting.costPerHour', { defaultValue: 'Cost / hour' })}
+            <input type="number" step="0.0001" min={0} value={draft.costPerHour} onChange={(e) => setDraft({ ...draft, costPerHour: e.target.value })} style={{ padding: 6, width: '100%' }} />
+          </label>
+          <label>{t('costAccounting.costPerUnit', { defaultValue: 'Cost / unit' })}
+            <input type="number" step="0.0001" min={0} value={draft.costPerUnit} onChange={(e) => setDraft({ ...draft, costPerUnit: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
           <label>{t('costAccounting.currency')}
             <input type="text" maxLength={3} value={draft.currency} onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })} style={{ padding: 6, width: '100%' }} />
           </label>
-          <label>{t('costAccounting.notes')}
+          <label>{t('costAccounting.validFrom', { defaultValue: 'Valid from' })}
+            <input type="date" value={draft.validFrom} onChange={(e) => setDraft({ ...draft, validFrom: e.target.value })} style={{ padding: 6, width: '100%' }} />
+          </label>
+          <label style={{ gridColumn: '1 / -1' }}>{t('costAccounting.notes')}
             <input type="text" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
-          <button onClick={upsert} style={{ padding: '8px 12px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}>
-            {t('costAccounting.upsert')}
+          <button onClick={add} disabled={createMut.isPending} style={{ padding: '8px 12px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}>
+            {createMut.isPending ? t('common.saving') : t('costAccounting.upsert')}
           </button>
-        </div>
-        <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
-          {t('costAccounting.storageHint')}
         </div>
       </fieldset>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'center' }}>
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('costAccounting.searchPlaceholder') as string} style={{ padding: 6, minWidth: 240 }} />
-        <span style={{ color: '#888' }}>{t('costAccounting.rowCount', { count: filtered.length })}</span>
-        <span style={{ color: '#555', marginLeft: 'auto' }}>
-          {t('costAccounting.avgRate')}: <strong>{formatQuantity(avgRate, 4)}</strong> / {t('costAccounting.minute')}
+        <select value={scopeFilter} onChange={(e) => setScopeFilter(e.target.value === 'All' ? 'All' : Number(e.target.value) as CostRateScope)} style={{ padding: 6 }}>
+          <option value="All">{t('common.all', { defaultValue: 'All' })}</option>
+          {(Object.keys(COST_RATE_SCOPE_LABEL) as unknown as CostRateScope[]).map((s) => (
+            <option key={s} value={s}>{COST_RATE_SCOPE_LABEL[s]}</option>
+          ))}
+        </select>
+        <span style={{ color: '#888' }}>
+          {isLoading ? t('common.loading') : t('costAccounting.rowCount', { count: filtered.length })}
         </span>
-        <button onClick={() => exportToCsv(enriched, [
-          { key: 'workCenterCode', label: t('costAccounting.workCenter') as string },
-          { key: 'workCenterName', label: t('common.name') as string },
-          { key: 'shiftCode', label: t('costAccounting.shift') as string },
-          { key: 'shiftName', label: t('common.name') as string },
-          { key: 'ratePerMinute', label: t('costAccounting.ratePerMinute') as string, type: 'number', decimals: 4 },
+        <button onClick={() => exportToCsv(filtered, [
+          { key: 'scope', label: 'Scope', get: (r: CostRateDto) => COST_RATE_SCOPE_LABEL[r.scope] },
+          { key: 'scopeName', label: 'Scope target', get: (r: CostRateDto) => resolveScopeName(r.scope, r.scopeId) },
+          { key: 'costPerHour', label: 'Cost / hour', type: 'number', decimals: 4 },
+          { key: 'costPerUnit', label: 'Cost / unit', type: 'number', decimals: 4 },
           { key: 'currency', label: t('costAccounting.currency') as string },
+          { key: 'validFrom', label: 'Valid from', type: 'date' },
           { key: 'notes', label: t('costAccounting.notes') as string },
-        ], 'cost-accounting')}
-          disabled={enriched.length === 0}
-          style={{ padding: '6px 12px' }}
+        ], 'cost-rates')}
+          disabled={filtered.length === 0}
+          style={{ padding: '6px 12px', marginLeft: 'auto' }}
         >
           {t('common.exportExcel')}
         </button>
@@ -194,27 +227,29 @@ const CostAccounting: React.FC = () => {
         <table>
           <thead>
             <tr>
-              <th>{t('costAccounting.workCenter')}</th>
-              <th>{t('costAccounting.shift')}</th>
-              <th>{t('costAccounting.ratePerMinute')}</th>
+              <th>{t('costAccounting.scope', { defaultValue: 'Scope' })}</th>
+              <th>{t('costAccounting.scopeId', { defaultValue: 'Target' })}</th>
+              <th>{t('costAccounting.costPerHour', { defaultValue: 'Cost / hr' })}</th>
+              <th>{t('costAccounting.costPerUnit', { defaultValue: 'Cost / unit' })}</th>
               <th>{t('costAccounting.currency')}</th>
+              <th>{t('costAccounting.validFrom', { defaultValue: 'Valid from' })}</th>
               <th>{t('costAccounting.notes')}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('costAccounting.empty')}</td></tr>}
-            {!loading && filtered.map((r) => (
-              <tr key={`${r.workCenterId}-${r.shiftId}`}>
-                <td><code>{r.workCenterCode}</code> {r.workCenterName}</td>
-                <td><code>{r.shiftCode}</code> {r.shiftName}</td>
-                <td><strong>{formatQuantity(r.ratePerMinute, 4)}</strong></td>
+            {isLoading && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20 }}>{t('common.loading')}</td></tr>}
+            {!isLoading && filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('costAccounting.empty')}</td></tr>}
+            {!isLoading && filtered.map((r) => (
+              <tr key={r.id}>
+                <td>{COST_RATE_SCOPE_LABEL[r.scope]}</td>
+                <td>{resolveScopeName(r.scope, r.scopeId)}</td>
+                <td><strong>{r.costPerHour != null ? formatQuantity(r.costPerHour, 4) : '-'}</strong></td>
+                <td>{r.costPerUnit != null ? formatQuantity(r.costPerUnit, 4) : '-'}</td>
                 <td>{r.currency}</td>
+                <td>{r.validFrom?.slice(0, 10) ?? '-'}</td>
                 <td style={{ fontSize: 13 }}>{r.notes || '-'}</td>
-                <td>
-                  <button onClick={() => remove(r.workCenterId, r.shiftId)} style={{ padding: '4px 10px', fontSize: 12, color: '#c62828' }}>×</button>
-                </td>
+                <td><button onClick={() => remove(r.id)} disabled={deleteMut.isPending} style={{ padding: '4px 10px', fontSize: 12, color: '#c62828' }}>×</button></td>
               </tr>
             ))}
           </tbody>

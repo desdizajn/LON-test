@@ -124,6 +124,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // HR (P16.C2)
     public DbSet<EmployeeCertification> EmployeeCertifications => Set<EmployeeCertification>();
 
+    // Finance — P16.C3
+    public DbSet<CostRate> CostRates => Set<CostRate>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

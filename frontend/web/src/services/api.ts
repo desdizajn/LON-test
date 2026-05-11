@@ -462,6 +462,16 @@ export const financeApi = {
     api.post(`/Finance/invoices/${id}/mark-paid`, { paidAt: paidAt ?? null }),
   cancel: (id: string, reason?: string | null) =>
     api.post(`/Finance/invoices/${id}/cancel`, { reason: reason ?? null }),
+
+  // P16.C3.a — cost rates
+  getCostRates: (scope?: 1 | 2 | 3 | 4 | 5) =>
+    api.get('/Finance/cost-rates', { params: { scope } }),
+  createCostRate: (data: any) =>
+    api.post('/Finance/cost-rates', data),
+  updateCostRate: (id: string, data: any) =>
+    api.put(`/Finance/cost-rates/${id}`, data),
+  deleteCostRate: (id: string) =>
+    api.delete(`/Finance/cost-rates/${id}`),
 };
 
 export const customsApi = {

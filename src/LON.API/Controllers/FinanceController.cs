@@ -1,4 +1,6 @@
 using LON.Application.Finance;
+using LON.Application.Finance.CostRates;
+using LON.Domain.Entities.Finance;
 using LON.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -220,5 +222,38 @@ public class FinanceController : BaseController
     {
         var result = await Mediator.Send(new GetInvoiceByIdQuery(id));
         return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+
+    // ─────────────── P16.C3.a — cost rates ───────────────
+    // Backs pages/Finance/CostAccounting.tsx. Tenant isolation via the
+    // global EF query filter on the ITenantScoped CostRate entity.
+
+    [HttpGet("cost-rates")]
+    public async Task<IActionResult> GetCostRates([FromQuery] CostRateScope? scope)
+    {
+        var result = await Mediator.Send(new GetCostRatesQuery(scope));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("cost-rates")]
+    public async Task<IActionResult> CreateCostRate([FromBody] CreateCostRateCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPut("cost-rates/{id:guid}")]
+    public async Task<IActionResult> UpdateCostRate(Guid id, [FromBody] UpdateCostRateCommand command)
+    {
+        if (command.Id != id) command = command with { Id = id };
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpDelete("cost-rates/{id:guid}")]
+    public async Task<IActionResult> DeleteCostRate(Guid id)
+    {
+        var result = await Mediator.Send(new DeleteCostRateCommand(id));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

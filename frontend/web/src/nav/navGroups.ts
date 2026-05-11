@@ -680,12 +680,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.costAccounting',
         icon: '🧮',
         path: '/finance/cost-accounting',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C3',
-        plannedBehavior:
-          'Cost accounting: чинење на минута на машина × оператор × shift. Support за pricing decisions.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.a ќе го замени со BE entity (CostRate).',
+          'P16.C3.a — CostRate (Scope=Machine/Operator/Shift/Operation/WorkCenter). Tenant-scoped CRUD via /api/Finance/cost-rates.',
       },
       {
         key: 'finance-margin',
