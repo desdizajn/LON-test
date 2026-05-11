@@ -1134,6 +1134,84 @@ export interface paths {
       };
     };
   };
+  "/api/Finance/supplier-invoices": {
+    get: {
+      parameters: {
+        query?: {
+          status?: components["schemas"]["SupplierInvoiceProjectedStatus"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateSupplierInvoiceCommand"];
+          "text/json": components["schemas"]["CreateSupplierInvoiceCommand"];
+          "application/*+json": components["schemas"]["CreateSupplierInvoiceCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/supplier-invoices/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateSupplierInvoiceCommand"];
+          "text/json": components["schemas"]["UpdateSupplierInvoiceCommand"];
+          "application/*+json": components["schemas"]["UpdateSupplierInvoiceCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/FinishedGoods/awaiting-pack": {
     get: {
       responses: {
@@ -4727,6 +4805,19 @@ export interface components {
       trackingNumber?: string | null;
       salesOrderNumber?: string | null;
     };
+    CreateSupplierInvoiceCommand: {
+      number?: string | null;
+      /** Format: uuid */
+      supplierPartnerId?: string;
+      /** Format: date-time */
+      invoiceDate?: string;
+      /** Format: date-time */
+      dueDate?: string;
+      /** Format: double */
+      amount?: number;
+      currency?: string | null;
+      notes?: string | null;
+    };
     CreateTransferRequest: {
       /** Format: uuid */
       fromLocationId?: string;
@@ -5430,6 +5521,16 @@ export interface components {
       /** Format: double */
       relevanceScore?: number;
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    SupplierInvoiceProjectedStatus: 1 | 2 | 3 | 4;
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    SupplierInvoiceStatus: 1 | 2 | 3;
     Tenant: {
       /** Format: uuid */
       id?: string;
@@ -5592,6 +5693,24 @@ export interface components {
       endTime?: string | null;
       description?: string | null;
       isActive?: boolean;
+    };
+    UpdateSupplierInvoiceCommand: {
+      /** Format: uuid */
+      id?: string;
+      number?: string | null;
+      /** Format: uuid */
+      supplierPartnerId?: string;
+      /** Format: date-time */
+      invoiceDate?: string;
+      /** Format: date-time */
+      dueDate?: string;
+      /** Format: double */
+      amount?: number;
+      currency?: string | null;
+      status?: components["schemas"]["SupplierInvoiceStatus"];
+      /** Format: date-time */
+      paidDate?: string | null;
+      notes?: string | null;
     };
     UpdateUserRequest: {
       email?: string | null;

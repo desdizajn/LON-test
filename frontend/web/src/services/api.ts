@@ -486,6 +486,18 @@ export const financeApi = {
     api.post(`/Finance/payroll-periods/${id}/finalize`),
   exportPayrollPeriod: (id: string) =>
     api.post(`/Finance/payroll-periods/${id}/export`),
+
+  // P16.C3.c — supplier invoices
+  getSupplierInvoices: (status?: 1 | 2 | 3 | 4) =>
+    api.get('/Finance/supplier-invoices', { params: { status } }),
+  getSupplierInvoice: (id: string) =>
+    api.get(`/Finance/supplier-invoices/${id}`),
+  createSupplierInvoice: (data: any) =>
+    api.post('/Finance/supplier-invoices', data),
+  updateSupplierInvoice: (id: string, data: any) =>
+    api.put(`/Finance/supplier-invoices/${id}`, data),
+  deleteSupplierInvoice: (id: string) =>
+    api.delete(`/Finance/supplier-invoices/${id}`),
 };
 
 export const customsApi = {

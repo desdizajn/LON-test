@@ -1,6 +1,7 @@
 using LON.Application.Finance;
 using LON.Application.Finance.CostRates;
 using LON.Application.Finance.PayrollPeriods;
+using LON.Application.Finance.SupplierInvoices;
 using LON.Domain.Entities.Finance;
 using LON.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -300,6 +301,44 @@ public class FinanceController : BaseController
     public async Task<IActionResult> ExportPayrollPeriod(Guid id)
     {
         var result = await Mediator.Send(new ExportPayrollPeriodCommand(id));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // ─────────────── P16.C3.c — supplier invoices ───────────────
+
+    [HttpGet("supplier-invoices")]
+    public async Task<IActionResult> GetSupplierInvoices([FromQuery] SupplierInvoiceProjectedStatus? status)
+    {
+        var result = await Mediator.Send(new GetSupplierInvoicesQuery(status));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("supplier-invoices/{id:guid}")]
+    public async Task<IActionResult> GetSupplierInvoice(Guid id)
+    {
+        var result = await Mediator.Send(new GetSupplierInvoiceByIdQuery(id));
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+
+    [HttpPost("supplier-invoices")]
+    public async Task<IActionResult> CreateSupplierInvoice([FromBody] CreateSupplierInvoiceCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPut("supplier-invoices/{id:guid}")]
+    public async Task<IActionResult> UpdateSupplierInvoice(Guid id, [FromBody] UpdateSupplierInvoiceCommand command)
+    {
+        if (command.Id != id) command = command with { Id = id };
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpDelete("supplier-invoices/{id:guid}")]
+    public async Task<IActionResult> DeleteSupplierInvoice(Guid id)
+    {
+        var result = await Mediator.Send(new DeleteSupplierInvoiceCommand(id));
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

@@ -128,6 +128,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CostRate> CostRates => Set<CostRate>();
     public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
     public DbSet<PayrollLine> PayrollLines => Set<PayrollLine>();
+    public DbSet<SupplierInvoice> SupplierInvoices => Set<SupplierInvoice>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

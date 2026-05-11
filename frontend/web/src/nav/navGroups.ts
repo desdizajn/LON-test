@@ -699,12 +699,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.ap',
         icon: '📤',
         path: '/finance/ap',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C3',
-        plannedBehavior:
-          'Добавувач invoices: packaging, energy, spare parts. Отворени / платени, due dates.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.c ќе го замени со BE entity (SupplierInvoice).',
+          'P16.C3.c — SupplierInvoice (AP register). Status Open/Paid/Cancelled stored; Overdue derived from (Open + DueDate<today).',
       },
       {
         key: 'finance-payroll',

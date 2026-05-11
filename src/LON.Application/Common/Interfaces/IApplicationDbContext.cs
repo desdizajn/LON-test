@@ -123,6 +123,7 @@ public interface IApplicationDbContext
     DbSet<CostRate> CostRates { get; }
     DbSet<PayrollPeriod> PayrollPeriods { get; }
     DbSet<PayrollLine> PayrollLines { get; }
+    DbSet<SupplierInvoice> SupplierInvoices { get; }
 
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
