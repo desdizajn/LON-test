@@ -1,7 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { wmsApi, masterDataApi } from '../services/api';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  inventoryKeys,
+  useAllLocationsQuery,
+  useBulkMoveBalances,
+  useInventoryQuery,
+  useQualityStatusChange,
+  type InventoryRow,
+} from '../hooks/queries/useInventory';
 import ReceiptForm from '../components/WMS/ReceiptForm';
 import TransferForm from '../components/WMS/TransferForm';
 import ShipmentForm from '../components/WMS/ShipmentForm';
@@ -15,27 +23,19 @@ import { useRowSelection } from '../hooks/useRowSelection';
 import { exportToCsv } from '../utils/export';
 import { translateError } from '../utils/translateError';
 
-type InventoryRow = {
-  id: string;
-  itemId: string;
-  item?: { id?: string; code?: string; name?: string } | null;
-  location?: { id?: string; code?: string; name?: string; warehouseId?: string } | null;
-  locationId: string;
-  batchNumber?: string | null;
-  mrn?: string | null;
-  quantity: number;
-  uoM?: { code?: string } | null;
-  qualityStatus: number;
-};
-
 const QC_OK = 1;
 const QC_BLOCKED = 2;
 const QC_QUARANTINE = 3;
 
 const Inventory: React.FC = () => {
   const { t } = useTranslation();
-  const [inventory, setInventory] = useState<InventoryRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+
+  const { data: inventory = [], isLoading: loading } = useInventoryQuery();
+  const { data: allLocations = [] } = useAllLocationsQuery();
+  const bulkMoveMutation = useBulkMoveBalances();
+  const qcStatusMutation = useQualityStatusChange();
+
   const [activeForm, setActiveForm] = useState<string | null>(null);
   const [moveBatchRow, setMoveBatchRow] = useState<InventoryRow | null>(null);
 
@@ -52,38 +52,12 @@ const Inventory: React.FC = () => {
 
   // Bulk move modal
   const [bulkMoveModal, setBulkMoveModal] = useState<null | { targetLocationId: string; reason: string }>(null);
-  const [allLocations, setAllLocations] = useState<Array<{ id: string; code: string; name: string; warehouseId: string }>>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await masterDataApi.getLocations();
-        if (!cancelled) setAllLocations((resp.data as any[]) ?? []);
-      } catch { /* ignore */ }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    loadInventory();
-  }, []);
-
-  const loadInventory = async () => {
-    try {
-      setLoading(true);
-      const response = await wmsApi.getInventory();
-      setInventory(response.data);
-    } catch (err) {
-      console.error('Failed to load inventory', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refreshInventory = () => qc.invalidateQueries({ queryKey: inventoryKeys.all });
 
   const handleFormSuccess = () => {
     setActiveForm(null);
-    loadInventory();
+    refreshInventory();
   };
 
   const handleFormCancel = () => {
@@ -155,16 +129,15 @@ const Inventory: React.FC = () => {
     if (ids.length === 0) return;
     setBulkRunning(true);
     try {
-      const resp = await wmsApi.bulkMoveBalances({
+      const env = (await bulkMoveMutation.mutateAsync({
         balanceIds: ids,
         targetLocationId,
         reason: reason || null,
-      });
-      const env = resp.data as { isSuccess?: boolean; data?: { balancesMoved: number; balancesSkipped: number; totalQuantityMoved: number }; errorMessage?: string; errorCode?: string };
+      })) as { isSuccess?: boolean; data?: { balancesMoved: number; balancesSkipped: number; totalQuantityMoved: number }; errorMessage?: string; errorCode?: string };
       if (env && env.isSuccess === false) {
         toast.error(translateError(env));
       } else {
-        const data = env.data ?? (resp.data as any);
+        const data = env.data ?? (env as any);
         toast.success(
           t('inventory.bulkMove.success', {
             moved: data.balancesMoved,
@@ -179,7 +152,6 @@ const Inventory: React.FC = () => {
       setBulkRunning(false);
       setBulkMoveModal(null);
       selection.clear();
-      await loadInventory();
     }
   }
 
@@ -192,7 +164,7 @@ const Inventory: React.FC = () => {
     const firstError: string[] = [];
     for (const r of rows) {
       try {
-        await wmsApi.updateQualityStatus({
+        await qcStatusMutation.mutateAsync({
           inventoryBalanceId: r.id,
           newQualityStatus: target,
           reason,
@@ -206,7 +178,6 @@ const Inventory: React.FC = () => {
     setBulkRunning(false);
     setBulkQcModal(null);
     selection.clear();
-    await loadInventory();
     if (failed === 0) {
       toast.success(t('inventory.bulkQc.successAll', { count: ok }) as string);
     } else {
@@ -489,7 +460,7 @@ const Inventory: React.FC = () => {
                 qty: summary.totalQty,
               })
             );
-            loadInventory();
+            refreshInventory();
           }}
         />
       )}

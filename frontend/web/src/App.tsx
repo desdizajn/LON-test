@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -275,10 +277,23 @@ const ProtectedLayout: React.FC<{
   );
 };
 
+// P16.B1 — shared QueryClient. staleTime 30s keeps mutations from
+// triggering avalanches; refetchOnWindowFocus picks up cross-tab edits.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
+  },
+});
+
 const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState('dashboard');
 
   return (
+    <QueryClientProvider client={queryClient}>
     <Router>
       <div className="app">
         <Routes>
@@ -498,6 +513,8 @@ const App: React.FC = () => {
       </div>
       <ToastContainer position="top-right" autoClose={3000} />
     </Router>
+    {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+    </QueryClientProvider>
   );
 };
 
