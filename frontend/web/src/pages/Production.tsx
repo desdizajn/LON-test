@@ -4,6 +4,8 @@ import { productionApi } from '../services/api';
 import ProductionOrderForm from '../components/Production/ProductionOrderForm';
 import MaterialIssueForm from '../components/Production/MaterialIssueForm';
 import ProductionReceiptForm from '../components/Production/ProductionReceiptForm';
+import DataTable, { Column } from '../components/common/DataTable';
+import ProductionVariantsSubTable from '../components/Production/ProductionVariantsSubTable';
 
 const Production: React.FC = () => {
   const { t } = useTranslation();
@@ -14,7 +16,6 @@ const Production: React.FC = () => {
   const [showReceiptForm, setShowReceiptForm] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -101,13 +102,89 @@ const Production: React.FC = () => {
       .sort((a, b) => a.key.localeCompare(b.key));
   }, [orders, search, statusFilter]);
 
-  const toggle = (k: string) => {
-    setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(k)) next.delete(k); else next.add(k);
-      return next;
-    });
-  };
+  const tableRows = useMemo<OrderRow[]>(() => grouped.map((g) => {
+    const hasChildren = g.children.length > 0;
+    const headRow = g.main || g.children[0];
+    const isStandalone = !g.main && g.children.length === 1;
+    const hasExpandableChildren = hasChildren && !isStandalone;
+    return {
+      id: g.key,
+      orderNumber: g.main?.orderNumber || g.key,
+      itemLabel: headRow?.item?.name || headRow?.item?.code || '',
+      itemNode: (
+        <>
+          {headRow?.item?.name || headRow?.item?.code}
+          {!g.main && variantBadges(headRow?.item)}
+          {hasChildren && g.main && (
+            <span style={{ color: '#6b7280', fontSize: 11, marginLeft: 6 }}>
+              ({g.children.length} {t('production.variants', { defaultValue: 'variants' })})
+            </span>
+          )}
+        </>
+      ),
+      orderQty: headRow?.orderQuantity ?? null,
+      produced: headRow?.producedQuantity ?? null,
+      scrap: headRow?.scrapQuantity ?? null,
+      status: headRow?.status ?? null,
+      start: headRow?.plannedStartDate ? new Date(headRow.plannedStartDate).toLocaleDateString() : '-',
+      end: headRow?.plannedEndDate ? new Date(headRow.plannedEndDate).toLocaleDateString() : '-',
+      actions: renderActions(g.main || headRow),
+      hasExpandableChildren,
+      children: g.children,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [grouped, busyOrderId, t]);
+
+  const columns: Column<OrderRow>[] = [
+    {
+      id: 'orderNumber',
+      label: t('production.columns.orderNumber', { defaultValue: 'Order Number' }) as string,
+      format: (v: string, row) => (
+        <strong>{v}</strong>
+      ),
+    },
+    {
+      id: 'itemNode',
+      label: t('production.columns.item', { defaultValue: 'Item' }) as string,
+      format: (_v, row) => row.itemNode,
+    },
+    {
+      id: 'orderQty',
+      label: t('production.columns.orderQty', { defaultValue: 'Order Qty' }) as string,
+      align: 'right',
+      format: (v: number | null) => (v == null ? '-' : v.toFixed(2)),
+    },
+    {
+      id: 'produced',
+      label: t('production.columns.produced', { defaultValue: 'Produced' }) as string,
+      align: 'right',
+      format: (v: number | null) => (v == null ? '-' : v.toFixed(2)),
+    },
+    {
+      id: 'scrap',
+      label: t('production.columns.scrap', { defaultValue: 'Scrap' }) as string,
+      align: 'right',
+      format: (v: number | null) => (v == null ? '-' : v.toFixed(2)),
+    },
+    {
+      id: 'status',
+      label: t('production.columns.status', { defaultValue: 'Status' }) as string,
+      format: (v: number | null) => (v == null ? '-' : getStatusBadge(v)),
+    },
+    {
+      id: 'start',
+      label: t('production.columns.start', { defaultValue: 'Start' }) as string,
+    },
+    {
+      id: 'end',
+      label: t('production.columns.end', { defaultValue: 'End' }) as string,
+    },
+    {
+      id: 'actions',
+      label: t('common.actions', { defaultValue: 'Actions' }) as string,
+      format: (_v, row) => row.actions,
+    },
+  ];
 
   const renderActions = (o: any) => (
     <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
@@ -185,86 +262,41 @@ const Production: React.FC = () => {
         </select>
       </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: 30 }}></th>
-              <th>Order Number</th>
-              <th>Item</th>
-              <th>Order Qty</th>
-              <th>Produced</th>
-              <th>Scrap</th>
-              <th>Status</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grouped.map(g => {
-              const hasChildren = g.children.length > 0;
-              const isOpen = expanded.has(g.key);
-              const headRow = g.main || g.children[0];
-              const isStandalone = !g.main && g.children.length === 1;
-              return (
-                <React.Fragment key={g.key}>
-                  <tr style={{ background: hasChildren && g.main ? '#f3f4f6' : undefined, fontWeight: hasChildren ? 600 : undefined }}>
-                    <td style={{ textAlign: 'center' }}>
-                      {hasChildren && !isStandalone && (
-                        <button onClick={() => toggle(g.key)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14 }}>
-                          {isOpen ? '▼' : '▶'}
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      <strong>{g.main?.orderNumber || g.key}</strong>
-                      {hasChildren && g.main && (
-                        <span style={{ color: '#6b7280', fontSize: 11, marginLeft: 6 }}>
-                          ({g.children.length} {t('production.variants', { defaultValue: 'variants' })})
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {headRow?.item?.name || headRow?.item?.code}
-                      {!g.main && variantBadges(headRow?.item)}
-                    </td>
-                    <td>{headRow?.orderQuantity?.toFixed?.(2) ?? '-'}</td>
-                    <td>{headRow?.producedQuantity?.toFixed?.(2) ?? '-'}</td>
-                    <td>{headRow?.scrapQuantity?.toFixed?.(2) ?? '-'}</td>
-                    <td>{getStatusBadge(headRow?.status)}</td>
-                    <td>{headRow?.plannedStartDate ? new Date(headRow.plannedStartDate).toLocaleDateString() : '-'}</td>
-                    <td>{headRow?.plannedEndDate ? new Date(headRow.plannedEndDate).toLocaleDateString() : '-'}</td>
-                    <td>{g.main ? renderActions(g.main) : renderActions(headRow)}</td>
-                  </tr>
-
-                  {hasChildren && isOpen && g.children.map((c: any) => (
-                    <tr key={c.id} style={{ background: '#ffffff' }}>
-                      <td></td>
-                      <td style={{ paddingLeft: 26, color: '#4b5563' }}>
-                        ↳ <span style={{ fontFamily: 'monospace' }}>{c.subOrderNumber || c.orderNumber}</span>
-                      </td>
-                      <td>
-                        {c.item?.code}
-                        {variantBadges(c.item)}
-                      </td>
-                      <td>{c.orderQuantity.toFixed(2)}</td>
-                      <td>{c.producedQuantity.toFixed(2)}</td>
-                      <td>{c.scrapQuantity.toFixed(2)}</td>
-                      <td>{getStatusBadge(c.status)}</td>
-                      <td>{new Date(c.plannedStartDate).toLocaleDateString()}</td>
-                      <td>{new Date(c.plannedEndDate).toLocaleDateString()}</td>
-                      <td>{renderActions(c)}</td>
-                    </tr>
-                  ))}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <DataTable<OrderRow>
+        columns={columns}
+        data={tableRows}
+        searchable={false}
+        emptyMessage={t('production.empty', { defaultValue: 'No production orders' }) as string}
+        renderExpanded={(row) =>
+          row.hasExpandableChildren ? (
+            <ProductionVariantsSubTable
+              children={row.children}
+              variantBadges={variantBadges}
+              getStatusBadge={getStatusBadge}
+              renderActions={renderActions}
+            />
+          ) : null
+        }
+        rowClassName={(row) => (row.hasExpandableChildren ? 'group-parent-row' : undefined)}
+      />
     </div>
   );
+};
+
+type OrderRow = {
+  id: string;
+  orderNumber: string;
+  itemLabel: string;
+  itemNode: React.ReactNode;
+  orderQty: number | null;
+  produced: number | null;
+  scrap: number | null;
+  status: number | null;
+  start: string;
+  end: string;
+  actions: React.ReactNode;
+  hasExpandableChildren: boolean;
+  children: any[];
 };
 
 export default Production;

@@ -13,10 +13,13 @@ import {
   Box,
   IconButton,
   Tooltip,
+  Checkbox,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LoadingSpinner from './LoadingSpinner';
 
 export interface Column<T> {
@@ -38,6 +41,19 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   emptyMessage?: string;
   rowsPerPageOptions?: number[];
+  /**
+   * P16.B2 — multi-select. Controlled API: pass `selectedIds` + `onSelectionChange`.
+   * Omitting both disables the checkbox column entirely.
+   */
+  selectedIds?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
+  /**
+   * P16.B2 — render-prop for an expandable detail panel below each row.
+   * When supplied, a leading toggle column is rendered with ▶ / ▼ icons.
+   */
+  renderExpanded?: (row: T) => React.ReactNode;
+  /** Optional row-level CSS class hook (e.g. parent-row highlight in Production grid). */
+  rowClassName?: (row: T) => string | undefined;
 }
 
 function DataTable<T extends { id: string }>({
@@ -51,16 +67,22 @@ function DataTable<T extends { id: string }>({
   searchPlaceholder = 'Search...',
   emptyMessage = 'No data available',
   rowsPerPageOptions = [10, 25, 50, 100],
+  selectedIds,
+  onSelectionChange,
+  renderExpanded,
+  rowClassName,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(rowsPerPageOptions[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [orderBy, setOrderBy] = useState<keyof T | string>('');
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+  const selectionEnabled = !!onSelectionChange;
+  const selected = new Set(selectedIds ?? []);
+
+  const handleChangePage = (_event: unknown, newPage: number) => setPage(newPage);
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
@@ -73,7 +95,6 @@ function DataTable<T extends { id: string }>({
     setOrderBy(columnId);
   };
 
-  // Filter data based on search term
   const filteredData = searchable
     ? data.filter((row) =>
         Object.values(row as any).some((value) =>
@@ -82,7 +103,6 @@ function DataTable<T extends { id: string }>({
       )
     : data;
 
-  // Sort data
   const sortedData = [...filteredData].sort((a, b) => {
     if (!orderBy) return 0;
     const aValue = (a as any)[orderBy];
@@ -92,13 +112,48 @@ function DataTable<T extends { id: string }>({
     return 0;
   });
 
-  // Paginate data
   const paginatedData = sortedData.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
 
+  const pageIds = paginatedData.map((r) => r.id);
+  const pageSelectedCount = pageIds.filter((id) => selected.has(id)).length;
+  const allPageSelected = pageIds.length > 0 && pageSelectedCount === pageIds.length;
+  const somePageSelected = pageSelectedCount > 0 && !allPageSelected;
+
+  const toggleRow = (id: string) => {
+    if (!onSelectionChange) return;
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange(Array.from(next));
+  };
+
+  const toggleAllOnPage = () => {
+    if (!onSelectionChange) return;
+    const next = new Set(selected);
+    if (allPageSelected) {
+      pageIds.forEach((id) => next.delete(id));
+    } else {
+      pageIds.forEach((id) => next.add(id));
+    }
+    onSelectionChange(Array.from(next));
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const hasActions = onEdit || onDelete || onView;
+  const expandable = !!renderExpanded;
+  const colSpan =
+    columns.length + (hasActions ? 1 : 0) + (selectionEnabled ? 1 : 0) + (expandable ? 1 : 0);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -117,6 +172,7 @@ function DataTable<T extends { id: string }>({
               setSearchTerm(e.target.value);
               setPage(0);
             }}
+            inputProps={{ 'aria-label': 'search' }}
           />
         </Box>
       )}
@@ -124,6 +180,17 @@ function DataTable<T extends { id: string }>({
         <Table stickyHeader>
           <TableHead>
             <TableRow>
+              {expandable && <TableCell padding="checkbox" />}
+              {selectionEnabled && (
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected}
+                    onChange={toggleAllOnPage}
+                    inputProps={{ 'aria-label': 'select all' }}
+                  />
+                </TableCell>
+              )}
               {columns.map((column) => (
                 <TableCell
                   key={String(column.id)}
@@ -149,50 +216,92 @@ function DataTable<T extends { id: string }>({
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} align="center">
+                <TableCell colSpan={colSpan} align="center">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((row) => (
-                <TableRow hover key={row.id}>
-                  {columns.map((column) => {
-                    const value = (row as any)[column.id];
-                    return (
-                      <TableCell key={String(column.id)} align={column.align || 'left'}>
-                        {column.format ? column.format(value, row) : value}
-                      </TableCell>
-                    );
-                  })}
-                  {hasActions && (
-                    <TableCell align="center">
-                      <Box display="flex" justifyContent="center" gap={1}>
-                        {onView && (
-                          <Tooltip title="View">
-                            <IconButton size="small" onClick={() => onView(row)}>
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onEdit && (
-                          <Tooltip title="Edit">
-                            <IconButton size="small" color="primary" onClick={() => onEdit(row)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onDelete && (
-                          <Tooltip title="Delete">
-                            <IconButton size="small" color="error" onClick={() => onDelete(row)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
+              paginatedData.map((row) => {
+                const isSelected = selected.has(row.id);
+                const isExpanded = expandedIds.has(row.id);
+                const customClass = rowClassName?.(row);
+                return (
+                  <React.Fragment key={row.id}>
+                    <TableRow
+                      hover
+                      selected={isSelected}
+                      className={customClass}
+                    >
+                      {expandable && (
+                        <TableCell padding="checkbox">
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleExpand(row.id)}
+                            aria-label={isExpanded ? 'collapse row' : 'expand row'}
+                          >
+                            {isExpanded ? (
+                              <KeyboardArrowDownIcon fontSize="small" />
+                            ) : (
+                              <KeyboardArrowRightIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </TableCell>
+                      )}
+                      {selectionEnabled && (
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => toggleRow(row.id)}
+                            inputProps={{ 'aria-label': `select row ${row.id}` }}
+                          />
+                        </TableCell>
+                      )}
+                      {columns.map((column) => {
+                        const value = (row as any)[column.id];
+                        return (
+                          <TableCell key={String(column.id)} align={column.align || 'left'}>
+                            {column.format ? column.format(value, row) : value}
+                          </TableCell>
+                        );
+                      })}
+                      {hasActions && (
+                        <TableCell align="center">
+                          <Box display="flex" justifyContent="center" gap={1}>
+                            {onView && (
+                              <Tooltip title="View">
+                                <IconButton size="small" onClick={() => onView(row)}>
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {onEdit && (
+                              <Tooltip title="Edit">
+                                <IconButton size="small" color="primary" onClick={() => onEdit(row)}>
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {onDelete && (
+                              <Tooltip title="Delete">
+                                <IconButton size="small" color="error" onClick={() => onDelete(row)}>
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    {expandable && isExpanded && (
+                      <TableRow>
+                        <TableCell colSpan={colSpan} sx={{ p: 0, borderBottom: 'unset' }}>
+                          {renderExpanded!(row)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>
