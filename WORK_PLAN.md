@@ -873,8 +873,48 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ---
 
+## Phase 16 — Cleanup + UI Foundation
+
+> Reaction to the May 2026 frontend audit (CLAUDE.md §11). Plan + prompts: [`AGENT-PROMPTS.md`](AGENT-PROMPTS.md). Verification: [`VERIFICATION.md`](VERIFICATION.md).
+
+### Wave A — Cleanup (no business logic)
+
+- [x] **P16.A1** ✅ *2026-05-11 (commit `b24ad80`)* — Removed dead `pages/MasterData/Warehouses/WarehousesList.tsx` + `/master-data/warehouses-old` Route. Fixed pre-existing unused-import warning in `pages/Customs.tsx`. eslint 0/0; filterNav 13/13. VPS deployed.
+- [ ] **P16.A2** — Flip `navGroups.ts` `backendStatus` to `partial` for the 6 localStorage-only pages + warning banner via `t('common.localStorageWarning')` (4 locales).
+- [ ] **P16.A3** — `docs/PHASE16_AUDIT.md`: MasterData duplication audit (no deletes). File any unambiguous-dead under `P16.A3.followup`.
+
+### Wave B — UI foundations
+
+- [ ] **P16.B1** — Install `@tanstack/react-query`, wrap `App.tsx`, create `hooks/queries/useInventory.ts`, migrate `pages/Inventory.tsx` as pilot.
+- [ ] **P16.B2** — Harden `components/common/DataTable.tsx` (sort/paginate/select/sticky/loading/empty/mobile). Add jest tests. Migrate `pages/Production.tsx` orders grid.
+- [ ] **P16.B3** — `components/layout/PageShell.tsx` + `theme.ts` (MUI ThemeProvider). Migrate Dashboard, Inventory, Production.
+
+### Wave C — localStorage → backend
+
+- [ ] **P16.C1** — `RiskRegisterItem` entity (Kind=Risk|Escalation) + CRUD + tests + migrate `pages/Management/OpenRisks.tsx` & `pages/Management/Escalations.tsx`.
+- [ ] **P16.C2** — `EmployeeCertification` entity + `/api/Hr/certifications` (+ `/expiring`) + migrate `pages/Hr/Training.tsx`.
+- [ ] **P16.C3.a** — `CostRate` + migrate `pages/Finance/CostAccounting.tsx`.
+- [ ] **P16.C3.b** — `PayrollPeriod` + `PayrollLine` + `/finalize` + `/export` + migrate `pages/Finance/PayrollAggregate.tsx` (sources hours from Attendance + Absence).
+- [ ] **P16.C3.c** — `SupplierInvoice` + derived `Overdue` status + migrate `pages/Finance/SupplierInvoices.tsx`.
+
+### Wave D — Test coverage gap fill (parallelizable)
+
+- [ ] **P16.D1** — `WMSControllerTests.cs` (10 endpoints × tenant isolation).
+- [ ] **P16.D2** — `RolePermissionTests.cs` (9 roles × ~10 endpoints matrix; mirror `filterNavGroups.test.ts`).
+- [ ] **P16.D3** — `MasterDataCrudTests.cs` (8 resources × POST/GET/PUT/DELETE + tenant isolation, Theory-driven).
+
+### DoD за Phase 16
+
+(a) Сите А, Б, В, Г таскови `[x]` со SESSION_LOG записи + commits.
+(b) Frontend builds clean: 0 tsc errors in `src/`, 0 eslint errors/warnings.
+(c) 6-те localStorage-only страници имаат вистински backend + integration тестови.
+(d) `nav/navGroups.ts` нема лажен `backendStatus`.
+(e) `BLUEPRINT.md` се пишува откако P16 ќе се затвори (CLAUDE.md §12).
+
+---
+
 ## Current Active Task
 
-**Phase 15 complete (15/15 shipped).** Next: write end-to-end user manual (`docs/USER_MANUAL.md`) covering IM → Podelba → Production → Waste → EX/Return → Zaverka → Razdolzuvanje → Finance. Every process step references the API endpoints + frontend routes the operator uses.
+**P16.A2** — Flip `navGroups.ts` `backendStatus: 'exists' → 'partial'` for the 6 localStorage-only nav items (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training). Each gets `workPlanRef: 'P16.C1'/'P16.C2'/'P16.C3'` + `existingDataHint` warning suffix. Each page gets a top `<Alert severity="warning">` rendering `t('common.localStorageWarning')`; key added to 4 locales. tsc + eslint clean, filterNav still passes, VPS smoke confirms banner on all 6 pages.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

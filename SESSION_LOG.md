@@ -2,6 +2,29 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.A1 — Remove dead WarehousesList + /warehouses-old route
+Plan: A `App.tsx` имаше две паралелни warehouse list pages — `WarehousesList` (стара) на `/master-data/warehouses-old` + `WarehouseList` (нова) на `/master-data/warehouses`. Грепот потврди дека стариот компонент не е референциран никаде освен во самиот `App.tsx`. Бришам го фајлот + import + Route.
+Files touched:
+  - `frontend/web/src/App.tsx` (−2 lines)
+  - `frontend/web/src/pages/MasterData/Warehouses/WarehousesList.tsx` (deleted, 148 lines)
+  - `frontend/web/src/pages/Customs.tsx` (−1 unused import — pre-existing eslint warning fixed per `feedback_fix_all_warnings.md`)
+Verification:
+  - `grep -rn WarehousesList src` → empty (post-delete)
+  - `grep -rn warehouses-old src` → empty (post-delete)
+  - tsc на src/ → 0 errors (errors во `node_modules/react-hook-form/.../watch.d.ts` се pre-existing version mismatch, не cause-ed од A1)
+  - eslint src → 0 errors, 0 warnings
+  - `react-scripts test filterNav` → 13/13 pass (VERIFICATION.md побара `jest --testPathPattern`; директниот jest call fail-а заради missing `@babel/preset-typescript` — pre-existing infra gap, CRA's `react-scripts test` го пренесува правилно)
+  - VPS deploy: pull + build frontend + recreate → `lon-frontend Started`
+  - VPS smoke: `https://elon.elbosoft.click/master-data/warehouses` → SPA shell (200), `/warehouses-old` → SPA shell (200, no route match → blank — App.tsx нема fallback route; не stack trace, satisfies VERIFICATION A1 #2), `/health` → `{"status":"healthy"}`
+Commit: `b24ad80`
+Outcome: [x] done
+Notes:
+  - Warehouses/WarehouseForm.tsx останува неимпортиран — out of A1 scope; ќе биде покриен од A3 audit.
+  - App.tsx нема `path="*"` fallback / NotFound — minor UX gap (не A1 scope).
+  - VERIFICATION.md A1 предлага директна `node_modules/.bin/jest` инвокација која fail-а заради jest TS preset; project standard е `react-scripts test`. SESSION_LOG ова е flagged за идни A-задачи.
+
+---
+
 ## 2026-04-23 — Tariff browser + duty calculator + P15.16.1 + P15.17
 
 **Status:** [x] 3 features shipped (commit `d23c04c`), VPS verified end-to-end.
