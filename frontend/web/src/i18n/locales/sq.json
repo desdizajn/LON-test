@@ -65,7 +65,8 @@
     "exportCsv": "Eksporto në CSV",
     "searchPlaceholder": "Kërko...",
     "noResults": "Nuk ka rezultate",
-    "clear": "Pastro"
+    "clear": "Pastro",
+    "localStorageWarning": "Këto të dhëna ruhen vetëm në shfletues. Mund të humbasin gjatë pastrimit të cache-it."
   },
   "bulkActions": {
     "selected": "{{count}} të zgjedhura",

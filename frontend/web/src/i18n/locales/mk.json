@@ -65,7 +65,8 @@
     "exportCsv": "Извоз во CSV",
     "searchPlaceholder": "Пребарај...",
     "noResults": "Нема резултати",
-    "clear": "Исчисти"
+    "clear": "Исчисти",
+    "localStorageWarning": "Овие податоци се чуваат само во browserот. Може да се изгубат при чистење на cache."
   },
   "bulkActions": {
     "selected": "{{count}} означени",

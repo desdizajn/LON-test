@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/format';
+import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 
 /**
  * P13.8 — Escalations.
@@ -95,6 +96,8 @@ const Escalations: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('escalations.title')}</h1>
       <p style={{ color: '#666' }}>{t('escalations.subtitle')}</p>
+
+      <LocalStorageWarningBanner />
 
       <fieldset style={{ border: '1px solid #ddd', borderRadius: 4, padding: 12, marginBottom: 12 }}>
         <legend>{t('escalations.newLegend')}</legend>

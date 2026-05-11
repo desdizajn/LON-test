@@ -4,6 +4,7 @@ import { hrApi, masterDataApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatQuantity } from '../../utils/format';
 import { exportToCsv } from '../../utils/export';
+import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 
 /**
  * P12.6 — Плати (aggregate).
@@ -132,6 +133,8 @@ const PayrollAggregate: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('payrollAggregate.title')}</h1>
       <p style={{ color: '#666' }}>{t('payrollAggregate.subtitle')}</p>
+
+      <LocalStorageWarningBanner />
 
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 

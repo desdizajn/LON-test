@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { masterDataApi, api } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatQuantity } from '../../utils/format';
+import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 import { exportToCsv } from '../../utils/export';
 
 /**
@@ -129,6 +130,8 @@ const CostAccounting: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('costAccounting.title')}</h1>
       <p style={{ color: '#666' }}>{t('costAccounting.subtitle')}</p>
+
+      <LocalStorageWarningBanner />
 
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 

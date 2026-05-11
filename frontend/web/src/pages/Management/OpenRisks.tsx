@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/format';
 import { exportToCsv } from '../../utils/export';
+import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 
 /**
  * P13.6 — Open risks register.
@@ -98,6 +99,8 @@ const OpenRisks: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('risks.title')}</h1>
       <p style={{ color: '#666' }}>{t('risks.subtitle')}</p>
+
+      <LocalStorageWarningBanner />
 
       <fieldset style={{ border: '1px solid #ddd', borderRadius: 4, padding: 12, marginBottom: 12 }}>
         <legend>{t('risks.newLegend')}</legend>

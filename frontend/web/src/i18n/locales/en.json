@@ -65,7 +65,8 @@
     "exportCsv": "Export CSV",
     "searchPlaceholder": "Search...",
     "noResults": "No results",
-    "clear": "Clear"
+    "clear": "Clear",
+    "localStorageWarning": "This view is browser-local until backend lands. Data may be lost on cache clear."
   },
   "bulkActions": {
     "selected": "{{count}} selected",

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { masterDataApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate } from '../../utils/format';
+import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 import { exportToCsv } from '../../utils/export';
 
 /**
@@ -118,6 +119,8 @@ const TrainingPage: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('training.title')}</h1>
       <p style={{ color: '#666' }}>{t('training.subtitle')}</p>
+
+      <LocalStorageWarningBanner />
 
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 

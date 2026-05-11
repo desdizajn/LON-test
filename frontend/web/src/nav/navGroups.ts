@@ -524,10 +524,12 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.training',
         icon: '🎓',
         path: '/hr/training',
-        backendStatus: 'exists',
-        workPlanRef: 'P3.X — training & certifications',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C2',
         plannedBehavior:
           'Сертификати на вработени per machine type / operation. Рок на важност, предупредувања пред истек.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C2 ќе го замени со BE entity (EmployeeCertification).',
       },
       {
         key: 'hr-payroll-export',
@@ -681,10 +683,12 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.costAccounting',
         icon: '🧮',
         path: '/finance/cost-accounting',
-        backendStatus: 'exists',
-        workPlanRef: 'P5.X — cost per minute',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C3',
         plannedBehavior:
           'Cost accounting: чинење на минута на машина × оператор × shift. Support за pricing decisions.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.a ќе го замени со BE entity (CostRate).',
       },
       {
         key: 'finance-margin',
@@ -701,20 +705,24 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.ap',
         icon: '📤',
         path: '/finance/ap',
-        backendStatus: 'exists',
-        workPlanRef: 'P5.X — accounts payable',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C3',
         plannedBehavior:
           'Добавувач invoices: packaging, energy, spare parts. Отворени / платени, due dates.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.c ќе го замени со BE entity (SupplierInvoice).',
       },
       {
         key: 'finance-payroll',
         labelKey: 'nav.finance.payroll',
         icon: '💳',
         path: '/finance/payroll',
-        backendStatus: 'exists',
-        workPlanRef: 'P3.X — payroll aggregate from HR',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C3',
         plannedBehavior:
           'Aggregate плати за месецот: вкупно часови регуларни + overtime + bonus × шифри. Feed од /hr/payroll-export.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.b ќе го замени со BE entity (PayrollPeriod + PayrollLine).',
       },
       {
         key: 'finance-pnl',
@@ -822,10 +830,12 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.risks',
         icon: '⚠️',
         path: '/management/risks',
-        backendStatus: 'exists',
-        workPlanRef: 'P6.X — open risks register',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C1',
         plannedBehavior:
           'Отворени ризици: царински (деадлине), operational (машина, кадар), финансиски (клиент overdue), legal.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C1 ќе го замени со BE entity (RiskRegisterItem).',
       },
       {
         key: 'management-trends',
@@ -842,10 +852,12 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.escalations',
         icon: '🔥',
         path: '/management/escalations',
-        backendStatus: 'exists',
-        workPlanRef: 'P6.X — escalations',
+        backendStatus: 'partial',
+        workPlanRef: 'P16.C1',
         plannedBehavior:
           'Налози што бараат управувачка одлука: доцнат, клиент тражи extension, legal issue, budget override.',
+        existingDataHint:
+          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C1 ќе го замени со BE entity (RiskRegisterItem, Kind=Escalation).',
       },
       {
         key: 'management-client-scorecard',
