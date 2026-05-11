@@ -2,6 +2,173 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — Phase 17 PREP session — ELON recon + wipe plan (no code change, no VPS)
+
+Цел: подготвителна сесија пред Phase 17 E0 — три артефакти за Cowork architect да напише `docs/migration/MAPPING.md` со реални податоци, не претпоставки. Сите ELON queries `read-only`. Локалниот LON dev DB **не постои** — види Task 3.
+
+### Task 1 — Happy-path candidates (ELON DB, OdobrenieRBr=1, GarancijaBroj `19MK00900000014B6`, GarancijaIznos 77,000,000 MKD)
+
+Сите 4 ELON Odobrenija (само 2 со GarancijaIznos > 0; OdobrenieRBr=1 е главното и носи 248 од 269 Zaklucoci). Затоа candidate pool e ефективно еден Odobrenie.
+
+| # | OdobrenieRBr | ZaklucokBroj | NumIM | ImportLines | ExportRows | WasteRows | RazdolzeniHdr | ExpShipments | OrphanExpRows | TotalValueEUR | TotalDutyMKD | FirstIM | Rationale |
+|---|--------------|--------------|-------|-------------|------------|-----------|---------------|--------------|---------------|---------------|--------------|---------|-----------|
+| **1 (recommended)** | 1 | **2779** | 1 | 13 | 5 | 3 | 13 | 1 | **0** | 368,355 | 8,774,701 | 2025-06-12 | Single-thread happy path: 1 IM → 13 import lines → 5-line BOM (1 producer) → 1 Izdatnica → fully razdolzeno. Zero orphan refs to Ispratnici/Izdatnici. Mid-2025 timing — recent enough that codelists are current, stable enough that no in-flight edits ще ja chase. Best E2E test target. |
+| 2 | 1 | 2802 | 1 | 34 | 14 | 6 | 34 | 3 | 3 | 2,455,069 | 58,427,545 | 2025-10-31 | Stress test pick. 2 producers (LM.Proizvoditel=1 + 39), 3 distinct Izdatnici, 6 waste rows. 3/14 export rows have orphan DokRBr — useful as "migration must quarantine, not fail" case. Largest fully-closed cycle in DB. |
+| 3 | 1 | 2780 | 1 | 5 | 2 | 1 | 5 | 1 | 2 | 43,945 | 1,046,820 | 2025-06-13 | Trivial smoke. Useful as "can the round-trip pass with the smallest meaningful order" sanity check before throwing Z2779 at it. |
+
+**Details for recommended pick (Z2779):**
+- GotoviProizvodi: 1 row
+- Normativi: 5 rows (= 5 BOM lines for the one finished good — fits the "3–10 BOM lines per FG" criterion)
+- Distinct producers (LagerMaterijali.Proizvoditel numeric): 1 (id=1)
+- Izdatnici (NOT Ispratnici — see §Surprise 1 below): 1 (8232/2025 dated 2025-07-02)
+- Activity date range: 2025-06-12 (first IM) → 2025-07-02 (Izdatnica = exit-to-producer). 20-day production cycle. No waste activity dates because `LagerMaterijali.LagerDatum` is NULL for this Zaklucok's rows — must rely on Izdatnica dates.
+
+**Recommendation:** Use **Z2779** as the canonical E2E test fixture for Phase 17. Keep Z2802 in reserve as a multi-producer + multi-shipment stress test for Phase 17.E / Phase 21 reconciliation. Z2780 is the daily smoke after each E-task lands.
+
+### Task 2 — ELON schema reconnaissance
+
+#### Surprise 1: ELON local DB is a **trimmed TEKSPORT extract**, not the full legacy schema
+
+`docs/ELON_Research/00_MASTER_ELON_OVERVIEW.md` describes the FULL ELON system (501 tables). The local `ELON` DB has only **31 tables** — a single-tenant slice for TEKSPORT. Tables that the PREP prompt expected and that **do not exist** in this DB:
+
+- `tblFirmi` (partner master) — **absent**
+- `KnigaNai` (tariff codes) — **absent**
+- `Aneksi` (tariff annexes) — **absent**
+- `Preferencijal` (preferential origins) — **absent**
+- `FakturiU5Skart` (skart on imports) — **absent**
+- `tblKorisnikTEKSPORT` / any employee table — **absent**
+
+Migration consequence: master-data and tariff catalogues must come from the **production ELON DB on Teksport's site**, not from this local copy. Cowork's MAPPING.md should call out which source-tables are missing locally and add a "request export" line item to the Phase 21 cutover plan.
+
+#### Surprise 2: `Uvoznik` column is NULL across the board
+
+`LagerMaterijali.Uvoznik` is NULL for ALL 760,645 rows. Research notes treated this as the tenant discriminator. Reality: this DB is single-tenant (only TEKSPORT lives here) and `Uvoznik` is unused. Migration can ignore it; the DB-as-a-whole IS the tenant.
+
+#### Surprise 3: `LagerMaterijali.DokRBr` semantics depend on `Proces`
+
+Cross-tabulation across all 760k rows:
+
+| Proces | Rows | Match Ispratnici | Match Izdatnici | Interpretation |
+|--------|------|------------------|-----------------|----------------|
+| 1 | 294,288 | 0 | 0 | Stock-on-hand (receipt) — no exit doc |
+| 6 | 192 | 0 | 0 | Rare — appears to be an in-house adjustment |
+| **7** (export to producer) | 298,056 | 35,027 (12%) | **294,332 (99%)** | DokRBr points to **Izdatnica**, not Ispratnica. The 12% Ispratnici matches are RBr coincidences only. |
+| 8 (return from producer) | 2,071 | 0 | 265 | Some link to Izdatnici |
+| **9** (waste) | 166,038 | **166,038 (100%)** | 0 | DokRBr → Ispratnica (destruction certificate) |
+
+The research notes treated Proces=7 as "EX shipment with Ispratnica" — actually it's "exit-to-producer with Izdatnica". The true Ispratnica is for **waste destruction**, not export. Migration needs a `DocumentSource` resolver keyed on `Proces`: 7 → `Izdatnica`, 9 → `Ispratnica`, 8 → `Izdatnica` (return voucher). This drastically changes the BLUEPRINT §9.1 mapping table — flag for BLUEPRINT review.
+
+#### Master data volumes
+
+| Domain | Count |
+|--------|-------|
+| `tblArtikli` total | 11,114 |
+| ├ Materials (`ArtKatTip=1`) | 8,960 |
+| ├ Finished (`ArtKatTip=0`) | 2,154 |
+| ├ ArtOtpadZao | **0** (research expected this to be the legacy "waste catalog" flag — unused) |
+| ├ Archived | 8,953 (80% — large dormant set) |
+| └ With "A" suffix variant | 456 |
+| `Odobrenija` | 4 (2 with garancija) |
+| `Zaklucoci` (non-staging) | 269 |
+| `Zaklucoci` staging `00000` | **0** (already cleaned; per research, ELON usually has staging markers) |
+| `KnigaNai` (tariffs) | **table absent** — distinct `TarBr` values in `FakturiU5`: **147** |
+| Distinct `ZemjaPoteklo` in lines | 30 |
+| `DrzavaKor` (country lookup) | 240 |
+| `EdMerKor` (UoM lookup) | 34 (only 3 actively used in lines: PCS, MTR, PRS) |
+
+#### Domain volumes (full table)
+
+| Table | Rows | Note |
+|-------|------|------|
+| LagerMaterijali | 760,645 | Main movement ledger |
+| Normativi | 319,212 | BOM lines — massive (avg ~62 lines per FG over 5,130 FGs) |
+| PropratniciStavki | 295,918 | Delivery-note lines, not in BLUEPRINT mapping — new entity? Flag for Cowork. |
+| FakturiU5 (lines) | 43,224 | |
+| FakturiU5Z (headers) | 721 | |
+| LagerGotoviProizvodi | 15,203 | |
+| Ispratnici | 776 | Surprisingly few given 166k waste rows — many waste rows share one Ispratnica |
+| Izdatnici | 1,119 | |
+| Propratnici | 1,658 | Out-of-BLUEPRINT — propratnici/PropratniciStavki not in §9.1 mapping. **Flag for Cowork.** |
+| GotoviProizvodi | 5,130 | |
+| NaimU5 | 10,885 | Migration: BLUEPRINT says NOT a table — computed view. Verify migration sources lines from `FakturiU5` (43k) and re-aggregates, ignoring this table. |
+| NormativTemplS | 20,434 | BOM templates by size — heavy use |
+| NormativTemplO | 522 | BOM templates by operation |
+| NormativiVelicini | **0** | Size variants NOT used historically — BLUEPRINT keeps the entity though |
+| tblIzvozniFakturi + Stavki | 3,239 + 57,857 | **Commercial** export invoice (not customs decl) — separate from BLUEPRINT scope. Maps to a `CommercialInvoice` entity that isn't in §3.2. **Flag for Cowork.** |
+| Arhiva | 6 | |
+
+#### Employees table discovered
+
+- No employee table in this DB. `FakturiU5Z.User` and `LagerMaterijali.User` columns hold a small integer (0–8), with no lookup table to resolve names.
+- Department / Position columns: **not present anywhere in the 31 tables.**
+- Implication for Task 17.7.5 (Department + Position lookup promotion): the v1 LON DB must seed Department/Position lists from scratch (or from the production ELON copy, NOT from this local extract). PREP cannot enumerate distinct values.
+
+#### Edge cases
+
+- **Orphan LagerMaterijali** (no matching FakturiU5Z header on `(OdobrenieRBr, FakturaU5Broj, FakturaU5Datum)`): **0** rows. Clean.
+- **Staging marker rows** (`ZaklucokBroj='00000'`): **0**. Already pruned.
+- **Article variants** ("A" suffix in `ArtKatBr`): **456** rows.
+- **Currencies in `FakturiU5` lines**: EUR 43,223 + NULL 1 → effectively single-currency. No MKD/USD/RSD lines in this snapshot. Simpler than BLUEPRINT §5.2 plans for.
+- **Distinct countries of origin**: **30** (top: AT 14k, DE 7.6k, BG 7.2k, CN 6k, TR 2k — EU-heavy with a long China/Asia tail).
+- **Inflate-for-waste articles**: only **4 articles** with `ArtOtpadProc > 0`, max value 2%. Contradicts research note expectation that TEKSPORT/DREKKV inflate norms by 100/(100-ArtOtpadProc). This column appears to be **almost completely unused** in TEKSPORT's data. Inflate-for-waste logic should be kept as a feature flag, defaulting OFF for new tenants. **Flag for Cowork.**
+- **`Proizvoditeli` (comma-text)** on GotoviProizvodi: **NULL/empty for all 5 candidates**. The producer attribution lives on `LagerMaterijali.Proizvoditel` (numeric) and `Ispratnici.Proizvoditel`/`Izdatnici.Proizvoditel`. Migration mapper must source producers from movement rows, not from GotoviProizvodi.Proizvoditeli.
+
+### Task 3 — Teksport (LON dev DB) state + wipe plan
+
+#### Critical discovery: there is no local LON dev DB
+
+`sys.databases` on `localhost`:
+
+```
+CDEPS, ECUS, e_CUS, Elbosoft, ELON, ELON_BMZ1SK, ELON_T, Kasper,
+master, model, msdb, NebimV3EventLog, NebimV3Master, ReportServer,
+ReportServerTempDB, tempdb, Texport, VGSL, VGSP
+```
+
+- `appsettings.Development.json` points at `Server=localhost;Database=LONDB;Integrated Security=True;TrustServerCertificate=True` — `LONDB` is **absent**.
+- The local `Texport` DB **is the production Nebim V3 ERP** of the customer (Turkish apparel ERP — table prefixes `cd*`, `bs*`, `pr*`, `tr*`, `dfX*`, `auX*`, `zt*` with volumes like `prItemBatchBarcode=1.78M` rows). Completely unrelated to LON. CLAUDE.md §4 calling it "Local LON DB" is **stale and must be corrected**.
+
+Implication: LON development to date has been happening on the **VPS LONDB only** (Docker container at `root@173.212.254.216:/opt/apps/LON/LON-test`), not locally. The wipe target is the VPS DB.
+
+#### Current LON migration baseline
+
+- `dotnet ef migrations` file count: **51** (`ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | wc -l`).
+- CLAUDE.md §5 says 43 → **stale** by 8 migrations. Phase 16.C and Phase 15 polish migrations accumulated. Update CLAUDE.md as part of Phase 17 cleanup.
+- Latest: `20260511111516_P16_C3c_AddSupplierInvoice`.
+
+#### Wipe plan deliverable
+
+`docs/migration/TEKSPORT_WIPE_PLAN.md` (just written, **NOT executed**) covers:
+
+1. Target = VPS LONDB (per §0 of the plan).
+2. FK-respecting truncation order across all 79 entity DbSets, plus a faster `sp_MSforeachtable NOCHECK CONSTRAINT` short-cut.
+3. Identity reseed only for `int IDENTITY` PKs (most LON entities are Guid — explicit list deferred to execute-wipe session).
+4. Tables to preserve: none for v1; only `__EFMigrationsHistory` untouched.
+5. Seed-data spec: 1 Tenant (TEKSPORT, deterministic sentinel-zeros GUID), 12 Roles per BLUEPRINT §4.1, all Permissions + RolePermissions, 1 Administrator user (password from `LON_BOOTSTRAP_ADMIN_PASSWORD` env var — NOT hardcoded), CodeListItems (EUR/USD/MKD/RSD + 30 origin codes + UoM set), 5 default WorkCenters, 4 CustomsProcedures (4051, 1041, 6121, 4200).
+6. Mandatory pre-wipe `BACKUP DATABASE LONDB TO DISK ... WITH COMPRESSION` + `RESTORE VERIFYONLY` gate.
+7. Post-wipe verification queries (empty-tables check + seed-row-count check + login smoke).
+
+**Wipe NOT executed.** Awaiting three user decisions documented at the bottom of the wipe plan.
+
+### Blockers / questions for Cowork architect
+
+These contradictions/discoveries should be reconciled in `docs/migration/MAPPING.md` before Phase 17 E0 starts:
+
+1. **BLUEPRINT §9.1 mapping table is partly wrong** about `LagerMaterijali` exits. Update it: Proces 7 → `Shipment` (via Izdatnica), not Ispratnica. Proces 9 → `WasteDeclaration` via Ispratnica. Add an explicit `DocumentSource` discriminator.
+2. **Local ELON DB is a TEKSPORT-only slice** missing the cross-tenant reference tables (KnigaNai, tblFirmi, Aneksi, Preferencijal). Phase 21 cutover plan needs an item: "request `KnigaNai`, `Aneksi`, `Preferencijal`, `tblFirmi`, `tblKorisnikTEKSPORT` export from Teksport prod, send via secure transfer".
+3. **CLAUDE.md §4 and §5 are stale**: local LON DB doesn't exist; migration count is 51 not 43. Both lines must be corrected.
+4. **`tblIzvozniFakturi` (commercial export invoice, 3.2k headers + 57.9k lines)** is not in BLUEPRINT §3.2 or §9.1. Decision needed: is this a new LON entity (`CommercialInvoice`), or is it folded into existing `Invoice`? Out of v1 scope, or in?
+5. **`Propratnici` / `PropratniciStavki` (1.6k + 295.9k)** also not in BLUEPRINT mapping. Likely "delivery note" — does this map to LON's existing `Shipment` flow or is it a separate paper-trail entity? Decide before Phase 17 E8.
+6. **`ArtOtpadProc` inflate-for-waste pattern barely used** in Teksport (4 articles out of 8,960 materials, max 2%). Should LON keep this code path (BLUEPRINT §3.5 mentions it under "TEKSPORT quirks") or feature-flag it OFF by default with override? Influence on Phase 17.7's MaterialIssue computation.
+7. **NaimU5 has 10,885 rows in legacy** — BLUEPRINT calls it "computed view" in LON. Decision is sound, but Phase 21 reconciliation must SUM (lines grouped by TariffCode+UoM+CountryOfOrigin) and assert match with legacy NaimU5 rows. Add to §9.1 reconciliation queries.
+8. **Producer attribution conflict**: BLUEPRINT §9.1 maps `Proizvoditeli` (comma-text on GotoviProizvodi) → `Partner` (type=Producer). Reality: `GotoviProizvodi.Proizvoditeli` is NULL on every candidate. True producer attribution is `LagerMaterijali.Proizvoditel` (numeric ID) per movement row. Migration must build Partner catalogue from the union of movement-row Proizvoditel values, not from GotoviProizvodi.
+9. **Employee/User migration source** is not in the local ELON DB. Department/Position lookups planned for task 17.7.5 will need a separate export from Teksport prod. Or accept fresh-start (no historical employee attribution carried over) — recommended for v1.
+
+Outcome: [x] done (no code change, no VPS touch, no DB write — PREP only).
+Commit to follow: `docs/migration/TEKSPORT_WIPE_PLAN.md` + `SESSION_LOG.md`.
+
+---
+
 ## 2026-05-11 — P16.D — Test coverage gap fill (WMS + Roles + MasterData CRUD)
 Plan: Затворам Phase 16 со D1/D2/D3 integration test файлови. No VPS deploy — test-only.
 Files touched:
