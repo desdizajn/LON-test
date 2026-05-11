@@ -24,7 +24,6 @@ import ItemsList from './pages/MasterData/Items/ItemsList';
 import ItemDetail from './pages/MasterData/Items/ItemDetail';
 import PartnersList from './pages/MasterData/Partners/PartnersList';
 import PartnerDetail from './pages/MasterData/Partners/PartnerDetail';
-import WarehousesList from './pages/MasterData/Warehouses/WarehousesList';
 import UoMList from './pages/MasterData/UoM/UoMList';
 import BOMsList from './pages/MasterData/BOMs/BOMsList';
 import BOMDetail from './pages/MasterData/BOMs/BOMDetail';
@@ -473,7 +472,6 @@ const App: React.FC = () => {
             <Route path="/master-data/items/:id" element={<ItemDetail />} />
             <Route path="/master-data/partners" element={<PartnersList />} />
             <Route path="/master-data/partners/:id" element={<PartnerDetail />} />
-            <Route path="/master-data/warehouses-old" element={<WarehousesList />} />
             <Route path="/master-data/warehouses" element={<WarehouseList />} />
             <Route path="/master-data/warehouses/:id" element={<WarehouseForm />} />
             <Route path="/master-data/locations" element={<LocationList />} />

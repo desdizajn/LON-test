@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { customsApi } from '../services/api';
 import CustomsDeclarationForm from '../components/Customs/CustomsDeclarationForm';
