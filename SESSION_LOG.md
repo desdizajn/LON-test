@@ -2,6 +2,30 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.B2 — Harden DataTable + Production.tsx pilot migration
+Plan: Аудит на `DataTable` capabilities → `docs/PHASE16_DATATABLE_GAPS.md`. Имплементирам недостасните: multi-select checkboxes (controlled `selectedIds`/`onSelectionChange`) + expandable rows (render-prop). Пишувам 6 тестови. Migrate `pages/Production.tsx` orders grid: zero hand-rolled `<table>` во самата страница; expandable children rendering преку `ProductionVariantsSubTable` child component.
+Files touched:
+  - `docs/PHASE16_DATATABLE_GAPS.md` (new, 53 lines)
+  - `frontend/web/src/components/common/DataTable.tsx` (+selection, +expandable, +rowClassName; +60 lines net)
+  - `frontend/web/src/components/common/DataTable.test.tsx` (new, 6 tests, @testing-library/react)
+  - `frontend/web/src/components/Production/ProductionVariantsSubTable.tsx` (new child component for variant rows in expanded panel)
+  - `frontend/web/src/pages/Production.tsx` (-77 lines hand-rolled markup, +85 lines columns/rows config + DataTable usage)
+Verification:
+  - `grep -c "<table" src/pages/Production.tsx` → 0 (was 1).
+  - `grep -c "DataTable" src/pages/Production.tsx` → 2 (import + usage).
+  - tsc на src: 0 errors.
+  - eslint src: 0 errors, 0 warnings.
+  - `react-scripts test --watchAll=false`: 19/19 pass (6 new DataTable + 13 filterNav).
+  - VPS deploy: build OK, нов JS bundle `main.17cc4ce0.js`, /health healthy.
+Commit: `897cef4`
+Outcome: [x] done
+Notes:
+  - Expandable rows infrastructure се додава generic-ki во DataTable. Иднина: ItemsList можеби ќе го испoлзува за per-item variant rollups.
+  - `ProductionVariantsSubTable` интенционално не e нов DataTable instance — variant rows би се рендерирале со full search/pagination chrome, а UX за parent-child grouping би се изгубил. Inline sub-table со MUI Box стилизирана за continuity со MUI table визуелна.
+  - VPS interactive smoke (sort click, pagination click, expand-row toggle): се остава на корисник или browser MCP во наредна сесија. Curl-level health + новиот bundle потврдуваат deploy.
+
+---
+
 ## 2026-05-11 — P16.B1 — react-query install + Inventory.tsx pilot migration
 Plan: Инсталирам `@tanstack/react-query` v5 + devtools. Wrap-нам `App.tsx` во `QueryClientProvider` со staleTime 30s + refetchOnWindowFocus. Креирам `hooks/queries/useInventory.ts` со 10 hooks (2 queries + 8 mutations). Rewrite `pages/Inventory.tsx` за да чита/мутаци преку hook-ите; нула `wmsApi.*`/`masterDataApi.*`/`axios` директни повици во самата страница.
 Files touched:
