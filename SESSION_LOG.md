@@ -2,6 +2,31 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.A2 — Honest navGroups for 6 localStorage-only pages
+Plan: Flip `backendStatus: 'exists' -> 'partial'` за 6-те страници кои лажеа за BE покриеност (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training). Точкам workPlanRef на P16.C1/C2/C3. Додавам `<LocalStorageWarningBanner>` под subtitle на секоja од 6 страници; банерот чита нов `common.localStorageWarning` клуч добавен во en/mk/sq/sr.
+Files touched:
+  - `frontend/web/src/nav/navGroups.ts` (6 NavItem-и flipped)
+  - `frontend/web/src/i18n/locales/{en,mk,sq,sr}.json` (+1 клуч секoj)
+  - `frontend/web/src/components/common/LocalStorageWarningBanner.tsx` (new, 22 lines)
+  - `frontend/web/src/pages/Management/{OpenRisks,Escalations}.tsx` (import + 1-line mount)
+  - `frontend/web/src/pages/Finance/{CostAccounting,PayrollAggregate,SupplierInvoices}.tsx` (import + 1-line mount)
+  - `frontend/web/src/pages/Hr/Training.tsx` (import + 1-line mount)
+Verification:
+  - Локализација: 4/4 локали имаат `localStorageWarning` (en/mk/sq/sr).
+  - navGroups: `grep -A3 backendStatus` за 6-те патишта -> 6× `partial`, 6× workPlanRef P16.C*.
+  - tsc на src: 0 errors.
+  - eslint src: 0 errors, 0 warnings.
+  - `react-scripts test filterNav`: 13/13 pass (групната структура не е променета, тестот не покрива item status).
+  - VPS deploy: `docker compose build frontend && up -d frontend` -> `lon-frontend Started`; `/health` -> healthy.
+  - VPS smoke: spot check на 6-те URL-и → SPA shells served 200 (банерот ќе се рендерира кога користникот ќе се логира; визуелна потврда се остава на корисникот при follow-up).
+Commit: `c9000b5`
+Outcome: [x] done
+Notes:
+  - Шеирани компонент-pattern за банерот (`LocalStorageWarningBanner.tsx`) — намерно. Кога C1/C2/C3 ги мигрираат страниците, ќе ги тргнаме single-line mount-ите и компонентот ќе остане dead → ќе се избрише со последниот.
+  - Не сум допирал `plannedBehavior` копитата; тие остануваат како roadmap text за placeholder UI.
+
+---
+
 ## 2026-05-11 — P16.A1 — Remove dead WarehousesList + /warehouses-old route
 Plan: A `App.tsx` имаше две паралелни warehouse list pages — `WarehousesList` (стара) на `/master-data/warehouses-old` + `WarehouseList` (нова) на `/master-data/warehouses`. Грепот потврди дека стариот компонент не е референциран никаде освен во самиот `App.tsx`. Бришам го фајлот + import + Route.
 Files touched:

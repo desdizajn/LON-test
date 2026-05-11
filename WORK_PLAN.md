@@ -880,7 +880,7 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 ### Wave A — Cleanup (no business logic)
 
 - [x] **P16.A1** ✅ *2026-05-11 (commit `b24ad80`)* — Removed dead `pages/MasterData/Warehouses/WarehousesList.tsx` + `/master-data/warehouses-old` Route. Fixed pre-existing unused-import warning in `pages/Customs.tsx`. eslint 0/0; filterNav 13/13. VPS deployed.
-- [ ] **P16.A2** — Flip `navGroups.ts` `backendStatus` to `partial` for the 6 localStorage-only pages + warning banner via `t('common.localStorageWarning')` (4 locales).
+- [x] **P16.A2** ✅ *2026-05-11 (commit `c9000b5`)* — 6 nav items flipped to `partial` + `workPlanRef: P16.C1/C2/C3` + `existingDataHint` warning. New shared `LocalStorageWarningBanner` mounted on all 6 pages. `common.localStorageWarning` added to en/mk/sq/sr. VPS deployed, healthy.
 - [ ] **P16.A3** — `docs/PHASE16_AUDIT.md`: MasterData duplication audit (no deletes). File any unambiguous-dead under `P16.A3.followup`.
 
 ### Wave B — UI foundations
@@ -915,6 +915,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.A2** — Flip `navGroups.ts` `backendStatus: 'exists' → 'partial'` for the 6 localStorage-only nav items (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training). Each gets `workPlanRef: 'P16.C1'/'P16.C2'/'P16.C3'` + `existingDataHint` warning suffix. Each page gets a top `<Alert severity="warning">` rendering `t('common.localStorageWarning')`; key added to 4 locales. tsc + eslint clean, filterNav still passes, VPS smoke confirms banner on all 6 pages.
+**P16.A3** — `docs/PHASE16_AUDIT.md` MasterData duplication audit. Walk every `frontend/web/src/pages/MasterData/**/*.tsx`, fill table: Component | Path | RoutedRefs | Lines | LastCommit | Verdict | Reason. No deletes in A3 itself — file followups under P16.A3.* if unambiguous-dead. Also note dead pages in `pages/` root.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
