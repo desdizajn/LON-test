@@ -1,4 +1,5 @@
 using LON.Application.Hr;
+using LON.Application.Hr.Certifications;
 using LON.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -134,6 +135,51 @@ public class HrOperationsController : BaseController
         [FromQuery] bool? activeOnly)
     {
         var result = await Mediator.Send(new GetAssignmentsQuery(employeeId, machineId, activeOnly));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // ─────────────────────── P16.C2 — certifications ──────────────────────
+    // Backs pages/Hr/Training.tsx. Tenant isolation via the global EF query
+    // filter on the ITenantScoped EmployeeCertification entity.
+
+    /// <summary>P16.C2 — list certifications (optional employee filter).</summary>
+    [HttpGet("certifications")]
+    public async Task<IActionResult> GetCertifications([FromQuery] Guid? employeeId)
+    {
+        var result = await Mediator.Send(new GetEmployeeCertificationsQuery(employeeId));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>P16.C2 — certifications expiring within N days (default 30).</summary>
+    [HttpGet("certifications/expiring")]
+    public async Task<IActionResult> GetExpiring([FromQuery] int withinDays = 30)
+    {
+        var result = await Mediator.Send(new GetExpiringCertificationsQuery(withinDays));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>P16.C2 — create certification.</summary>
+    [HttpPost("certifications")]
+    public async Task<IActionResult> CreateCertification([FromBody] CreateEmployeeCertificationCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>P16.C2 — update certification.</summary>
+    [HttpPut("certifications/{id:guid}")]
+    public async Task<IActionResult> UpdateCertification(Guid id, [FromBody] UpdateEmployeeCertificationCommand command)
+    {
+        if (command.Id != id) command = command with { Id = id };
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>P16.C2 — soft-delete certification.</summary>
+    [HttpDelete("certifications/{id:guid}")]
+    public async Task<IActionResult> DeleteCertification(Guid id)
+    {
+        var result = await Mediator.Send(new DeleteEmployeeCertificationCommand(id));
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

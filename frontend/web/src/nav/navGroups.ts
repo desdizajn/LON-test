@@ -524,12 +524,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.hr.training',
         icon: '🎓',
         path: '/hr/training',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C2',
-        plannedBehavior:
-          'Сертификати на вработени per machine type / operation. Рок на важност, предупредувања пред истек.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C2 ќе го замени со BE entity (EmployeeCertification).',
+          'P16.C2 — EmployeeCertification. Tenant-scoped CRUD via /api/Hr/certifications + /expiring traffic-light feed.',
       },
       {
         key: 'hr-payroll-export',

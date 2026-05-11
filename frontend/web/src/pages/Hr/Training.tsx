@@ -4,90 +4,97 @@ import { toast } from 'react-toastify';
 import { masterDataApi } from '../../services/api';
 import { translateError } from '../../utils/translateError';
 import { formatDate } from '../../utils/format';
-import LocalStorageWarningBanner from '../../components/common/LocalStorageWarningBanner';
 import { exportToCsv } from '../../utils/export';
+import {
+  EmployeeCertificationDto,
+  useCertificationsQuery,
+  useCreateCertification,
+  useDeleteCertification,
+} from '../../hooks/queries/useTrainings';
 
 /**
- * P10.6 — Training records.
- *
- * Lightweight training-log per employee. Stored in browser localStorage per
- * tenant until a real TrainingRecord backend entity lands. Supports
- * certification expiry + skills taxonomy.
+ * P16.C2 — Training / certification records backed by the
+ * `EmployeeCertification` entity. Replaces the localStorage-only
+ * persistence the page used to depend on.
  */
 
 type Employee = { id: string; employeeNumber: string; firstName: string; lastName: string; department?: string };
 
-type TrainingRecord = {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  topic: string;
-  skillArea: string;
-  provider: string;
-  completionDate: string;
-  expiryDate: string;
-  certificate: string;
-  notes: string;
-};
+const SKILL_AREAS = ['Sewing', 'Cutting', 'Quality Control', 'Machine Operation', 'Safety', 'Customs', 'IT', 'Management', 'Other'];
 
-const storageKey = (tenantId: string) => `lon.training.${tenantId || 'default'}`;
-function currentTenantId(): string {
-  try {
-    const raw = localStorage.getItem('token') || '';
-    const part = raw.split('.')[1];
-    if (!part) return 'default';
-    const p = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
-    return p['tenant_id'] || 'default';
-  } catch { return 'default'; }
+interface DraftState {
+  employeeId: string;
+  certificationName: string;
+  skillArea: string;
+  issuingAuthority: string;
+  issuedDate: string;
+  expiryDate: string;
+  certificateNumber: string;
 }
 
-const SKILL_AREAS = ['Sewing', 'Cutting', 'Quality Control', 'Machine Operation', 'Safety', 'Customs', 'IT', 'Management', 'Other'];
+const today = () => new Date().toISOString().slice(0, 10);
 
 const TrainingPage: React.FC = () => {
   const { t } = useTranslation();
-  const today = new Date().toISOString().slice(0, 10);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [rows, setRows] = useState<TrainingRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
 
-  const [draft, setDraft] = useState<TrainingRecord>({
-    id: '', employeeId: '', employeeName: '', topic: '', skillArea: 'Sewing',
-    provider: '', completionDate: today, expiryDate: '', certificate: '', notes: '',
-  });
+  const { data: rows = [], isLoading } = useCertificationsQuery();
+  const createMut = useCreateCertification();
+  const deleteMut = useDeleteCertification();
 
-  const tenantId = currentTenantId();
+  const [draft, setDraft] = useState<DraftState>({
+    employeeId: '',
+    certificationName: '',
+    skillArea: 'Sewing',
+    issuingAuthority: '',
+    issuedDate: today(),
+    expiryDate: '',
+    certificateNumber: '',
+  });
 
   useEffect(() => {
     (async () => {
-      try { const resp = await masterDataApi.getEmployees(); setEmployees((resp.data as Employee[]) ?? []); }
-      catch (err) { setError(translateError(err)); }
+      try {
+        const resp = await masterDataApi.getEmployees();
+        setEmployees((resp.data as Employee[]) ?? []);
+      } catch (err) {
+        setError(translateError(err));
+      }
     })();
   }, []);
 
-  useEffect(() => {
-    const raw = localStorage.getItem(storageKey(tenantId));
-    if (raw) { try { setRows(JSON.parse(raw)); } catch { /* ignore */ } }
-  }, [tenantId]);
-
-  function persist(next: TrainingRecord[]) { setRows(next); localStorage.setItem(storageKey(tenantId), JSON.stringify(next)); }
-
-  function add() {
-    if (!draft.employeeId || !draft.topic.trim()) { toast.error(t('training.invalid') as string); return; }
-    const emp = employees.find((e) => e.id === draft.employeeId);
-    persist([{
-      ...draft,
-      id: crypto.randomUUID(),
-      employeeName: emp ? `${emp.firstName} ${emp.lastName}` : draft.employeeId,
-    }, ...rows]);
-    setDraft({ ...draft, id: '', topic: '', provider: '', certificate: '', notes: '' });
-    toast.success(t('training.saved') as string);
+  async function add() {
+    if (!draft.employeeId || !draft.certificationName.trim()) {
+      toast.error(t('training.invalid') as string);
+      return;
+    }
+    try {
+      await createMut.mutateAsync({
+        employeeId: draft.employeeId,
+        certificationName: draft.certificationName.trim(),
+        skillArea: draft.skillArea || null,
+        issuingAuthority: draft.issuingAuthority || null,
+        issuedDate: draft.issuedDate,
+        expiryDate: draft.expiryDate || null,
+        certificateNumber: draft.certificateNumber || null,
+      });
+      setDraft({ ...draft, certificationName: '', issuingAuthority: '', certificateNumber: '' });
+      toast.success(t('training.saved') as string);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed');
+    }
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (!window.confirm(t('training.confirmDelete') as string)) return;
-    persist(rows.filter((r) => r.id !== id));
+    try {
+      await deleteMut.mutateAsync(id);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed');
+    }
   }
 
   const enriched = useMemo(() => {
@@ -101,15 +108,20 @@ const TrainingPage: React.FC = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return enriched.filter((r) => {
-      if (expiringOnly && (r.daysLeft === null || r.daysLeft > 60)) return false;
-      if (q && !`${r.employeeName} ${r.topic} ${r.skillArea} ${r.provider} ${r.certificate}`.toLowerCase().includes(q)) return false;
-      return true;
-    }).sort((a, b) => {
-      if (a.daysLeft === null) return 1;
-      if (b.daysLeft === null) return -1;
-      return a.daysLeft - b.daysLeft;
-    });
+    return enriched
+      .filter((r) => {
+        if (expiringOnly && (r.daysLeft === null || r.daysLeft > 60)) return false;
+        if (q) {
+          const hay = `${r.employeeName ?? ''} ${r.certificationName} ${r.skillArea ?? ''} ${r.issuingAuthority ?? ''} ${r.certificateNumber ?? ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.daysLeft === null) return 1;
+        if (b.daysLeft === null) return -1;
+        return a.daysLeft - b.daysLeft;
+      });
   }, [enriched, expiringOnly, search]);
 
   const expiringCount = enriched.filter((r) => r.daysLeft !== null && r.daysLeft <= 60 && r.daysLeft >= 0).length;
@@ -119,8 +131,6 @@ const TrainingPage: React.FC = () => {
     <div style={{ padding: 16 }}>
       <h1>{t('training.title')}</h1>
       <p style={{ color: '#666' }}>{t('training.subtitle')}</p>
-
-      <LocalStorageWarningBanner />
 
       {error && <div style={{ padding: 12, background: '#fdecea', color: '#a00', borderRadius: 4, marginBottom: 12 }}>{error}</div>}
 
@@ -134,7 +144,7 @@ const TrainingPage: React.FC = () => {
             </select>
           </label>
           <label>{t('training.topic')}
-            <input type="text" value={draft.topic} onChange={(e) => setDraft({ ...draft, topic: e.target.value })} style={{ padding: 6, width: '100%' }} />
+            <input type="text" value={draft.certificationName} onChange={(e) => setDraft({ ...draft, certificationName: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
           <label>{t('training.skillArea')}
             <select value={draft.skillArea} onChange={(e) => setDraft({ ...draft, skillArea: e.target.value })} style={{ padding: 6, width: '100%' }}>
@@ -142,19 +152,19 @@ const TrainingPage: React.FC = () => {
             </select>
           </label>
           <label>{t('training.provider')}
-            <input type="text" value={draft.provider} onChange={(e) => setDraft({ ...draft, provider: e.target.value })} style={{ padding: 6, width: '100%' }} />
+            <input type="text" value={draft.issuingAuthority} onChange={(e) => setDraft({ ...draft, issuingAuthority: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
           <label>{t('training.completionDate')}
-            <input type="date" value={draft.completionDate} onChange={(e) => setDraft({ ...draft, completionDate: e.target.value })} style={{ padding: 6, width: '100%' }} />
+            <input type="date" value={draft.issuedDate} onChange={(e) => setDraft({ ...draft, issuedDate: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
           <label>{t('training.expiryDate')}
             <input type="date" value={draft.expiryDate} onChange={(e) => setDraft({ ...draft, expiryDate: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
           <label>{t('training.certificate')}
-            <input type="text" value={draft.certificate} onChange={(e) => setDraft({ ...draft, certificate: e.target.value })} style={{ padding: 6, width: '100%' }} />
+            <input type="text" value={draft.certificateNumber} onChange={(e) => setDraft({ ...draft, certificateNumber: e.target.value })} style={{ padding: 6, width: '100%' }} />
           </label>
-          <button onClick={add} style={{ padding: '8px 12px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}>
-            {t('training.add')}
+          <button onClick={add} disabled={createMut.isPending} style={{ padding: '8px 12px', background: 'var(--taris-blue-500, #1e88e5)', color: 'white', border: 'none', borderRadius: 4 }}>
+            {createMut.isPending ? t('common.saving') : t('training.add')}
           </button>
         </div>
       </fieldset>
@@ -164,15 +174,17 @@ const TrainingPage: React.FC = () => {
         <label><input type="checkbox" checked={expiringOnly} onChange={(e) => setExpiringOnly(e.target.checked)} /> {t('training.expiringOnly')}</label>
         <span style={{ color: '#ef6c00' }}>{t('training.expiring', { count: expiringCount })}</span>
         <span style={{ color: '#c62828' }}>{t('training.expired', { count: expiredCount })}</span>
-        <span style={{ color: '#888', marginLeft: 'auto' }}>{t('training.rowCount', { count: filtered.length })}</span>
+        <span style={{ color: '#888', marginLeft: 'auto' }}>
+          {isLoading ? t('common.loading') : t('training.rowCount', { count: filtered.length })}
+        </span>
         <button onClick={() => exportToCsv(filtered, [
-          { key: 'employeeName', label: t('training.employee') as string },
-          { key: 'topic', label: t('training.topic') as string },
+          { key: 'employeeName', label: t('training.employee') as string, get: (r: EmployeeCertificationDto) => r.employeeName ?? '' },
+          { key: 'certificationName', label: t('training.topic') as string },
           { key: 'skillArea', label: t('training.skillArea') as string },
-          { key: 'provider', label: t('training.provider') as string },
-          { key: 'completionDate', label: t('training.completionDate') as string, type: 'date' },
+          { key: 'issuingAuthority', label: t('training.provider') as string },
+          { key: 'issuedDate', label: t('training.completionDate') as string, type: 'date' },
           { key: 'expiryDate', label: t('training.expiryDate') as string, type: 'date' },
-          { key: 'certificate', label: t('training.certificate') as string },
+          { key: 'certificateNumber', label: t('training.certificate') as string },
         ], 'training')}
           disabled={filtered.length === 0}
           style={{ padding: '6px 12px' }}
@@ -196,19 +208,19 @@ const TrainingPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{t('training.empty')}</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 20, color: '#888' }}>{isLoading ? t('common.loading') : t('training.empty')}</td></tr>}
             {filtered.map((r) => (
               <tr key={r.id}>
-                <td><strong>{r.employeeName}</strong></td>
-                <td>{r.topic}</td>
-                <td>{r.skillArea}</td>
-                <td>{formatDate(r.completionDate)}</td>
+                <td><strong>{r.employeeName ?? r.employeeNumber ?? '-'}</strong></td>
+                <td>{r.certificationName}</td>
+                <td>{r.skillArea ?? '-'}</td>
+                <td>{formatDate(r.issuedDate)}</td>
                 <td>{r.expiryDate ? formatDate(r.expiryDate) : '-'}</td>
                 <td style={{ color: r.daysLeft === null ? '#888' : r.daysLeft < 0 ? '#c62828' : r.daysLeft <= 60 ? '#ef6c00' : '#2e7d32', fontWeight: 600 }}>
                   {r.daysLeft === null ? '-' : r.daysLeft < 0 ? t('training.expiredBadge') : r.daysLeft}
                 </td>
-                <td>{r.certificate || '-'}</td>
-                <td><button onClick={() => remove(r.id)} style={{ padding: '4px 10px', fontSize: 12, color: '#c62828' }}>×</button></td>
+                <td>{r.certificateNumber || '-'}</td>
+                <td><button onClick={() => remove(r.id)} disabled={deleteMut.isPending} style={{ padding: '4px 10px', fontSize: 12, color: '#c62828' }}>×</button></td>
               </tr>
             ))}
           </tbody>

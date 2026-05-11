@@ -1377,6 +1377,86 @@ export interface paths {
       };
     };
   };
+  "/api/Hr/certifications": {
+    get: {
+      parameters: {
+        query?: {
+          employeeId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateEmployeeCertificationCommand"];
+          "text/json": components["schemas"]["CreateEmployeeCertificationCommand"];
+          "application/*+json": components["schemas"]["CreateEmployeeCertificationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/certifications/expiring": {
+    get: {
+      parameters: {
+        query?: {
+          withinDays?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Hr/certifications/{id}": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateEmployeeCertificationCommand"];
+          "text/json": components["schemas"]["UpdateEmployeeCertificationCommand"];
+          "application/*+json": components["schemas"]["UpdateEmployeeCertificationCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/import/sessions": {
     get: {
       parameters: {
@@ -4282,6 +4362,19 @@ export interface components {
       warehouseId?: string;
       notes?: string | null;
     };
+    CreateEmployeeCertificationCommand: {
+      /** Format: uuid */
+      employeeId?: string;
+      certificationName?: string | null;
+      skillArea?: string | null;
+      /** Format: date-time */
+      issuedDate?: string;
+      /** Format: date-time */
+      expiryDate?: string | null;
+      issuingAuthority?: string | null;
+      certificateNumber?: string | null;
+      notes?: string | null;
+    };
     CreateEmployeeRequest: {
       /** Format: uuid */
       userId?: string;
@@ -5224,6 +5317,19 @@ export interface components {
       countryOfDispatch?: string | null;
       countryOfDestination?: string | null;
       specialRemarks?: string | null;
+      notes?: string | null;
+    };
+    UpdateEmployeeCertificationCommand: {
+      /** Format: uuid */
+      id?: string;
+      certificationName?: string | null;
+      skillArea?: string | null;
+      /** Format: date-time */
+      issuedDate?: string;
+      /** Format: date-time */
+      expiryDate?: string | null;
+      issuingAuthority?: string | null;
+      certificateNumber?: string | null;
       notes?: string | null;
     };
     UpdateEmployeeRequest: {

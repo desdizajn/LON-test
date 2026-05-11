@@ -121,6 +121,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Management (P16.C1)
     public DbSet<RiskRegisterItem> RiskRegisterItems => Set<RiskRegisterItem>();
 
+    // HR (P16.C2)
+    public DbSet<EmployeeCertification> EmployeeCertifications => Set<EmployeeCertification>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

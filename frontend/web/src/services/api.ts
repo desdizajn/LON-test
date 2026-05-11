@@ -337,6 +337,18 @@ export const hrApi = {
     api.post(`/Hr/assignments/${id}/end`, { validTo }),
   getAssignments: (params?: { employeeId?: string; machineId?: string; activeOnly?: boolean }) =>
     api.get('/Hr/assignments', { params }),
+
+  // P16.C2 — certifications
+  getCertifications: (employeeId?: string) =>
+    api.get('/Hr/certifications', { params: { employeeId } }),
+  getExpiringCertifications: (withinDays = 30) =>
+    api.get('/Hr/certifications/expiring', { params: { withinDays } }),
+  createCertification: (data: any) =>
+    api.post('/Hr/certifications', data),
+  updateCertification: (id: string, data: any) =>
+    api.put(`/Hr/certifications/${id}`, data),
+  deleteCertification: (id: string) =>
+    api.delete(`/Hr/certifications/${id}`),
 };
 
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)
