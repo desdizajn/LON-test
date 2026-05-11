@@ -2,6 +2,41 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.C3 — Finance localStorage trio (CostRate, PayrollPeriod+Line, SupplierInvoice) migrated to BE
+Plan: Три entity-секвенци за затворање на Phase 16.C:
+  - C3.a `CostRate` (Scope=Machine/Operator/Shift/Operation/WorkCenter)
+  - C3.b `PayrollPeriod` + `PayrollLine` со Draft → Finalized → Exported лифциклус, seed-ан од Attendance + Absence
+  - C3.c `SupplierInvoice` со derived `Overdue` статус (не persisted)
+Backend (по slice):
+  - C3.a — 5 handlers, 4 endpoints, 6 tests, migration `P16_C3a_AddCostRate`, commit `550bccb`.
+  - C3.b — Period + Line + 6 handlers (CRUD + Finalize + Export), 6 endpoints, 2 tests, migration `P16_C3b_AddPayrollPeriodAndLine`, commit `849de17`.
+  - C3.c — 5 handlers + 5 endpoints + 3 tests + projection-with-derived-Overdue, migration `P16_C3c_AddSupplierInvoice`, commit `455b067`.
+Frontend (по slice):
+  - `services/api.ts` — financeApi gains 5+6+5 = 16 нови методи across the three sub-tasks.
+  - hooks: `useCostRates.ts`, `usePayroll.ts`, `useSupplierInvoices.ts`.
+  - 3 pages rewritten: `CostAccounting.tsx` (Scope picker → per-scope dropdown), `PayrollAggregate.tsx` (month picker → seeds period + editable lines + finalize/export), `SupplierInvoices.tsx` (with Overdue tab projected).
+  - 3 migration docs со paste-once console snippets.
+  - `LocalStorageWarningBanner.tsx` deleted — no remaining consumers (all 6 C-target pages migrated).
+  - navGroups: cost-accounting / payroll / ap flipped `partial` → `exists`.
+Verification (cumulative):
+  - dotnet build src/LON.API → 0/0; tests build → 0 errors.
+  - tsc src/ → 0; eslint src/ → 0/0; jest 19/19.
+  - All 6 C-target pages: `grep localStorage.[sg]etItem` → 0, `grep LocalStorageWarningBanner` → 0.
+  - VPS deploy (3 separate deploys across C3.a/b/c): api+frontend rebuilt, migrations applied on startup, /health healthy.
+  - VPS live smoke:
+    - C3.a: `POST /cost-rates {scope:5, costPerHour:12.5}` → 200 + tenantId TEKSPORT; GET ?scope=5 → 1.
+    - C3.b: `POST /payroll-periods 2026-04` → 200, status=1 (Draft), lines=3.
+    - C3.c: POST с DueDate=2026-04-15 (past) → status=4 (derived Overdue); GET ?status=4 → 1.
+Outcome: [x] done (Phase 16.C fully closed)
+Notes:
+  - Each sub-task got its own commit + push + deploy + smoke per the AGENT-PROMPTS instructions.
+  - Integration тестовите ќе се валидираат на CI runner со Docker (Testcontainers MsSql); локален env нема Docker.
+  - CostRate frontend collapsed legacy WorkCenter × Shift matrix into single-axis Scope picker. Shift dimension is captured in Notes via the migration snippet.
+  - PayrollPeriod lines се seed-ат од Attendance + approved Absence (read-only). NetAmount е operator-entered; rate × hours math moved into the migration doc as a console-side helper.
+  - SupplierInvoice derives `Overdue` status; it isn't a persisted enum value. The frontend list lets the operator filter explicitly by Overdue.
+
+---
+
 ## 2026-05-11 — P16.C2 — EmployeeCertification entity + migrate Training off localStorage
 Plan: `EmployeeCertification` entity (ITenantScoped + Employee FK). 4 CRUD handlers + dedicated `GetExpiringCertificationsQuery` за traffic-light feed. 5 controller endpoints `/api/Hr/certifications` + `/expiring`. 5 integration тестови (CRUD + expiring filter + tenant isolation). React-query hooks (`useTrainings.ts`). Rewrite `Training.tsx` (0 localStorage, banner gone). Migration doc.
 Files touched (backend):

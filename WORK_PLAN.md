@@ -895,9 +895,9 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 - [x] **P16.C1** ✅ *2026-05-11 (commit `2a5b8f3`)* — `RiskRegisterItem` (Kind=Risk|Escalation, 3 enums) + EF migration + 5 MediatR handlers + 5 endpoints + 5 integration tests. Frontend: react-query hooks (`useRisks.ts`), OpenRisks + Escalations rewritten (0 localStorage), navGroups flipped to `exists`. Migration doc shipped. VPS live smoke: POST 200 + GET 200 + tenant correctly scoped to TEKSPORT.
 - [x] **P16.C2** ✅ *2026-05-11 (commit `9499323`)* — `EmployeeCertification` entity (Employee FK) + migration + 5 MediatR handlers (CRUD + GetExpiring) + 5 endpoints + 5 integration tests. Frontend: `useTrainings.ts` hooks, `Training.tsx` rewritten (field renames documented in migration doc), navGroups flipped. VPS live smoke: POST + GET + expiring filter all green.
-- [ ] **P16.C3.a** — `CostRate` + migrate `pages/Finance/CostAccounting.tsx`.
-- [ ] **P16.C3.b** — `PayrollPeriod` + `PayrollLine` + `/finalize` + `/export` + migrate `pages/Finance/PayrollAggregate.tsx` (sources hours from Attendance + Absence).
-- [ ] **P16.C3.c** — `SupplierInvoice` + derived `Overdue` status + migrate `pages/Finance/SupplierInvoices.tsx`.
+- [x] **P16.C3.a** ✅ *2026-05-11 (commit `550bccb`)* — `CostRate` entity (Scope=Machine/Operator/Shift/Operation/WorkCenter) + CRUD + 6 tests. CostAccounting rewritten with scope picker. VPS smoke green.
+- [x] **P16.C3.b** ✅ *2026-05-11 (commit `849de17`)* — `PayrollPeriod` + `PayrollLine` with Draft/Finalized/Exported. Lines seeded from Attendance + approved Absence. Finalize + Export endpoints. PayrollAggregate rewritten. VPS smoke: 3 lines seeded.
+- [x] **P16.C3.c** ✅ *2026-05-11 (commit `455b067`)* — `SupplierInvoice` with derived `Overdue` status (not persisted). 3 tests. SupplierInvoices rewritten. VPS smoke: past-due invoice projected as status=4. `LocalStorageWarningBanner` component deleted (no consumers).
 
 ### Wave D — Test coverage gap fill (parallelizable)
 
@@ -917,6 +917,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.C3.a** — `CostRate` entity (Scope=Machine|Operator|Shift|Operation, ScopeId nullable Guid, CostPerHour, CostPerUnit, Currency, ValidFrom, ValidTo, Notes). Standard CRUD handlers + endpoints under `/api/Finance/cost-rates`. `CostRateTests.cs` (CRUD + tenant isolation). Regenerate OpenAPI. Rewrite `pages/Finance/CostAccounting.tsx` off localStorage. Migration doc. Flip navGroups `finance-cost-accounting` to `exists`. VPS live smoke.
+**P16.D1** — `tests/LON.IntegrationTests/WMSControllerTests.cs` covering at minimum: `GET /WMS/inventory`, `GET /WMS/receipts`, `GET /WMS/shipments`, `GET /WMS/transfers`, `GET /WMS/cycle-counts`, `GET /WMS/pick-tasks`, `GET /WMS/skart`, `GET /WMS/inventory/mozni-minusi`, `POST /WMS/adjustments`. Each test asserts HTTP 200 + response shape + tenant isolation (foreign tenant doesn't leak). Existing 154 + new ≥10 tests should all pass. No VPS deploy (test-only).
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
