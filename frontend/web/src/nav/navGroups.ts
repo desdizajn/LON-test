@@ -711,12 +711,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.finance.payroll',
         icon: '💳',
         path: '/finance/payroll',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C3',
-        plannedBehavior:
-          'Aggregate плати за месецот: вкупно часови регуларни + overtime + bonus × шифри. Feed од /hr/payroll-export.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C3.b ќе го замени со BE entity (PayrollPeriod + PayrollLine).',
+          'P16.C3.b — PayrollPeriod + PayrollLine. Lines seeded from existing Attendance + Absence; Draft → Finalized → Exported lifecycle.',
       },
       {
         key: 'finance-pnl',

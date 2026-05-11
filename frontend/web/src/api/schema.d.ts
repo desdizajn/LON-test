@@ -1042,6 +1042,98 @@ export interface paths {
       };
     };
   };
+  "/api/Finance/payroll-periods": {
+    get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreatePayrollPeriodCommand"];
+          "text/json": components["schemas"]["CreatePayrollPeriodCommand"];
+          "application/*+json": components["schemas"]["CreatePayrollPeriodCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/payroll-periods/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/payroll-periods/lines/{id}": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdatePayrollLineCommand"];
+          "text/json": components["schemas"]["UpdatePayrollLineCommand"];
+          "application/*+json": components["schemas"]["UpdatePayrollLineCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/payroll-periods/{id}/finalize": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/payroll-periods/{id}/export": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/FinishedGoods/awaiting-pack": {
     get: {
       responses: {
@@ -4513,6 +4605,15 @@ export interface components {
       issuedByEmployeeId?: string | null;
       lines?: components["schemas"]["MaterialIssueLineDto"][] | null;
     };
+    CreatePayrollPeriodCommand: {
+      /** Format: date-time */
+      periodStart?: string;
+      /** Format: date-time */
+      periodEnd?: string;
+      /** Format: double */
+      standardHoursPerDay?: number;
+      notes?: string | null;
+    };
     CreateProductionOrderCommand: {
       /** Format: uuid */
       itemId?: string;
@@ -5442,6 +5543,23 @@ export interface components {
       position?: string | null;
       department?: string | null;
       isActive?: boolean;
+    };
+    UpdatePayrollLineCommand: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: double */
+      regularHours?: number;
+      /** Format: double */
+      overtimeHours?: number;
+      /** Format: double */
+      absenceHours?: number;
+      /** Format: double */
+      bonusAmount?: number;
+      /** Format: double */
+      deductionAmount?: number;
+      /** Format: double */
+      netAmount?: number;
+      currency?: string | null;
     };
     UpdateRiskRegisterItemCommand: {
       /** Format: uuid */

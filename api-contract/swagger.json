@@ -1883,6 +1883,158 @@
         }
       }
     },
+    "/api/Finance/payroll-periods": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayrollPeriodCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayrollPeriodCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePayrollPeriodCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Finance/payroll-periods/{id}": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Finance/payroll-periods/lines/{id}": {
+      "put": {
+        "tags": [
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePayrollLineCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePayrollLineCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePayrollLineCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Finance/payroll-periods/{id}/finalize": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Finance/payroll-periods/{id}/export": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/FinishedGoods/awaiting-pack": {
       "get": {
         "tags": [
@@ -8362,6 +8514,28 @@
         },
         "additionalProperties": false
       },
+      "CreatePayrollPeriodCommand": {
+        "type": "object",
+        "properties": {
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "standardHoursPerDay": {
+            "type": "number",
+            "format": "double"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateProductionOrderCommand": {
         "type": "object",
         "properties": {
@@ -11027,6 +11201,44 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdatePayrollLineCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "regularHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "overtimeHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "absenceHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "bonusAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "deductionAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "netAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

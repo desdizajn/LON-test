@@ -472,6 +472,20 @@ export const financeApi = {
     api.put(`/Finance/cost-rates/${id}`, data),
   deleteCostRate: (id: string) =>
     api.delete(`/Finance/cost-rates/${id}`),
+
+  // P16.C3.b — payroll periods
+  getPayrollPeriods: () =>
+    api.get('/Finance/payroll-periods'),
+  getPayrollPeriod: (id: string) =>
+    api.get(`/Finance/payroll-periods/${id}`),
+  createPayrollPeriod: (data: any) =>
+    api.post('/Finance/payroll-periods', data),
+  updatePayrollLine: (id: string, data: any) =>
+    api.put(`/Finance/payroll-periods/lines/${id}`, data),
+  finalizePayrollPeriod: (id: string) =>
+    api.post(`/Finance/payroll-periods/${id}/finalize`),
+  exportPayrollPeriod: (id: string) =>
+    api.post(`/Finance/payroll-periods/${id}/export`),
 };
 
 export const customsApi = {

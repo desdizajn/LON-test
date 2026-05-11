@@ -126,6 +126,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     // Finance — P16.C3
     public DbSet<CostRate> CostRates => Set<CostRate>();
+    public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
+    public DbSet<PayrollLine> PayrollLines => Set<PayrollLine>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

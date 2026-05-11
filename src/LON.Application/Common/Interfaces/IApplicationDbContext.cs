@@ -121,6 +121,8 @@ public interface IApplicationDbContext
 
     // Finance — P16.C3 backend replacements for legacy localStorage pages
     DbSet<CostRate> CostRates { get; }
+    DbSet<PayrollPeriod> PayrollPeriods { get; }
+    DbSet<PayrollLine> PayrollLines { get; }
 
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null

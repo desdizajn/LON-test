@@ -1,5 +1,6 @@
 using LON.Application.Finance;
 using LON.Application.Finance.CostRates;
+using LON.Application.Finance.PayrollPeriods;
 using LON.Domain.Entities.Finance;
 using LON.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -254,6 +255,51 @@ public class FinanceController : BaseController
     public async Task<IActionResult> DeleteCostRate(Guid id)
     {
         var result = await Mediator.Send(new DeleteCostRateCommand(id));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // ─────────────── P16.C3.b — payroll periods ───────────────
+
+    [HttpGet("payroll-periods")]
+    public async Task<IActionResult> GetPayrollPeriods()
+    {
+        var result = await Mediator.Send(new GetPayrollPeriodsQuery());
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("payroll-periods/{id:guid}")]
+    public async Task<IActionResult> GetPayrollPeriod(Guid id)
+    {
+        var result = await Mediator.Send(new GetPayrollPeriodByIdQuery(id));
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+
+    [HttpPost("payroll-periods")]
+    public async Task<IActionResult> CreatePayrollPeriod([FromBody] CreatePayrollPeriodCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPut("payroll-periods/lines/{id:guid}")]
+    public async Task<IActionResult> UpdatePayrollLine(Guid id, [FromBody] UpdatePayrollLineCommand command)
+    {
+        if (command.Id != id) command = command with { Id = id };
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("payroll-periods/{id:guid}/finalize")]
+    public async Task<IActionResult> FinalizePayrollPeriod(Guid id)
+    {
+        var result = await Mediator.Send(new FinalizePayrollPeriodCommand(id));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("payroll-periods/{id:guid}/export")]
+    public async Task<IActionResult> ExportPayrollPeriod(Guid id)
+    {
+        var result = await Mediator.Send(new ExportPayrollPeriodCommand(id));
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }
