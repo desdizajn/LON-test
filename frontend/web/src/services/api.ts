@@ -340,12 +340,24 @@ export const hrApi = {
 };
 
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)
+// P16.C1 — risks/escalations CRUD
 export const managementApi = {
   getOnTime: (params?: { from?: string; to?: string }) =>
     api.get('/Management/on-time', { params }),
   getByCustomer: (params?: { from?: string; to?: string }) =>
     api.get('/Management/by-customer', { params }),
   getAlerts: () => api.get('/Management/alerts'),
+  // Risks / Escalations
+  getRisks: (kind?: 1 | 2) =>
+    api.get('/Management/risks', { params: { kind } }),
+  getRisk: (id: string) =>
+    api.get(`/Management/risks/${id}`),
+  createRisk: (data: any) =>
+    api.post('/Management/risks', data),
+  updateRisk: (id: string, data: any) =>
+    api.put(`/Management/risks/${id}`, data),
+  deleteRisk: (id: string) =>
+    api.delete(`/Management/risks/${id}`),
 };
 
 // P12.2 / P12.3 — Finance (contracts, rate cards, invoices)

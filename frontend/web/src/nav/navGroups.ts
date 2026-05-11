@@ -830,12 +830,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.risks',
         icon: '⚠️',
         path: '/management/risks',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C1',
-        plannedBehavior:
-          'Отворени ризици: царински (деадлине), operational (машина, кадар), финансиски (клиент overdue), legal.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C1 ќе го замени со BE entity (RiskRegisterItem).',
+          'P16.C1 — RiskRegisterItem (Kind=Risk). Tenant-scoped CRUD via /api/Management/risks.',
       },
       {
         key: 'management-trends',
@@ -852,12 +849,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: 'nav.management.escalations',
         icon: '🔥',
         path: '/management/escalations',
-        backendStatus: 'partial',
-        workPlanRef: 'P16.C1',
-        plannedBehavior:
-          'Налози што бараат управувачка одлука: доцнат, клиент тражи extension, legal issue, budget override.',
+        backendStatus: 'exists',
         existingDataHint:
-          '⚠ Тековно се чува во browser localStorage — се губи при cache clear. P16.C1 ќе го замени со BE entity (RiskRegisterItem, Kind=Escalation).',
+          'P16.C1 — RiskRegisterItem (Kind=Escalation). Shares schema with /management/risks.',
       },
       {
         key: 'management-client-scorecard',

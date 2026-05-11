@@ -7,6 +7,7 @@ using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Finance;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.Importing;
+using LON.Domain.Entities.Management;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Domain.Entities.Traceability;
@@ -116,6 +117,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Importing (P5.1)
     public DbSet<ImportSession> ImportSessions => Set<ImportSession>();
     public DbSet<ImportMappingProfile> ImportMappingProfiles => Set<ImportMappingProfile>();
+
+    // Management (P16.C1)
+    public DbSet<RiskRegisterItem> RiskRegisterItems => Set<RiskRegisterItem>();
 
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

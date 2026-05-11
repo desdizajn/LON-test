@@ -817,6 +817,37 @@
         }
       }
     },
+    "/api/Customs/duty-calculator": {
+      "post": {
+        "tags": [
+          "Customs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DutyWhatIfQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DutyWhatIfQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DutyWhatIfQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/tariff-lookup/{tariffCode}": {
       "get": {
         "tags": [
@@ -832,6 +863,181 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/declarations/{id}/naim": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/reports/razdolzuvanje": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "authorizationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/reports/monthly-register": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/reports/waste-register": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/declarations/{id}/pee/{envelope}": {
+      "get": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "envelope",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/pee/020/parse": {
+      "post": {
+        "tags": [
+          "Customs"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Pee020Upload"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Pee020Upload"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Pee020Upload"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -1880,6 +2086,75 @@
         }
       }
     },
+    "/api/Guarantee/snapshots/run": {
+      "post": {
+        "tags": [
+          "Guarantee"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunSnapshotRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunSnapshotRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunSnapshotRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Guarantee/snapshots": {
+      "get": {
+        "tags": [
+          "Guarantee"
+        ],
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Hr/attendance/clock-in": {
       "post": {
         "tags": [
@@ -2636,6 +2911,13 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "wasteCatalogOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -3960,6 +4242,140 @@
         }
       }
     },
+    "/api/Management/risks": {
+      "get": {
+        "tags": [
+          "Management"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/RiskKind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Management"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskRegisterItemCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskRegisterItemCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskRegisterItemCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Management/risks/{id}": {
+      "get": {
+        "tags": [
+          "Management"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Management"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRiskRegisterItemCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRiskRegisterItemCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRiskRegisterItemCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Management"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/MasterData/partners": {
       "get": {
         "tags": [
@@ -4376,6 +4792,130 @@
       "get": {
         "tags": [
           "Production"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Production/distribute-material": {
+      "post": {
+        "tags": [
+          "Production"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributeMaterialAcrossOrdersCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributeMaterialAcrossOrdersCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistributeMaterialAcrossOrdersCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Production/materials/{materialId}/sizes": {
+      "get": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "materialId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "materialId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SizeLine"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SizeLine"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SizeLine"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Production"
+        ],
+        "parameters": [
+          {
+            "name": "materialId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -6003,6 +6543,37 @@
         }
       }
     },
+    "/api/WMS/inventory/bulk-move-balances": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkMoveBalancesCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkMoveBalancesCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkMoveBalancesCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/WMS/shipments": {
       "get": {
         "tags": [
@@ -6217,6 +6788,213 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/PickTaskStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/skart": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSkartCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSkartCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSkartCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "WMS"
+        ],
+        "parameters": [
+          {
+            "name": "openOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mrn",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/skart/{id}/resolve": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSkartRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSkartRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSkartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/podelba": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/shipments/{id}/ispratnica": {
+      "get": {
+        "tags": [
+          "WMS"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/shipments/{id}/ispratnica.html": {
+      "get": {
+        "tags": [
+          "WMS"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/inventory-by-producer": {
+      "get": {
+        "tags": [
+          "WMS"
+        ],
+        "parameters": [
+          {
+            "name": "producerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -6536,6 +7314,46 @@
           "sequenceNumber": {
             "type": "integer",
             "format": "int32"
+          },
+          "primaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "primaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "secondaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "secondaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tertiaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tertiaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "zagubaItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "zagubaPercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6581,6 +7399,33 @@
             "items": {
               "$ref": "#/components/schemas/BOMLineRequest"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BulkMoveBalancesCommand": {
+        "type": "object",
+        "properties": {
+          "balanceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "targetLocationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "movementDate": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },
@@ -6965,6 +7810,14 @@
           },
           "specialRemarks": {
             "type": "string",
+            "nullable": true
+          },
+          "useAverageRate": {
+            "type": "boolean"
+          },
+          "averageDutyRate": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           },
           "status": {
@@ -7376,6 +8229,51 @@
         },
         "additionalProperties": false
       },
+      "CreateRiskRegisterItemCommand": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RiskKind"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/RiskSeverity"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RiskStatus"
+          },
+          "owner": {
+            "type": "string",
+            "nullable": true
+          },
+          "mitigation": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolution": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateScheduleBody": {
         "type": "object",
         "properties": {
@@ -7738,6 +8636,36 @@
         "type": "integer",
         "format": "int32"
       },
+      "DistributeMaterialAcrossOrdersCommand": {
+        "type": "object",
+        "properties": {
+          "customsDeclarationLineId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/DistributionMode"
+          },
+          "productionOrderIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DistributionMode": {
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
       "DowntimeCategory": {
         "enum": [
           1,
@@ -7750,6 +8678,43 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "DutyWhatIfQuery": {
+        "type": "object",
+        "properties": {
+          "tariffCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "customsValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "exchangeRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "countryOfOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPreferentialOrigin": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       },
       "EmployeeDto": {
         "type": "object",
@@ -8163,6 +9128,57 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "partnerSKU": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "primaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "secondaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "secondaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "tertiaryWasteItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tertiaryWastePercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "zagubaItemId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "zagubaPercentage": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "wasteTariffCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "isWasteCatalog": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8623,10 +9639,21 @@
           2,
           3,
           4,
-          5
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "Pee020Upload": {
+        "type": "object",
+        "properties": {
+          "xmlContent": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "PermissionDto": {
         "type": "object",
@@ -8659,6 +9686,37 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "PodelbaAllocation": {
+        "type": "object",
+        "properties": {
+          "producerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PodelbaCommand": {
+        "type": "object",
+        "properties": {
+          "sourceBalanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PodelbaAllocation"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ProductionOrderStatus": {
         "enum": [
@@ -8845,6 +9903,37 @@
         },
         "additionalProperties": false
       },
+      "ReportSkartCommand": {
+        "type": "object",
+        "properties": {
+          "receiptLineId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "skartQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResolveSkartRequest": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "$ref": "#/components/schemas/SkartResolution"
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ReturnLineDto": {
         "type": "object",
         "properties": {
@@ -8907,6 +9996,36 @@
           }
         },
         "additionalProperties": false
+      },
+      "RiskKind": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "RiskSeverity": {
+        "enum": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "RiskStatus": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "RoleDto": {
         "type": "object",
@@ -9011,6 +10130,21 @@
             "items": {
               "$ref": "#/components/schemas/RoutingOperationRequest"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RunSnapshotRequest": {
+        "type": "object",
+        "properties": {
+          "snapshotDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -9126,6 +10260,38 @@
           }
         },
         "additionalProperties": false
+      },
+      "SizeLine": {
+        "type": "object",
+        "properties": {
+          "sizeOrdinal": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sizeLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "normativPerUnit": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SkartResolution": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "SourceReference": {
         "type": "object",
@@ -9436,6 +10602,52 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateRiskRegisterItemCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "$ref": "#/components/schemas/RiskSeverity"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RiskStatus"
+          },
+          "owner": {
+            "type": "string",
+            "nullable": true
+          },
+          "mitigation": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolution": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false

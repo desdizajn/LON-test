@@ -3,6 +3,7 @@ using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Finance;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.Importing;
+using LON.Domain.Entities.Management;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
 using LON.Domain.Entities.Traceability;
@@ -111,6 +112,9 @@ public interface IApplicationDbContext
     // Importing (P5.1)
     DbSet<ImportSession> ImportSessions { get; }
     DbSet<ImportMappingProfile> ImportMappingProfiles { get; }
+
+    // Management (P16.C1)
+    DbSet<RiskRegisterItem> RiskRegisterItems { get; }
 
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null

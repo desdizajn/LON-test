@@ -444,11 +444,124 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/duty-calculator": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["DutyWhatIfQuery"];
+          "text/json": components["schemas"]["DutyWhatIfQuery"];
+          "application/*+json": components["schemas"]["DutyWhatIfQuery"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/tariff-lookup/{tariffCode}": {
     get: {
       parameters: {
         path: {
           tariffCode: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/declarations/{id}/naim": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/reports/razdolzuvanje": {
+    get: {
+      parameters: {
+        query?: {
+          authorizationId?: string;
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/reports/monthly-register": {
+    get: {
+      parameters: {
+        query?: {
+          year?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/reports/waste-register": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/declarations/{id}/pee/{envelope}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+          envelope: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/pee/020/parse": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["Pee020Upload"];
+          "text/json": components["schemas"]["Pee020Upload"];
+          "application/*+json": components["schemas"]["Pee020Upload"];
         };
       };
       responses: {
@@ -1057,6 +1170,40 @@ export interface paths {
       };
     };
   };
+  "/api/Guarantee/snapshots/run": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["RunSnapshotRequest"];
+          "text/json": components["schemas"]["RunSnapshotRequest"];
+          "application/*+json": components["schemas"]["RunSnapshotRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Guarantee/snapshots": {
+    get: {
+      parameters: {
+        query?: {
+          accountId?: string;
+          from?: string;
+          to?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Hr/attendance/clock-in": {
     post: {
       requestBody?: {
@@ -1475,6 +1622,7 @@ export interface paths {
       parameters: {
         query?: {
           search?: string;
+          wasteCatalogOnly?: boolean;
         };
       };
       responses: {
@@ -2199,6 +2347,84 @@ export interface paths {
       };
     };
   };
+  "/api/Management/risks": {
+    get: {
+      parameters: {
+        query?: {
+          kind?: components["schemas"]["RiskKind"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateRiskRegisterItemCommand"];
+          "text/json": components["schemas"]["CreateRiskRegisterItemCommand"];
+          "application/*+json": components["schemas"]["CreateRiskRegisterItemCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/risks/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateRiskRegisterItemCommand"];
+          "text/json": components["schemas"]["UpdateRiskRegisterItemCommand"];
+          "application/*+json": components["schemas"]["UpdateRiskRegisterItemCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/MasterData/partners": {
     get: {
       parameters: {
@@ -2443,6 +2669,71 @@ export interface paths {
   };
   "/api/Production/shortage": {
     get: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Production/distribute-material": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["DistributeMaterialAcrossOrdersCommand"];
+          "text/json": components["schemas"]["DistributeMaterialAcrossOrdersCommand"];
+          "application/*+json": components["schemas"]["DistributeMaterialAcrossOrdersCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Production/materials/{materialId}/sizes": {
+    get: {
+      parameters: {
+        path: {
+          materialId: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      parameters: {
+        path: {
+          materialId: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["SizeLine"][];
+          "text/json": components["schemas"]["SizeLine"][];
+          "application/*+json": components["schemas"]["SizeLine"][];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          materialId: string;
+        };
+      };
       responses: {
         /** @description OK */
         200: {
@@ -3371,6 +3662,23 @@ export interface paths {
       };
     };
   };
+  "/api/WMS/inventory/bulk-move-balances": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BulkMoveBalancesCommand"];
+          "text/json": components["schemas"]["BulkMoveBalancesCommand"];
+          "application/*+json": components["schemas"]["BulkMoveBalancesCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/WMS/shipments": {
     get: {
       parameters: {
@@ -3485,6 +3793,122 @@ export interface paths {
       parameters: {
         query?: {
           status?: components["schemas"]["PickTaskStatus"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/skart": {
+    get: {
+      parameters: {
+        query?: {
+          openOnly?: boolean;
+          itemId?: string;
+          mrn?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ReportSkartCommand"];
+          "text/json": components["schemas"]["ReportSkartCommand"];
+          "application/*+json": components["schemas"]["ReportSkartCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/skart/{id}/resolve": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ResolveSkartRequest"];
+          "text/json": components["schemas"]["ResolveSkartRequest"];
+          "application/*+json": components["schemas"]["ResolveSkartRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/podelba": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["PodelbaCommand"];
+          "text/json": components["schemas"]["PodelbaCommand"];
+          "application/*+json": components["schemas"]["PodelbaCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/shipments/{id}/ispratnica": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/shipments/{id}/ispratnica.html": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/inventory-by-producer": {
+    get: {
+      parameters: {
+        query?: {
+          producerId?: string;
         };
       };
       responses: {
@@ -3670,6 +4094,22 @@ export interface components {
       scrapFactor?: number;
       /** Format: int32 */
       sequenceNumber?: number;
+      /** Format: uuid */
+      primaryWasteItemId?: string | null;
+      /** Format: double */
+      primaryWastePercentage?: number | null;
+      /** Format: uuid */
+      secondaryWasteItemId?: string | null;
+      /** Format: double */
+      secondaryWastePercentage?: number | null;
+      /** Format: uuid */
+      tertiaryWasteItemId?: string | null;
+      /** Format: double */
+      tertiaryWastePercentage?: number | null;
+      /** Format: uuid */
+      zagubaItemId?: string | null;
+      /** Format: double */
+      zagubaPercentage?: number | null;
     };
     BOMRequest: {
       /** Format: uuid */
@@ -3686,6 +4126,14 @@ export interface components {
       notes?: string | null;
       isActive?: boolean;
       lines?: components["schemas"]["BOMLineRequest"][] | null;
+    };
+    BulkMoveBalancesCommand: {
+      balanceIds?: string[] | null;
+      /** Format: uuid */
+      targetLocationId?: string;
+      reason?: string | null;
+      /** Format: date-time */
+      movementDate?: string | null;
     };
     BulkReceiptFromDeclarationCommand: {
       /** Format: uuid */
@@ -3821,6 +4269,9 @@ export interface components {
       countryOfDispatch?: string | null;
       countryOfDestination?: string | null;
       specialRemarks?: string | null;
+      useAverageRate?: boolean;
+      /** Format: double */
+      averageDutyRate?: number | null;
       status?: components["schemas"]["DeclarationStatus"];
       lines?: components["schemas"]["DeclarationLineDto"][] | null;
     };
@@ -3958,6 +4409,20 @@ export interface components {
       specialRemarks?: string | null;
       lines?: components["schemas"]["ReturnLineDto"][] | null;
     };
+    CreateRiskRegisterItemCommand: {
+      kind?: components["schemas"]["RiskKind"];
+      title?: string | null;
+      category?: string | null;
+      severity?: components["schemas"]["RiskSeverity"];
+      status?: components["schemas"]["RiskStatus"];
+      owner?: string | null;
+      mitigation?: string | null;
+      resolution?: string | null;
+      /** Format: date-time */
+      dueDate?: string | null;
+      /** Format: date-time */
+      reviewDate?: string | null;
+    };
     CreateScheduleBody: {
       /** Format: uuid */
       machineId?: string;
@@ -4088,11 +4553,36 @@ export interface components {
      * @enum {integer}
      */
     DeclarationStatus: 0 | 1 | 2 | 3 | 99;
+    DistributeMaterialAcrossOrdersCommand: {
+      /** Format: uuid */
+      customsDeclarationLineId?: string;
+      mode?: components["schemas"]["DistributionMode"];
+      productionOrderIds?: string[] | null;
+    };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    DistributionMode: 1 | 2 | 3;
     /**
      * Format: int32
      * @enum {integer}
      */
     DowntimeCategory: 1 | 2 | 3 | 4 | 5 | 6 | 99;
+    DutyWhatIfQuery: {
+      tariffCode?: string | null;
+      /** Format: double */
+      customsValue?: number;
+      currency?: string | null;
+      /** Format: double */
+      exchangeRate?: number;
+      /** Format: date-time */
+      date?: string;
+      /** Format: double */
+      quantity?: number;
+      countryOfOrigin?: string | null;
+      isPreferentialOrigin?: boolean;
+    };
     EmployeeDto: {
       /** Format: uuid */
       id?: string;
@@ -4238,6 +4728,25 @@ export interface components {
       isActive?: boolean;
       /** Format: double */
       standardCost?: number | null;
+      partnerSKU?: string | null;
+      /** Format: uuid */
+      primaryWasteItemId?: string | null;
+      /** Format: double */
+      primaryWastePercentage?: number | null;
+      /** Format: uuid */
+      secondaryWasteItemId?: string | null;
+      /** Format: double */
+      secondaryWastePercentage?: number | null;
+      /** Format: uuid */
+      tertiaryWasteItemId?: string | null;
+      /** Format: double */
+      tertiaryWastePercentage?: number | null;
+      /** Format: uuid */
+      zagubaItemId?: string | null;
+      /** Format: double */
+      zagubaPercentage?: number | null;
+      wasteTariffCode?: string | null;
+      isWasteCatalog?: boolean;
     };
     /**
      * Format: int32
@@ -4400,7 +4909,10 @@ export interface components {
      * Format: int32
      * @enum {integer}
      */
-    PartnerType: 1 | 2 | 3 | 4 | 5;
+    PartnerType: 1 | 2 | 3 | 4 | 5 | 6;
+    Pee020Upload: {
+      xmlContent?: string | null;
+    };
     PermissionDto: {
       /** Format: uuid */
       id?: string;
@@ -4413,6 +4925,17 @@ export interface components {
      * @enum {integer}
      */
     PickTaskStatus: 1 | 2 | 3 | 4;
+    PodelbaAllocation: {
+      /** Format: uuid */
+      producerId?: string;
+      /** Format: double */
+      quantity?: number;
+    };
+    PodelbaCommand: {
+      /** Format: uuid */
+      sourceBalanceId?: string;
+      allocations?: components["schemas"]["PodelbaAllocation"][] | null;
+    };
     /**
      * Format: int32
      * @enum {integer}
@@ -4480,6 +5003,17 @@ export interface components {
     RefreshTokenRequest: {
       refreshToken?: string | null;
     };
+    ReportSkartCommand: {
+      /** Format: uuid */
+      receiptLineId?: string;
+      /** Format: double */
+      skartQuantity?: number;
+      reason?: string | null;
+    };
+    ResolveSkartRequest: {
+      resolution?: components["schemas"]["SkartResolution"];
+      resolutionNote?: string | null;
+    };
     ReturnLineDto: {
       /** Format: uuid */
       itemId?: string;
@@ -4504,6 +5038,21 @@ export interface components {
       returnQuantity?: number;
       returnTo?: components["schemas"]["LonProcessState"];
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    RiskKind: 1 | 2;
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    RiskSeverity: 1 | 2 | 3 | 4;
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    RiskStatus: 1 | 2 | 3 | 4 | 5 | 6;
     RoleDto: {
       /** Format: uuid */
       id?: string;
@@ -4536,6 +5085,11 @@ export interface components {
       description?: string | null;
       isActive?: boolean;
       operations?: components["schemas"]["RoutingOperationRequest"][] | null;
+    };
+    RunSnapshotRequest: {
+      /** Format: date-time */
+      snapshotDate?: string | null;
+      notes?: string | null;
     };
     SearchRequest: {
       query?: string | null;
@@ -4576,6 +5130,20 @@ export interface components {
       description?: string | null;
       isActive?: boolean;
     };
+    SizeLine: {
+      /** Format: int32 */
+      sizeOrdinal?: number;
+      sizeLabel?: string | null;
+      /** Format: double */
+      quantity?: number;
+      /** Format: double */
+      normativPerUnit?: number;
+    };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    SkartResolution: 0 | 1 | 2 | 3;
     SourceReference: {
       documentTitle?: string | null;
       reference?: string | null;
@@ -4666,6 +5234,21 @@ export interface components {
       position?: string | null;
       department?: string | null;
       isActive?: boolean;
+    };
+    UpdateRiskRegisterItemCommand: {
+      /** Format: uuid */
+      id?: string;
+      title?: string | null;
+      category?: string | null;
+      severity?: components["schemas"]["RiskSeverity"];
+      status?: components["schemas"]["RiskStatus"];
+      owner?: string | null;
+      mitigation?: string | null;
+      resolution?: string | null;
+      /** Format: date-time */
+      dueDate?: string | null;
+      /** Format: date-time */
+      reviewDate?: string | null;
     };
     UpdateScheduleBody: {
       taskDescription?: string | null;
