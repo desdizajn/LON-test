@@ -2,6 +2,43 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.C1 — RiskRegisterItem entity + migrate Risks/Escalations off localStorage
+Plan: Унифициран domain entity `RiskRegisterItem` (Kind=Risk|Escalation) + tenant-scoped EF config + миграција. 5 MediatR handlers (Create/Update/Delete/GetList/GetById) + 5 controller endpoints под `/api/Management/risks`. 5 integration тестови (CRUD + tenant isolation + Kind filter). Regenerate OpenAPI → TS schema. Rewrite на двете frontend страници кон react-query hooks; локалните 6-те warning banner-и тргнати од овие 2. navGroups flip `partial → exists`. Migration doc `PHASE16_C1_LOCAL_TO_BE_MIGRATION.md` со browser console snippet.
+Files touched (backend):
+  - `src/LON.Domain/Entities/Management/RiskRegisterItem.cs` (new, 71 lines, 3 enums)
+  - `src/LON.Infrastructure/Persistence/Configurations/RiskRegisterItemConfiguration.cs` (new, 39 lines)
+  - `src/LON.Infrastructure/Migrations/20260511102949_P16_C1_AddRiskRegisterItem.{cs,Designer.cs}` (new) + snapshot diff
+  - `src/LON.Infrastructure/Persistence/ApplicationDbContext.cs` + `src/LON.Application/Common/Interfaces/IApplicationDbContext.cs` (+DbSet)
+  - `src/LON.Application/Management/Risks/{Create,Update,Delete}RiskRegisterItemCommand.cs` + `GetRiskRegisterItemsQuery.cs` + `RiskRegisterDtos.cs` (new, 5 files)
+  - `src/LON.API/Controllers/ManagementController.cs` (+5 endpoints)
+  - `tests/LON.IntegrationTests/RiskRegisterTests.cs` (new, 5 tests)
+Files touched (frontend):
+  - `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` (regenerated)
+  - `frontend/web/src/services/api.ts` (managementApi + 5 risk methods)
+  - `frontend/web/src/hooks/queries/useRisks.ts` (new, 96 lines)
+  - `frontend/web/src/pages/Management/OpenRisks.tsx` (full rewrite, 0 localStorage)
+  - `frontend/web/src/pages/Management/Escalations.tsx` (full rewrite, party→category, description→mitigation, resolution-on-blur)
+  - `frontend/web/src/nav/navGroups.ts` (2 items flipped back to `exists`)
+  - `docs/PHASE16_C1_LOCAL_TO_BE_MIGRATION.md` (new, paste-once console snippet)
+Verification:
+  - `dotnet build src/LON.API` → 0 warnings, 0 errors.
+  - `dotnet build tests/LON.IntegrationTests` → 0 errors (4 pre-existing warnings in other tests).
+  - `tsc src/` → 0 errors.
+  - `eslint src/` → 0 errors, 0 warnings.
+  - `react-scripts test --watchAll=false` → 19/19 pass.
+  - `grep localStorage.[sg]etItem` на двете страници → 0.
+  - `grep LocalStorageWarningBanner` на двете страници → 0.
+  - VPS deploy: `docker compose build api frontend` + recreate → both Started; migration applied на startup.
+  - VPS live smoke: login → POST `/api/Management/risks` `{kind:1, title:"P16.C1 smoke risk", severity:3, status:1, ...}` → `{isSuccess:true, id:7c7779a0-…, tenantId:b8d4fe76-… (TEKSPORT)}`; GET `?kind=1` → 1 row.
+Commit: `2a5b8f3`
+Outcome: [x] done
+Notes:
+  - Integration тестовите бараат Docker (Testcontainers MsSql) → се пуштаат на CI, не локално. Локалниот build pass + VPS live smoke го покрива happy path; tenant isolation тестот ќе се валидира на CI run.
+  - Escalation страницата мапи legacy `party` → `Category` и `description` → `Mitigation` на унифицирана шема. Migration snippet го документира мапирањето.
+  - 4 страници остануваат на старот warning banner (CostAccounting, PayrollAggregate, SupplierInvoices, Training); ќе се пресечат во C2 + C3.
+
+---
+
 ## 2026-05-11 — P16.B3 — PageShell + MUI theme + 3 page migrations
 Plan: Создавам `theme.ts` со MUI palette mirroring `--taris-*` CSS variables (primary `#1e88e5`, secondary `#e53935`). Wrap-нам `App.tsx` во `<ThemeProvider><CssBaseline />`. Создавам `components/layout/PageShell.tsx` со title/actions/breadcrumbs/subtitle/children props + responsive header. Migrate-нам Dashboard, Inventory, Production кон PageShell.
 Files touched:

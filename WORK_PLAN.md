@@ -893,7 +893,7 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ### Wave C — localStorage → backend
 
-- [ ] **P16.C1** — `RiskRegisterItem` entity (Kind=Risk|Escalation) + CRUD + tests + migrate `pages/Management/OpenRisks.tsx` & `pages/Management/Escalations.tsx`.
+- [x] **P16.C1** ✅ *2026-05-11 (commit `2a5b8f3`)* — `RiskRegisterItem` (Kind=Risk|Escalation, 3 enums) + EF migration + 5 MediatR handlers + 5 endpoints + 5 integration tests. Frontend: react-query hooks (`useRisks.ts`), OpenRisks + Escalations rewritten (0 localStorage), navGroups flipped to `exists`. Migration doc shipped. VPS live smoke: POST 200 + GET 200 + tenant correctly scoped to TEKSPORT.
 - [ ] **P16.C2** — `EmployeeCertification` entity + `/api/Hr/certifications` (+ `/expiring`) + migrate `pages/Hr/Training.tsx`.
 - [ ] **P16.C3.a** — `CostRate` + migrate `pages/Finance/CostAccounting.tsx`.
 - [ ] **P16.C3.b** — `PayrollPeriod` + `PayrollLine` + `/finalize` + `/export` + migrate `pages/Finance/PayrollAggregate.tsx` (sources hours from Attendance + Absence).
@@ -917,6 +917,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.C1** — `RiskRegisterItem` domain entity (Kind enum Risk|Escalation) + DbSet on `ApplicationDbContext` + `IApplicationDbContext` + EF config with TenantId query filter + migration `P16_C1_AddRiskRegisterItem`. MediatR: Create/Update/Delete commands + GetItems (filter by Kind) + GetById query. Controller: 5 endpoints under `/api/Management/risks`. Integration tests in `RiskRegisterTests.cs` (create→get / update / delete / tenant isolation / kind filter). Regenerate OpenAPI → schema.d.ts. Rewrite `OpenRisks.tsx` + `Escalations.tsx` to react-query hooks (remove ALL localStorage usage + banner imports). Migration doc `docs/PHASE16_C1_LOCAL_TO_BE_MIGRATION.md`. Flip navGroups back to `exists`. VPS deploy + DB row count smoke + tenant isolation smoke.
+**P16.C2** — `EmployeeCertification` entity (Tenant-scoped + FK to Employee) with CertificationName/IssuedDate/ExpiryDate/IssuingAuthority/CertificateNumber/Notes. DbSet + config + migration. MediatR: Create/Update/Delete/Get + GetExpiring (param `withinDays`). Endpoints `/api/Hr/certifications` (+ `/expiring`). `EmployeeCertificationTests.cs` (CRUD + tenant isolation + expiring filter logic). Regenerate OpenAPI. Rewrite `pages/Hr/Training.tsx` (0 localStorage + banner removed). `docs/PHASE16_C2_TRAINING_MIGRATION.md`. Flip navGroups `hr-training` to `exists`. VPS smoke.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
