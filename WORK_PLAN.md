@@ -889,7 +889,7 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 - [x] **P16.B1** ✅ *2026-05-11 (commit `6d7b5c6`)* — `@tanstack/react-query@^5.100.9` + devtools installed. `App.tsx` wrapped (`staleTime 30s`, `refetchOnWindowFocus`, Devtools dev-only). `hooks/queries/useInventory.ts` (10 hooks). `pages/Inventory.tsx` migrated — zero `wmsApi`/`masterDataApi`/`axios` direct refs. VPS deployed, healthy. Form-mutation hooks staged for future Form migration.
 - [x] **P16.B2** ✅ *2026-05-11 (commit `897cef4`)* — `DataTable` gained multi-select + expandable rows + rowClassName. 6 jest tests (`@testing-library/react`). `pages/Production.tsx` migrated (0 `<table` markup), variants moved to `ProductionVariantsSubTable`. VPS deployed.
-- [ ] **P16.B3** — `components/layout/PageShell.tsx` + `theme.ts` (MUI ThemeProvider). Migrate Dashboard, Inventory, Production.
+- [x] **P16.B3** ✅ *2026-05-11 (commit `68217c2`)* — `theme.ts` (MUI ThemeProvider matching `--taris-*` palette) + `components/layout/PageShell.tsx` (title/actions/breadcrumbs/subtitle props, responsive header). Dashboard / Inventory / Production migrated. VPS deployed.
 
 ### Wave C — localStorage → backend
 
@@ -917,6 +917,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.B3** — `components/layout/PageShell.tsx` (props: `title`, `actions`, `breadcrumbs?`, `children`) + `theme.ts` (MUI `<ThemeProvider>` in App.tsx) with LON palette (primary `#1e88e5`, secondary `#7b1fa2` defaults unless logo spec changes them). Migrate Dashboard, Inventory, Production to PageShell. tsc + eslint clean. VPS smoke @ desktop 1920px + mobile 375px.
+**P16.C1** — `RiskRegisterItem` domain entity (Kind enum Risk|Escalation) + DbSet on `ApplicationDbContext` + `IApplicationDbContext` + EF config with TenantId query filter + migration `P16_C1_AddRiskRegisterItem`. MediatR: Create/Update/Delete commands + GetItems (filter by Kind) + GetById query. Controller: 5 endpoints under `/api/Management/risks`. Integration tests in `RiskRegisterTests.cs` (create→get / update / delete / tenant isolation / kind filter). Regenerate OpenAPI → schema.d.ts. Rewrite `OpenRisks.tsx` + `Escalations.tsx` to react-query hooks (remove ALL localStorage usage + banner imports). Migration doc `docs/PHASE16_C1_LOCAL_TO_BE_MIGRATION.md`. Flip navGroups back to `exists`. VPS deploy + DB row count smoke + tenant isolation smoke.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*

@@ -2,6 +2,29 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.B3 — PageShell + MUI theme + 3 page migrations
+Plan: Создавам `theme.ts` со MUI palette mirroring `--taris-*` CSS variables (primary `#1e88e5`, secondary `#e53935`). Wrap-нам `App.tsx` во `<ThemeProvider><CssBaseline />`. Создавам `components/layout/PageShell.tsx` со title/actions/breadcrumbs/subtitle/children props + responsive header. Migrate-нам Dashboard, Inventory, Production кон PageShell.
+Files touched:
+  - `frontend/web/src/theme.ts` (new, 60 lines)
+  - `frontend/web/src/components/layout/PageShell.tsx` (new, 102 lines)
+  - `frontend/web/src/App.tsx` (+ThemeProvider wrap, +CssBaseline)
+  - `frontend/web/src/pages/Dashboard.tsx` (welcome/logout block → PageShell title/subtitle/actions)
+  - `frontend/web/src/pages/Inventory.tsx` (header h2 + 6 action buttons → PageShell)
+  - `frontend/web/src/pages/Production.tsx` (header h2 + "New PO" button → PageShell)
+Verification:
+  - tsc на src: 0 errors.
+  - eslint src: 0 errors, 0 warnings.
+  - `react-scripts test --watchAll=false`: 19/19 pass (6 DataTable + 13 filterNav).
+  - VPS deploy: build OK, /health healthy.
+Commit: `68217c2`
+Outcome: [x] done
+Notes:
+  - Theme palette мирира постоечките CSS vars наместо да воведе нова палета — постоечкиот ink/border/success/etc CSS vars остануваат функционални додека останатите страници не се мигрираат.
+  - Dashboard div nesting error caught от tsc (extra `</div>` после миграцијата на dashboard-new wrapper); fixed inline пред commit.
+  - VPS визуелна верификација на desktop/mobile responsive header се оставa на корисник (или browser MCP во наредна сесија). Curl + bundle hash потврдуваат deploy.
+
+---
+
 ## 2026-05-11 — P16.B2 — Harden DataTable + Production.tsx pilot migration
 Plan: Аудит на `DataTable` capabilities → `docs/PHASE16_DATATABLE_GAPS.md`. Имплементирам недостасните: multi-select checkboxes (controlled `selectedIds`/`onSelectionChange`) + expandable rows (render-prop). Пишувам 6 тестови. Migrate `pages/Production.tsx` orders grid: zero hand-rolled `<table>` во самата страница; expandable children rendering преку `ProductionVariantsSubTable` child component.
 Files touched:
