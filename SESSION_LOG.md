@@ -2,6 +2,26 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.A3 — MasterData + pages/ root duplication audit
+Plan: Docs-only walk низ `pages/MasterData/**/*.tsx` (+ pages/ root) — за секoj фајл, грep `App.tsx` за exact relative import + грep src/ за inline-editor pattern од sibling List/Detail. Fill table со Component / Path / Routed / Lines / LastCommit / Verdict / Reason. Без deletes; file follow-ups за чисто-мртвите.
+Files touched:
+  - `docs/PHASE16_AUDIT.md` (new, 88 lines)
+  - `WORK_PLAN.md` (P16.A3 marked done + new A3.1 / A3.2 follow-ups)
+Verification:
+  - `wc -l docs/PHASE16_AUDIT.md` → 88 lines (≥15 ✓).
+  - Грep recap: 23 MasterData KEEP + 1 DELETE; 16 pages/-root KEEP + 1 DELETE.
+  - tsc/eslint/test/VPS deploy: NOT applicable (docs-only).
+Findings (unambiguous-dead):
+  - **A3.1** — `pages/MasterData/Warehouses/WarehouseForm.tsx` (113 lines). Zero imports anywhere. Was left behind by A1's strict scope.
+  - **A3.2** — `pages/Customs.tsx` (256 lines). Zero imports since P6.37.6 split it into role-scoped sub-pages (`pages/Customs/LONAuthorizationsList.tsx`, etc). My A1 ESLint fix here was a courtesy на мртов код.
+  - All Form files in subfolders (BOMForm/PartnerForm/RoutingForm/UoMForm/ItemForm) are KEEP — used as inline editors via List page imports.
+Commit: pending (next commit closes A3 with audit doc + plan updates).
+Outcome: [x] done
+Notes:
+  - The verification script in VERIFICATION.md А3 had a flaw: `grep -c "$(basename $f .tsx)"` matches the basename ANYWHERE in App.tsx, including inside Routes that reference a different file with the same basename (flat WarehouseForm vs Warehouses/WarehouseForm both contain "WarehouseForm"). I switched to `grep -c "from '\./<relative path>'"` which is path-precise. Updated audit table reflects the path-precise count.
+
+---
+
 ## 2026-05-11 — P16.A2 — Honest navGroups for 6 localStorage-only pages
 Plan: Flip `backendStatus: 'exists' -> 'partial'` за 6-те страници кои лажеа за BE покриеност (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training). Точкам workPlanRef на P16.C1/C2/C3. Додавам `<LocalStorageWarningBanner>` под subtitle на секоja од 6 страници; банерот чита нов `common.localStorageWarning` клуч добавен во en/mk/sq/sr.
 Files touched:

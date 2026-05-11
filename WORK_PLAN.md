@@ -881,7 +881,9 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 - [x] **P16.A1** ✅ *2026-05-11 (commit `b24ad80`)* — Removed dead `pages/MasterData/Warehouses/WarehousesList.tsx` + `/master-data/warehouses-old` Route. Fixed pre-existing unused-import warning in `pages/Customs.tsx`. eslint 0/0; filterNav 13/13. VPS deployed.
 - [x] **P16.A2** ✅ *2026-05-11 (commit `c9000b5`)* — 6 nav items flipped to `partial` + `workPlanRef: P16.C1/C2/C3` + `existingDataHint` warning. New shared `LocalStorageWarningBanner` mounted on all 6 pages. `common.localStorageWarning` added to en/mk/sq/sr. VPS deployed, healthy.
-- [ ] **P16.A3** — `docs/PHASE16_AUDIT.md`: MasterData duplication audit (no deletes). File any unambiguous-dead under `P16.A3.followup`.
+- [x] **P16.A3** ✅ *2026-05-11* — `docs/PHASE16_AUDIT.md` shipped (88 lines, 24 MasterData rows + 17 pages/-root rows). Two unambiguous-dead findings filed below.
+  - [ ] **P16.A3.1** — Delete `pages/MasterData/Warehouses/WarehouseForm.tsx` (113 lines, zero imports) + the now-empty `Warehouses/` directory.
+  - [ ] **P16.A3.2** — Delete `pages/Customs.tsx` (256 lines, zero imports since P6.37.6 IA split).
 
 ### Wave B — UI foundations
 
@@ -915,6 +917,6 @@ Unified `GeneratePeeXmlQuery` handles all four; mismatched envelope × declarati
 
 ## Current Active Task
 
-**P16.A3** — `docs/PHASE16_AUDIT.md` MasterData duplication audit. Walk every `frontend/web/src/pages/MasterData/**/*.tsx`, fill table: Component | Path | RoutedRefs | Lines | LastCommit | Verdict | Reason. No deletes in A3 itself — file followups under P16.A3.* if unambiguous-dead. Also note dead pages in `pages/` root.
+**P16.B1** — Install `@tanstack/react-query`, wrap `App.tsx` in `<QueryClientProvider>` (staleTime 30s, refetchOnWindowFocus true, ReactQueryDevtools dev-only). Create `frontend/web/src/hooks/queries/useInventory.ts` exporting `useInventoryQuery` + 7 mutation hooks (receipt/transfer/shipment/cycle-count/adjustment/quality-status/move-batch). Rewrite `pages/Inventory.tsx` to use them (same UX, just plumbing). Invalidate-on-mutate; no manual reload. tsc + eslint clean, VPS smoke 6 checks from VERIFICATION.md B1.
 
 *Оваа секција секогаш покажува еден активен таск. Се ажурира после секој commit.*
