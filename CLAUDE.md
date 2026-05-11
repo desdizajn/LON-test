@@ -70,7 +70,7 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 
 - **Test tenant:** `TEKSPORT` (мапира на истоимениот Uvoznik во ELON, чии табели се `tblKorisnikTEKSPORT`, `InvoiceTEKSPORT`, итн.).
 - **TEKSPORT legacy quirks:** inflate-for-waste на import (`KolMat * 100/(100-otpad%)`), deletes Invoice staging после transfer — мора да се преслика ако сакаме bit-by-bit споредба.
-- **VPS state:** скоро ништо не работи end-to-end. Фаза 0 = дијагностика пред било каков feature development.
+- **Состојба на проектот (May 2026):** Фази 0–15 ги поставија ядрата (~31.8k LoC backend, 122 FE pages, 43 EF migrations, 154 [Fact] integration тестови, 174 BE routes, 85 FE endpoints — 100% покриеност). Сега сме во **Фаза 16 (cleanup + UI foundation)** — види секција 11.
 - **Multi-tenant од почеток:** секоја нова ентитет мора да има `TenantId`. Секој нов query мора да биде tenant-scoped.
 
 ---
@@ -87,6 +87,15 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 - **По секој таск**: SESSION_LOG запис + WORK_PLAN status update + релевантна меморија во `memory/`.
 - **Commit message:** `phase-X.Y: <краток опис>` — за да може да се проследи по фаза.
 
+### 6.1 UI дефаулти (вградени со Phase 16)
+
+- **Една таблица:** нови табелa-views користат `components/common/DataTable.tsx`. Никаков handcrafted `<table>` за нови страници.
+- **Data fetching:** нови страници користат **react-query** (`useQuery`/`useMutation`) преку hooks во `frontend/web/src/hooks/queries/`. Не нов raw `useEffect + fetch` pattern.
+- **Стилирање:** нови страници користат **MUI** + design tokens. Никакво нов inline `style={{}}` (>3 reда), никакви нови ad-hoc bootstrap-style CSS класи. Постоечки страници се мигрираат само кога ги допираш за друга причина (не „рerite-everything" rampage).
+- **Forms:** нови форми со 3+ полиња користат **react-hook-form** + `components/forms/Form*` wrappers (или MUI еквивалент).
+- **Browser storage НЕ Е backend.** `localStorage`/`sessionStorage` смее да зачува UI prefs (selected filter, theme). Никогаш бизнис податоци (escalations, risks, certs). Ако нема BE entity → не имплементирај, отвори таск во Phase 16.
+- **navGroups.ts мора да не лаже.** `backendStatus: 'exists'` значи: има handler + endpoint + DB persistence. Ако е `localStorage`-only → `partial`. Ако нема handler → `missing`.
+
 ---
 
 ## 7. Меморија и логирање — што каде оди
@@ -95,6 +104,8 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 |---|---|---|
 | [`memory/`](memory/) (persistent Claude memory) | Durable факти: архитектурни одлуки, user preferences, credentials pointers | Преку сесии |
 | [`WORK_PLAN.md`](WORK_PLAN.md) | Активни фази + таскови + verification criteria + status checkboxes | Активен до крајот на проектот |
+| [`AGENT-PROMPTS.md`](AGENT-PROMPTS.md) | **Phase 16 task prompts** — копи-пастабилни промптови за Claude Code сесии. Еден промт = еден таск. Самосодржани (Claude Code нема пристап до оваа conversation history). | Активен низ Phase 16 |
+| [`VERIFICATION.md`](VERIFICATION.md) | **Phase 16 verification checklists** — точни команди, URLs, SQL queries за докажување дека таскот е готов. Се повикува од секој AGENT-PROMPTS запис. | Активен низ Phase 16 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | **Roadmap за P7–P13** — детални табели за секоја placeholder страница: ефорт, приоритет, зависности. Single source of traceability за преостанатите ~65 screens. | Активен до крајот на Phase 13 |
 | [`SESSION_LOG.md`](SESSION_LOG.md) | Хронолошки лог: датум, таск, што е направено, како е верификувано, наод | Append-only, никогаш не се брише |
 | Commit messages | Специфично за промените во code base | git history |
@@ -146,4 +157,45 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 
 ---
 
-*Последна ревизија: 2026-04-18 — иницијална верзија.*
+## 11. Phase 16 — Cleanup + UI Foundation (тековна фаза)
+
+> Phase 16 е реакција на искрена ревизија на кодот (May 2026): backend е здрав, frontend има хаос. Целта е **да исчистиме лажното и да поставиме UI стандард** пред да продолжиме со нови фичери. Сите промптови за таскови во оваа фаза живеат во [`AGENT-PROMPTS.md`](AGENT-PROMPTS.md). Сите verification listи живеат во [`VERIFICATION.md`](VERIFICATION.md).
+
+### 11.1 Што нашовме (искрено)
+
+- **Backend:** солиден. 23 controllers, 174 routes, 57 MediatR handlers, 76 DbSets, 154 [Fact]/[Theory] integration тестови, 43 EF migrations.
+- **API contract:** 85 FE-called endpoints, 100% покриеност во BE routes (по case-correct match).
+- **Frontend компилира clean:** 0 TS errors, 0 ESLint errors, 1 unused-import warning.
+- **6 страници го лажат корисникот:** користат `localStorage` како „backend" (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training) — `navGroups.ts` ги означи како `backendStatus: 'exists'`. Tenant cache clear = губиток на податоци.
+- **Дупликат wired-страници:** `WarehousesList` (стара) и `WarehouseList` (нова) се двете во `App.tsx` под различни патишта. Стариот е dead route.
+- **UI хаос:** 91 страници со inline стилови, 82 со bootstrap-y className, 20 со MUI, 6 со `DataTable`, 8 со react-hook-form — нема консистентен систем.
+- **Test coverage gaps:** WMSController (25 endpoints), Analytics, Traceability, сите MasterData CRUD controllers, Users/Roles/Permissions немаат dedicated тест фајл.
+
+### 11.2 Phase 16 sub-фази (по редослед)
+
+| Sub-фаза | Опсег | Време |
+|---|---|---|
+| **A. Cleanup** | Бриши dead routes, поправи `navGroups.ts` лажни statuses, реши дупликат MasterData страници | 1–2 дена |
+| **B. UI foundations** | Инсталирај react-query, мигрирај една pilot страница (`Inventory.tsx`), стандардизирај на `DataTable`, дефинирај layout shell | 2–3 дена |
+| **C. localStorage → backend** | Замени 6-те лажни страници со реални BE entities + handlers + миграции | 3–5 дена |
+| **D. Test gap fill** | Integration тестови за WMSController, Auth/Roles, MasterData CRUD smoke | паралелно со А-Ц |
+
+Конкретни промптови за секоj sub-таск (А1, А2, А3, Б1, Б2, Б3, В1, В2, В3, Г1, Г2, Г3) се во `AGENT-PROMPTS.md`. Не пробувај да измислуваш sub-таскови — ако појавиш потреба, додај нов до `AGENT-PROMPTS.md` пред да го почнеш.
+
+### 11.3 Phase 16 правила (надополнуваат Section 3 Verification Protocol)
+
+- **Никаква нова страница** во Phase 16. Чистиме, не градиме нови фичери.
+- **Никаква нова `localStorage` употреба** за бизнис податоци. UI prefs (filter selection) ОК — се означуваат со prefix `lon.ui.*`.
+- **Pre-commit `tsc --noEmit` за frontend** — задолжителен (CRA build толерира warnings, ние не).
+- **Кога допираш страница за refactor**: задолжителен screencast / VPS screenshot пред и потоа, во SESSION_LOG.
+- **Brand-new entity во Phase 16.C** — мора да добие integration test веднаш (не „следна сесија").
+
+---
+
+## 12. BLUEPRINT.md (forthcoming)
+
+Постоечкиот `ELON_Blueprint.md` (Март 2026) опишува визија која не одговара со тековниот код. Откако ќе го завршиме Phase 16, ќе се напише нов `BLUEPRINT.md` врз основа на **она што навистина постои** + **она што останува до v1**. Дотогаш не цитирај го `ELON_Blueprint.md` како авторитет за scope — користи го само за legacy context.
+
+---
+
+*Последна ревизија: 2026-05-11 — Phase 16 (cleanup + UI foundation).*
