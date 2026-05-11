@@ -2,6 +2,30 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-11 — P16.B1 — react-query install + Inventory.tsx pilot migration
+Plan: Инсталирам `@tanstack/react-query` v5 + devtools. Wrap-нам `App.tsx` во `QueryClientProvider` со staleTime 30s + refetchOnWindowFocus. Креирам `hooks/queries/useInventory.ts` со 10 hooks (2 queries + 8 mutations). Rewrite `pages/Inventory.tsx` за да чита/мутаци преку hook-ите; нула `wmsApi.*`/`masterDataApi.*`/`axios` директни повици во самата страница.
+Files touched:
+  - `frontend/web/package.json`, `package-lock.json` (+`@tanstack/react-query@^5.100.9`, +devtools)
+  - `frontend/web/src/App.tsx` (+QueryClientProvider + Devtools gated на NODE_ENV=development)
+  - `frontend/web/src/hooks/queries/useInventory.ts` (new, 122 lines, 10 exported hooks)
+  - `frontend/web/src/pages/Inventory.tsx` (rewired data fetching; -53 lines on plumbing, -unused imports)
+Verification:
+  - `grep "wmsApi\\.|masterDataApi\\.|axios" src/pages/Inventory.tsx` → нула (only via hook imports).
+  - `grep "^export (function|const) use" src/hooks/queries/useInventory.ts` → 10 (≥7 required).
+  - `grep "QueryClientProvider\|ReactQueryDevtools" src/App.tsx` → 4 lines (Provider wrap + Devtools dev-gated import + render).
+  - tsc на src: 0 errors.
+  - eslint src: 0 errors, 0 warnings.
+  - `react-scripts test filterNav`: 13/13 pass.
+  - VPS deploy: build OK, `lon-frontend Started`, `/health` healthy, нов JS bundle `main.3924d9f1.js`.
+Commit: `6d7b5c6`
+Outcome: [x] done
+Notes:
+  - VPS smoke #2 од VERIFICATION.md B1 (DevTools Network → "exactly one `GET /WMS/inventory`") + #4 (create receipt → list refreshes without manual reload) + #5 (cross-tab focus refresh) бараат интерактивна сесија пред реален UI. Curl-level smoke потврдува дека страницата се сервира + JS bundle е обновен; интерактивните чекови ги оставам за лиценцен преглед од корисник (или за следна сесија со browser MCP). Не блокирам остатокот од Phase 16.B на тоа.
+  - Хук-фајлот експонира `inventoryKeys` за идни sibling-и; B2/B3/C задачи можат да го реиспoлзуваат истиот ключен namespace кога инвалидираат прекуграничен mutations.
+  - 7-те form-mutation hooks (useReceiptCreate, useTransferCreate, useShipmentCreate, useCycleCountCreate, useAdjustmentCreate, useQualityStatusChange, useMoveBatch) не се користат сè уште од нивните Form компоненти (тие повикуваат wmsApi директно). Тие се пишуваат како infrastructure за иднина — следната фаза кога ќе ги мигрираме Form-ите ќе ги употреби без друг diff во hook фајлот.
+
+---
+
 ## 2026-05-11 — P16.A3 — MasterData + pages/ root duplication audit
 Plan: Docs-only walk низ `pages/MasterData/**/*.tsx` (+ pages/ root) — за секoj фајл, грep `App.tsx` за exact relative import + грep src/ за inline-editor pattern од sibling List/Detail. Fill table со Component / Path / Routed / Lines / LastCommit / Verdict / Reason. Без deletes; file follow-ups за чисто-мртвите.
 Files touched:
