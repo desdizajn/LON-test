@@ -778,9 +778,9 @@ grep -q "SoftDeleteRetentionJob\|HardDeleteAfter90Days" src/LON.Worker/
 
 ### §E7.5 — Department + Position lookup promotion
 
-> **Data-source caveat (2026-05-12 PREP):** Local ELON DB has no employee table; depending on PRE.3 / D6 outcome:
-> - **D6=fresh-start (default):** `EmployeeDepartment`/`EmployeePosition` categories seeded with 0 rows; backfill check below trivially passes; UI inline „+Add new" creates first values.
-> - **D6=prod-export:** entire task deferred to Phase 21 (skip §E7.5 verification block).
+> **D6 decided 2026-05-12: prod-export at Phase 21 cutover.** Two execution paths:
+> - **Path A (recommended): Defer entire task to Phase 21.1.1.** Skip this verification block in Phase 17.
+> - **Path B: Land schema in Phase 17, backfill in Phase 21.1.1.** Verify schema present + categories created with 0 rows; the backfill check below is trivially 0/0. Backfill verification re-runs in Phase 21.1.1 after prod-export staging is loaded.
 
 ```bash
 # Migration applied
@@ -816,6 +816,112 @@ dotnet test --filter "FullyQualifiedName~Employee" 2>&1 | tail -5
 ```
 
 **VPS smoke:** open EmployeeForm → Department dropdown loads existing values + accepts inline „Add new" → new entry appears in dropdown immediately.
+
+---
+
+### §E7.6 — `DeliveryNote` entity + polymorphic auto-gen
+
+```bash
+# Entities + migration
+test -f src/LON.Domain/Entities/Logistics/DeliveryNote.cs
+test -f src/LON.Domain/Entities/Logistics/DeliveryNoteLine.cs
+ls src/LON.Infrastructure/Migrations/*phase-17*DeliveryNote*.cs
+
+# DbSet exposed
+grep -q "DbSet<DeliveryNote>" src/LON.Infrastructure/Persistence/ApplicationDbContext.cs
+grep -q "DbSet<DeliveryNote>" src/LON.Application/Common/Interfaces/IApplicationDbContext.cs
+
+# SQL SEQUENCE exists
+sqlcmd -S localhost -E -d LONDB -h -1 -W -Q "
+  SELECT name FROM sys.sequences WHERE name LIKE 'seq_DeliveryNote%'
+"
+# Expected: ≥1 row
+
+# Handlers
+ls src/LON.Application/Logistics/DeliveryNotes/
+# Expected: Get + Update + Confirm + Cancel handlers
+
+# Endpoints
+grep -E '\[Http(Get|Post|Put|Delete)' src/LON.API/Controllers/LogisticsController.cs | wc -l
+# Expected: ≥5 endpoints (list / by-id / update / confirm / cancel / pdf)
+
+# Auto-gen wiring verified via integration tests
+test -f tests/LON.IntegrationTests/DeliveryNoteTests.cs
+dotnet test --filter "FullyQualifiedName~DeliveryNote" 2>&1 | tail -10
+# Expected: green; ≥6 tests (3 auto-gen types + status transitions + tenant isolation + PDF smoke)
+
+# UI
+test -f frontend/web/src/pages/Logistics/DeliveryNoteList.tsx
+test -f frontend/web/src/pages/Logistics/DeliveryNoteDetail.tsx
+grep -q "/warehouse/delivery-notes" frontend/web/src/App.tsx
+
+# OpenAPI types regenerated
+./scripts/gen-api-types.sh
+git diff --stat frontend/web/src/api/schema.d.ts
+```
+
+**VPS smoke (3 scenarios):**
+1. From hub: trigger MaterialIssue (E7 flow) → toast appears „Создаден DN-YYYY-NNNNNN" → click toast → DN detail loads with line(s) from MaterialIssue.
+2. From hub: commit Shipment Export (E8) → DN(Type=CustomerShipment) auto-created.
+3. From hub: commit FinishedGoodReceipt (E8 sub-flow) → DN(Type=ProducerReturn) auto-created.
+4. Confirm one DN → status flips to `Sent`; PDF link works; PDF contains the line data.
+
+**Z2779 fixture check:**
+After PRE.7 Z2779 import re-runs (or via dry-run on existing data), expect exactly 1 DeliveryNote(Type=ProducerDispatch) for Z2779's single Izdatnica, with line count matching IssuedMaterials.
+
+---
+
+### §E8.5 — `CommercialInvoice` entity + EX hub chain
+
+```bash
+# Entities + migration
+test -f src/LON.Domain/Entities/Customs/CommercialInvoice.cs
+test -f src/LON.Domain/Entities/Customs/CommercialInvoiceLine.cs
+ls src/LON.Infrastructure/Migrations/*phase-17*CommercialInvoice*.cs
+
+# DbSet exposed
+grep -q "DbSet<CommercialInvoice>" src/LON.Infrastructure/Persistence/ApplicationDbContext.cs
+grep -q "DbSet<CommercialInvoice>" src/LON.Application/Common/Interfaces/IApplicationDbContext.cs
+
+# SQL SEQUENCE
+sqlcmd -S localhost -E -d LONDB -h -1 -W -Q "
+  SELECT name FROM sys.sequences WHERE name LIKE 'seq_CommercialInvoice%'
+"
+# Expected: ≥1 row per tenant
+
+# Handlers
+ls src/LON.Application/Customs/CommercialInvoices/
+# Expected: Create + Update + Issue + Cancel + GetList + GetById + Suggest handlers
+
+# Endpoints
+grep -E '\[Http(Get|Post|Put|Delete)' src/LON.API/Controllers/CommercialInvoicesController.cs | wc -l
+# Expected: ≥7 endpoints
+
+# Suggestion service
+test -f src/LON.Application/Customs/CommercialInvoices/CommercialInvoiceSuggestionService.cs
+grep -q "SuggestFromShipment" src/LON.Application/Customs/CommercialInvoices/CommercialInvoiceSuggestionService.cs
+
+# Tests
+test -f tests/LON.IntegrationTests/CommercialInvoiceTests.cs
+dotnet test --filter "FullyQualifiedName~CommercialInvoice" 2>&1 | tail -10
+# Expected: green; ≥8 tests (CRUD + tenant + numbering concurrency + suggest + status transitions + PDF)
+
+# UI
+test -f frontend/web/src/pages/Customs/CommercialInvoiceList.tsx
+test -f frontend/web/src/pages/Customs/CommercialInvoiceDetail.tsx
+grep -q "/customs/commercial-invoices" frontend/web/src/App.tsx
+
+# Hub integration: tab on /orders/:id
+grep -q "commercial-invoices\|CommercialInvoice" frontend/web/src/pages/Orders/OrderHub.tsx
+```
+
+**VPS smoke:**
+1. Create EX declaration from hub (E8) → after submit → toast „EX поднесен. Креирај commercial invoice?" → click → form opens with line draft from Shipment.
+2. Fill consignee/consignor/incoterms (or accept defaults) → Save Draft → list shows new CI.
+3. Issue → status flips to `Issued`; lines locked; PDF download works; PDF contains correct lines/values.
+4. Visit ClientOrder hub → „Commercial invoices" tab → CI is listed.
+
+**Z2779 fixture check:** Z2779 has no `tblIzvozniFakturi` correlation in legacy snapshot (fully-inward processing cycle), so PRE.7 does NOT produce a CommercialInvoice for Z2779. Phase 21 dry-run on broader Zaklucoci is when this entity gets meaningful migration data.
 
 ---
 

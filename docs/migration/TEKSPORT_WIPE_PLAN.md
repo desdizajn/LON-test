@@ -340,8 +340,15 @@ Login smoke from VPS shell: `curl -s -X POST https://elon.elbosoft.click/api/aut
 
 ---
 
-## §9 — Awaiting user decision before execute-wipe session
+## §9 — User decisions (resolved 2026-05-12)
 
-- **Approval to wipe VPS LONDB.** This destroys all Phase 0–16 test data. Acceptable trade for a Phase 17 fresh-start ClientOrder hub. **User confirms?**
-- **Source of admin password.** Env var (preferred for automation), interactive prompt (preferred for one-off), or rotate-after-bootstrap (admin sets new password on first login)?
-- **Whether to also bootstrap a local LON dev DB** (`dotnet ef database update` on `localhost\LONDB`) in the same session, so offline iteration is possible. Recommended yes.
+| # | Decision | User answer | Effect |
+|---|---|---|---|
+| D1 | Wipe VPS LONDB approval | ✅ **YES** | Proceed with §3 BACKUP + §4 TRUNCATE in PRE.5. All Phase 0–16 test data destroyed; Phase 17 fresh-start. |
+| D2 | Source of admin password | ✅ **(a) Env var** `LON_BOOTSTRAP_ADMIN_PASSWORD` | PRE.6 seed reads from env; deploy scripts inject from secrets store. NEVER commit a literal password. |
+| D3 | Bootstrap local LON dev DB | ✅ **OK (already done)** | LONDB created on `localhost` (Windows auth) in this session: 83 tables, 50 migrations applied, seeded (1 TEKSPORT tenant + 9 users + 12 roles + 30 permissions + 345 CodeListItems). Available for offline iteration. |
+| D4 | `tblIzvozniFakturi` mapping | ✅ **New `CommercialInvoice` entity** (BLUEPRINT §3.2.1) | Built in Phase 17 §E8.5. Finance integration (margin reconciliation) deferred to Phase 27. |
+| D5 | `Propratnici` + `PropratniciStavki` mapping | ✅ **New `DeliveryNote` entity** (BLUEPRINT §3.8) | Polymorphic; auto-generated on MaterialIssue/Shipment/FinishedGoodReceipt commit. Built in Phase 17 §E7.6. |
+| D6 | Employee/User attribution source | ✅ **Prod export at Phase 21 cutover** | New Phase 21.1.1 sub-task: import `tblKorisnikTEKSPORT` + missing master-data tables (`KnigaNai`, `Aneksi`, `Preferencijal`, `tblFirmi`). PRE.7 Z2779 happy-path uses placeholder `migrated-elon-bulk` user. |
+
+PRE.4 (`docs/migration/MAPPING.md`) is the authoritative tracking doc after this point. PRE.5 (execute wipe) is unblocked.

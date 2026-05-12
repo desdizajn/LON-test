@@ -192,8 +192,66 @@ public class ClientOrderFinishedGood : BaseEntity, ITenantScoped
 | `CustomsProcedure` | reference | Постои |
 | `TariffCode` + `TariffCodeRate` | KnigaNai + Aneksi | Постои; подобрено |
 | `Skart` | FakturiU5Skart | Постои |
+| `CommercialInvoice` + `CommercialInvoiceLine` | `tblIzvozniFakturi` + `tblIzvozniFakturiStavki` (3,239 + 57,857 rows) | **NEW v1** (Phase 17 §E8.5) — see below |
 
 Клучна разлика од ELON: **NaimU5 рollup не е separate entity**. Тоа е computed view (SQL view или MediatR query) над `CustomsDeclarationLine` групирано по `(TariffCodeId, UoMId, CountryOfOrigin)`. Никакво insert/delete на header-of-naimenovanija — namesto тоа, наименованијата се производ на агрегација.
+
+#### §3.2.1 — CommercialInvoice (export-value document, distinct from sales Invoice)
+
+`CommercialInvoice` е **царински придружен документ** што го следи физичкиот export shipment — declares commercial value of goods at border crossing. Различен документ од `Invoice` (§5.14.2 = Teksport sales invoice за processing услуги до customer). Two реални documents:
+
+- **`Invoice` (§5.14.2)** — Teksport фактурира customer-от за обработката (sewing labor + overhead, per ClientContract rate card). Revenue side.
+- **`CommercialInvoice` (§3.2.1)** — на customs declaration се прикажува trade value of FG that crosses the border. Required by customs authority. Често замислена како "what the customer would invoice their downstream retailer for", но во inward processing на Teksport се generates by Teksport on customer's behalf.
+
+```csharp
+public class CommercialInvoice : BaseEntity, ITenantScoped, IAuditable, ISoftDeletable {
+    public Guid TenantId { get; set; }
+    public string Number { get; set; }                       // SEQUENCE CI-{year}-{seq:D6}
+    public Guid? ClientOrderId { get; set; }                 // optional FK
+    public Guid? ShipmentId { get; set; }                    // FK; the physical shipment carrying these goods
+    public Guid? CustomsDeclarationId { get; set; }          // FK to EX declaration
+    public Guid ConsigneePartnerId { get; set; }             // receiver (downstream brand / retailer)
+    public Guid ConsignorPartnerId { get; set; }             // sender (usually Teksport's customer brand)
+    public DateTime InvoiceDate { get; set; }
+    public string Currency { get; set; }                     // 3-char ISO
+    public decimal Subtotal { get; set; }
+    public decimal? TaxAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string CountryOfDestination { get; set; }         // 2-char ISO
+    public string Incoterms { get; set; }                    // FOB / EXW / CIF / DAP / ...
+    public string? PaymentTerms { get; set; }                // free text
+    public string Status { get; set; }                       // Draft | Issued | Cancelled
+    public ICollection<CommercialInvoiceLine> Lines { get; set; }
+}
+
+public class CommercialInvoiceLine : BaseEntity, ITenantScoped {
+    public Guid CommercialInvoiceId { get; set; }
+    public Guid ItemId { get; set; }                         // FG item
+    public string Description { get; set; }
+    public decimal Quantity { get; set; }
+    public Guid UoMId { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
+    public string CountryOfOrigin { get; set; }              // 2-char ISO (usually MK for processed-in-MK FG)
+    public Guid? TariffCodeId { get; set; }                  // FK; pulls from FG.DefaultTariffCode
+}
+```
+
+Workflow:
+- Auto-suggest from EX `CustomsDeclaration` lines on hub-action „Креирај commercial invoice" (one click).
+- User can edit consignee/consignor (often differs from ClientOrder.CustomerPartner), incoterms, prices.
+- Status: Draft → Issued (locks; generates PDF).
+
+Finance integration (post-v1 Phase 27):
+- Margin report per ClientOrder will reconcile: commercial export value − cost of production − Teksport's invoice to customer = net trade value through Teksport. Informational, not P&L.
+- Cash flow: CommercialInvoice never appears in Teksport's cash flow (it's not Teksport's revenue) — purely informational/regulatory.
+
+UI:
+- `/customs/commercial-invoices` list.
+- ClientOrder hub → „Commercial invoices" tab.
+- Linked from EX CustomsDeclaration detail.
+
+PDF: standardized export-invoice template (consignee, consignor, lines, incoterms, signature block).
 
 ### 3.3 Guarantee subdomain (с подобрена интегритета над ELON)
 
@@ -333,6 +391,59 @@ Entities со `IAuditable + ISoftDeletable` мора (mandatory):
 Optional за master data (`Item`, `Partner`) — soft-delete мора, audit pожелно.
 
 EF Core global query filter за `!IsDeleted`. `IgnoreSoftDelete()` extension за admin-restore UI.
+
+### 3.8 Logistics paperwork (DeliveryNote)
+
+**Цел.** Физичкиот придружен документ (cover sheet) што пътува со стоката — нужен за legal/audit/customs purposes, доказ за handover, и legacy continuity (`Propratnici` table во ELON има 1,658 headers + 295,918 lines).
+
+`DeliveryNote` е **polymorphic** — едно entity покрива три legacy flows:
+
+| DocumentType | Кога се генерира | Поврзан со |
+|---|---|---|
+| `ProducerDispatch` | На Podelba/MaterialIssue Committed | `MaterialIssue.Id` (1:1) |
+| `ProducerReturn` | На FinishedGoodReceipt (FG arrives from producer back to HQ) | `Shipment.Id` (1:1, Type=ProducerReturn) |
+| `CustomerShipment` | На Shipment (FG → customer) | `Shipment.Id` (1:1, Type=Export) |
+
+```csharp
+public enum DeliveryNoteType { ProducerDispatch = 1, ProducerReturn = 2, CustomerShipment = 3 }
+
+public class DeliveryNote : BaseEntity, ITenantScoped, IAuditable, ISoftDeletable {
+    public Guid TenantId { get; set; }
+    public string Number { get; set; }                        // SEQUENCE DN-{year}-{seq:D6}
+    public DeliveryNoteType DocumentType { get; set; }
+    public Guid RelatedDocumentId { get; set; }               // polymorphic: MaterialIssue.Id or Shipment.Id
+    public DateTime DispatchDate { get; set; }
+    public Guid FromLocationId { get; set; }                  // origin warehouse/location
+    public Guid? ToLocationId { get; set; }                   // destination (если internal location)
+    public Guid? ToPartnerId { get; set; }                    // destination (если external partner — producer / customer)
+    public string? DriverName { get; set; }
+    public string? VehicleRegistration { get; set; }
+    public string? Remarks { get; set; }
+    public string Status { get; set; }                        // Draft | Sent | Confirmed | Cancelled
+    public DateTime? ConfirmedAt { get; set; }
+    public Guid? ConfirmedBy { get; set; }
+    public ICollection<DeliveryNoteLine> Lines { get; set; }
+}
+
+public class DeliveryNoteLine : BaseEntity, ITenantScoped {
+    public Guid DeliveryNoteId { get; set; }
+    public Guid ItemId { get; set; }
+    public string Description { get; set; }
+    public decimal Quantity { get; set; }
+    public Guid UoMId { get; set; }
+    public string? BatchNumber { get; set; }
+    public string? Notes { get; set; }
+}
+```
+
+**Auto-generation.** When the related document commits (`MaterialIssueCommittedEvent` / `ShipmentCommittedEvent` / `FinishedGoodReceiptCommittedEvent`), a `DeliveryNote` is automatically created in `Draft` status, populated from related-doc data. User reviews → adds driver/vehicle → confirms → status flips to `Sent` and PDF generates.
+
+**UI.**
+- `/warehouse/delivery-notes` — list page (filter by type, date, partner).
+- Auto-prompt on related-doc commit: „Создаден Propratnica DN-2026-000123. Преглед?" toast → opens detail.
+- Print/download as PDF (standard legal cover-sheet template; signature block).
+
+**Note vs. CommercialInvoice.** DeliveryNote е internal/logistics; CommercialInvoice е customs-bound (declared value за border). И двата се generated за `CustomerShipment` (Type=Export Shipment) — DeliveryNote придружува стоката internally, CommercialInvoice patut customs declarationот. Различни templates, различни recipients.
 
 ---
 
@@ -2080,9 +2191,9 @@ Playwright config in `playwright.config.ts` at repo root. CI: nightly + on PR.
 | `tblArtikli` | `Item` (type derived from `ArtKatTip` flag) | Total 11,114 (Materials 8,960 / Finished 2,154); 80% archived — migration carries archived as `IsActive=false`. |
 | `tblArtikli.ArtOtpadProc` (inflate-for-waste) | `Item.WasteSlots` / tenant-policy feature flag | **Correction**: only 4 articles out of 8,960 have non-zero `ArtOtpadProc` (max 2%). Inflate-for-waste кеп як feature flag (`Tenant.InflateForWasteEnabled`), default **OFF** for new tenants. Migration sets `true` on TEKSPORT to preserve legacy behavior; other migrated tenants default false. |
 | `tblFirmi` | `Partner` | **Table absent in local TEKSPORT slice** — needs prod export. |
-| `tblKorisnik<TenantName>` (per-tenant) | `Employee` + `User` | **Table absent in local TEKSPORT slice** — `FakturiU5Z.User` + `LagerMaterijali.User` carry small-int FKs (0–8) with no local resolver. Either export from prod, or accept fresh-start with no historical user attribution. |
-| `tblIzvozniFakturi` + `Stavki` (3,239 headers + 57,857 lines) | **— DECISION PENDING (Phase 17.PRE.3)** | Commercial export invoice, not customs declaration. Not currently in BLUEPRINT §3.2. Options: (a) new `CommercialInvoice` entity in §3.2, (b) fold into existing `Invoice`, (c) out-of-v1 (export only via Phase 27 finance depth). User to decide. |
-| `Propratnici` + `PropratniciStavki` (1,658 headers + 295,918 lines) | **— DECISION PENDING (Phase 17.PRE.3)** | Likely delivery note / cover sheet. Not in BLUEPRINT §3.2. Options: (a) map to existing `Shipment` flow (paper-trail), (b) new `DeliveryNote` entity, (c) out-of-v1. User to decide. |
+| `tblKorisnik<TenantName>` (per-tenant) | `Employee` + `User` | **Table absent in local TEKSPORT slice** + **D6=prod-export approved 2026-05-12**: Phase 21 cutover plan must include `tblKorisnikTEKSPORT` export from prod ELON. `FakturiU5Z.User` + `LagerMaterijali.User` (small-int FKs 0–8) resolved via that export. Phase 17.PRE.7 Z2779 happy-path uses placeholder `migrated-elon-bulk` user for created-by attribution (real users joined in Phase 21). |
+| `tblIzvozniFakturi` + `Stavki` (3,239 headers + 57,857 lines) | `CommercialInvoice` + `CommercialInvoiceLine` (NEW v1 entity, BLUEPRINT §3.2.1) | **D4=new entity approved 2026-05-12.** Distinct from sales `Invoice` (§5.14.2 = Teksport invoicing customer for processing). `CommercialInvoice` е царински документ на consignor/consignee level со declared trade value of FG at border. Built in Phase 17 §E8.5. Finance integration (margin reconciliation) deferred to Phase 27. |
+| `Propratnici` + `PropratniciStavki` (1,658 headers + 295,918 lines) | `DeliveryNote` + `DeliveryNoteLine` (NEW v1 entity, BLUEPRINT §3.8) | **D5=new entity approved 2026-05-12.** Polymorphic (`DocumentType`): ProducerDispatch (paired w/ MaterialIssue) / ProducerReturn (paired w/ Shipment) / CustomerShipment (paired w/ Shipment Export). Auto-generated on related-doc commit. Built in Phase 17 §E6.5. |
 
 **DocumentSource resolver (new — keys on `Proces`):**
 

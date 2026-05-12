@@ -783,6 +783,67 @@ TASK
 Before declaring done, walk through VERIFICATION.md Section E7. Paste evidence into SESSION_LOG.md.
 ```
 
+### E7.6 — `DeliveryNote` entity + polymorphic auto-gen on commit events
+
+```
+Read BLUEPRINT.md §3.8 (DeliveryNote) + §5.6 (Podelba) + §5.7 (MaterialIssue) + VERIFICATION.md §E7.6.
+
+CONTEXT (D5 decision 2026-05-12)
+Legacy ELON's `Propratnici` + `PropratniciStavki` (1,658 + 295,918 rows) carry
+delivery-note paperwork that physically accompanies goods. BLUEPRINT §5.6
+historically mentioned „Generate Propratnica PDF" as an ad-hoc rendering;
+D5 elevated it to a first-class polymorphic entity (3 DocumentTypes:
+ProducerDispatch / ProducerReturn / CustomerShipment).
+
+TASK
+1. Entities (`src/LON.Domain/Entities/Logistics/DeliveryNote.cs` — new folder):
+   - `DeliveryNoteType` enum: ProducerDispatch=1 | ProducerReturn=2 | CustomerShipment=3.
+   - `DeliveryNote` (ITenantScoped + IAuditable + ISoftDeletable) per BLUEPRINT §3.8.
+   - `DeliveryNoteLine` (ITenantScoped).
+2. DbSet + IApplicationDbContext exposure.
+3. EF configurations + tenant query filter + IsDeleted filter + unique
+   constraint on (TenantId, Number).
+4. EF migration: `phase-17.7.6_DeliveryNote` includes:
+   - Schema creation.
+   - SQL SEQUENCE `seq_DeliveryNote_<tenantId>` per BLUEPRINT §6.6 pattern.
+5. NumberFormatter extended: `DeliveryNote(int year, long seq) → DN-{year}-{seq:D6}`.
+6. Auto-gen: subscribe domain event handlers (foundation depends on E11
+   domain-events infra; if E11 not yet shipped, use direct call in
+   MaterialIssue/Shipment/FinishedGoodReceipt command handlers as bridge):
+   - `MaterialIssueCommittedEvent` → create DeliveryNote(Type=ProducerDispatch,
+     RelatedDocumentId=MaterialIssue.Id, Lines from ProductionOrderMaterial.IssuedQuantity).
+   - `ShipmentCommittedEvent` with Type=ProducerReturn → create DeliveryNote(Type=ProducerReturn).
+   - `ShipmentCommittedEvent` with Type=Export → create DeliveryNote(Type=CustomerShipment).
+   - Status=Draft on creation; user reviews/confirms.
+7. MediatR handlers in `src/LON.Application/Logistics/DeliveryNotes/`:
+   - GetDeliveryNotesQuery (filter by type, dateRange, partnerId).
+   - GetDeliveryNoteByIdQuery (includes lines).
+   - UpdateDeliveryNoteCommand (driver, vehicle, remarks; only when Status=Draft).
+   - ConfirmDeliveryNoteCommand (Status: Draft → Sent; sets ConfirmedAt/By; generates PDF).
+   - CancelDeliveryNoteCommand (Status: Draft → Cancelled).
+8. Controller endpoints under `/api/Logistics/delivery-notes`:
+   - GET (list + by id), PUT (update Draft), POST /{id}/confirm, POST /{id}/cancel.
+   - GET /{id}/pdf — generates standardized cover-sheet PDF (QuestPDF or similar).
+9. UI:
+   - new route `/warehouse/delivery-notes` — DataTable with filters; click row → detail.
+   - DeliveryNote detail page: header + lines DataTable + confirm/cancel/download PDF buttons.
+   - Toast notification on auto-creation: „Создаден Propratnica DN-YYYY-NNNNNN" with deep-link.
+10. Integration tests (`DeliveryNoteTests.cs`):
+    - Auto-gen on MaterialIssue commit creates ProducerDispatch DeliveryNote.
+    - Auto-gen on Shipment Export creates CustomerShipment DeliveryNote.
+    - Auto-gen on FinishedGoodReceipt creates ProducerReturn DeliveryNote.
+    - Tenant isolation.
+    - Status transitions (Draft→Sent→Confirmed; Cancel only from Draft).
+    - PDF endpoint returns 200 + correct content-type.
+11. Regenerate OpenAPI → TS schema.
+12. Commit: `phase-17.7.6: DeliveryNote entity + polymorphic auto-gen + UI`
+13. Deploy + smoke: trigger MaterialIssue via E7 flow → verify DeliveryNote appears in list.
+
+Z2779 verification check (per PRE.7 fixture): the single Izdatnica in Z2779 should produce 1 DeliveryNote(Type=ProducerDispatch) after re-running migration; line count matches issued materials.
+
+Before declaring done, walk through VERIFICATION.md §E7.6. SESSION_LOG evidence.
+```
+
 ### E8 — Wire EX declaration + Shipment + QC from hub
 
 ```
@@ -807,6 +868,71 @@ TASK
 4. Deploy + smoke.
 
 Before declaring done, walk through VERIFICATION.md Section E8. Paste evidence into SESSION_LOG.md.
+```
+
+### E8.5 — `CommercialInvoice` entity + wire from EX hub action
+
+```
+Read BLUEPRINT.md §3.2.1 (CommercialInvoice) + §5.10 (EX flow) + §9.1 (D4 mapping) + VERIFICATION.md §E8.5.
+
+CONTEXT (D4 decision 2026-05-12)
+Legacy ELON's `tblIzvozniFakturi` + `tblIzvozniFakturiStavki` (3,239 + 57,857 rows)
+carry the commercial export invoice that accompanies each EX customs declaration.
+This is distinct from sales `Invoice` (§5.14.2 — Teksport billing customer for
+processing). CommercialInvoice = customs document showing trade value of FG at border.
+Built as first-class v1 entity; finance integration deferred to Phase 27.
+
+TASK
+1. Entities (`src/LON.Domain/Entities/Customs/CommercialInvoice.cs`):
+   - `CommercialInvoice` (ITenantScoped + IAuditable + ISoftDeletable) per BLUEPRINT §3.2.1.
+   - `CommercialInvoiceLine` (ITenantScoped).
+2. DbSet + IApplicationDbContext exposure.
+3. EF configurations + tenant filter + soft-delete filter + unique
+   constraint on (TenantId, Number).
+4. EF migration: `phase-17.8.5_CommercialInvoice` includes:
+   - Schema creation.
+   - SQL SEQUENCE `seq_CommercialInvoice_<tenantId>`.
+5. NumberFormatter extended: `CommercialInvoice(int year, long seq) → CI-{year}-{seq:D6}`.
+6. MediatR handlers in `src/LON.Application/Customs/CommercialInvoices/`:
+   - CreateCommercialInvoiceCommand (accepts ShipmentId; auto-suggests lines from
+     Shipment lines via service `CommercialInvoiceSuggestionService.SuggestFromShipment`).
+   - UpdateCommercialInvoiceCommand (lines edit, consignee/consignor/incoterms;
+     only when Status=Draft).
+   - IssueCommercialInvoiceCommand (Status: Draft → Issued; locks; generates PDF).
+   - CancelCommercialInvoiceCommand (Status: Draft|Issued → Cancelled with reason).
+   - GetCommercialInvoicesQuery (filter by clientOrderId, dateRange, status, consigneeId).
+   - GetCommercialInvoiceByIdQuery (includes lines + linked Shipment/Declaration).
+7. Controller endpoints under `/api/Customs/commercial-invoices`:
+   - POST / PUT / DELETE (soft) / GET (list + by id).
+   - POST /{id}/issue / POST /{id}/cancel.
+   - GET /{id}/pdf — generates standardized export-invoice PDF.
+   - POST /suggest-from-shipment?shipmentId={id} — returns line draft.
+8. Hub action wiring: extend EX hub action (§E8) to optionally chain
+   „Креирај commercial invoice" after EX submit (toast: „EX поднесен. Креирај commercial invoice сега?").
+9. UI:
+   - new route `/customs/commercial-invoices` — list page.
+   - CommercialInvoice detail page: header + line DataTable + issue/cancel/download PDF buttons.
+   - ClientOrder hub → new tab „Commercial invoices" listing CIs for this order.
+   - EX CustomsDeclaration detail → „Commercial invoice" link card if exists, else „Create" button.
+10. Integration tests (`CommercialInvoiceTests.cs`):
+    - CRUD smoke + tenant isolation.
+    - Numbering: 5 parallel creates → 5 distinct CI-YYYY-NNNNNN sequence values.
+    - Suggest-from-shipment: shipment with 3 lines → returns 3 line drafts with correct quantities.
+    - Status transitions (Draft → Issued; Issued → Cancelled; cannot edit lines after Issued).
+    - PDF endpoint smoke.
+11. Regenerate OpenAPI → TS schema.
+12. Commit: `phase-17.8.5: CommercialInvoice entity + EX hub wiring + UI`
+13. Deploy + smoke: create EX from hub → chain into commercial invoice → issue → download PDF.
+
+Z2779 verification: Z2779 doesn't have a tblIzvozniFakturi correlation (single-cycle
+inward-processing fully razdolzheno; no commercial export invoice raised). Phase 21
+dry-run is when this entity gets meaningful migration data.
+
+Finance integration (out of scope for §E8.5; tracked for Phase 27): margin
+reconciliation per ClientOrder = (CommercialInvoice.TotalAmount) − (cost of
+production) − (Invoice §5.14.2 to customer). Phase 27 adds the dashboard widget.
+
+Before declaring done, walk through VERIFICATION.md §E8.5. SESSION_LOG evidence.
 ```
 
 ### E9 — Razdolzuvanje view per ClientOrder
@@ -1021,16 +1147,26 @@ Before declaring done, walk through VERIFICATION.md Section E14. Paste evidence 
 ```
 Read BLUEPRINT.md §5.12.1 + VERIFICATION.md §E7.5.
 
-PREREQUISITE / DATA SOURCE NOTE (2026-05-12 PREP recon):
+PREREQUISITE / DATA SOURCE NOTE (2026-05-12 PREP recon + D6 decision):
 Local ELON DB slice has NO employee table (`tblKorisnikTEKSPORT` absent — see §9.1).
-Fresh-start vs prod-export was decided in PRE.3 / D6:
-- If D6=fresh-start: this task seeds 2 EMPTY CodeListItem categories (`EmployeeDepartment`,
-  `EmployeePosition`) ready for prod backfill in Phase 21. Skip the
-  „SELECT DISTINCT Department FROM Employees" backfill step — there are no existing
-  values to extract. New employees get values via inline „+Add new" on the form.
-- If D6=prod-export: this task DEFERS to Phase 21 (after prod ELON export arrives
-  containing real Department/Position string values).
-Default assumption: D6=fresh-start. Re-confirm via PRE.3 commit before starting.
+**D6 decided 2026-05-12: prod-export at Phase 21 cutover.**
+
+This task is therefore **DEFERRED to Phase 21.1.1** (a new sub-task after
+prod ELON export arrives carrying real `tblKorisnikTEKSPORT` rows with
+Department/Position string values).
+
+Phase 17 placeholder: backend handlers + schema (DepartmentId/PositionId
+columns + CodeListItem categories) can land in Phase 17 §E7.5 (this task) but
+backfill query runs against the prod-export staging DB at Phase 21, not against
+local. If you run §E7.5 in Phase 17:
+- Add the migration (schema + 2 categories) but with 0 seed rows.
+- UI inline „+Add new" creates first entries for net-new employees.
+- Phase 21.1.1 backfill query: SELECT DISTINCT Department FROM prod-staging
+  Employees → INSERT CodeListItem; UPDATE Employee.DepartmentId by string match.
+
+Alternative: leave the entire task to Phase 21 as a single bundle. Recommended for
+schedule predictability. If chosen, mark §E7.5 here as „deferred to 21.1.1" and
+do NOT execute in Phase 17.
 
 CONTEXT
 Employee entity has `Department` and `Position` as free-text `string?` fields.

@@ -141,9 +141,9 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 
 **Phase 17.PRE — Migration foundations + Z2779 happy-path** *(inserted 2026-05-12 after prep recon)*
 
-- [/] 17.PRE.1 CLAUDE.md §4/§5 + §11 stale-fact corrections (LON DB row, migration count, Phase 16→17) → committed `6e27a88`
-- [/] 17.PRE.2 BLUEPRINT §9.1 mapping update (9 corrections; Proces resolver; missing-tables flagged) → committed `6e27a88`
-- [ ] 17.PRE.3 User decisions for `TEKSPORT_WIPE_PLAN.md` + BLUEPRINT mapping D4/D5/D6 → awaiting user input
+- [x] 17.PRE.1 CLAUDE.md §4/§5 + §11 stale-fact corrections (LON DB row, migration count, Phase 16→17) → committed `6e27a88`
+- [x] 17.PRE.2 BLUEPRINT §9.1 mapping update (9 corrections; Proces resolver; missing-tables flagged) + Cowork audit closeout (Izdatnica/Ispratnica + inflate-for-waste + sticky-defaults reframe + HR caveat) → committed `6e27a88`+`7e67f1e`
+- [x] 17.PRE.3 6 user decisions resolved 2026-05-12 (D1=wipe approved, D2=env-var admin password, D3=local DB created, D4=new CommercialInvoice entity, D5=new DeliveryNote entity, D6=Phase 21 prod-export for HR) → committed (this commit)
 - [ ] 17.PRE.4 `docs/migration/MAPPING.md` (authoritative legacy→LON, table-by-table)
 - [ ] 17.PRE.5 Execute VPS wipe (backup + RESTORE VERIFYONLY gate; per `TEKSPORT_WIPE_PLAN.md`)
 - [ ] 17.PRE.6 Minimal seed (1 Tenant + 12 Roles + Permissions + Admin + codelists + 5 WorkCenters + 4 CustomsProcedures)
@@ -159,14 +159,16 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [ ] 17.5   Wire BOM + ProductionOrder from hub  → BLUEPRINT §5.4
 - [ ] 17.6   Wire Podelba from hub  → BLUEPRINT §5.6
 - [ ] 17.7   Wire MaterialIssue + ProductionReceipt from hub  → BLUEPRINT §5.7, §5.8
+- [ ] 17.7.6 `DeliveryNote` entity + polymorphic auto-gen on commit events (D5 — replaces Propratnici/Stavki 1.6k+296k legacy rows)  → BLUEPRINT §3.8
 - [ ] 17.8   Wire EX declaration + Shipment from hub + FinishedGoodReceipt + QC  → BLUEPRINT §5.9, §5.10
+- [ ] 17.8.5 `CommercialInvoice` entity + EX hub chain (D4 — replaces tblIzvozniFakturi/Stavki 3.2k+57.9k legacy rows; finance integration deferred to Phase 27)  → BLUEPRINT §3.2.1
 - [ ] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11
 - [ ] 17.10  AI helper service + 3 core recommendations + floating UI  → BLUEPRINT §7.4
 - [ ] 17.11  Domain events infrastructure + handler refactor (guarantee, inventory transitions)  → BLUEPRINT §3.6, §6.1, §6.2
 - [ ] 17.12  SQL SEQUENCE objects + NumberFormatter  → BLUEPRINT §6.6
 - [ ] 17.13  Audit interceptor + AuditLogEntry writes + /admin/audit-log UI activation  → BLUEPRINT §6.5
 - [ ] 17.14  Soft-delete global filter + recycle bin UI  → BLUEPRINT §6.7
-- [ ] 17.7.5 Department + Position lookup promotion (CodeListItem reuse + backfill migration)  → BLUEPRINT §5.12.1
+- [ ] 17.7.5 Department + Position lookup promotion (CodeListItem reuse) — **D6 decided 2026-05-12**: prod-export path. Recommended: defer schema + backfill entirely to Phase 21.1.1. Alternative: land schema in Phase 17 (empty seed) and backfill in Phase 21.1.1.  → BLUEPRINT §5.12.1
 - [ ] 17.10.5 AlertRule + AlertEvent entities + 6 predefined rules + nightly worker evaluator (no UI editor — Phase 26 adds it)  → BLUEPRINT §5.13.4
 - [ ] 17.X1  FxRate entity + manual maintenance UI `/finance/fx-rates`  → BLUEPRINT §5.14.8
 - [ ] 17.E   Playwright E2E happy-path test (the v1 acceptance loop, dev mode)  → BLUEPRINT §8.5
@@ -198,6 +200,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 ### Phase 21 — Migration + production hardening + launch  *(prompts in AGENT-PROMPTS.md §I1–§I6)*
 
 - [ ] 21.1  ELON migration dry-run loop (until reconciliation 100%)
+- [ ] 21.1.1 HR data backfill from prod ELON export (D6): import `tblKorisnikTEKSPORT` → resolve `FakturiU5Z.User` + `LagerMaterijali.User` int FKs to real User rows; backfill `Employee.DepartmentId` + `Employee.PositionId` from prod Department/Position strings; also missing master-data tables import (`KnigaNai`, `Aneksi`, `Preferencijal`, `tblFirmi`)  → BLUEPRINT §9.1
 - [ ] 21.2  Reconciliation queries documented
 - [ ] 21.3  Cutover plan written + reviewed
 - [ ] 21.4  USER_MANUAL.md updated to reflect ClientOrder hub
