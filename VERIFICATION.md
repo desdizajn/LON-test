@@ -474,7 +474,9 @@ SESSION_LOG: per-resource pass/fail; any 500s discovered (fix in same task or fi
 
 ## Phase 17 — ClientOrder hub + flow wiring + AI helper
 
-### §E0 — Sticky-defaults hook + bulk currency change
+### §E0 — Sticky-defaults hook + bulk field-update endpoint pattern
+
+> **Reframe (2026-05-12 PREP):** TEKSPORT ELON has 99.998% EUR lines — currency-specific bulk-change is a degenerate use case. Treat the hook + endpoint as **generic infrastructure** exercised primarily on UoM / CountryOfOrigin / TariffCode (where there IS variance), with currency a free side-effect.
 
 ```bash
 # Files present
@@ -490,7 +492,7 @@ node_modules/.bin/jest --testPathPattern="useStickyDefaults|BulkFieldUpdate"
 
 # Locale keys
 for lang in en mk; do
-  grep -q "bulkUpdate.currency" frontend/web/src/i18n/locales/${lang}.json && echo "$lang OK" || echo "$lang MISSING"
+  grep -q "bulkUpdate.title\|stickyDefaults.tooltip" frontend/web/src/i18n/locales/${lang}.json && echo "$lang OK" || echo "$lang MISSING"
 done
 
 # Compile + lint
@@ -776,6 +778,10 @@ grep -q "SoftDeleteRetentionJob\|HardDeleteAfter90Days" src/LON.Worker/
 
 ### §E7.5 — Department + Position lookup promotion
 
+> **Data-source caveat (2026-05-12 PREP):** Local ELON DB has no employee table; depending on PRE.3 / D6 outcome:
+> - **D6=fresh-start (default):** `EmployeeDepartment`/`EmployeePosition` categories seeded with 0 rows; backfill check below trivially passes; UI inline „+Add new" creates first values.
+> - **D6=prod-export:** entire task deferred to Phase 21 (skip §E7.5 verification block).
+
 ```bash
 # Migration applied
 ls src/LON.Infrastructure/Migrations/*DeptPosition*.cs
@@ -786,18 +792,18 @@ docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Tek
 "
 # Expected: 2 rows
 
-# CodeListItem rows seeded
+# CodeListItem rows seeded (D6=fresh-start: 2 rows expected, both count=0; D6=prod-export: skip this task)
 docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
   SELECT Category, COUNT(*) FROM CodeListItems
   WHERE Category IN ('EmployeeDepartment','EmployeePosition') GROUP BY Category
 "
-# Expected: 2 categories with N>0 rows (matching distinct values from old strings)
+# Expected: 2 categories rendered (count may be 0 in fresh-start mode)
 
-# Backfill verified
+# Backfill verified (D6=fresh-start: trivially 0 since no legacy Department strings)
 docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
   SELECT COUNT(*) FROM Employees WHERE Department IS NOT NULL AND DepartmentId IS NULL
 "
-# Expected: 0 (all mapped)
+# Expected: 0 (all mapped — or trivially zero in fresh-start)
 
 # UI
 grep -q "DepartmentId\|departmentId" frontend/web/src/pages/EmployeeManagement.tsx

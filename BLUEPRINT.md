@@ -558,7 +558,7 @@ Endpoint-level enforcement (FluentValidation + custom `[HasPermission(...)]` att
 
 **Business rules.**
 - Mora to be either а BOM linked OR a `NoBom=true` flag (rare; for trivial assembly).
-- Inflate-for-waste correction (legacy DREKKV/TEKSPORT): customer-template imports apply `KolMat * 100/(100-ArtOtpadProc)` when `ImportProfile.InflateForWaste=true`. Default false; only enabled per-customer.
+- Inflate-for-waste correction (legacy DREKKV/TEKSPORT): customer-template imports apply `KolMat * 100/(100-ArtOtpadProc)` when `Tenant.InflateForWasteEnabled=true`. **Legacy data check (2026-05-12 PREP):** only 4 articles out of 8,960 (0.04%) in TEKSPORT ELON have non-zero `ArtOtpadProc`, max 2%. Treat as legacy feature flag, **default OFF in v1**; TEKSPORT migration sets `true` to preserve audit-trail compatibility. Other migrated tenants opt-in explicitly.
 - Lock после first ProductionReceipt — само admin со reason може да менуа BOM.
 
 **Edge cases.**
@@ -647,7 +647,7 @@ Endpoint-level enforcement (FluentValidation + custom `[HasPermission(...)]` att
 
 **Учесници.** Warehouse Operator (физички pick на материјал), Production Planner (одобрува за пуштање), Production Operator at producer (физички приема + започнува работа).
 
-**ELON-was.** Implicitno during Podelba (Proces=1 → Proces=6). Formal Izdatnica (frmIzdatnici) + Ispratnica (frmIspratnici) chains.
+**ELON-was.** During Podelba: `LagerMaterijali` Proces=1 → Proces=7 (exit-to-producer). Formal document: **Izdatnica** (`frmIzdatnici` → `Izdatnici` table, 1,119 rows). `Ispratnica` (`frmIspratnici` → `Ispratnici` table, 776 rows) е **destruction certificate** (Proces=9 waste), не material issue — legacy research notes го имаа помешано. Match-rate: `LagerMaterijali.DokRBr` за Proces=7 vs `Izdatnici.RBr` = **99%**; vs `Ispratnici.RBr` = 12% (RBr coincidence only).
 
 **LON-spec.**
 
@@ -1083,7 +1083,7 @@ Business rules:
 
 **Учесници.** Quality Controller (главен), Warehouse Operator (повторен прием во главен магацин), Packaging Operator, Production Planner (rework decisions).
 
-**ELON-was.** Минимално — frmGotoviProizvodiPak (packaging), QC implicit via Ispratnici certifying.
+**ELON-was.** Минимално — `frmGotoviProizvodiPak` (packaging). QC немаше formal entity; quality issues се ракуваа ad-hoc преку comments на `LagerMaterijali` rows и `frmReklamacii` (not in local DB slice). Не преку Ispratnici — Ispratnici е destruction certificate (Proces=9 waste), не QC sign-off.
 
 **LON-spec.**
 
@@ -1177,7 +1177,7 @@ Post-v1 analytics:
 
 **Учесници.** Customs Officer (главен), Warehouse Operator (готови за товар), Speditor (post-v1, ако се logged).
 
-**ELON-was.** frmPodeliBaranjaBrz.cmdKreirajIspratnica — eden klik kreira Izdatnica + Ispratnica + Proces=7 InventoryRow.
+**ELON-was.** Customs EX submission се правеше преку **PEE060 XML manual upload** на customs portal + commercial export invoice во `tblIzvozniFakturi` (3.2k headers, 57.9k lines — out-of-v1 per §9.1 D4). Inward-processing **exit-to-producer** flow (Proces=7 → Izdatnica) е **различен** flow (види §5.6 Podelba и §5.7 MaterialIssue) — не дел od EX customs. EX customs во ELON немаше еден „submit" клик; correlation между PEE XML + commercial invoice + ClientOrder се правеше manually.
 
 **LON-spec.**
 - `Shipment` entity (постои) со FK `ClientOrderId`, ShipmentType=Export, CustomsDeclarationId (EX type).
@@ -1905,9 +1905,11 @@ Sticky fields per entity:
 - **ReceiptLine**: Location, QualityStatus.
 - **ProductionOrderMaterial**: Source location.
 
-**Bulk override toolbar** на секoja line-form: „🔄 Смени [field] на сите редови" → confirm dialog → update + audit log. За currency conкретно: dialog warns „Промена на валута ке ja recalculate-ира Vrednost според FX rate".
+**Bulk override toolbar** на секoja line-form: „🔄 Смени [field] на сите редови" → confirm dialog → update + audit log. За currency конкретно: dialog warns „Промена на валута ке ja recalculate-ира Vrednost според FX rate".
 
 UI placement: sticky pattern автоматска (нема user toggle); bulk action explicit (button во table toolbar).
+
+**Reality-check (2026-05-12 PREP):** TEKSPORT ELON snapshot има 43,223 EUR lines од 43,224 (99.998%). Currency bulk-change е degenerate use case за TEKSPORT — sticky-default-от за currency прави единствено „pre-fill EUR every time". Primary value на pattern-от е за **UoM / CountryOfOrigin / TariffCode** (значителна variance). Currency останува покриен од истата инфраструктура „безмала бесплатно", но не е showcase. Pattern не се rescope-ира; expectation за demos и user-training се прави.
 
 ### §7.4 — AI assistant (RAG свртен кон корисник)
 

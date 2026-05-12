@@ -15,7 +15,7 @@
 | Слој | Status | Бројки |
 |---|---|---|
 | Backend (Domain + App + API) | Solid, active development | 31.8k LoC src/, 174 routes, 57 handlers, 76 DbSets |
-| Database | Solid; 43 EF migrations | Last migration 2026-04-23 |
+| Database | Solid; 50 EF migrations | Last migration 2026-05-11 (P16.C3c `AddSupplierInvoice`) |
 | Integration tests | Good coverage on core flows | 154 [Fact]/[Theory], 39 files; gaps in WMS controller, RBAC, MasterData CRUD |
 | Frontend compile | Clean | 0 TS errors, 0 ESLint errors, 1 unused import |
 | Frontend UI | **Хаотичен** | 122 pages, 131 routes, 91 inline styles, 82 bootstrap, 20 MUI, 6 DataTable, 8 react-hook-form |
@@ -97,18 +97,20 @@
 ## §3 — Phase sequence with dependencies
 
 ```
-Phase 16 (in progress) ─┐
+Phase 16 ✅ closed 2026-05-11
                         │ blocks 17
-Phase 17 ────────────────┤
-                        │ blocks 18, 19
-Phase 18 ────────────────┤
-                        │
-Phase 19 ────────────────┤
-                        │
-Phase 20 ────────────────┤ blocks 21
-                        │
-Phase 21 ────────────────┘  v1!
+Phase 17 (in progress: PRE → E0–E16 → E15) ─┐
+                                            │ blocks 18, 19
+Phase 18 ────────────────────────────────────┤
+                                            │
+Phase 19 ────────────────────────────────────┤
+                                            │
+Phase 20 ────────────────────────────────────┤ blocks 21
+                                            │
+Phase 21 ────────────────────────────────────┘  v1!
 ```
+
+> Phase 17 inserted a **PRE sub-phase** (PRE.1–PRE.7) before E0 to fix the BLUEPRINT §9.1 mapping (9 corrections from prep recon), execute VPS wipe, and import Z2779 happy-path as the canonical fixture. See `CLAUDE.md §11.1`.
 
 Phases 18 + 19 may run in parallel (independent role implementations).
 
@@ -136,6 +138,18 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [ ] 16.D3  MasterData CRUD smoke tests
 
 ### Phase 17 — ClientOrder hub + flow wiring + AI helper minimum  *(prompts in AGENT-PROMPTS.md §E0–§E15)*
+
+**Phase 17.PRE — Migration foundations + Z2779 happy-path** *(inserted 2026-05-12 after prep recon)*
+
+- [/] 17.PRE.1 CLAUDE.md §4/§5 + §11 stale-fact corrections (LON DB row, migration count, Phase 16→17) → committed `6e27a88`
+- [/] 17.PRE.2 BLUEPRINT §9.1 mapping update (9 corrections; Proces resolver; missing-tables flagged) → committed `6e27a88`
+- [ ] 17.PRE.3 User decisions for `TEKSPORT_WIPE_PLAN.md` + BLUEPRINT mapping D4/D5/D6 → awaiting user input
+- [ ] 17.PRE.4 `docs/migration/MAPPING.md` (authoritative legacy→LON, table-by-table)
+- [ ] 17.PRE.5 Execute VPS wipe (backup + RESTORE VERIFYONLY gate; per `TEKSPORT_WIPE_PLAN.md`)
+- [ ] 17.PRE.6 Minimal seed (1 Tenant + 12 Roles + Permissions + Admin + codelists + 5 WorkCenters + 4 CustomsProcedures)
+- [ ] 17.PRE.7 `LON.Migration --happy-path Z2779` import + assert ClientOrder/IM/Receipt/BOM/Izdatnica/Razdolzuvanje + 6 reconciliation queries pass
+
+**Phase 17 main**
 
 - [ ] 17.0   `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern  → BLUEPRINT §7.3.1
 - [ ] 17.1   ClientOrder entity + migration + handlers + endpoints  → BLUEPRINT §3.1

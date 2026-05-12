@@ -474,13 +474,23 @@ Before declaring done, walk through VERIFICATION.md Section D3. Paste evidence i
 
 ## §E — Phase 17: ClientOrder hub + flow wiring + AI helper
 
-### E0 — Sticky-defaults hook + bulk currency change (foundation for E3/E5/E8)
+### E0 — Sticky-defaults hook + bulk field-update endpoint pattern (foundation for E3/E5/E8)
 
 ```
 Read BLUEPRINT.md §7.3.1 (Sticky values pattern) + §5.2 (UX detail) and VERIFICATION.md §E0 before starting.
 
 CONTEXT
-Q11.3 resolution: per-line currency with auto-prefill from last-entered row.
+Q11.3 resolution: per-line sticky-prefill from last-entered row for
+high-variance fields (UoM, CountryOfOrigin, TariffCode), plus a generic
+bulk field-update toolbar action для any line-table column.
+
+REALITY CHECK (2026-05-12 PREP recon): TEKSPORT ELON has 43,223 EUR rows /
+43,224 total (99.998% EUR). Currency is effectively single-value historically,
+so the original Q11.3 framing („per-line currency change") is over-engineered.
+Reframe: the **infrastructure** is the goal — sticky-defaults + generic bulk
+update — and we exercise it on UoM/Country/TariffCode (where there IS variance),
+plus currency as a degenerate case that still happens to work.
+
 Tasks E3 (IM lines), E5 (BOM lines), E8 (EX lines) all need this — implement
 once as a shared hook + component before wiring the line-tables.
 
@@ -514,12 +524,13 @@ TASK
 3. Server side: handler must accept a bulk update with `Reason` field;
    record AuditLogEntry with Action='BulkUpdate' for each affected row.
    Pattern: POST /api/{Resource}/{parentId}/lines/bulk-update with body:
-     { field: 'Currency', value: 'EUR', reason: '...' }
+     { field: 'UoM' | 'CountryOfOrigin' | 'TariffCode' | 'Currency', value: '...', reason: '...' }
    Returns affected count + new line snapshot.
+   Field whitelist enforced server-side (whitelist via FluentValidation).
 
-4. Locale keys (en + mk):
-   - common.bulkUpdate.currency.title / .confirm / .recalcWarning
-   - common.stickyDefaults.tooltip („Валутата се копира од претходниот ред")
+4. Locale keys (en + mk only per v1 scope):
+   - common.bulkUpdate.title / .confirm / .recalcWarning (generic — used for all fields)
+   - common.stickyDefaults.tooltip („Стандарденте вредности се копираат од претходниот ред")
 
 5. Pre-commit checks: tsc + eslint + jest.
 6. Commit: `phase-17.0: useStickyDefaults hook + BulkFieldUpdateButton + bulk-update endpoint pattern`
@@ -1009,6 +1020,17 @@ Before declaring done, walk through VERIFICATION.md Section E14. Paste evidence 
 
 ```
 Read BLUEPRINT.md §5.12.1 + VERIFICATION.md §E7.5.
+
+PREREQUISITE / DATA SOURCE NOTE (2026-05-12 PREP recon):
+Local ELON DB slice has NO employee table (`tblKorisnikTEKSPORT` absent — see §9.1).
+Fresh-start vs prod-export was decided in PRE.3 / D6:
+- If D6=fresh-start: this task seeds 2 EMPTY CodeListItem categories (`EmployeeDepartment`,
+  `EmployeePosition`) ready for prod backfill in Phase 21. Skip the
+  „SELECT DISTINCT Department FROM Employees" backfill step — there are no existing
+  values to extract. New employees get values via inline „+Add new" on the form.
+- If D6=prod-export: this task DEFERS to Phase 21 (after prod ELON export arrives
+  containing real Department/Position string values).
+Default assumption: D6=fresh-start. Re-confirm via PRE.3 commit before starting.
 
 CONTEXT
 Employee entity has `Department` and `Position` as free-text `string?` fields.
