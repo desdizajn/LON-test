@@ -58,7 +58,7 @@ sql_db "
 SET NOCOUNT ON;
 SELECT TOP 15
   t.name AS TableName,
-  SUM(p.rows) AS RowCount
+  SUM(p.rows) AS Rws
 FROM sys.tables t
 INNER JOIN sys.partitions p ON p.object_id = t.object_id
 WHERE p.index_id IN (0,1)
@@ -125,7 +125,7 @@ SELECT 'migrations (should be 50)' = COUNT(*) FROM __EFMigrationsHistory;
 
 SELECT
   t.name AS TableName,
-  SUM(p.rows) AS RowCount
+  SUM(p.rows) AS Rws
 FROM sys.tables t
 INNER JOIN sys.partitions p ON p.object_id = t.object_id
 WHERE p.index_id IN (0,1)
