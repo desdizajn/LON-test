@@ -472,19 +472,667 @@ SESSION_LOG: per-resource pass/fail; any 500s discovered (fix in same task or fi
 
 ---
 
+## Phase 17 — ClientOrder hub + flow wiring + AI helper
+
+### §E0 — Sticky-defaults hook + bulk currency change
+
+```bash
+# Files present
+test -f frontend/web/src/hooks/useStickyDefaults.ts
+test -f frontend/web/src/components/common/BulkFieldUpdateButton.tsx
+test -f frontend/web/src/hooks/useStickyDefaults.test.tsx
+test -f frontend/web/src/components/common/BulkFieldUpdateButton.test.tsx
+
+# Unit tests pass
+cd frontend/web
+node_modules/.bin/jest --testPathPattern="useStickyDefaults|BulkFieldUpdate"
+# Expected: ≥5 tests green
+
+# Locale keys
+for lang in en mk; do
+  grep -q "bulkUpdate.currency" frontend/web/src/i18n/locales/${lang}.json && echo "$lang OK" || echo "$lang MISSING"
+done
+
+# Compile + lint
+node_modules/.bin/tsc --noEmit
+node_modules/.bin/eslint src
+```
+
+**Server-side bulk update endpoint pattern:**
+```bash
+# Expect at least one handler implementing bulk-update with Reason
+grep -rE "BulkUpdateLinesCommand|BulkFieldUpdateRequest" src/LON.Application --include="*.cs"
+# Expected: ≥1 match (foundation; consumed by later tasks)
+```
+
+**No VPS smoke required (foundation only; visible when E3 consumes it).**
+
+**SESSION_LOG:**
+- Hook signature + scope keys defined
+- Unit test count
+- Locale keys added (count)
+
+---
+
+### §E1 — ClientOrder entity + endpoints
+
+```bash
+# Entity present
+test -f src/LON.Domain/Entities/Customs/ClientOrder.cs
+grep -q "ClientOrderStatus" src/LON.Domain/Enums/*.cs
+grep -q "DbSet<ClientOrder>" src/LON.Infrastructure/Persistence/ApplicationDbContext.cs
+grep -q "DbSet<ClientOrder>" src/LON.Application/Common/Interfaces/IApplicationDbContext.cs
+
+# Migration applied locally
+ls src/LON.Infrastructure/Migrations/*phase-17*ClientOrder*.cs
+dotnet ef database update --project src/LON.Infrastructure --startup-project src/LON.API
+
+# Handlers
+ls src/LON.Application/Customs/ClientOrders/
+# Expected: Create / Update / Cancel / GetById / GetList + Handler files
+
+# Endpoints
+grep -E '\[Http(Get|Post|Put|Delete)' src/LON.API/Controllers/ClientOrdersController.cs | wc -l
+# Expected: ≥6
+
+# Number formatter
+grep -q "CO-{year:0000}-{seq:D6}\|CO-{0}-{1:D6}" src/LON.Domain/Common/NumberFormatter.cs
+
+# Tests
+test -f tests/LON.IntegrationTests/ClientOrderTests.cs
+dotnet test tests/LON.IntegrationTests/ --filter "FullyQualifiedName~ClientOrder" 2>&1 | tail -10
+# Expected: green; ≥6 tests including concurrency + tenant isolation
+```
+
+**SQL SEQUENCE check:**
+```bash
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT name FROM sys.sequences WHERE name LIKE 'seq_ClientOrder%'
+"
+# Expected: 1 row (per-tenant); current_value increments after 1 CreateClientOrder POST
+```
+
+**OpenAPI types:**
+```bash
+./scripts/gen-api-types.sh
+git diff --stat frontend/web/src/api/schema.d.ts
+# Expected: change present, committed
+```
+
+**VPS smoke:**
+1. Deploy. Verify `https://elon.elbosoft.click/api/ClientOrders` (with auth) returns `[]`.
+2. POST one via Postman → 201, returns `OrderNumber: "CO-2026-000001"`.
+3. GET it back → matches.
+
+---
+
+### §E2 — ClientOrder list + hub UI shell
+
+```bash
+test -f frontend/web/src/pages/Orders/OrderList.tsx
+test -f frontend/web/src/pages/Orders/OrderHub.tsx
+grep -q "/orders" frontend/web/src/App.tsx
+grep -q "/orders/:id" frontend/web/src/App.tsx
+grep -q "orders" frontend/web/src/nav/navGroups.ts
+
+cd frontend/web
+node_modules/.bin/tsc --noEmit
+node_modules/.bin/eslint src
+```
+
+**Locales:**
+```bash
+for lang in en mk; do
+  grep -q "orders.hub" frontend/web/src/i18n/locales/${lang}.json && echo "$lang OK" || echo "$lang MISSING orders keys"
+done
+```
+
+**VPS smoke:**
+1. Login as Manager → /orders renders.
+2. Click „Нов налог" → dialog opens, can create.
+3. Created → navigates to /orders/:id; hub renders with 3 widgets + action launcher (buttons disabled with tooltip).
+4. Sidebar shows „📋 Налози" group; click navigates to /orders.
+
+---
+
+### §E3 — Wire IM declaration from hub
+
+```bash
+grep -q "Креирај увозна декларација" frontend/web/src/pages/Orders/OrderHub.tsx
+grep -q "actions.imDeclaration" frontend/web/src/i18n/locales/mk.json
+
+# Concurrency test:
+# Open 2 browser tabs to /orders/X simultaneously, both create IM declarations
+# → expect 2 distinct DeclarationNumbers (IM-2026-XXXXX1 + IM-2026-XXXXX2),
+# both pointed at same ClientOrder.
+```
+
+**VPS smoke:**
+1. From hub action → fill dialog → submit → Declarations tab on hub updates with new entry.
+2. Verify ClientOrder.Status transitioned Draft → Active via re-fetch (or hub reload).
+
+---
+
+### §E4–§E9 (continued business flow wiring)
+
+Each follows pattern of §E3:
+- File presence: action button in OrderHub.tsx with t() key
+- Locale keys MK + EN
+- tsc + eslint clean
+- VPS smoke: from real ClientOrder, execute the action, verify side-effect on hub
+
+Specific extras:
+
+**§E4 — Receipt:**
+- After receive: InventoryBalance count via API increases by N where N = number of lines received.
+- Variance: receive 95 of 100 declared → status of line on hub shows „Partially received".
+
+**§E5 — BOM + ProductionOrder:**
+- ClientOrderFinishedGood rows added; ProductionOrder created with FK clientOrderId; bom assigned.
+- Smart suggestion: previously-used BOM for same Item shows in dropdown highlighted.
+
+**§E6 — Podelba:**
+- After podelba: InventoryBalance rows have AssignedProducerId set; Materials tab on hub filters by producer.
+
+**§E7 — Issue + ProductionReceipt:**
+- After issue: ProductionOrder.IssuedMaterials list populated.
+- After receipt: ProductionOrder.ProducedQuantity increases; %Produced widget on hub updates.
+
+**§E8 — EX + Shipment + QC:**
+- After EX submission: Shipments tab + Declarations tab on hub show new entries.
+- QC pass: FG.QualityStatus = OK; eligible for shipment.
+
+**§E9 — Razdolzuvanje:**
+- /orders/:id/razdolzuvanje renders; balance shown.
+- Snapshot button: POST /api/Guarantee/snapshots → GuaranteeBalanceSnapshot row created.
+- If balance reconciled + all lines flagged → ClientOrder.Status auto-transitions to Closed.
+
+---
+
+### §E10 — AI helper
+
+```bash
+test -f src/LON.Application/Ai/AiAssistantService.cs
+grep -q "GetRecommendations" src/LON.Application/Ai/AiAssistantService.cs
+grep -E '\[HttpPost\("recommendations' src/LON.API/Controllers/AiController.cs
+
+# Integration tests
+test -f tests/LON.IntegrationTests/AiHelperTests.cs
+dotnet test --filter "FullyQualifiedName~AiHelper" 2>&1 | tail -10
+
+# Frontend
+test -f frontend/web/src/components/common/AiHelperButton.tsx
+grep -q "AiHelperButton" frontend/web/src/App.tsx
+
+cd frontend/web
+node_modules/.bin/tsc --noEmit
+```
+
+**AiSuggestionLog table:**
+```bash
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT TOP 5 EntityType, RecommendationTitle, UserActedOn FROM AiSuggestionLog ORDER BY GeneratedAt DESC
+"
+```
+
+**VPS smoke (3 scenarios):**
+1. Create ClientOrder in Draft, no FGs → open hub → AI helper button → recommendations panel shows „Внеси готови производи (BOM)" with action link.
+2. Create Receipt with received qty 90/100 (10% variance) → AI helper recommends „Просечен variance ... провери packaging".
+3. Approach Razdolzuvanje on order with unconsumed materials → AI helper recommends „Има N линии IM без EX consumption".
+
+---
+
+### §E11 — Domain events + handler refactor
+
+```bash
+# Interfaces + concrete events
+test -f src/LON.Domain/Common/IDomainEvent.cs
+grep -E "class (ClientOrderCreated|CustomsDeclarationApproved|ReceiptCommitted|ShipmentCommitted)Event" src/LON.Domain --include="*.cs" -r | wc -l
+# Expected: ≥8
+
+# Dispatcher
+grep -q "Publish.*_events\|MediatR.Publish" src/LON.Infrastructure/Persistence/ApplicationDbContext.cs
+
+# Audit log table
+ls src/LON.Infrastructure/Migrations/*DomainEventLog*.cs
+
+# Handler refactor evidence: handlers no longer directly insert
+# GuaranteeLedgerEntry from CustomsDeclaration approval handler
+grep -A 20 "ApproveCustomsDeclarationCommandHandler" src/LON.Application/Customs/**/*.cs | grep -E "GuaranteeLedgerEntry|GuaranteeAccount"
+# Expected: ZERO matches (handler emits event; separate event handler creates ledger)
+
+# All integration tests still pass
+dotnet test 2>&1 | grep -E "Total tests:|Passed:|Failed:"
+# Expected: Failed: 0
+```
+
+---
+
+### §E12 — SQL SEQUENCE objects
+
+```bash
+# Migration applied
+ls src/LON.Infrastructure/Migrations/*NumberSequences*.cs
+
+# All expected sequences exist
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT name FROM sys.sequences ORDER BY name
+"
+# Expected: seq_ClientOrder_*, seq_CustomsDeclarationIM_*, seq_CustomsDeclarationEX_*,
+#           seq_Receipt_*, seq_MaterialIssue_*, seq_Shipment_*, seq_ProductionOrder_*,
+#           seq_GuaranteeLedger_*
+
+# No DMax+1 in new handler code
+grep -rn "DMax\|\.Max(.*)+ 1\|MAX.*\+.*1" src/LON.Application --include="*.cs" | grep -v "/* legacy"
+# Expected: empty or only commented-legacy
+
+# Concurrency test: parallel creates produce unique numbers
+test -f tests/LON.IntegrationTests/NumberingConcurrencyTests.cs
+dotnet test --filter "FullyQualifiedName~NumberingConcurrency" 2>&1 | tail -5
+```
+
+---
+
+### §E13 — Audit interceptor
+
+```bash
+test -f src/LON.Infrastructure/Persistence/Interceptors/AuditInterceptor.cs
+grep -q "AddInterceptors.*AuditInterceptor" src/LON.Infrastructure/
+
+# AuditLogEntry rows after entity modification:
+# (Run an integration test that updates a ClientOrder, then query)
+dotnet test --filter "FullyQualifiedName~AuditInterceptorTests" 2>&1 | tail -5
+
+# UI
+test -f frontend/web/src/pages/Admin/AuditLog.tsx
+grep -q "/admin/audit-log" frontend/web/src/App.tsx
+```
+
+**VPS smoke:**
+1. Login as Administrator → /admin/audit-log → DataTable loads.
+2. Modify a ClientOrder field → reload /admin/audit-log → new entry visible with ChangedFields JSON expanded.
+
+---
+
+### §E14 — Soft-delete + recycle bin
+
+```bash
+# Interface applied
+grep -rln "ISoftDeletable" src/LON.Domain/Entities/ --include="*.cs" | wc -l
+# Expected: ≥10 (per BLUEPRINT §3.7 list)
+
+# Global query filter
+grep -q "WHERE !.*IsDeleted\|.IsDeleted == false" src/LON.Infrastructure/Persistence/Configurations/*.cs
+
+# Recycle bin UI
+test -f frontend/web/src/pages/Admin/RecycleBin.tsx
+grep -q "/admin/recycle-bin" frontend/web/src/App.tsx
+
+# Retention worker
+grep -q "SoftDeleteRetentionJob\|HardDeleteAfter90Days" src/LON.Worker/
+```
+
+---
+
+### §E7.5 — Department + Position lookup promotion
+
+```bash
+# Migration applied
+ls src/LON.Infrastructure/Migrations/*DeptPosition*.cs
+
+# Schema check
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT name FROM sys.columns WHERE object_id=OBJECT_ID('Employees') AND name IN ('DepartmentId','PositionId')
+"
+# Expected: 2 rows
+
+# CodeListItem rows seeded
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT Category, COUNT(*) FROM CodeListItems
+  WHERE Category IN ('EmployeeDepartment','EmployeePosition') GROUP BY Category
+"
+# Expected: 2 categories with N>0 rows (matching distinct values from old strings)
+
+# Backfill verified
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT COUNT(*) FROM Employees WHERE Department IS NOT NULL AND DepartmentId IS NULL
+"
+# Expected: 0 (all mapped)
+
+# UI
+grep -q "DepartmentId\|departmentId" frontend/web/src/pages/EmployeeManagement.tsx
+grep -q "CodeListItem" frontend/web/src/pages/EmployeeManagement.tsx
+
+cd frontend/web
+node_modules/.bin/tsc --noEmit
+node_modules/.bin/eslint src
+dotnet test --filter "FullyQualifiedName~Employee" 2>&1 | tail -5
+```
+
+**VPS smoke:** open EmployeeForm → Department dropdown loads existing values + accepts inline „Add new" → new entry appears in dropdown immediately.
+
+---
+
+### §E10.5 — AlertRule + AlertEvent + worker
+
+```bash
+# Entities + migration
+test -f src/LON.Domain/Entities/Management/AlertRule.cs
+test -f src/LON.Domain/Entities/Management/AlertEvent.cs
+ls src/LON.Infrastructure/Migrations/*AlertRulesAndEvents*.cs
+
+# Seeded 6 rules
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT COUNT(*) FROM AlertRules WHERE IsActive=1
+"
+# Expected: 6
+
+# Worker
+test -f src/LON.Worker/Jobs/AlertEvaluatorJob.cs
+grep -q "AddHostedService.*AlertEvaluatorJob" src/LON.Worker/Program.cs
+
+# Endpoints
+grep -E '\[Http(Get|Post)\("alerts' src/LON.API/Controllers/ManagementController.cs
+# Expected: ≥3 entries (GET list, POST acknowledge, POST resolve)
+
+# Tests
+test -f tests/LON.IntegrationTests/AlertRulesTests.cs
+dotnet test --filter "FullyQualifiedName~AlertRules" 2>&1 | tail -10
+# Expected: green; ≥7 tests (one per rule + acknowledge + dedupe)
+
+# UI not localStorage anymore
+grep -c "localStorage.setItem\|localStorage.getItem" frontend/web/src/pages/Management/Alerts.tsx
+# Expected: 0
+```
+
+**VPS smoke:**
+1. Wait for worker to run (10 min after deploy).
+2. Force a condition: set GuaranteeAccount.CurrentBalance via SQL to >95% of ceiling → restart worker → reload `/management/alerts` → new alert row visible.
+3. Click „Acknowledge" → row moves to Acknowledged state; audit log entry present.
+4. Dashboard card „Open alerts" shows updated count.
+
+---
+
+### §E16 — FxRate entity + maintenance UI
+
+```bash
+# Entity + migration
+test -f src/LON.Domain/Entities/Finance/FxRate.cs
+ls src/LON.Infrastructure/Migrations/*FxRate*.cs
+
+# Seeded rates
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT FromCurrency, ToCurrency, Rate FROM FxRates WHERE EffectiveDate <= GETDATE() ORDER BY FromCurrency
+"
+# Expected: ≥3 rows (EUR/MKD, USD/MKD, USD/EUR)
+
+# Service
+test -f src/LON.Application/Finance/FxRateService.cs
+grep -q "Task<decimal> GetRate" src/LON.Application/Finance/FxRateService.cs
+
+# Handlers
+ls src/LON.Application/Finance/FxRates/
+
+# Endpoints
+grep -E '\[Http(Get|Post|Put|Delete)\(' src/LON.API/Controllers/FinanceController.cs | grep -i fx
+# OR new dedicated controller
+test -f src/LON.API/Controllers/FxRatesController.cs || grep -q "fx-rates" src/LON.API/Controllers/FinanceController.cs
+
+# UI
+test -f frontend/web/src/pages/Finance/FxRates.tsx
+grep -q "/finance/fx-rates" frontend/web/src/App.tsx
+
+# Tests
+test -f tests/LON.IntegrationTests/FxRateTests.cs
+dotnet test --filter "FullyQualifiedName~FxRate" 2>&1 | tail -10
+# Expected: green; ≥5 tests (CRUD + GetRate + cross-rate fallback + exception on missing)
+```
+
+**VPS smoke:**
+1. Create FX rate EUR/MKD = 61.50 effective today via UI.
+2. Create test ClientOrder in EUR with €100 line.
+3. Generate Invoice → verify margin calc uses 61.50.
+4. Update rate to 62.00 effective tomorrow; re-fetch margin (today's value) → still 61.50.
+
+---
+
+### §E15 — Playwright E2E happy-path
+
+```bash
+test -f tests/playwright/playwright.config.ts
+test -f tests/playwright/tests/happy-path.spec.ts
+
+cd tests/playwright
+npm install
+npx playwright test --reporter=line
+# Expected: 1 test passed (happy-path)
+
+# Run against VPS too
+BASE_URL=https://elon.elbosoft.click API_URL=https://elon.elbosoft.click/api npx playwright test
+# Expected: 1 test passed
+```
+
+**Screenshot evidence:** Playwright auto-records video on failure; on success, attach `playwright-report/index.html` to SESSION_LOG entry.
+
+---
+
+## Phase 18 — Subcontractor (§F)
+
+### §F1 — Role + JWT claim
+
+```bash
+# Role seeded
+grep -q "Subcontractor" src/LON.Migration/Seed/
+# OR check via API
+curl -fsSL -u admin "https://elon.elbosoft.click/api/Roles" | jq '.data[] | select(.name=="Subcontractor")'
+# Expected: 1 result
+
+# JWT contains claim (decode token of a Subcontractor user; check external_partner_id)
+```
+
+### §F2 — Server-side filter + RBAC
+
+```bash
+test -f tests/LON.IntegrationTests/SubcontractorIsolationTests.cs
+dotnet test --filter "FullyQualifiedName~SubcontractorIsolation" 2>&1 | tail -10
+# Expected: green; tests that subcontractor sees only their POs + 403 on forbidden endpoints
+```
+
+### §F3 — Subcontractor dashboard
+
+```bash
+test -f frontend/web/src/pages/Producer/Dashboard.tsx
+grep -q "/producer/dashboard" frontend/web/src/App.tsx
+```
+
+**VPS smoke:** Login as subcontractor, see only their POs.
+
+### §F5 — Playwright
+
+```bash
+test -f tests/playwright/tests/subcontractor-isolation.spec.ts
+cd tests/playwright && npx playwright test subcontractor-isolation
+# Expected: green
+```
+
+---
+
+## Phase 19 — Speditor (§G)
+
+Mirror Phase 18 (auth/filter/dashboard/E2E pattern).
+
+```bash
+test -f tests/playwright/tests/speditor.spec.ts
+cd tests/playwright && npx playwright test speditor
+```
+
+---
+
+## Phase 20 — RLS + tenant security (§H)
+
+### §H1–H2 — RLS policy + middleware
+
+```bash
+# Policy exists
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  SELECT name FROM sys.security_policies WHERE name='TenantIsolationPolicy'
+"
+# Expected: 1 row, is_enabled=1
+
+# SQL-level isolation test
+docker exec lon-sqlserver /opt/mssql-tools/bin/sqlcmd -U sa -P "$SA_PASS" -d Teksport -Q "
+  EXEC sp_set_session_context 'TenantId', N'00000000-0000-0000-0000-000000000000';
+  SELECT COUNT(*) FROM ClientOrders
+"
+# Expected: 0 (no rows match the fake tenant)
+```
+
+### §H3 — Pen test
+
+```bash
+test -f docs/security/PHASE20_PENTEST.md
+# Contains: 3+ tampered JWT scenarios + their blocked-result evidence
+```
+
+### §H4 — Security audit document
+
+```bash
+test -f docs/security/PHASE20_AUDIT.md
+# Contains: sign-off section, all 8 audit topics
+```
+
+### §H5 — Backup + restore
+
+```bash
+ls /opt/apps/LON/backups/ | tail -10
+# Expected: 7+ days of daily backups
+# Run restore drill on staging container; document in SESSION_LOG
+```
+
+---
+
+## Phase 21 — Migration + launch (§I)
+
+### §I1 — Migration reconciliation
+
+```bash
+# Reconciliation queries return clean
+dotnet run --project src/LON.Migration --verify
+# Expected: all 6 reconciliation checks pass (variance within tolerance)
+```
+
+### §I2 — Cutover plan
+
+```bash
+test -f docs/launch/PHASE21_CUTOVER_PLAN.md
+# Contains: T-7/T-1/T-0 timeline, rollback procedure, user sign-off
+```
+
+### §I3 — USER_MANUAL
+
+```bash
+# Updated for hub UX
+grep -q "ClientOrder hub\|/orders/" docs/USER_MANUAL.md
+```
+
+### §I4 — Final E2E sweep
+
+```bash
+cd tests/playwright
+BASE_URL=https://elon.elbosoft.click npx playwright test --reporter=html
+# Expected: 4+ E2E spec files all green
+```
+
+### §I5 — Go-live
+
+Final ceremony:
+- Cutover plan executed.
+- Live tail of logs for 48h.
+- Issues documented in SESSION_LOG.
+- Phase 22+ post-v1 backlog filed.
+
+---
+
+## §J — Playwright E2E patterns (shared reference)
+
+### §J1 — Local test run
+
+```bash
+cd tests/playwright
+npm ci
+npx playwright install --with-deps chromium
+npx playwright test --headed   # see browser
+npx playwright test            # headless (CI)
+npx playwright test --debug    # step-through
+npx playwright test --ui       # UI mode
+```
+
+### §J2 — Generate test report
+
+```bash
+npx playwright show-report
+# Opens browser to HTML report
+```
+
+### §J3 — Test data hygiene
+
+- Each test creates own tenant via API (no shared mutable state).
+- Teardown deletes tenant.
+- If a test fails mid-flow, teardown still runs (Playwright `afterEach`).
+
+### §J4 — Flake mitigation
+
+- Use `await expect(locator).toBeVisible()` instead of `waitFor` literals.
+- Avoid arbitrary `sleep`. Use Playwright's auto-wait.
+- Stable selectors: `data-testid="..."` attributes preferred over text (i18n changes).
+- Retry once on CI (not locally): `playwright.config.ts: retries: process.env.CI ? 1 : 0`.
+
+### §J5 — Visual regression (post-v1)
+
+If we add: `await expect(page).toHaveScreenshot('hub-empty.png', { maxDiffPixelRatio: 0.01 });`
+Stored in `tests/playwright/__screenshots__/`. Re-baseline with `--update-snapshots`.
+
+### §J6 — CI configuration sample
+
+```yaml
+# .github/workflows/e2e.yml
+name: E2E
+on: [pull_request, schedule]
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f docker-compose.yml up -d --build
+      - run: ./scripts/wait-for-api.sh
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: cd tests/playwright && npm ci && npx playwright install --with-deps chromium
+      - run: cd tests/playwright && npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/playwright/playwright-report/
+          retention-days: 14
+```
+
+---
+
 ## Cross-cutting rules
 
 **Never:**
 - Skip the OpenAPI type regen step when you touched a DTO. CI gate will catch you, but the symptom is a frontend that compiles locally then breaks runtime on VPS.
 - Commit with `--no-verify`. The pre-commit hook is the only thing keeping tsc honest right now.
-- Merge to main without a SESSION_LOG entry. The audit trail is how we'll write the new BLUEPRINT.md.
+- Merge to main without a SESSION_LOG entry.
+- Skip Playwright run before declaring Phase 17.E15 / 18.F5 / 19.G4 / 20.H3 / 21.I4 done.
 
 **Always:**
 - Run the universal pre-flight + post-task blocks.
-- Take a screenshot of the VPS smoke step (the screenshot IS the evidence — text claims of "I tested it" don't count).
-- Update WORK_PLAN.md → "Phase 16" section → mark `[x]` after evidence is in SESSION_LOG.
+- Take a screenshot of the VPS smoke step OR Playwright HTML report (evidence — text claims of "I tested it" don't count).
+- Update PLAN.md → relevant phase section → mark `[x]` after evidence is in SESSION_LOG.
 
 **If blocked:**
-- File the blocker as a new `P16.X.followup` row in WORK_PLAN.md with `[!]` marker.
-- Note in SESSION_LOG what specifically is blocking (DB connection? VPS down? Test flake?).
+- File the blocker as a new `P{N}.X.followup` row in PLAN.md with `[!]` marker.
+- Note in SESSION_LOG what specifically is blocking (DB connection? VPS down? Test flake? Missing decision Q11.X?).
 - Do NOT move to a later prompt to "make progress" — the chaos in Phase 0–15 came from exactly this habit.

@@ -6,7 +6,9 @@
 
 ## 1. Контекст (еден параграф)
 
-**LON** е нова multi-tenant SaaS апликација што ја заменува **ELON** — 30-годишна Access/VBA апликација за **увоз за облагородување** (inward processing) царинска постапка. Тим: **еден корисник + Claude** за развој; **експерт од областа (постои во фирмата што користи ELON во продукција)** за тестирање и валидација. Stack: .NET 8 clean architecture + React/TS + Flutter + SQL Server + Docker + OpenAI RAG. Целосна анализа на legacy во [`../PdfToExcel/ELON_Research/`](../PdfToExcel/ELON_Research/). Blueprint на новата апликација во [`ELON_Blueprint.md`](ELON_Blueprint.md).
+**LON** е нова multi-tenant SaaS апликација што ја заменува **ELON** — 30-годишна Access/VBA апликација за **увоз за облагородување** (inward processing) царинска постапка. Тим: **еден корисник + Claude** за развој; **експерт од областа (постои во фирмата што користи ELON во продукција)** за тестирање и валидација. Stack: .NET 8 clean architecture + React/TS + Flutter + SQL Server + Docker + OpenAI RAG. Целосна анализа на legacy во [`docs/ELON_Research/`](docs/ELON_Research/). **Спецификацијата за финалната апликација е во [`BLUEPRINT.md`](BLUEPRINT.md) — single source of truth.** Roadmap до v1 е во [`PLAN.md`](PLAN.md).
+
+> ⚠ Стариот [`ELON_Blueprint.md`](ELON_Blueprint.md) (Март 2026) е **архивиран — не e авторитет**. Користи го само за legacy context.
 
 ---
 
@@ -57,10 +59,15 @@
 |---|---|---|
 | **Local dev** | Windows 11, SQL Server express со Windows auth, working dir: `C:\Users\БобанКозаров\Documents\LON-test` | `docker compose up` за integration; `dotnet run` за API-only |
 | **VPS (production-test)** | Contabo, `root@173.212.254.216`, домен `elon.elbosoft.click`, app path `/opt/apps/LON/LON-test`, Caddy reverse proxy + auto SSL | Сите промени **секогаш** се deploy-ираат тука. Не се прашува „дали". Passwordless SSH од local `~/.ssh/id_ed25519`. |
-| **Legacy ELON DB** | Локален SQL Server, Windows Authentication, база: `ELON` | Read-only за миграција и споредба. НИКОГАШ не се менува. |
+| **Local LON DB** | Локален SQL Server, Windows Authentication, база: `LONDB` | LON development DB. Овде се применуваат EF миграции локално (`dotnet ef database update --project src/LON.Infrastructure --startup-project src/LON.API`). Recreate: `sqlcmd -S localhost -E -Q "CREATE DATABASE LONDB;"` потоа `dotnet ef database update`, потоа `cd src/LON.API && ASPNETCORE_ENVIRONMENT=Development dotnet run` еднаш да го triggerа seedот. |
+| **Legacy ELON DB** | Локален SQL Server, Windows Authentication, база: `ELON` | Read-only за миграција и споредба. НИКОГАШ не се менува. ⚠ Локалниот ELON DB е TEKSPORT-only slice од 31 табела — не цел legacy schema. Master-data + tariff catalogues (`KnigaNai`, `Aneksi`, `Preferencijal`, `tblFirmi`, `tblKorisnikTEKSPORT`) недостасуваат тука; ќе се бараат export од Teksport prod во Phase 21. |
 
-### Legacy DB конекција (за миграции и споредба)
+### Local DB конекции
 ```
+# LON (dev — write)
+Server=localhost;Database=LONDB;Trusted_Connection=True;TrustServerCertificate=True;
+
+# Legacy ELON (read-only за миграции и споредба)
 Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
@@ -68,9 +75,10 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 
 ## 5. Клучни факти
 
-- **Test tenant:** `TEKSPORT` (мапира на истоимениот Uvoznik во ELON, чии табели се `tblKorisnikTEKSPORT`, `InvoiceTEKSPORT`, итн.).
-- **TEKSPORT legacy quirks:** inflate-for-waste на import (`KolMat * 100/(100-otpad%)`), deletes Invoice staging после transfer — мора да се преслика ако сакаме bit-by-bit споредба.
-- **Состојба на проектот (May 2026):** Фази 0–15 ги поставија ядрата (~31.8k LoC backend, 122 FE pages, 43 EF migrations, 154 [Fact] integration тестови, 174 BE routes, 85 FE endpoints — 100% покриеност). Сега сме во **Фаза 16 (cleanup + UI foundation)** — види секција 11.
+- **Test tenant:** `TEKSPORT` (мапира на истоимениот Uvoznik во legacy ELON). Локален ELON DB е TEKSPORT-only slice — `Uvoznik` колоната е NULL свугде; tenant discriminator се извлекува „DB-as-a-whole IS the tenant".
+- **TEKSPORT legacy quirks:** inflate-for-waste на import (`KolMat * 100/(100-otpad%)`) — реално користен на само 4 articles (од 8,960 materials, max 2%); зачувуваме како feature flag, default OFF. Invoice staging deletion после transfer — мора да се преслика ако сакаме bit-by-bit споредба.
+- **Состојба на проектот (May 2026):** Фази 0–15 ги поставија ядрата (~31.8k LoC backend, 122 FE pages, 154 [Fact] integration тестови, 174 BE routes, 85 FE endpoints — 100% покриеност). **Фаза 16 ЗАВРШЕНА** (cleanup + UI foundation — 13/13). **Сега сме во Фаза 17** (ClientOrder hub + flow wiring + AI helper; започнува со **Phase 17.PRE** — migration foundations + Z2779 happy-path) — види секција 11.
+- **EF migrations:** 50 applied (Phase 16.C добавки `P16_C1_AddRiskRegisterItem`, `P16_C2_AddEmployeeCertification`, `P16_C3a/b/c`). Recreate count со `ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | grep -v ModelSnapshot | wc -l`.
 - **Multi-tenant од почеток:** секоја нова ентитет мора да има `TenantId`. Секој нов query мора да биде tenant-scoped.
 
 ---
@@ -118,15 +126,19 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 
 ### 8.1 ПРЕД првата реплика на корисник — задолжителна hydration
 
-Корисникот имал лошо искуство со сесии што почнуваат „како првпат". **НЕ ПРАШУВАЈ** за VPS, креденцијали, тестово окружување, одлуки — сето тоа е запишано. Прочитај задолжително:
+Корисникот имал лошо искуство со сесии што почнуваат „како првпат". **НЕ ПРАШУВАЈ** за VPS, креденцијали, тестово окружување, одлуки — сето тоа е запишано. Прочитај задолжително во овој ред:
 
-1. `MEMORY.md` (автоматски loaded) — 14 pointer записи, следи ги сите што се релевантни.
+1. `MEMORY.md` (автоматски loaded) — pointer записи, следи ги сите што се релевантни.
 2. Овој `CLAUDE.md` — правила + environments + защо defaults.
-3. `WORK_PLAN.md` — најмалку прво 40 линии (состојба на фази) + **Current Active Task** на дното.
-4. **`docs/ROADMAP.md`** — single source за преостанатите фази P7–P13; секоја placeholder-to-real конверзија има стабилен ID (`P7.1`, `P10.3`, ...), ефорт, приоритет, зависности. Провери што е следно на Sprint редоследот.
-5. Последни 3–5 записи во `SESSION_LOG.md` — последен контекст + докази + discoveries.
+3. **`BLUEPRINT.md` §1, §3, §5, §10** — vision, domain model, business flows, roadmap. Single source of truth за *што* апликацијата мора да биде.
+4. **`PLAN.md`** — текoven статус + delta per BLUEPRINT секција + tasks per phase. Single source за *како* стасуваме до v1.
+5. **`AGENT-PROMPTS.md`** — ако ова е Claude Code сесија: најди го матичниот промпт за тaскот од име/ID. Самосодржани (не реferирaj назад на conversation history).
+6. **`VERIFICATION.md`** — за тековниот таск, пред да започнеш и пред да кажеш „готово".
+7. Последни 3–5 записи во `SESSION_LOG.md` — последен контекст + докази + discoveries.
 
-Ако корисникот даде нешто специфично, тоа се надополнува врз оваа база. Ако нема, тргни од **Current Active Task** во WORK_PLAN.
+Ако корисникот даде нешто специфично, тоа се надополнува врз оваа база. Ако нема, тргни од најраниот `[ ]` таск во `PLAN.md` § активна фаза.
+
+> **Конфликт-резолуција:** ако BLUEPRINT и WORK_PLAN.md (legacy) се разликуваат → BLUEPRINT победува. Ако SESSION_LOG ажурира одлука што не е во BLUEPRINT → се проможегира на BLUEPRINT во следна review сесија (не „on the fly" од Claude Code).
 
 ### 8.2 Taskun-циклус
 
@@ -157,45 +169,66 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 
 ---
 
-## 11. Phase 16 — Cleanup + UI Foundation (тековна фаза)
+## 11. Phase 17 — ClientOrder hub + flow wiring + AI helper (тековна фаза)
 
-> Phase 16 е реакција на искрена ревизија на кодот (May 2026): backend е здрав, frontend има хаос. Целта е **да исчистиме лажното и да поставиме UI стандард** пред да продолжиме со нови фичери. Сите промптови за таскови во оваа фаза живеат во [`AGENT-PROMPTS.md`](AGENT-PROMPTS.md). Сите verification listи живеат во [`VERIFICATION.md`](VERIFICATION.md).
+> Phase 16 ЗАВРШЕНА 2026-05-11 (13/13 sub-tasks; cleanup + UI foundation). Phase 17 е најголемиот path-to-v1 chunk: ClientOrder концептот (top-level „order from customer" entity) + hub-and-spoke UI + AI helper + domain events + SEQUENCE + audit + soft-delete + Playwright E2E. Сите промптови во [`AGENT-PROMPTS.md`](AGENT-PROMPTS.md) §E. Сите verification listи во [`VERIFICATION.md`](VERIFICATION.md) §E.
 
-### 11.1 Што нашовме (искрено)
+### 11.1 Phase 17.PRE — Migration foundations + Z2779 happy-path (PRE-фаза; започната 2026-05-12)
 
-- **Backend:** солиден. 23 controllers, 174 routes, 57 MediatR handlers, 76 DbSets, 154 [Fact]/[Theory] integration тестови, 43 EF migrations.
-- **API contract:** 85 FE-called endpoints, 100% покриеност во BE routes (по case-correct match).
-- **Frontend компилира clean:** 0 TS errors, 0 ESLint errors, 1 unused-import warning.
-- **6 страници го лажат корисникот:** користат `localStorage` како „backend" (Escalations, OpenRisks, CostAccounting, PayrollAggregate, SupplierInvoices, Training) — `navGroups.ts` ги означи како `backendStatus: 'exists'`. Tenant cache clear = губиток на податоци.
-- **Дупликат wired-страници:** `WarehousesList` (стара) и `WarehouseList` (нова) се двете во `App.tsx` под различни патишта. Стариот е dead route.
-- **UI хаос:** 91 страници со inline стилови, 82 со bootstrap-y className, 20 со MUI, 6 со `DataTable`, 8 со react-hook-form — нема консистентен систем.
-- **Test coverage gaps:** WMSController (25 endpoints), Analytics, Traceability, сите MasterData CRUD controllers, Users/Roles/Permissions немаат dedicated тест фајл.
+PRE phase се додаде врз основа на prep session findings (commit `3fe77c3`): локален ELON DB recon откри 9 контрадикции со BLUEPRINT §9.1; локалниот LON DB не постоеше; mapping doc немаше. Изградба на E0–E15 врз тоа значеше rework во Phase 21. Затоа: фиксирај mapping + локализиран happy-path ПРЕД E0.
 
-### 11.2 Phase 16 sub-фази (по редослед)
+**Канонски happy-path candidate:** `Zaklucok 2779` (OdobrenieRBr=1, single producer, 13 import lines → 5-line BOM → 1 Izdatnica → fully razdolzeno, нула orphan refs). Z2802 во резерва за multi-producer stress (Phase 17.E + Phase 21). Z2780 за daily smoke.
 
-| Sub-фаза | Опсег | Време |
+| PRE-таск | Опис | Статус |
 |---|---|---|
-| **A. Cleanup** | Бриши dead routes, поправи `navGroups.ts` лажни statuses, реши дупликат MasterData страници | 1–2 дена |
-| **B. UI foundations** | Инсталирај react-query, мигрирај една pilot страница (`Inventory.tsx`), стандардизирај на `DataTable`, дефинирај layout shell | 2–3 дена |
-| **C. localStorage → backend** | Замени 6-те лажни страници со реални BE entities + handlers + миграции | 3–5 дена |
-| **D. Test gap fill** | Integration тестови за WMSController, Auth/Roles, MasterData CRUD smoke | паралелно со А-Ц |
+| **PRE.1** | Корекции на CLAUDE.md §4/§5 (local LON DB row restored as `LONDB`; migration count 43→50; Фаза 16→17) | `[/]` |
+| **PRE.2** | BLUEPRINT §9.1 mapping update врз основа на 9 откритија (`Proces=7 → Izdatnica`, `Proces=9 → Ispratnica` за waste, `DocumentSource` discriminator, ELON DB е TEKSPORT-only slice, `Уvoznik` NULL, `tblIzvozniFakturi` out-of-blueprint, `Propratnici`/`PropratniciStavki` out-of-blueprint, `ArtOtpadProc` rarely used, `Proizvoditeli` NULL — true producer e `LagerMaterijali.Proizvoditel`) | `[ ]` |
+| **PRE.3** | 3 user decisions за `docs/migration/TEKSPORT_WIPE_PLAN.md` | `[ ]` |
+| **PRE.4** | `docs/migration/MAPPING.md` — authoritative legacy→LON mapping (table-by-table со колумни + transformations + edge cases + reconciliation queries) | `[ ]` |
+| **PRE.5** | Execute VPS wipe (BACKUP + RESTORE VERIFYONLY gate; FK-respecting TRUNCATE; identity reseed; per `TEKSPORT_WIPE_PLAN.md`) | `[ ]` |
+| **PRE.6** | Минимален seed: 1 Tenant (TEKSPORT, sentinel-zeros GUID), 12 Roles per BLUEPRINT §4.1, all Permissions + RolePermissions, 1 Admin (password од `LON_BOOTSTRAP_ADMIN_PASSWORD` env), CodeListItems (EUR/USD/MKD/RSD + 30 countries + UoMs), 5 WorkCenters, 4 CustomsProcedures (4051, 1041, 6121, 4200) | `[ ]` |
+| **PRE.7** | `LON.Migration` (нов entry point `--happy-path Z2779`) imports Z2779 → assert: ClientOrder created, IM declaration со 13 lines, 13 ReceiptLines, 5-line BOM, Izdatnica/Shipment to producer, Razdolzuvanje balanced. Сите 6 reconciliation queries pass | `[ ]` |
 
-Конкретни промптови за секоj sub-таск (А1, А2, А3, Б1, Б2, Б3, В1, В2, В3, Г1, Г2, Г3) се во `AGENT-PROMPTS.md`. Не пробувај да измислуваш sub-таскови — ако појавиш потреба, додај нов до `AGENT-PROMPTS.md` пред да го почнеш.
+### 11.2 Phase 17 main — E0–E15 (after PRE)
 
-### 11.3 Phase 16 правила (надополнуваат Section 3 Verification Protocol)
+Сите 16 промптови во `AGENT-PROMPTS.md` §E0–§E16:
 
-- **Никаква нова страница** во Phase 16. Чистиме, не градиме нови фичери.
+| Таск | Опис | Status |
+|---|---|---|
+| E0 | `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern | `[ ]` |
+| E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[ ]` |
+| E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[ ]` |
+| E3 | Wire IM declaration creation from hub | `[ ]` |
+| E4 | Wire Receipt from hub | `[ ]` |
+| E5 | Wire BOM + ProductionOrder from hub | `[ ]` |
+| E6 | Wire Podelba from hub | `[ ]` |
+| E7 | Wire MaterialIssue + ProductionReceipt from hub | `[ ]` |
+| E7.5 | Department + Position lookup promotion (CodeListItem categories) | `[ ]` |
+| E8 | Wire EX declaration + Shipment + QC from hub | `[ ]` |
+| E9 | Razdolzuvanje view per ClientOrder | `[ ]` |
+| E10 | AI helper service + 3 core recommendations + floating UI | `[ ]` |
+| E10.5 | AlertRule + AlertEvent + 6 predefined rules + nightly evaluator | `[ ]` |
+| E11 | Domain events infrastructure + handler refactor | `[ ]` |
+| E12 | SQL SEQUENCE objects + NumberFormatter | `[ ]` |
+| E13 | Audit interceptor + AuditLogEntry writes + /admin/audit-log UI | `[ ]` |
+| E14 | Soft-delete global filter + recycle bin UI | `[ ]` |
+| E16 | FxRate entity + manual maintenance UI | `[ ]` |
+| E15 | Playwright E2E happy-path (scripted Z2779 flow) | `[ ]` |
+
+### 11.3 Phase 17 правила (надополнуваат секција 3 Verification Protocol)
+
+- **Z2779 е канонски fixture.** Секој E-таск треба да го smoke-тестира врз Z2779-state локално + VPS пред да каже „done". Synthetic test data е дозволена само за edge cases (concurrency, tenant isolation).
+- **MAPPING.md е single source of truth за legacy→LON.** Ако E-таск открие нова mapping недоречност — append во MAPPING.md веднаш, не „следна сесија".
+- **BLUEPRINT.md е авторитет.** Ако PLAN.md и BLUEPRINT.md се разликуваат, BLUEPRINT победува. Ако SESSION_LOG ажурира одлука што не е во BLUEPRINT → се promovира во следна review сесија (не „on the fly").
 - **Никаква нова `localStorage` употреба** за бизнис податоци. UI prefs (filter selection) ОК — се означуваат со prefix `lon.ui.*`.
-- **Pre-commit `tsc --noEmit` за frontend** — задолжителен (CRA build толерира warnings, ние не).
-- **Кога допираш страница за refactor**: задолжителен screencast / VPS screenshot пред и потоа, во SESSION_LOG.
-- **Brand-new entity во Phase 16.C** — мора да добие integration test веднаш (не „следна сесија").
+- **`DataTable` + react-query + MUI + react-hook-form** се пресудени стандарди. Нови страници не отвораат custom patterns.
 
 ---
 
-## 12. BLUEPRINT.md (forthcoming)
+## 12. BLUEPRINT.md (active)
 
-Постоечкиот `ELON_Blueprint.md` (Март 2026) опишува визија која не одговара со тековниот код. Откако ќе го завршиме Phase 16, ќе се напише нов `BLUEPRINT.md` врз основа на **она што навистина постои** + **она што останува до v1**. Дотогаш не цитирај го `ELON_Blueprint.md` како авторитет за scope — користи го само за legacy context.
+[`BLUEPRINT.md`](BLUEPRINT.md) е single source of truth за финалната v1 апликација (2026-05-11 верзија). [`PLAN.md`](PLAN.md) опишува *како* стасуваме до тоа. Стариот `ELON_Blueprint.md` (Март 2026) е архивиран — користи го само за legacy context.
 
 ---
 
-*Последна ревизија: 2026-05-11 — Phase 16 (cleanup + UI foundation).*
+*Последна ревизија: 2026-05-12 — Phase 17.PRE (migration foundations + Z2779 happy-path).*

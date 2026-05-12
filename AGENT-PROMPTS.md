@@ -1,10 +1,22 @@
-# AGENT-PROMPTS — Phase 16 (Cleanup + UI Foundation)
+# AGENT-PROMPTS — Phase 16 → 21 (path to v1)
 
-> Self-contained prompts for Claude Code sessions. Each prompt assumes the agent starts with **zero context** beyond `CLAUDE.md`, `VERIFICATION.md`, and the codebase. Copy a prompt verbatim into Claude Code.
+> Self-contained prompts for Claude Code sessions. Each prompt assumes the agent starts with **zero context** beyond `CLAUDE.md`, `BLUEPRINT.md`, `PLAN.md`, `VERIFICATION.md`, and the codebase. Copy a prompt verbatim into Claude Code.
 >
-> **Order matters.** A1 → A2 → A3, then B1 → B2 → B3, then C1 → C2 → C3 (parallel D allowed). Don't skip ahead.
+> **Order matters.** Follow PLAN.md §3 phase sequence. Within a phase, follow numbered sub-tasks.
 >
 > Every prompt ends with: *"Before declaring done, walk through the matching section in `VERIFICATION.md`. Paste evidence into `SESSION_LOG.md`."*
+>
+> **Sections:**
+> - §A — Phase 16.A Cleanup
+> - §B — Phase 16.B UI foundations
+> - §C — Phase 16.C localStorage → backend
+> - §D — Phase 16.D Test gap fill
+> - §E — Phase 17 ClientOrder hub + flow wiring + AI helper
+> - §F — Phase 18 Subcontractor login
+> - §G — Phase 19 Speditor role
+> - §H — Phase 20 RLS + tenant security
+> - §I — Phase 21 Migration + launch
+> - §J — Playwright E2E patterns (used across phases)
 
 ---
 
@@ -458,13 +470,1165 @@ Before declaring done, walk through VERIFICATION.md Section D3. Paste evidence i
 
 ---
 
+---
+
+## §E — Phase 17: ClientOrder hub + flow wiring + AI helper
+
+### E0 — Sticky-defaults hook + bulk currency change (foundation for E3/E5/E8)
+
+```
+Read BLUEPRINT.md §7.3.1 (Sticky values pattern) + §5.2 (UX detail) and VERIFICATION.md §E0 before starting.
+
+CONTEXT
+Q11.3 resolution: per-line currency with auto-prefill from last-entered row.
+Tasks E3 (IM lines), E5 (BOM lines), E8 (EX lines) all need this — implement
+once as a shared hook + component before wiring the line-tables.
+
+TASK
+1. Hook: frontend/web/src/hooks/useStickyDefaults.ts
+   API:
+     const { defaults, captureFrom, reset } = useStickyDefaults<TLine>(
+       scopeKey: string,           // e.g. 'declaration-{id}-lines'
+       initial: Partial<TLine>     // initial defaults (from Partner.PrimaryCurrency etc.)
+     );
+   Behavior:
+     - State held in React Context per scope (NOT in localStorage — per-document,
+       not cross-session).
+     - `captureFrom(line)` updates defaults from a just-saved line (Currency,
+       UoM, CountryOfOrigin, TariffCode).
+     - Reset clears back to `initial`.
+   Unit tests: tests/hooks/useStickyDefaults.test.tsx
+     - Initial defaults used for first line.
+     - After captureFrom on line1, line2 prefills from line1.
+     - Reset works.
+     - Two scopes don't bleed values.
+
+2. Component: frontend/web/src/components/common/BulkFieldUpdateButton.tsx
+   Props: { fieldName, currentValue, onConfirm, label, recalcWarning? }
+   Behavior:
+     - Renders a toolbar button (icon + label).
+     - On click: ConfirmDialog with optional `recalcWarning` text
+       (e.g. „Промена на валута ке ja recalculate-ира Vrednost според FX rate. Продолжи?").
+     - On confirm: calls onConfirm; parent issues API call + audit reason.
+
+3. Server side: handler must accept a bulk update with `Reason` field;
+   record AuditLogEntry with Action='BulkUpdate' for each affected row.
+   Pattern: POST /api/{Resource}/{parentId}/lines/bulk-update with body:
+     { field: 'Currency', value: 'EUR', reason: '...' }
+   Returns affected count + new line snapshot.
+
+4. Locale keys (en + mk):
+   - common.bulkUpdate.currency.title / .confirm / .recalcWarning
+   - common.stickyDefaults.tooltip („Валутата се копира од претходниот ред")
+
+5. Pre-commit checks: tsc + eslint + jest.
+6. Commit: `phase-17.0: useStickyDefaults hook + BulkFieldUpdateButton + bulk-update endpoint pattern`
+7. No VPS deploy needed (foundation only — visible after E3 consumes it).
+
+Before declaring done, walk through VERIFICATION.md Section E0. Paste evidence into SESSION_LOG.md.
+```
+
+### E1 — `ClientOrder` entity + migration + handlers + endpoints
+
+```
+Read BLUEPRINT.md §3.1 + §5.1 + §6.6 (numbering) + §6.7 (soft-delete), CLAUDE.md, and VERIFICATION.md §E1 before starting.
+
+CONTEXT
+The single biggest gap to v1 (PLAN.md §1 status: ClientOrder concept = Missing).
+ClientOrder is the hub that ties together: customer order intent →
+CustomsDeclaration(s) → ProductionOrder(s) → Shipment(s) → Razdolzuvanje.
+
+TASK
+1. Create entity src/LON.Domain/Entities/Customs/ClientOrder.cs per BLUEPRINT §3.1
+   (TenantId, OrderNumber, CustomerPartnerId, LONAuthorizationId NOT NULL,
+   CustomerOrderReference, OrderDate, RequestedShipDate, Status enum,
+   audit fields, soft-delete fields).
+2. Create entity ClientOrderFinishedGood (per BLUEPRINT §3.1).
+3. ClientOrderStatus enum: Draft, Active, Producing, Shipped, Closed, Cancelled.
+4. Add `ClientOrderId` nullable FK to existing CustomsDeclaration entity.
+   Migration: add column + index; backfill: leave NULL on existing rows.
+5. Add ClientOrderId nullable FK to ProductionOrder + Shipment.
+6. ApplicationDbContext: DbSet<ClientOrder> + DbSet<ClientOrderFinishedGood>.
+   IApplicationDbContext: expose both.
+7. EF Configurations: TenantId query filter; IsDeleted filter; unique
+   constraint on (TenantId, OrderNumber).
+8. EF migration: `phase-17.1_ClientOrder`.
+9. SQL SEQUENCE `seq_ClientOrder_<tenantId>` — generate in migration via
+   `CREATE SEQUENCE` on tenant provisioning. For Teksport, add to seed
+   data. (BLUEPRINT §6.6)
+10. NumberFormatter helper in LON.Domain/Common/NumberFormatter.cs with
+    `ClientOrder(int year, long seq)` returning `CO-{year}-{seq:D6}`.
+11. MediatR handlers in LON.Application/Customs/ClientOrders/:
+    - CreateClientOrderCommand (uses NumberFormatter + SEQUENCE)
+    - UpdateClientOrderCommand (status auto-computed; only Cancel is user-set)
+    - CancelClientOrderCommand
+    - GetClientOrdersQuery (filter by status, customer, dateRange)
+    - GetClientOrderByIdQuery (includes FinishedGoods + counts of linked entities)
+12. Controller endpoints under /api/ClientOrders:
+    - POST/PUT/DELETE/GET (with id and as list)
+    - GET /api/ClientOrders/{id}/summary returns hub-card data (counts, balances)
+13. Integration tests:
+    - Create → Get returns it with auto-generated OrderNumber
+    - Tenant isolation: tenant A can't GET tenant B's orders
+    - Numbering: 5 parallel creates produce 5 distinct sequential numbers
+    - Soft-delete: deleted order doesn't appear in default list, appears
+      in IgnoreSoftDelete query
+    - Authorization required: cannot create ClientOrder without valid
+      LONAuthorizationId
+14. Run scripts/gen-api-types.sh and commit schema diff.
+15. Commit: `phase-17.1: ClientOrder entity + handlers + endpoints + tests`
+16. Deploy to VPS.
+
+Before declaring done, walk through VERIFICATION.md Section E1. Paste evidence into SESSION_LOG.md.
+```
+
+### E2 — ClientOrder list + hub UI
+
+```
+Read BLUEPRINT.md §5.1 + §7.1 (Hub-and-spoke) + §7.2 (Contextual actions), and VERIFICATION.md §E2.
+
+CONTEXT
+E1 created the entity + endpoints. Now build the user-facing hub. This is
+the central UI shift — from per-page-island navigation to hub-and-spoke.
+
+TASK
+1. New route /orders (list page) — MUI DataTable, columns: OrderNumber,
+   Customer, Status, OrderDate, RequestedShipDate, %Produced (progress bar),
+   GuaranteeUtilization, Actions. Filters: status, customer, dateRange.
+   Top-right „Нов налог" button → opens dialog (FormDialog + react-hook-form).
+   Use react-query hook useClientOrders.
+2. New route /orders/:id (hub page) per BLUEPRINT §5.1 layout:
+   - Header: order number, status badge, customer link, authorization link,
+     dates, manager note (optional).
+   - Left vertical timeline: chronological events from /api/DomainEvents
+     filtered by clientOrderId (placeholder events for now; real wiring
+     in E11). Just stub three events: Created, FirstDeclarationLinked,
+     LastShipped.
+   - Center: 3 progress widgets (produced %, guarantee utilization %,
+     days-to-ship).
+   - Right sticky action launcher panel with action buttons (placeholders
+     for now; E3–E9 wire each):
+       • Внеси готови производи (BOM)
+       • Креирај увозна декларација (IM)
+       • Прими во магацин
+       • Распредели подизведувач
+       • Издади материјал
+       • Креирај извозна декларација (EX)
+       • Razdolzuvanje
+       • Аудит / историја
+       • 💡 AI препораки  ← (stub for E10)
+   - Tabs below: Declarations | Production Orders | Shipments | Materials
+     in stock. Each tab: small DataTable filtered by clientOrderId.
+3. React Router add both routes.
+4. Sidebar: add „📋 Налози" group with single item linking to /orders.
+   Allowed roles: Administrator, Manager, ProductionPlanner; read-only
+   visible for WhMgr, Customs, QC, Finance.
+5. i18n keys EN + MK only (per BLUEPRINT §6.8 v1 scope):
+   nav.orders.*, orders.list.*, orders.hub.*, orders.actions.*.
+6. tsc + eslint clean.
+7. Commit: `phase-17.2: ClientOrder list + hub UI shell`
+8. Deploy. Verify on VPS at /orders that:
+   - List loads (empty initially, then create 1 via API/UI)
+   - Clicking row navigates to hub
+   - All action buttons render disabled with tooltip „Coming in E3–E9"
+
+Before declaring done, walk through VERIFICATION.md Section E2. Paste evidence into SESSION_LOG.md.
+```
+
+### E3 — Wire IM declaration creation from hub
+
+```
+Read BLUEPRINT.md §5.2 and VERIFICATION.md §E3.
+
+CONTEXT
+The hub's „Креирај увозна декларација" action launcher button must open
+an inline-dialog (no navigation away) that creates a CustomsDeclaration
+(DeclarationType=IM) linked to current ClientOrder.
+
+TASK
+1. Inline dialog in ClientOrderHub.tsx — opens on action click.
+   Form fields (react-hook-form + Zod):
+   - DeclarationNumber (auto-suggested from SEQUENCE; user can override)
+   - DeclarationDate
+   - CustomsProcedure (combo, defaults to LON's procedure 51 00 or 42 00)
+   - Partner (sender) — autocomplete from /api/MasterData/partners
+   - SenderName/Address/Country (auto-populate from Partner)
+   - LONAuthorization — pre-filled from ClientOrder.LONAuthorizationId
+2. „Преглед" tab in same dialog: lines editor (DataTable inline editing,
+   or open separate routed line-edit page if cleaner).
+3. „Зачувај како Draft" / „Поднеси (Submitted)" buttons.
+4. On Create: hits POST /api/Customs/declarations with clientOrderId set;
+   close dialog; refetch ClientOrder summary + Declarations tab.
+5. Verify SEQUENCE: open 2 parallel browser tabs, create simultaneously,
+   different numbers result (regression test for §6.6).
+6. Commit: `phase-17.3: wire IM declaration creation from ClientOrder hub`
+7. Deploy. VPS smoke: open /orders/{realId} → click action → fill in →
+   submit → see in Declarations tab.
+
+Before declaring done, walk through VERIFICATION.md Section E3. Paste evidence into SESSION_LOG.md.
+```
+
+### E4 — Wire Receipt from hub
+
+```
+Read BLUEPRINT.md §5.3 and VERIFICATION.md §E4.
+
+CONTEXT
+Hub action „Прими во магацин" must show approved IM declarations for this
+ClientOrder, allow selecting one, and create a Receipt for it.
+
+TASK
+1. Action button on hub → dialog shows list of approved IM declarations
+   for the ClientOrder (DataTable, columns: DeclarationNumber, Date,
+   Sender, TotalLines, ReceivedLines).
+2. Select declaration → next step: receive lines (one row per
+   CustomsDeclarationLine):
+   - Expected qty (from declaration)
+   - Received qty (default = expected; user can override)
+   - Skart qty (default 0; if >0 prompt reason)
+   - Location (autocomplete from /api/MasterData/locations)
+   - Batch number (optional auto-generate)
+   - MRN (defaults to declaration MRN)
+   - QualityStatus (default OK)
+3. „Прими" button: POST /api/WMS/receipts with all line data.
+4. Verify side effects via UI refetch: Inventory tab now shows new
+   InventoryBalance rows; Declaration line marked as „Received".
+5. Variance handling: if received <> expected, show AI helper hint
+   inline (stub for now: „Препорака: проверете packaging").
+6. Commit: `phase-17.4: wire Receipt creation from ClientOrder hub`
+7. Deploy + VPS smoke (real declaration approved + receive flow).
+
+Before declaring done, walk through VERIFICATION.md Section E4. Paste evidence into SESSION_LOG.md.
+```
+
+### E5 — Wire BOM + ProductionOrder from hub
+
+```
+Read BLUEPRINT.md §5.4, §7.3 (smart prefill) and VERIFICATION.md §E5.
+
+TASK
+1. Hub action „Внеси готови производи" → dialog with two-tab layout:
+   Tab 1: ClientOrderFinishedGood rows editor (Item picker + qty + UoM).
+   Tab 2: BOM picker per FG row — show existing BOMs for Item; or
+   „Create new BOM" inline.
+2. New BOM creation: BOMLine editor (Material picker + Normativ +
+   WasteSlots per BOMLineWasteOverrides). Smart suggestion: most-used
+   BOM for this Item (call /api/Suggestions/bom?itemId=X). If found,
+   prefill BOMLines and let user adjust.
+3. „Создај налог за производство" button per FG row → POST
+   /api/Production/orders with clientOrderId + bomId + qty.
+4. On save: refetch ProductionOrders tab; show count badge update.
+5. Per-size variants (NormativiVelicini): if Item has size variants,
+   show size-quantity grid inline; creates child POs with
+   ProductionOrderMaterialSize entries.
+6. Commit: `phase-17.5: wire BOM + ProductionOrder creation from hub`
+7. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E5. Paste evidence into SESSION_LOG.md.
+```
+
+### E6 — Wire Podelba from hub
+
+```
+Read BLUEPRINT.md §5.6 + §7.4 (AI producer suggestion) and VERIFICATION.md §E6.
+
+TASK
+1. Hub action „Распредели подизведувач" → dialog:
+   - Source: pick warehouse (default = HQ).
+   - Target: pick producer (autocomplete /api/MasterData/partners
+     ?type=Producer; show capacity hint inline if known).
+   - Material rows: show available InventoryBalance for materials
+     linked to ClientOrder POs; user picks qty per material.
+2. Smart helper inline panel: „💡 препорачан подизведувач" — call
+   /api/Suggestions/producer?clientOrderId=X (stub for now returning
+   most-used producer in past 3 months; full impl in E10).
+3. „Подели" button → POST /api/WMS/inventory/bulk-move-balances with
+   producerId set.
+4. Side effect: InventoryBalance rows update with AssignedProducerId;
+   Materials tab on hub refreshes.
+5. Commit: `phase-17.6: wire Podelba from hub + producer suggestion stub`
+6. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E6. Paste evidence into SESSION_LOG.md.
+```
+
+### E7 — Wire MaterialIssue + ProductionReceipt from hub
+
+```
+Read BLUEPRINT.md §5.7, §5.8 and VERIFICATION.md §E7.
+
+TASK
+1. Hub action „Издади материјал" → dialog: list of ProductionOrders
+   in Released status for this ClientOrder, with required materials
+   from BOM. Select PO → review materials → „Issue all" button.
+2. POST /api/Production/orders/{id}/issues/bulk.
+3. Hub action „Запиши производство" → dialog: PO picker, qty produced
+   (default = remaining), scrap qty, batch number. POST
+   /api/Production/orders/{id}/receipts.
+4. Both actions update hub progress widget („%Produced" recalculates).
+5. Commit: `phase-17.7: wire MaterialIssue + ProductionReceipt from hub`
+6. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E7. Paste evidence into SESSION_LOG.md.
+```
+
+### E8 — Wire EX declaration + Shipment + QC from hub
+
+```
+Read BLUEPRINT.md §5.9, §5.10 and VERIFICATION.md §E8.
+
+TASK
+1. Hub action „Креирај извозна декларација" → wizard:
+   Step 1: pick which FGs to export (DataTable of ClientOrderFinishedGood
+   rows with available qty at HQ — non-zero only).
+   Step 2: shipment details (consignee, country, transport,
+   incoterm, scheduled date).
+   Step 3: declaration metadata (DeclarationType=EX, related IM
+   declarations auto-suggested from same ClientOrder).
+   Step 4: review computed exit duties + pre-flight guarantee credit
+   estimate. Show inline AI helper warning if discrepancies.
+   Submit: POST /api/Customs/declarations (EX) + POST /api/WMS/shipments
+   (atomic — Saga or single command).
+2. Hub action „QC + Пакување" → list of FGs from HQ inventory with
+   QualityStatus=Quarantine. Quick-action „Pass QC" sets OK; „Reject"
+   prompts for reason + creates rework PO or waste declaration.
+3. Commit: `phase-17.8: wire EX declaration + Shipment + QC from hub`
+4. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E8. Paste evidence into SESSION_LOG.md.
+```
+
+### E9 — Razdolzuvanje view per ClientOrder
+
+```
+Read BLUEPRINT.md §5.11 and VERIFICATION.md §E9.
+
+TASK
+1. Hub action „Razdolzuvanje" → opens /orders/:id/razdolzuvanje route.
+2. Page renders RazdolzuvanjeReport: aggregates IM duty charged vs.
+   EX/Waste/Return duty credited. Side-by-side columns. Variance row
+   at bottom (must be < €0.50 tolerance).
+3. Per CustomsDeclarationLine: „RazdolzenaDaNe" checkbox.
+4. Buttons: Download PDF, Download PEE060 XML, Take Snapshot.
+5. Snapshot button → POST /api/Guarantee/snapshots → creates
+   GuaranteeBalanceSnapshot row + locks ClientOrder Status to Closed
+   if all lines have RazdolzenaDaNe + balance reconciled.
+6. Commit: `phase-17.9: Razdolzuvanje view per ClientOrder`
+7. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E9. Paste evidence into SESSION_LOG.md.
+```
+
+### E10 — AI helper service + 3 core recommendations + floating UI
+
+```
+Read BLUEPRINT.md §7.4 + §6.11 (RAG) and VERIFICATION.md §E10.
+
+CONTEXT
+KnowledgeBase RAG endpoints exist but never surfaced to business users.
+This task connects RAG + structured DB queries → contextual recommendations.
+
+TASK
+1. New service LON.Application.Ai.AiAssistantService with method
+   GetRecommendations(string entityType, Guid entityId, string? mode).
+   Returns List<Recommendation> { title, body, confidence, actionLink?,
+   structuredData? }.
+2. Endpoint POST /api/Ai/recommendations with body
+   { entityType, entityId, mode? }.
+3. Implement 3 core recommendations:
+   a. ClientOrder hub: detect blocked next step.
+      Logic (NOT LLM-call; structured query):
+      - Status=Draft AND no FGs → „Внеси готови производи".
+      - Status=Active AND no IM declarations approved → „Креирај IM".
+      - Receipt qty > 0 AND not distributed → „Распредели подизведувач".
+      - Production complete AND no EX → „Креирај извоз".
+      - Sum unbilled EX duty > 0 AND no Razdolzuvanje snapshot → „Razdolzuvanje".
+   b. Receipt creation: variance flag.
+      Logic: compute variance% from declaration line vs received;
+      if >5%, return recommendation „Просечен variance од овој снабдувач
+      е X%; вашиот Y% — провери packaging".
+      Use AVG over last 10 receipts from same Partner.
+   c. Razdolzuvanje pre-flight: reconciliation check.
+      Logic: enumerate IM lines without matching EX consumption; if
+      any, return list as recommendation „Има N линии IM без EX
+      consumption — провери".
+4. Floating button component <AiHelperButton /> bottom-right on every
+   route. Click → side drawer with 2 tabs: „Препораки" (calls
+   POST /api/Ai/recommendations with current page context auto-detected)
+   and „Прашај" (chat box, calls /api/KnowledgeBase/ask — existing RAG).
+5. AiHelperButton receives context via React Context that each page
+   sets on mount: { entityType, entityId }.
+6. Recommendations should render with action buttons that navigate
+   to the relevant flow (e.g. „Внеси готови производи" button =
+   open E5 dialog).
+7. Audit: every recommendation generated is logged to AiSuggestionLog
+   table (id, tenantId, entityType, entityId, recommendationTitle,
+   userActedOn bool, generatedAt). User-dismiss = userActedOn=false;
+   user-clicked-action = userActedOn=true.
+8. Integration tests for each of the 3 recommendation logics.
+9. Commit: `phase-17.10: AI helper service + 3 core recommendations + UI`
+10. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E10. Paste evidence into SESSION_LOG.md.
+```
+
+### E11 — Domain events + handler refactor
+
+```
+Read BLUEPRINT.md §3.6 + §6.1 (guarantee lifecycle) + §6.2 (inventory state machine) and VERIFICATION.md §E11.
+
+CONTEXT
+Currently handlers directly write to GuaranteeAccount, InventoryBalance,
+etc. inline. Move to domain-event pattern: aggregate root emits event,
+handler in App layer consumes. This isolates side-effects + enables
+event-replay + audit + AI helper triggers.
+
+TASK
+1. LON.Domain.Common.IDomainEvent interface with `DateTime OccurredAt`.
+2. Concrete events:
+   - ClientOrderCreatedEvent, ClientOrderStatusChangedEvent
+   - CustomsDeclarationCreatedEvent, CustomsDeclarationApprovedEvent
+   - ReceiptCommittedEvent
+   - MaterialIssueCommittedEvent
+   - ProductionReceiptCommittedEvent
+   - PodelbaCommittedEvent
+   - ShipmentCommittedEvent
+   - GuaranteeThresholdReachedEvent
+3. Each aggregate root has `private readonly List<IDomainEvent> _events`
+   and `public IReadOnlyList<IDomainEvent> Events => _events`. Methods
+   that change state call `_events.Add(new XEvent(...))`.
+4. After SaveChangesAsync in ApplicationDbContext, dispatch events
+   via MediatR.Publish (or custom dispatcher) and clear list.
+5. DomainEventLog table (append-only) for audit + replay.
+6. Refactor existing handlers:
+   - CustomsDeclarationApproved → handler creates GuaranteeLedgerEntry
+     (Debit). Remove inline GuaranteeAccount update from
+     ApproveDeclarationCommand handler.
+   - ReceiptCommitted → handler updates InventoryBalance state.
+   - ShipmentCommitted → handler computes EX guarantee credit pro-rata.
+   - ProductionReceiptCommitted → handler decrements materials,
+     emits LonProcessState transitions.
+7. Integration tests must still pass (use BeforeAll seed; assert post-event state).
+8. Add tests for event dispatch order + idempotency.
+9. Commit: `phase-17.11: domain events infrastructure + handler refactor`
+10. Deploy + run full integration test suite + smoke on VPS.
+
+Before declaring done, walk through VERIFICATION.md Section E11. Paste evidence into SESSION_LOG.md.
+```
+
+### E12 — SQL SEQUENCE objects + NumberFormatter
+
+```
+Read BLUEPRINT.md §6.6 and VERIFICATION.md §E12.
+
+TASK
+1. EF migration `phase-17.12_NumberSequences`:
+   - For each numbered entity (ClientOrder, IM Declaration, EX Declaration,
+     Receipt, MaterialIssue, Shipment, ProductionOrder, GuaranteeLedger),
+     create SQL SEQUENCE per tenant (initially Teksport only).
+   - Set initial value based on MAX existing in that table for tenant
+     (so new numbers continue from where DMax left off).
+2. NumberFormatter helper (started in E1.10) extended to cover all
+   entity types.
+3. All handlers that previously did `DMax+1` (or any in-memory MAX
+   logic) refactored to:
+   `var seq = await ctx.Database.ExecuteSqlRawAsync(
+     "SELECT NEXT VALUE FOR seq_<table>_<tenantId>");`
+   Or via stored proc / wrapper service.
+4. Concurrency test: 10 parallel CreateClientOrder calls → 10 unique
+   sequential OrderNumbers (no duplicates, no gaps that aren't from
+   rolled-back transactions).
+5. Commit: `phase-17.12: SQL SEQUENCE for all numbered entities`
+6. Deploy + run integration tests.
+
+Before declaring done, walk through VERIFICATION.md Section E12. Paste evidence into SESSION_LOG.md.
+```
+
+### E13 — Audit interceptor + AuditLogEntry writes + /admin/audit-log UI
+
+```
+Read BLUEPRINT.md §3.7 + §6.5 and VERIFICATION.md §E13.
+
+TASK
+1. EF SaveChangesInterceptor in LON.Infrastructure/Persistence/Interceptors/
+   AuditInterceptor.cs:
+   - For every Modified IAuditable entity: capture pre + post property
+     values for tracked fields.
+   - Insert AuditLogEntry row with EntityType, EntityId, Action="Update",
+     ChangedFields=JSON array, Actor=currentUserId from IUserContext,
+     OccurredAt, Reason=null (or from special API header).
+   - For Added: Action="Create", ChangedFields=full snapshot.
+   - For Deleted (soft via IsDeleted=true): Action="SoftDelete".
+   - For hard Deleted (admin-only): Action="HardDelete".
+2. Register interceptor in DI.
+3. Filter AuditLog entity types to per BLUEPRINT §3.7 list (avoid noise
+   from every Item edit).
+4. UI: activate /admin/audit-log page:
+   - DataTable: EntityType, EntityId (link to that entity's detail),
+     Action, Actor, OccurredAt, ChangedFields (expandable).
+   - Filters: entityType, actor, dateRange, action.
+   - Per-entity „Audit history" tab on hub + detail pages (last 20
+     entries; link to full history).
+5. Permission: only Administrator + Manager can access full /admin/audit-log;
+   regular users see only audit on entities they own.
+6. Integration tests: modify entity → assert AuditLogEntry row present
+   with correct ChangedFields JSON.
+7. Commit: `phase-17.13: audit interceptor + AuditLogEntry + UI`
+8. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E13. Paste evidence into SESSION_LOG.md.
+```
+
+### E14 — Soft-delete global filter + recycle bin UI
+
+```
+Read BLUEPRINT.md §6.7 and VERIFICATION.md §E14.
+
+TASK
+1. ISoftDeletable interface (IsDeleted, DeletedAt, DeletedBy).
+2. Apply interface to entities listed in BLUEPRINT §3.7.
+3. EF migration: add IsDeleted (bool, default false, indexed) + DeletedAt +
+   DeletedBy columns.
+4. Global query filter on ApplicationDbContext: `WHERE !IsDeleted` for
+   ISoftDeletable; expose IgnoreSoftDelete() extension.
+5. Cascade rules: soft-delete ClientOrder → cascade soft-delete linked
+   CustomsDeclarations, ProductionOrders, Shipments (with audit log per).
+6. UI: /admin/recycle-bin page with tabs per entity type, each showing
+   soft-deleted records. „Restore" action sets IsDeleted=false (with audit).
+   „Permanent delete" admin-only action (with confirmation).
+7. Retention job in LON.Worker: weekly, hard-delete records with
+   DeletedAt > 90 days old.
+8. Integration tests for soft-delete + restore + retention.
+9. Commit: `phase-17.14: soft-delete global filter + recycle bin`
+10. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section E14. Paste evidence into SESSION_LOG.md.
+```
+
+### E7.5 — Department + Position lookup promotion
+
+```
+Read BLUEPRINT.md §5.12.1 + VERIFICATION.md §E7.5.
+
+CONTEXT
+Employee entity has `Department` and `Position` as free-text `string?` fields.
+This causes inconsistency (typos, no list-of-values, harder reporting).
+Reuse existing `CodeListItem` entity with categories.
+
+TASK
+1. Add 2 CodeListItem categories: `EmployeeDepartment` and `EmployeePosition`.
+   No new entity needed — CodeListItem already supports categorized lookups.
+2. Migration `phase-17.7.5_DeptPosition_AsLookups`:
+   a. Add nullable Guid columns `Employee.DepartmentId` (FK CodeListItem) and
+      `Employee.PositionId` (FK CodeListItem).
+   b. Backfill: SELECT DISTINCT Department FROM Employees → insert as
+      CodeListItem rows in category 'EmployeeDepartment'; same for Position.
+      For each Employee row: set DepartmentId/PositionId to matching CodeListItem.
+      Special-case NULL/empty Department/Position values (leave null).
+   c. Keep the old `Department` and `Position` string columns for 1 release
+      (deprecation period); mark in code via [Obsolete]. Final cleanup in Phase 18.
+3. UI update:
+   - EmployeeForm: replace Department + Position text inputs with autocomplete-
+     style dropdowns reading CodeListItems by category.
+   - Inline „+ Add new" option opens lightweight create dialog (creates new
+     CodeListItem on the fly with proper category).
+4. Admin: `/master-data/code-lists` (постоен) gets two new categories visible
+   in dropdown filter.
+5. Integration tests:
+   - Migration backfill produces expected count of distinct values.
+   - New Employee with DepartmentId/PositionId saves correctly.
+   - Old `Department`/`Position` strings remain populated during deprecation.
+6. tsc + eslint + dotnet test green.
+7. Commit: `phase-17.7.5: Department + Position promoted to CodeListItem lookups`
+8. Deploy + smoke: open EmployeeForm, verify dropdown loads existing values + autocomplete works.
+
+Before declaring done, walk through VERIFICATION.md §E7.5. SESSION_LOG evidence.
+```
+
+### E10.5 — AlertRule + AlertEvent + 6 predefined v1 rules + nightly evaluator
+
+```
+Read BLUEPRINT.md §5.13.4 + VERIFICATION.md §E10.5.
+
+CONTEXT
+Management dashboard (§5.13.1) shows „Open alerts" card. Backing entities
++ evaluator do not exist. Phase 26 will add UI editor for rule definition;
+Phase 17 provides the foundation + predefined v1 rules.
+
+TASK
+1. Entities (src/LON.Domain/Entities/Management/AlertRule.cs):
+   - AlertRule { Id, TenantId, Code (unique), Name (mk+en via labels?),
+     Severity (Low|Medium|High|Critical), IsActive, TriggerKind (enum: one
+     of the 6 predefined v1 rules), Threshold (decimal?), Recipients
+     (JSON role list), DeliveryChannels (flags: Dashboard, Email — v1 only
+     Dashboard active), CreatedAt, CreatedBy }.
+   - AlertEvent { Id, TenantId, AlertRuleId, OccurredAt, EntityType,
+     EntityId, Severity, Title, Body, AcknowledgedBy, AcknowledgedAt,
+     ResolvedAt }.
+2. DbSet exposures + EF configurations + tenant filter + soft-delete.
+3. Migration `phase-17.10.5_AlertRulesAndEvents` includes:
+   - Schema creation.
+   - SEED 6 predefined rules for current Teksport tenant (and template for
+     future tenants — handle via tenant-provisioning seed):
+     a. GuaranteeUtilization > 90% (severity=High, eval daily)
+     b. ClientOrder due in <7 days with <50% produced (High, eval hourly)
+     c. Machine down >2 hours (Medium, eval every 15min)
+     d. Certification expiring in <30 days (Medium, eval daily)
+     e. Receipt variance >5% on single event (Medium, eval on event)
+     f. Subcontractor late on PO milestone (High, eval daily — milestone
+        defined as 50% of planned date)
+4. Background worker LON.Worker.AlertEvaluatorJob:
+   - Implements IHostedService running every 5 min.
+   - For each Active AlertRule, evaluates per its TriggerKind:
+     - Queries DB.
+     - For each new condition match (not already an unresolved AlertEvent
+       for same entity), inserts AlertEvent row.
+   - Optional: dispatches DomainEvent `AlertRaisedEvent` (for AI helper +
+     future email integration in Phase 26).
+5. Endpoints under /api/Management/alerts (extend existing route):
+   - GET /alerts?status=Open|Acknowledged|Resolved (paginated)
+   - POST /alerts/{id}/acknowledge { reason? }
+   - POST /alerts/{id}/resolve { reason? }
+6. UI: existing `/management/alerts` (currently localStorage per Phase 16
+   audit) — rewire to backend. List with severity badges, acknowledge
+   button, drill-down to entity.
+7. Dashboard card „Open alerts" (§5.13.1 card 7): count badge, click → list.
+8. Integration tests:
+   - Each of 6 rules: seed condition → run evaluator → AlertEvent created.
+   - Duplicate suppression: re-run evaluator → no new AlertEvent if existing
+     unresolved one matches.
+   - Acknowledge + resolve flows + audit.
+9. tsc + eslint + dotnet test green.
+10. Commit: `phase-17.10.5: AlertRule + AlertEvent + 6 predefined rules + nightly evaluator`
+11. Deploy. Wait for worker to run once (10 min); verify AlertEvent rows in DB.
+
+Before declaring done, walk through VERIFICATION.md §E10.5. SESSION_LOG evidence.
+```
+
+### E16 — FxRate entity + manual maintenance UI
+
+```
+Read BLUEPRINT.md §5.14.8 + §5.14.10 + VERIFICATION.md §E16.
+
+CONTEXT
+Currency conversion is needed for: CustomsDeclarationLine valuation,
+Invoice currency totals, Margin reports (aggregate to Tenant.PrimaryCurrency).
+v1 has no FxRate entity — values currently use hard-coded 1.0 or per-line
+rate fields. Manual maintenance в v1; auto-import is Phase 27.1.
+
+TASK
+1. Entity src/LON.Domain/Entities/Finance/FxRate.cs:
+   - TenantId, FromCurrency (3-char ISO), ToCurrency (3-char ISO), Rate
+     (decimal 18,8), EffectiveDate (date — UTC), Source (enum:
+     Manual | NationalBank), CreatedBy, CreatedAt, IAuditable.
+   - Unique constraint: (TenantId, FromCurrency, ToCurrency, EffectiveDate).
+2. DbSet + configuration + tenant filter.
+3. Migration `phase-17.X1_FxRate` includes schema + seed for current
+   well-known currencies in Teksport: EUR/MKD, USD/MKD, USD/EUR (from
+   today's central-bank rates — placeholder; user updates after deploy).
+4. Service src/LON.Application/Finance/FxRateService.cs:
+   - `Task<decimal> GetRate(string from, string to, DateTime asOf)`.
+   - Returns rate effective <= asOf (latest matching row).
+   - If from == to → return 1.0.
+   - If exact pair not found, try inverse (1 / rate) or cross via EUR.
+   - If still not found → throws FxRateMissingException.
+5. Handlers in src/LON.Application/Finance/FxRates/:
+   - CreateFxRateCommand
+   - UpdateFxRateCommand
+   - DeleteFxRateCommand
+   - GetFxRatesQuery (filter by currency pair + date range)
+   - GetEffectiveRateQuery (single point-in-time lookup)
+6. Endpoints under /api/Finance/fx-rates: POST/PUT/DELETE/GET (list + by id + effective).
+7. UI new route `/finance/fx-rates`:
+   - DataTable with currency pair, date, rate, source.
+   - Add/edit form.
+   - Filters by currency pair + date range.
+   - Quick-action „Copy rate forward to today" for prior row.
+8. Integration tests:
+   - CRUD smoke.
+   - GetRate returns latest effective <= asOf.
+   - Cross-rate fallback through EUR.
+9. UI wire: where CustomsDeclarationLine, Invoice, MarginReport use currency,
+   call FxRateService.GetRate at point of valuation (no schema change to
+   those entities; computed via service).
+10. tsc + eslint + dotnet test green.
+11. Commit: `phase-17.X1: FxRate entity + maintenance UI + service`
+12. Deploy + smoke: create FX rate via UI, verify Invoice generated for
+    foreign-currency ClientOrder uses correct rate for margin computation.
+
+Before declaring done, walk through VERIFICATION.md §E16. SESSION_LOG evidence.
+```
+
+### E15 — Phase 17 E2E Playwright happy-path test
+
+```
+Read BLUEPRINT.md §1.3 (v1 acceptance criterion) + §8.5 (testing) and VERIFICATION.md §E15 + §J.
+
+CONTEXT
+End of Phase 17. The v1 acceptance loop must be executable end-to-end via
+Playwright as proof. Required before declaring Phase 17 complete.
+
+TASK
+1. Install Playwright (if not already):
+   cd tests && dotnet new tool-manifest && dotnet tool install
+     Microsoft.Playwright.CLI (or use Playwright-Test npm equivalent).
+   Choose: TypeScript-based Playwright (tests/playwright/) NOT C# binding
+   (faster iteration; can call back into API for setup).
+2. Project structure:
+   tests/playwright/
+     ├── playwright.config.ts
+     ├── package.json
+     ├── tests/
+     │   ├── happy-path.spec.ts  ← the v1 loop
+     │   └── setup/
+     │       ├── auth.ts          ← login helpers per role
+     │       └── seeds.ts         ← create test tenant + base data via API
+3. happy-path.spec.ts implementation: scripted user flow (see VERIFICATION
+   §E15 for explicit steps).
+4. Test data: per-test isolated tenant (`Tenant-Playwright-{nanoid}`)
+   seeded via API; teardown deletes tenant after test.
+5. Run locally: `npx playwright test`. Expected: green (assuming Phase
+   17.1-14 all complete).
+6. CI integration: GitHub Action runs Playwright on PR + nightly.
+7. Screenshots + video on failure (Playwright defaults).
+8. Commit: `phase-17.15: E2E Playwright happy-path covering v1 loop`
+9. No VPS deploy required (test code only). However, run the test against
+   VPS (env BASE_URL=https://elon.elbosoft.click) to confirm it works
+   end-to-end on production-like environment.
+
+Before declaring done, walk through VERIFICATION.md Section E15. Paste evidence into SESSION_LOG.md.
+```
+
+---
+
+## §F — Phase 18: Subcontractor login
+
+### F1 — Subcontractor role + JWT claim extension
+
+```
+Read BLUEPRINT.md §4.3 + §8.2 and VERIFICATION.md §F1.
+
+TASK
+1. Seed role „Subcontractor" in RolePermissionTests fixture and
+   Migration's seed data.
+2. JWT generation: include `external_partner_id` claim when user
+   has Subcontractor role (must be set on user creation; new column
+   on User table or new UserExternalLink entity if multi-relationship).
+3. Decision (Q11.1 of BLUEPRINT — likely answer here):
+   - Approach A: User.ExternalPartnerId nullable Guid.
+   - Approach B: UserExternalPartnerLink (m:n) for users working with
+     multiple producers across tenants.
+   - For v1: A (simplest). Document upgrade path to B post-v1.
+4. Migration + handler updates for User entity.
+5. Integration test: subcontractor user logs in → JWT contains claim.
+6. Commit: `phase-18.1: subcontractor role + external_partner_id claim`
+7. Deploy.
+
+Before declaring done, walk through VERIFICATION.md Section F1. Paste evidence into SESSION_LOG.md.
+```
+
+### F2 — Server-side filter for subcontractor queries
+
+```
+Read BLUEPRINT.md §4.3 and VERIFICATION.md §F2.
+
+TASK
+1. Create ICurrentUserService extension method
+   `Guid? GetExternalPartnerId()` reading from JWT.
+2. Add to relevant queries (ProductionOrder, MaterialIssue, Inventory,
+   ProductionReceipt) a `.Where(po => po.ProducerPartnerId ==
+   _currentUser.GetExternalPartnerId())` when caller is Subcontractor.
+3. Endpoints inaccessible to Subcontractor (Customs, Finance, MasterData
+   write, Admin) → enforce via `[HasPermission(...)]` attribute check.
+4. Integration test: subcontractor calls list endpoints → returns only
+   their data. Subcontractor calls forbidden endpoint → 403.
+5. Commit: `phase-18.2: server-side filter + RBAC enforcement for subcontractor`
+6. Deploy.
+
+Before declaring done, walk through VERIFICATION.md Section F2. Paste evidence into SESSION_LOG.md.
+```
+
+### F3 — Subcontractor dashboard UI
+
+```
+Read BLUEPRINT.md §4.3 + §7.1 and VERIFICATION.md §F3.
+
+TASK
+1. Conditional dashboard rendering: if user.role includes Subcontractor
+   AND no other higher-priority role, redirect / → /producer/dashboard.
+2. /producer/dashboard page: shows tabs „Active POs", „Materials on
+   hand", „Pending issues", „History". Read-only DataTables.
+3. Per-PO detail page /producer/orders/:id: shows materials issued,
+   produced qty (entry form for ProductionReceipt), QC results.
+4. No access to ClientOrder hub, customs, finance, or master data.
+5. Playwright E2E: login as subcontractor, navigate, verify visible
+   pages + forbidden URLs return 403/redirect.
+6. Commit: `phase-18.3: subcontractor dashboard UI`
+7. Deploy + smoke.
+
+Before declaring done, walk through VERIFICATION.md Section F3. Paste evidence into SESSION_LOG.md.
+```
+
+### F4 — RLS extension for subcontractor (after Phase 20)
+
+```
+(BLOCKED until Phase 20 RLS deployment.)
+
+TASK (run after Phase 20.1-20.2 complete)
+1. Extend RLS predicate to allow rows where
+   `ProducerPartnerId = SESSION_CONTEXT('ExternalPartnerId')` OR
+   `TenantId = SESSION_CONTEXT('TenantId')`.
+2. Middleware sets SESSION_CONTEXT('ExternalPartnerId') from JWT.
+3. Pen test: tampered subcontractor JWT (changed external_partner_id)
+   returns 0 rows.
+4. Commit: `phase-18.4: RLS extension for subcontractor isolation`
+
+Before declaring done, walk through VERIFICATION.md Section F4.
+```
+
+### F5 — Phase 18 E2E Playwright
+
+```
+TASK
+Extend tests/playwright/tests/ with subcontractor-isolation.spec.ts.
+Steps:
+1. Setup: create 2 producers under same tenant; 1 ClientOrder uses
+   Producer A; another uses Producer B.
+2. Login as Producer A subcontractor → assert Producer A's POs visible,
+   Producer B's not.
+3. Try GET /api/Production/orders/{producerB-poId} directly with A's
+   JWT → expect 403.
+Commit: `phase-18.5: subcontractor E2E isolation tests`.
+```
+
+---
+
+## §G — Phase 19: Speditor role + export polish
+
+### G1 — Speditor role + SpeditorExportProfile entity
+
+```
+Read BLUEPRINT.md §5.5, §4.3 and VERIFICATION.md §G1.
+
+TASK
+1. Seed Speditor role.
+2. SpeditorExportProfile entity: TenantId, SpeditorPartnerId, Name,
+   FileFormat (Excel|CSV|XML), ColumnMapping (JSON), Active.
+3. CRUD endpoints under /api/MasterData/speditor-profiles.
+4. UI for admin: /admin/speditor-profiles.
+5. Integration tests.
+6. Commit: `phase-19.1: speditor role + export profile entity`
+```
+
+### G2 — Speditor login + shipment-detail view
+
+```
+TASK
+1. JWT external_partner_id for Speditor role (same pattern as F1).
+2. /speditor/dashboard route shows assigned shipments.
+3. Per-shipment detail: download Izpratnica PDF + EX declaration
+   documents.
+4. RBAC: Speditor can ONLY GET shipments where SpeditorPartnerId
+   matches their external_partner_id.
+5. Commit: `phase-19.2: speditor dashboard + shipment view`
+```
+
+### G3 — Auto-email on shipment ready (optional v1)
+
+```
+TASK
+1. Subscribe ShipmentReadyEvent handler to send email via SmtpClient
+   (config: AppSettings.Email.{Host,From,...}).
+2. Email template: shipment number, scheduled date, attached
+   documents (PDF + XML).
+3. Configurable per speditor: SpeditorExportProfile.AutoEmailEnabled.
+4. Integration test: stub IEmailService; assert called on event.
+5. Commit: `phase-19.3: auto-email on shipment ready`
+```
+
+### G4 — Phase 19 E2E
+
+```
+Playwright test: login as speditor, see only assigned shipment,
+download documents, verify file presence.
+Commit: `phase-19.4: speditor E2E tests`
+```
+
+---
+
+## §H — Phase 20: RLS + tenant security audit
+
+### H1 — RLS predicate function + policy creation
+
+```
+Read BLUEPRINT.md §6.9 and VERIFICATION.md §H1.
+
+TASK
+1. EF migration `phase-20.1_RLS`:
+   - CREATE FUNCTION dbo.fn_TenantPredicate (per BLUEPRINT §6.9).
+   - CREATE SECURITY POLICY TenantIsolationPolicy applying predicate
+     to every ITenantScoped table.
+   - Use raw SQL since EF Core doesn't model RLS natively.
+2. Verify: SQL-level test (not via API) — run
+   `EXEC sp_set_session_context 'TenantId', '<other-tenant-guid>';
+    SELECT * FROM ClientOrders;`
+   Expected: 0 rows even if rows exist for the actual current tenant.
+3. Commit: `phase-20.1: RLS policy applied to all tenant-scoped tables`
+```
+
+### H2 — Middleware: SESSION_CONTEXT per request
+
+```
+TASK
+1. ASP.NET Core middleware: on every request, after JWT validation,
+   open SQL connection scope, execute
+   `EXEC sp_set_session_context 'TenantId', @tenantId;`
+   and `EXEC sp_set_session_context 'IsSystemAdmin', @isSysAdmin;`.
+2. Apply on each EF Core connection (interceptor on
+   DbConnection.OpenAsync).
+3. Performance: measure overhead on 100 mixed requests; document.
+4. Commit: `phase-20.2: SESSION_CONTEXT middleware`
+```
+
+### H3 — Pen test
+
+```
+TASK
+1. Manual test scenarios:
+   - Tampered JWT with another tenant_id → API returns own data only.
+     Expected: 0 rows or 403.
+   - Forge `IgnoreQueryFilters` in code (developer mistake simulation)
+     and confirm RLS still blocks at DB.
+   - Direct SQL with stolen connection string → must require
+     SESSION_CONTEXT or default to 0 rows.
+2. Document scenarios + results in docs/security/PHASE20_PENTEST.md.
+3. Commit: `phase-20.3: pen test report`
+```
+
+### H4 — Security audit doc
+
+```
+TASK
+1. docs/security/PHASE20_AUDIT.md with sections:
+   - Auth flow (login + refresh)
+   - RBAC enforcement (controllers + service-layer checks)
+   - Tenant isolation (RLS + EF filter defense-in-depth)
+   - Audit trail integrity
+   - Password storage (BCrypt, no plain-text)
+   - JWT secret management
+   - SQL injection surface (any raw SQL audited)
+   - Backup security (off-VPS encrypted storage)
+2. Sign-off section: requires user (Bobby) review.
+3. Commit: `phase-20.4: security audit document`
+```
+
+### H5 — Backup automation + restore drill
+
+```
+TASK
+1. Cron job (VPS):
+   ```bash
+   0 2 * * * /opt/apps/LON/scripts/backup-daily.sh
+   ```
+   Script: `sqlcmd -S ... -Q "BACKUP DATABASE Teksport TO DISK..."`
+   then `scp` to off-VPS storage (configure SSH key + remote path).
+2. Retention: 30 days rolling on remote; old archives auto-deleted.
+3. Restore drill: monthly, restore to staging container, run
+   reconciliation queries (RecordCount per Proces, etc.) — assert
+   match within 0.01%.
+4. First drill: document in SESSION_LOG.
+5. Commit: `phase-20.5: backup automation + restore drill`
+```
+
+---
+
+## §I — Phase 21: Migration + launch
+
+### I1 — ELON migration dry-run + reconciliation
+
+```
+Read BLUEPRINT.md §9.1 + VERIFICATION.md §I1.
+
+TASK
+1. Set up staging environment: clean LON Teksport DB + read-only mirror
+   of ELON DB.
+2. Run LON.Migration end-to-end. Collect errors.
+3. Reconciliation queries (per BLUEPRINT §9.1):
+   a. Count by Proces in ELON LagerMaterijali vs InventoryBalance →
+      must match within 0.01%.
+   b. SUM(GarancijaIznos) per Odobrenie vs SUM in LON → match exact.
+   c. SUM(Vrednost), SUM(Davacki), SUM(Carina) per declaration → 10
+      random spot-checks.
+   d. Count Zaklucoci vs ClientOrders.
+   e. Count Normativi vs BOMLines.
+   f. Count Ispratnici vs Shipments.
+4. For each discrepancy → fix LON.Migration code + re-run.
+5. Iterate until all reconciliation passes.
+6. Document final timing (how long the full migration takes).
+7. Commit: `phase-21.1: ELON migration dry-run reconciled`
+```
+
+### I2 — Cutover plan document
+
+```
+TASK
+1. docs/launch/PHASE21_CUTOVER_PLAN.md:
+   - T-7 days: final dry-run, sign-off
+   - T-1 day: freeze ELON (read-only)
+   - T-0 morning: cutover (4-8h)
+   - T-0 afternoon: UAT 20 random orders
+   - T-0 evening: go-live decision
+2. Include: rollback procedure (if go-live fails).
+3. Include: communication template to Teksport staff.
+4. User review + sign-off documented in SESSION_LOG.
+5. Commit: `phase-21.2: cutover plan`
+```
+
+### I3 — USER_MANUAL.md refresh
+
+```
+TASK
+1. Rewrite docs/USER_MANUAL.md to reflect ClientOrder hub flow
+   (BLUEPRINT §5 walk-through, with screenshots).
+2. Localized: MK primary, EN translation.
+3. Distribute: print + PDF for Teksport staff.
+4. Commit: `phase-21.3: USER_MANUAL refresh`
+```
+
+### I4 — Final v1 acceptance E2E sweep
+
+```
+TASK
+1. Run all Playwright E2E tests on VPS production environment:
+   - Happy path (E15)
+   - Subcontractor isolation (F5)
+   - Speditor (G4)
+   - Tenant isolation under RLS (H3 scenarios as E2E)
+2. All green required for launch sign-off.
+3. Document results in SESSION_LOG.
+4. Commit: `phase-21.4: final v1 acceptance E2E sweep`
+```
+
+### I5 — Go-live
+
+```
+TASK
+1. Execute cutover plan on agreed date.
+2. Live monitoring: dashboards + error log tails for 48h post-launch.
+3. Daily check-ins for 2 weeks.
+4. Document any post-launch issues + resolutions in SESSION_LOG.
+5. Phase 22+ post-v1 backlog formalized.
+6. Commit: `phase-21.5: v1 GO-LIVE 🚀`
+```
+
+---
+
+## §J — Playwright E2E patterns (used across phases)
+
+> Reference patterns for E2E tests. Re-use across E15, F5, G4, H3, I4.
+
+### J1 — Project setup (once)
+
+```bash
+cd tests/playwright
+npm install -D @playwright/test
+npx playwright install chromium
+```
+
+### J2 — Auth helper
+
+```typescript
+// tests/playwright/tests/setup/auth.ts
+import { Page, APIRequestContext } from '@playwright/test';
+
+export async function loginAs(page: Page, request: APIRequestContext, role: string, tenantId?: string) {
+  // POST /api/Auth/login with seeded test user for role
+  const resp = await request.post(`${process.env.API_URL}/api/Auth/login`, {
+    data: { username: `test-${role}@playwright.local`, password: 'TestPass123!' }
+  });
+  const { token } = await resp.json();
+  await page.context().addCookies([{
+    name: 'auth_token', value: token, url: process.env.BASE_URL!
+  }]);
+  // Or: window.localStorage.setItem('token', token) before navigation
+}
+```
+
+### J3 — Tenant seed via API
+
+```typescript
+// Setup helper: provision an isolated tenant for the test run
+export async function seedTestTenant(request: APIRequestContext): Promise<TestTenant> {
+  // Call admin endpoint to provision tenant + roles + users + base data
+  // Returns tenant ID, login credentials for each role, IDs of seeded
+  // Item/Partner/Authorization for use in tests.
+}
+```
+
+### J4 — Pattern: happy-path test
+
+```typescript
+// tests/playwright/tests/happy-path.spec.ts
+test('v1 acceptance loop: ClientOrder → IM → Receipt → BOM → Podelba → Issue → Receipt → QC → EX → Razdolzuvanje', async ({ page, request }) => {
+  const tenant = await seedTestTenant(request);
+  await loginAs(page, request, 'Manager', tenant.id);
+
+  // Step 1: Create ClientOrder
+  await page.goto('/orders');
+  await page.getByRole('button', { name: 'Нов налог' }).click();
+  await page.getByLabel('Клиент').click();
+  await page.getByRole('option', { name: tenant.customerPartner.name }).click();
+  // ... fill remaining fields
+  await page.getByRole('button', { name: 'Зачувај' }).click();
+
+  // Hub opens
+  await expect(page).toHaveURL(/\/orders\/[a-f0-9-]+$/);
+  await expect(page.getByText('Status: Draft')).toBeVisible();
+
+  // Step 2: Click „Креирај увозна декларација" action
+  await page.getByRole('button', { name: 'Креирај увозна декларација' }).click();
+  // ... fill IM declaration
+
+  // ... (continues through all 11 steps)
+
+  // Final assertion: ClientOrder status = Closed; guarantee balance reconciled
+  await page.goto(`/orders/${createdOrderId}/razdolzuvanje`);
+  await expect(page.getByText('Варијанса: €0.00')).toBeVisible();
+});
+```
+
+### J5 — Pattern: visual regression (optional v1, recommended post)
+
+Snapshot per page; fail on diff > 1%.
+
+### J6 — CI integration
+
+```yaml
+# .github/workflows/e2e.yml
+on: [pull_request, schedule]
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build  # bring up LON locally
+      - run: cd tests/playwright && npm ci && npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/playwright/playwright-report/
+```
+
+---
+
 ## How to use this file
 
-1. Pick the lowest-letter, lowest-number prompt not yet done.
+1. Pick the lowest-letter, lowest-number prompt not yet done in current phase.
 2. Open a fresh Claude Code session in the repo root.
-3. Copy the prompt block (the fenced `\`\`\`` content) verbatim.
+3. Copy the prompt block (the fenced ` ``` ` content) verbatim.
 4. Let Claude Code execute. Stay in that session until VERIFICATION.md checks pass.
-5. SESSION_LOG entry written, commit pushed, status updated in WORK_PLAN.md under "Phase 16".
+5. SESSION_LOG entry written, commit pushed, status updated in PLAN.md.
 6. Move to next prompt.
 
 If a prompt fails midway: don't try to "patch" it from a different angle — fix the underlying issue, then resume that same prompt. Cross-prompt entanglement is how we got to the May 2026 chaos in the first place.
