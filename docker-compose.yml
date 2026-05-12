@@ -43,6 +43,7 @@ services:
       - OpenAI__EmbeddingModel=text-embedding-ada-002
       - OpenAI__ChatModel=gpt-4o-mini
       - EnableVectorStore=${ENABLE_VECTOR_STORE:-false}
+      - LON_BOOTSTRAP_ADMIN_PASSWORD=${LON_BOOTSTRAP_ADMIN_PASSWORD:-}
     volumes:
       - lon_dataprotection_keys:/root/.aspnet/DataProtection-Keys
     expose:

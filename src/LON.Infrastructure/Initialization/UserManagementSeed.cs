@@ -205,13 +205,28 @@ public static class UserManagementSeed
             await context.SaveChangesAsync();
             logger.LogInformation("Seeded 3 shifts.");
 
-            // Create Admin User
+            // Create Admin User — password from env var LON_BOOTSTRAP_ADMIN_PASSWORD (D2 decision 2026-05-12).
+            // Fallback to "Admin123!" for tests / first-boot dev. Production deployments
+            // must set LON_BOOTSTRAP_ADMIN_PASSWORD in their secrets store; if missing, warn loudly.
+            var bootstrapPassword = Environment.GetEnvironmentVariable("LON_BOOTSTRAP_ADMIN_PASSWORD");
+            if (string.IsNullOrWhiteSpace(bootstrapPassword))
+            {
+                bootstrapPassword = "Admin123!";
+                logger.LogWarning(
+                    "LON_BOOTSTRAP_ADMIN_PASSWORD env var not set — seeding admin with fallback 'Admin123!'. " +
+                    "Set the env var for production deployments. See docs/migration/TEKSPORT_WIPE_PLAN.md §5.4.");
+            }
+            else
+            {
+                logger.LogInformation("Seeding admin with password from LON_BOOTSTRAP_ADMIN_PASSWORD env var.");
+            }
+
             var adminUser = new User
             {
                 Id = Guid.NewGuid(),
                 Username = "admin",
                 Email = "admin@lon.local",
-                PasswordHash = authService.HashPassword("Admin123!"),
+                PasswordHash = authService.HashPassword(bootstrapPassword),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = "System"
