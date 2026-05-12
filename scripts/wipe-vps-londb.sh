@@ -44,7 +44,7 @@ sql() {
   local query="$1"
   local extra="${2:-}"
   docker exec -e PB64="$PASS_B64" "$SQLSERVER_CONTAINER" bash -c \
-    "P=\$(echo \$PB64 | base64 -d); $SQLCMD -S localhost -U sa -P \"\$P\" -N -C -b $extra -Q \"$query\""
+    "P=\$(echo \$PB64 | base64 -d); $SQLCMD -S localhost -U sa -P \"\$P\" -N -C -b -I $extra -Q \"$query\""
 }
 
 sql_db() {
