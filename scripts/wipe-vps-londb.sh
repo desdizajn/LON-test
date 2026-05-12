@@ -99,22 +99,56 @@ SET NUMERIC_ROUNDABORT OFF;
 SET XACT_ABORT ON;
 BEGIN TRAN WipeAll;
 
--- Disable all FK constraints
-EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
+DECLARE @sql NVARCHAR(MAX);
+DECLARE @tname NVARCHAR(300);
 
--- DELETE everything except migration history
-EXEC sp_MSforeachtable 'IF PARSENAME(''?'',1) NOT IN (''__EFMigrationsHistory'') DELETE FROM ?';
+-- 1) Disable all FK constraints
+DECLARE c1 CURSOR LOCAL FAST_FORWARD FOR
+  SELECT QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name)
+  FROM sys.tables t WHERE t.name <> N'__EFMigrationsHistory';
+OPEN c1;
+FETCH NEXT FROM c1 INTO @tname;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+  EXEC(N'ALTER TABLE ' + @tname + N' NOCHECK CONSTRAINT ALL');
+  FETCH NEXT FROM c1 INTO @tname;
+END
+CLOSE c1; DEALLOCATE c1;
 
--- Reseed identity columns (most tables are Guid PKs; this is a no-op for them)
-DECLARE @sql NVARCHAR(MAX) = N'';
-SELECT @sql = @sql + N'DBCC CHECKIDENT(''' + QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name) + N''', RESEED, 0);' + CHAR(13)
+-- 2) DELETE everything except __EFMigrationsHistory
+DECLARE c2 CURSOR LOCAL FAST_FORWARD FOR
+  SELECT QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name)
+  FROM sys.tables t WHERE t.name <> N'__EFMigrationsHistory';
+OPEN c2;
+FETCH NEXT FROM c2 INTO @tname;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+  SET @sql = N'SET QUOTED_IDENTIFIER ON; SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; DELETE FROM ' + @tname + N';';
+  EXEC sp_executesql @sql;
+  FETCH NEXT FROM c2 INTO @tname;
+END
+CLOSE c2; DEALLOCATE c2;
+
+-- 3) Reseed identity columns
+DECLARE @reseed NVARCHAR(MAX) = N'';
+SELECT @reseed = @reseed + N'DBCC CHECKIDENT(''' + SCHEMA_NAME(t.schema_id) + N'.' + t.name + N''', RESEED, 0);' + CHAR(13)
 FROM sys.tables t
 JOIN sys.identity_columns c ON c.object_id = t.object_id
-WHERE t.name <> '__EFMigrationsHistory';
-IF LEN(@sql) > 0 EXEC sp_executesql @sql;
+WHERE t.name <> N'__EFMigrationsHistory';
+IF LEN(@reseed) > 0 EXEC sp_executesql @reseed;
 
--- Re-enable FKs WITH CHECK
-EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';
+-- 4) Re-enable FKs WITH CHECK
+DECLARE c3 CURSOR LOCAL FAST_FORWARD FOR
+  SELECT QUOTENAME(SCHEMA_NAME(t.schema_id)) + N'.' + QUOTENAME(t.name)
+  FROM sys.tables t WHERE t.name <> N'__EFMigrationsHistory';
+OPEN c3;
+FETCH NEXT FROM c3 INTO @tname;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+  EXEC(N'ALTER TABLE ' + @tname + N' WITH CHECK CHECK CONSTRAINT ALL');
+  FETCH NEXT FROM c3 INTO @tname;
+END
+CLOSE c3; DEALLOCATE c3;
 
 COMMIT;
 PRINT 'Wipe transaction committed.';
