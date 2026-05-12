@@ -184,10 +184,12 @@ PRE phase се додаде врз основа на prep session findings (comm
 | **PRE.1** | Корекции на CLAUDE.md §4/§5 (local LON DB row restored as `LONDB`; migration count 43→50; Фаза 16→17) | `[x]` (`6e27a88`) |
 | **PRE.2** | BLUEPRINT §9.1 mapping update врз основа на 9 откритија + Cowork audit closeout (Izdatnica/Ispratnica fix во §5.7/§5.9/§5.10; inflate-for-waste reality; sticky-defaults reframe; HR caveat) | `[x]` (`6e27a88`+`7e67f1e`) |
 | **PRE.3** | 6 user decisions resolved 2026-05-12: D1=wipe approved, D2=env-var admin password, D3=local DB created (this session), D4=new `CommercialInvoice` entity (§3.2.1), D5=new `DeliveryNote` entity (§3.8), D6=Phase 21 prod-export for HR | `[x]` |
-| **PRE.4** | `docs/migration/MAPPING.md` — authoritative legacy→LON mapping (table-by-table со колумни + transformations + edge cases + reconciliation queries) | `[ ]` |
-| **PRE.5** | Execute VPS wipe (BACKUP + RESTORE VERIFYONLY gate; FK-respecting TRUNCATE; identity reseed; per `TEKSPORT_WIPE_PLAN.md`) — D1 approved | `[ ]` |
-| **PRE.6** | Минимален seed: 1 Tenant (TEKSPORT, sentinel-zeros GUID), 12 Roles per BLUEPRINT §4.1, all Permissions + RolePermissions, 1 Admin (password од `LON_BOOTSTRAP_ADMIN_PASSWORD` env — D2), CodeListItems (EUR/USD/MKD/RSD + 30 countries + UoMs), 5 WorkCenters, 4 CustomsProcedures (4051, 1041, 6121, 4200) | `[ ]` |
-| **PRE.7** | `LON.Migration` (нов entry point `--happy-path Z2779`) imports Z2779 → assert: ClientOrder created, IM declaration со 13 lines, 13 ReceiptLines, 5-line BOM, Izdatnica → DeliveryNote auto-gen (D5), Razdolzuvanje balanced. Сите 6 reconciliation queries pass. (Z2779 не активира `CommercialInvoice` — D4 фитура runs against larger Zaklucoci во Phase 21) | `[ ]` |
+| **PRE.4** | `docs/migration/MAPPING.md` — authoritative legacy→LON mapping (table-by-table со колумни + transformations + edge cases + reconciliation queries) | `[x]` (`4847d43`) |
+| **PRE.5** | Executed VPS wipe (backup: `LONDB_pre-wipe_20260512T091454Z.bak`; all business tables empty; 50 migrations preserved) — D1 approved | `[x]` (`5f07cb2`+`9b0967b`) |
+| **PRE.6** | Env-var admin password infrastructure (`LON_BOOTSTRAP_ADMIN_PASSWORD`) deployed; VPS seed verified (admin login HTTP 200, 30 permissions, 12 roles, 9 users) — D2 satisfied | `[x]` (`4b9170a`) |
+| **PRE.7** | LON.Migration discovery + structural-mismatch findings (`docs/migration/PRE7_FINDINGS.md`); full Z2779 happy-path **deferred to new Phase 17 task `E.MIGRATE`** (after E1+E5+E7.6+E8.5) | `[x]` |
+
+✅ **PRE phase CLOSED 2026-05-12.** Phase 17 main starts with §E0.
 
 ### 11.2 Phase 17 main — E0–E15 (after PRE)
 
@@ -208,6 +210,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E8 | Wire EX declaration + Shipment + QC from hub | `[ ]` |
 | E8.5 | `CommercialInvoice` entity + EX hub chain (D4; replaces legacy `tblIzvozniFakturi`) | `[ ]` |
 | E9 | Razdolzuvanje view per ClientOrder | `[ ]` |
+| **E.MIGRATE** | **LON.Migration refactor + Z2779 end-to-end + 6 reconciliation queries** (deferred from PRE.7; see `docs/migration/PRE7_FINDINGS.md` §6) | `[ ]` |
 | E10 | AI helper service + 3 core recommendations + floating UI | `[ ]` |
 | E10.5 | AlertRule + AlertEvent + 6 predefined rules + nightly evaluator | `[ ]` |
 | E11 | Domain events infrastructure + handler refactor | `[ ]` |

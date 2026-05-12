@@ -956,6 +956,81 @@ TASK
 Before declaring done, walk through VERIFICATION.md Section E9. Paste evidence into SESSION_LOG.md.
 ```
 
+### E.MIGRATE — LON.Migration refactor + Z2779 happy-path end-to-end (deferred from PRE.7)
+
+```
+Read docs/migration/PRE7_FINDINGS.md (especially §6 task list) + docs/migration/MAPPING.md + BLUEPRINT.md §9.1 + VERIFICATION.md §E.MIGRATE before starting.
+
+CONTEXT
+PRE.7 attempted to import Z2779 end-to-end but uncovered structural mismatches
+between `src/LON.Migration/` and BLUEPRINT-correct mapping:
+- AuthorizationMapper conflates `Zaklucok` with `LONAuthorization` (BLUEPRINT
+  splits them: `Odobrenija → LONAuthorization`, `Zaklucok → ClientOrder`).
+- DeclarationMapper expects `INW-PROC` (legacy abbreviation; now should be
+  `4051/1041/6121/4200`).
+- InventoryMapper doesn't honor DocumentSource resolver (MAPPING.md §11.1).
+- 7 mappers missing: ClientOrder, BOM, FinishedGood, MaterialIssue,
+  WasteDeclaration, DeliveryNote, CommercialInvoice.
+- No `--zaklucok` filter.
+
+This task runs AFTER §E1 (ClientOrder), §E5 (BOM wiring), §E7.6 (DeliveryNote),
+§E8.5 (CommercialInvoice) have all landed so the v1 schema is complete.
+
+TASK
+1. Refactor `AuthorizationMapper` → split into:
+   - `OdobrenijaMapper` (Odobrenija → LONAuthorization, 1:1 per BLUEPRINT §3.3).
+   - `ClientOrderMapper` (Zaklucoci → ClientOrder per BLUEPRINT §3.1; FK to
+     LONAuthorization via OdobrenieRBr resolution).
+2. Refactor `DeclarationMapper`:
+   - Resolve CustomsProcedure FK from `FakturiU5Z.VidUIS` (4051/1041/6121/4200).
+   - Default to `4051` if VidUIS empty.
+   - Add `ClientOrderId` FK assignment via composite Zaklucok lookup.
+3. Refactor `InventoryMapper`:
+   - Apply `ResolveExitDocument(Proces)` switch per MAPPING.md §11.1.
+   - Emit `InventoryMovement` with correct `MovementType` + `RelatedDocumentId`.
+   - Recompute `InventoryBalance` post-pass via FIFO replay (see MAPPING.md §4.1).
+4. Add new mappers:
+   - `BOMMapper` (Normativi → BOM + BOMLine + BOMLineWasteOverrides; dedupe per
+     MAPPING.md §5.2).
+   - `FinishedGoodMapper` (GotoviProizvodi → ClientOrderFinishedGood; ItemId via
+     Item.Code lookup).
+   - `MaterialIssueMapper` (Izdatnici → MaterialIssue; chain DeliveryNote auto-
+     gen per BLUEPRINT §3.8 + §E7.6 wiring).
+   - `WasteDeclarationMapper` (Ispratnici → WasteDeclaration per MAPPING.md §6.2).
+   - `CommercialInvoiceMapper` (tblIzvozniFakturi → CommercialInvoice per §3.2.1;
+     stub-mapping for now if not all columns identified — Z2779 has 0 rows so
+     not exercised by happy-path).
+   - `PartnerCatalogBuilder` (build Partner type=Producer catalog from union of
+     numeric FK columns across LagerMaterijali, Izdatnici, Ispratnici per
+     MAPPING.md §3.1 partner catalog build).
+5. Add `--zaklucok <number>` CLI flag to `Program.cs`. Every mapper filters
+   `WHERE ZaklucokBroj=@zb` (and joins as needed).
+6. Refresh `ReconciliationReporter`:
+   - R1 InventoryBalance/Movement count by MovementType vs LagerMaterijali by Proces.
+   - R2 GuaranteeAccount.CurrentBalance per LONAuthorization vs Odobrenija.GarancijaIznos.
+   - R3 Declaration totals (10 random spot-checks; tolerance EUR ±0.01).
+   - R4 ClientOrder count vs Zaklucoci (non-staging) — exact.
+   - R5 BOMLine count vs Normativi (LON ≤ legacy after dedupe; log collapsed).
+   - R6 Re-aggregate CustomsDeclarationLine grouped by (TariffCodeId, UoMId, CountryOfOrigin) → SUM-match legacy NaimU5 (tolerance EUR ±0.01).
+7. Run `dotnet run --project src/LON.Migration -- all --legacy ELON --lon LONDB --tenant TEKSPORT --zaklucok 2779`.
+8. Assertions (Z2779-specific):
+   - LONAuthorization count = 1 (OdobrenieRBr=1).
+   - ClientOrder count = 1 (Z2779 itself).
+   - CustomsDeclaration count = 1 (IM).
+   - CustomsDeclarationLine count = 13.
+   - InventoryMovement count: 13 Receipt (Proces=1) + 5 IssueToProducer (Proces=7) + 3 WasteDestroyed (Proces=9) ≈ 21 rows.
+   - BOM count = 1; BOMLine count = 5.
+   - MaterialIssue count = 1 (Izdatnica 8232/2025); DeliveryNote(ProducerDispatch) count = 1.
+   - WasteDeclaration count = 3 (Ispratnici for 3 waste rows).
+   - CommercialInvoice count = 0 (Z2779 has no tblIzvozniFakturi rows).
+   - All 6 reconciliation queries pass within tolerance.
+9. Document timing (Z2779 should complete in <30s; future --zaklucok runs benchmark vs this).
+10. Commit: `phase-17.E.MIGRATE: LON.Migration refactor + Z2779 happy-path end-to-end + 6 reconciliation queries passing`
+11. Deploy to VPS (optional for this task — local validation is the primary goal; VPS migration is Phase 21.1 dry-run for ALL 269 Zaklucoci).
+
+Before declaring done, walk through VERIFICATION.md §E.MIGRATE. SESSION_LOG evidence.
+```
+
 ### E10 — AI helper service + 3 core recommendations + floating UI
 
 ```

@@ -143,11 +143,11 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 
 - [x] 17.PRE.1 CLAUDE.md §4/§5 + §11 stale-fact corrections (LON DB row, migration count, Phase 16→17) → committed `6e27a88`
 - [x] 17.PRE.2 BLUEPRINT §9.1 mapping update (9 corrections; Proces resolver; missing-tables flagged) + Cowork audit closeout (Izdatnica/Ispratnica + inflate-for-waste + sticky-defaults reframe + HR caveat) → committed `6e27a88`+`7e67f1e`
-- [x] 17.PRE.3 6 user decisions resolved 2026-05-12 (D1=wipe approved, D2=env-var admin password, D3=local DB created, D4=new CommercialInvoice entity, D5=new DeliveryNote entity, D6=Phase 21 prod-export for HR) → committed (this commit)
-- [ ] 17.PRE.4 `docs/migration/MAPPING.md` (authoritative legacy→LON, table-by-table)
-- [ ] 17.PRE.5 Execute VPS wipe (backup + RESTORE VERIFYONLY gate; per `TEKSPORT_WIPE_PLAN.md`)
-- [ ] 17.PRE.6 Minimal seed (1 Tenant + 12 Roles + Permissions + Admin + codelists + 5 WorkCenters + 4 CustomsProcedures)
-- [ ] 17.PRE.7 `LON.Migration --happy-path Z2779` import + assert ClientOrder/IM/Receipt/BOM/Izdatnica/Razdolzuvanje + 6 reconciliation queries pass
+- [x] 17.PRE.3 6 user decisions resolved 2026-05-12 (D1=wipe approved, D2=env-var admin password, D3=local DB created, D4=new CommercialInvoice entity, D5=new DeliveryNote entity, D6=Phase 21 prod-export for HR) → committed `f6f0fb7`
+- [x] 17.PRE.4 `docs/migration/MAPPING.md` (authoritative legacy→LON, table-by-table) → `4847d43`
+- [x] 17.PRE.5 Executed VPS wipe (backup retained: `LONDB_pre-wipe_20260512T091454Z.bak`; all business tables empty; 50 migrations preserved) → `5f07cb2`+`9b0967b`
+- [x] 17.PRE.6 Env-var admin password infrastructure (`LON_BOOTSTRAP_ADMIN_PASSWORD`) deployed + VPS seed verified (admin login HTTP 200, 30 permissions, 12 roles, 9 users) → `4b9170a`
+- [x] 17.PRE.7 LON.Migration discovery + structural-mismatch findings documented (`docs/migration/PRE7_FINDINGS.md`); full Z2779 happy-path **deferred to new task `E.MIGRATE`** that lands after E1+E5+E7.6+E8.5
 
 **Phase 17 main**
 
@@ -163,6 +163,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [ ] 17.8   Wire EX declaration + Shipment from hub + FinishedGoodReceipt + QC  → BLUEPRINT §5.9, §5.10
 - [ ] 17.8.5 `CommercialInvoice` entity + EX hub chain (D4 — replaces tblIzvozniFakturi/Stavki 3.2k+57.9k legacy rows; finance integration deferred to Phase 27)  → BLUEPRINT §3.2.1
 - [ ] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11
+- [ ] 17.E.MIGRATE  LON.Migration refactor (OdobrenijaMapper + ClientOrderMapper + BOMMapper + MaterialIssueMapper + WasteDeclarationMapper + DeliveryNoteMapper + CommercialInvoiceMapper + `--zaklucok` filter) → run `Z2779` end-to-end + assert 6 reconciliation queries pass (PRE.7 deferred deliverable; see `docs/migration/PRE7_FINDINGS.md` §6)  → BLUEPRINT §9.1 + MAPPING.md
 - [ ] 17.10  AI helper service + 3 core recommendations + floating UI  → BLUEPRINT §7.4
 - [ ] 17.11  Domain events infrastructure + handler refactor (guarantee, inventory transitions)  → BLUEPRINT §3.6, §6.1, §6.2
 - [ ] 17.12  SQL SEQUENCE objects + NumberFormatter  → BLUEPRINT §6.6

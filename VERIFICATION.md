@@ -651,6 +651,57 @@ Specific extras:
 
 ---
 
+### §E.MIGRATE — LON.Migration refactor + Z2779 end-to-end (deferred from PRE.7)
+
+> Per `docs/migration/PRE7_FINDINGS.md` §6. Runs AFTER E1+E5+E7.6+E8.5 land.
+
+```bash
+# Build
+dotnet build src/LON.Migration/LON.Migration.csproj
+# Expected: 0 warnings, 0 errors
+
+# Verify --zaklucok flag exists
+dotnet run --project src/LON.Migration -- --help 2>&1 | grep -q -- "--zaklucok" && echo "OK" || echo "MISSING"
+
+# Refactored mappers present
+ls src/LON.Migration/Mappers/ | grep -E "OdobrenijaMapper|ClientOrderMapper|BOMMapper|FinishedGoodMapper|MaterialIssueMapper|WasteDeclarationMapper|DeliveryNoteMapper|CommercialInvoiceMapper"
+# Expected: 8 mappers listed
+
+# Execute Z2779
+dotnet run --project src/LON.Migration -- all --legacy "Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=True" --lon "Server=localhost;Database=LONDB;Trusted_Connection=True;TrustServerCertificate=True" --tenant TEKSPORT --zaklucok 2779
+
+# Verify counts (against local LONDB)
+sqlcmd -S localhost -E -d LONDB -h -1 -W -Q "
+  SELECT 'LONAuthorization' = COUNT(*) FROM LONAuthorizations;
+  SELECT 'ClientOrder' = COUNT(*) FROM ClientOrders WHERE LegacyZaklucokBroj='2779';
+  SELECT 'CustomsDeclaration' = COUNT(*) FROM CustomsDeclarations WHERE ClientOrderId IN (SELECT Id FROM ClientOrders WHERE LegacyZaklucokBroj='2779');
+  SELECT 'CustomsDeclarationLine' = COUNT(*) FROM CustomsDeclarationLines cdl JOIN CustomsDeclarations cd ON cdl.CustomsDeclarationId=cd.Id JOIN ClientOrders co ON cd.ClientOrderId=co.Id WHERE co.LegacyZaklucokBroj='2779';
+  SELECT 'InventoryMovement' = COUNT(*) FROM InventoryMovements WHERE ClientOrderId IN (SELECT Id FROM ClientOrders WHERE LegacyZaklucokBroj='2779');
+  SELECT 'BOM' = COUNT(*) FROM BOMs WHERE Id IN (SELECT DISTINCT BOMId FROM BOMLines bl JOIN ProductionOrders po ON ... );
+  -- (refine join chain when E5 lands; entities not yet wired today)
+"
+# Expected (Z2779 lineage):
+#   LONAuthorization >= 1 (Odobrenije 1)
+#   ClientOrder = 1 (Z2779)
+#   CustomsDeclaration = 1 (the single IM)
+#   CustomsDeclarationLine = 13
+#   InventoryMovement = ~21 (13 Receipt + 5 IssueToProducer + 3 WasteDestroyed)
+#   BOM = 1; BOMLine = 5
+#   MaterialIssue = 1; DeliveryNote(ProducerDispatch) = 1
+#   WasteDeclaration = 3
+#   CommercialInvoice = 0 (Z2779 has no tblIzvozniFakturi rows)
+
+# 6 reconciliation queries all pass
+dotnet run --project src/LON.Migration -- reconcile --zaklucok 2779 2>&1 | grep -E "PASS|FAIL"
+# Expected: 6 lines with PASS
+```
+
+**No VPS deploy required** (Phase 21.1 dry-run handles all-Zaklucoci migration against VPS).
+
+**SESSION_LOG:** include exact row counts + total runtime + any orphan/quarantine rows reported.
+
+---
+
 ### §E10 — AI helper
 
 ```bash

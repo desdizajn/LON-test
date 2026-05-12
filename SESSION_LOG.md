@@ -2,6 +2,27 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-12 — 🎯 Phase 17.PRE phase CLOSED (7/7 + deferred E.MIGRATE)
+
+PRE phase ги положи foundations пред Phase 17 main E0+. 7 sub-таскови, 9 commits.
+
+Sub-таскови:
+- PRE.1 (CLAUDE.md fact corrections): commit `6e27a88`. Restored local LON DB row (LONDB, Windows auth); migration count 43→50; Phase 16→17.
+- PRE.2 (BLUEPRINT §9.1 + Cowork audit corrections): `6e27a88`+`7e67f1e`. 9 mapping discrepancies fixed + Cowork's 8 audit findings addressed (Izdatnica/Ispratnica swap in §5.7/§5.9/§5.10; inflate-for-waste reality check; sticky-defaults reframe per TEKSPORT 99.998% EUR; HR data caveat).
+- PRE.3 (6 user decisions): `f6f0fb7`. D1=wipe approved; D2=env-var admin password; D3=local DB created; D4=new CommercialInvoice entity (BLUEPRINT §3.2.1, new); D5=new DeliveryNote entity (BLUEPRINT §3.8, new); D6=HR data prod-export at Phase 21 cutover. Two new Phase 17 tasks added: E7.6 (DeliveryNote) + E8.5 (CommercialInvoice).
+- PRE.4 (`docs/migration/MAPPING.md`): `4847d43`. 500-line authoritative legacy→LON mapping doc covering 31 ELON tables + reconciliation queries R1–R6 + DocumentSource resolver + edge cases + open questions.
+- PRE.5 (VPS LONDB wipe): `5f07cb2`+`9b0967b`. `scripts/wipe-vps-londb.sh` executes BACKUP → RESTORE VERIFYONLY → wipe (cursor-based DELETE per QUOTED_IDENTIFIER constraint) → post-wipe verify. Run on VPS: 0 non-empty business tables; 50 migrations preserved; backup at `/var/opt/mssql/backup/LONDB_pre-wipe_20260512T091454Z.bak`. Issues fixed mid-execution: sp_MSforeachtable doesn't propagate SET options through dynamic SQL → switched to explicit cursors + sp_executesql with SET prefix.
+- PRE.6 (env-var admin password infrastructure + VPS seed): `4b9170a`. `UserManagementSeed` reads `LON_BOOTSTRAP_ADMIN_PASSWORD` env var with `Admin123!` fallback + LogWarning. `docker-compose.yml` passes env from host .env. VPS rebuild + restart triggered auto-seed: 30 permissions, 12 roles, 9 users (admin + 8 tek-* test users). Admin login HTTP 200 confirmed.
+- PRE.7 (LON.Migration discovery): `docs/migration/PRE7_FINDINGS.md`. Built clean (0 warnings); dry-ran items+auths+decls+inventory. Discovered structural mismatches: AuthorizationMapper conflates Zaklucok with LONAuthorization (BLUEPRINT splits them); DeclarationMapper expects legacy `INW-PROC` (now 4051/1041/6121/4200); InventoryMapper missing DocumentSource resolver; 7 mappers missing (ClientOrder/BOM/FinishedGood/MaterialIssue/WasteDeclaration/DeliveryNote/CommercialInvoice); no `--zaklucok` flag. Real Z2779 happy-path **deferred to new task `E.MIGRATE`** in Phase 17 main (after E1+E5+E7.6+E8.5).
+
+Local LONDB created in this session (was absent): 83 tables, 50 migrations, seeded (1 TEKSPORT tenant + 9 users + 12 roles + 30 permissions + 345 CodeListItems). Available for offline iteration.
+
+VPS state post-PRE.5+6: API up, DB empty-then-seeded, admin login works (password=Admin123! fallback because LON_BOOTSTRAP_ADMIN_PASSWORD not set in VPS .env; warning logged as designed).
+
+Phase 17 main next: §E0 (sticky-defaults hook + bulk field-update endpoint pattern).
+
+---
+
 ## 2026-05-11 — Phase 17 PREP session — ELON recon + wipe plan (no code change, no VPS)
 
 Цел: подготвителна сесија пред Phase 17 E0 — три артефакти за Cowork architect да напише `docs/migration/MAPPING.md` со реални податоци, не претпоставки. Сите ELON queries `read-only`. Локалниот LON dev DB **не постои** — види Task 3.
