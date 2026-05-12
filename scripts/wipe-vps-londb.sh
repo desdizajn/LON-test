@@ -52,17 +52,19 @@ sql_db() {
   sql "$query" "-d LONDB"
 }
 
-# 1) Pre-wipe diagnostic
-echo "--- Pre-wipe row counts ---"
+# 1) Pre-wipe diagnostic (top 15 most-populated tables)
+echo "--- Pre-wipe top populated tables ---"
 sql_db "
-  SELECT 'migrations' = COUNT(*) FROM __EFMigrationsHistory;
-  SELECT 'tenants' = COUNT(*) FROM Tenants;
-  SELECT 'users' = COUNT(*) FROM Users;
-  SELECT 'clientOrders' = COUNT(*) FROM ClientOrders;
-  SELECT 'receipts' = COUNT(*) FROM Receipts;
-  SELECT 'inventoryBalances' = COUNT(*) FROM InventoryBalances;
-  SELECT 'items' = COUNT(*) FROM Items;
-  SELECT 'customsDeclarations' = COUNT(*) FROM CustomsDeclarations;
+SET NOCOUNT ON;
+SELECT TOP 15
+  t.name AS TableName,
+  SUM(p.rows) AS RowCount
+FROM sys.tables t
+INNER JOIN sys.partitions p ON p.object_id = t.object_id
+WHERE p.index_id IN (0,1)
+GROUP BY t.name
+HAVING SUM(p.rows) > 0
+ORDER BY SUM(p.rows) DESC;
 "
 echo
 
