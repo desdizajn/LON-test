@@ -1,4 +1,5 @@
 using LON.Application.Management;
+using LON.Application.Management.Alerts;
 using LON.Application.Management.Risks;
 using LON.Domain.Entities.Management;
 using Microsoft.AspNetCore.Mvc;
@@ -82,4 +83,59 @@ public class ManagementController : BaseController
         var result = await Mediator.Send(new DeleteRiskRegisterItemCommand(id));
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    // ──────────────────────── §E10.5 — persistent alert events ────────────
+    // The classic `/alerts` endpoint above still serves the computed feed
+    // (P13.5). These endpoints serve the new AlertEvent rows persisted by
+    // the worker's AlertEvaluatorJob (one row per rule trigger, status
+    // lifecycle Open → Acknowledged → Resolved).
+
+    /// <summary>§E10.5 — paginated AlertEvent list with severity / status / date filters.</summary>
+    [HttpGet("alert-events")]
+    public async Task<IActionResult> GetAlertEvents(
+        [FromQuery] AlertEventStatus? status = null,
+        [FromQuery] LON.Domain.Entities.Management.AlertSeverity? severity = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var result = await Mediator.Send(new GetAlertEventsQuery
+        {
+            Status = status,
+            Severity = severity,
+            From = from,
+            To = to,
+            Page = page,
+            PageSize = pageSize,
+        });
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>§E10.5 — flip an Open alert to Acknowledged with optional reason.</summary>
+    [HttpPost("alert-events/{id:guid}/acknowledge")]
+    public async Task<IActionResult> AcknowledgeAlertEvent(Guid id, [FromBody] AcknowledgeAlertEventBody? body)
+    {
+        var result = await Mediator.Send(new AcknowledgeAlertEventCommand(id, body?.Reason));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>§E10.5 — close out an alert (Open or Acknowledged → Resolved).</summary>
+    [HttpPost("alert-events/{id:guid}/resolve")]
+    public async Task<IActionResult> ResolveAlertEvent(Guid id, [FromBody] ResolveAlertEventBody? body)
+    {
+        var result = await Mediator.Send(new ResolveAlertEventCommand(id, body?.Reason));
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>§E10.5 — run one evaluator pass on demand (Administrator only).</summary>
+    [HttpPost("alert-events/run-evaluator")]
+    public async Task<IActionResult> RunAlertEvaluator()
+    {
+        var result = await Mediator.Send(new RunAlertEvaluatorCommand());
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
+
+public record AcknowledgeAlertEventBody { public string? Reason { get; init; } }
+public record ResolveAlertEventBody { public string? Reason { get; init; } }

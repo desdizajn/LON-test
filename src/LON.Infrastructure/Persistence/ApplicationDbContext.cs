@@ -141,6 +141,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // AI assistant — Phase 17 §E10
     public DbSet<LON.Domain.Entities.Ai.AiSuggestionLog> AiSuggestionLogs => Set<LON.Domain.Entities.Ai.AiSuggestionLog>();
 
+    // Management alerts — Phase 17 §E10.5
+    public DbSet<LON.Domain.Entities.Management.AlertRule> AlertRules => Set<LON.Domain.Entities.Management.AlertRule>();
+    public DbSet<LON.Domain.Entities.Management.AlertEvent> AlertEvents => Set<LON.Domain.Entities.Management.AlertEvent>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

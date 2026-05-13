@@ -3315,6 +3315,80 @@ export interface paths {
       };
     };
   };
+  "/api/Management/alert-events": {
+    get: {
+      parameters: {
+        query?: {
+          status?: components["schemas"]["AlertEventStatus"];
+          severity?: components["schemas"]["AlertSeverity"];
+          from?: string;
+          to?: string;
+          page?: number;
+          pageSize?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/alert-events/{id}/acknowledge": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["AcknowledgeAlertEventBody"];
+          "text/json": components["schemas"]["AcknowledgeAlertEventBody"];
+          "application/*+json": components["schemas"]["AcknowledgeAlertEventBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/alert-events/{id}/resolve": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["ResolveAlertEventBody"];
+          "text/json": components["schemas"]["ResolveAlertEventBody"];
+          "application/*+json": components["schemas"]["ResolveAlertEventBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Management/alert-events/run-evaluator": {
+    post: {
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/MasterData/partners": {
     get: {
       parameters: {
@@ -5022,6 +5096,9 @@ export interface components {
      * @enum {integer}
      */
     AbsenceType: 1 | 2 | 3 | 4 | 5 | 99;
+    AcknowledgeAlertEventBody: {
+      reason?: string | null;
+    };
     AddClientOrderFinishedGoodCommand: {
       /** Format: uuid */
       clientOrderId?: string;
@@ -5038,6 +5115,16 @@ export interface components {
       currency?: string | null;
       notes?: string | null;
     };
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    AlertEventStatus: 0 | 1 | 2;
+    /**
+     * Format: int32
+     * @enum {integer}
+     */
+    AlertSeverity: 1 | 2 | 3 | 4;
     ApplyMappingRequest: {
       mapping?: components["schemas"]["ImportMapping"];
       targetEntity?: string | null;
@@ -6149,6 +6236,9 @@ export interface components {
       receiptLineId?: string;
       /** Format: double */
       skartQuantity?: number;
+      reason?: string | null;
+    };
+    ResolveAlertEventBody: {
       reason?: string | null;
     };
     ResolveSkartRequest: {

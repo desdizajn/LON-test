@@ -2079,6 +2079,24 @@
         "atRiskPO": "PO под ризик",
         "lonAuthExpiring": "LON auth истек"
       }
+    },
+    "alertEvents": {
+      "title": "Persistent alerts (auto-evaluated)",
+      "subtitle": "Алертите од workerot (евалуирани секои 5 минути). Секое правило креира еден ред додека условот трае.",
+      "statusFilter": "Статус",
+      "status": {
+        "all": "Сите",
+        "open": "Отворени",
+        "acknowledged": "Прифатени",
+        "resolved": "Затворени"
+      },
+      "runEvaluator": "Изврши евалуатор сега",
+      "events": "настани",
+      "empty": "Нема алерти. Workerot ке ги повторно евалуира за 5 минути.",
+      "acknowledge": "Прифати",
+      "resolve": "Затвори",
+      "acknowledgedBy": "прифатено од {{user}}",
+      "resolvedBy": "затворено од {{user}}"
     }
   },
   "finance": {

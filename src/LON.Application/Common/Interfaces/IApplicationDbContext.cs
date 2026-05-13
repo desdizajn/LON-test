@@ -137,6 +137,10 @@ public interface IApplicationDbContext
     // AI assistant — Phase 17 §E10
     DbSet<LON.Domain.Entities.Ai.AiSuggestionLog> AiSuggestionLogs { get; }
 
+    // Management alerts — Phase 17 §E10.5
+    DbSet<LON.Domain.Entities.Management.AlertRule> AlertRules { get; }
+    DbSet<LON.Domain.Entities.Management.AlertEvent> AlertEvents { get; }
+
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
     /// during seeders / background jobs / login flow. Exposed so handlers

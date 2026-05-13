@@ -51,6 +51,24 @@ public static class DependencyInjection
         services.AddScoped<LON.Application.Ai.IRecommendationEngine,
             LON.Application.Ai.Engines.ReceiptVarianceRecommendationEngine>();
 
+        // Phase 17 §E10.5 — alert rule evaluators. Same registration in both
+        // API + Worker hosts so the API can run them on-demand (for tests +
+        // an admin "run-now" button) while the Worker drives the 5-minute loop.
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.GuaranteeUtilizationEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.ClientOrderDueDateEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.MachineDownEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.CertificationExpiringEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.ReceiptVarianceEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertRuleEvaluator,
+            LON.Application.Management.Alerts.Evaluators.SubcontractorLateEvaluator>();
+        services.AddScoped<LON.Application.Management.Alerts.IAlertEvaluatorRunner,
+            LON.Application.Management.Alerts.AlertEvaluatorRunner>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         

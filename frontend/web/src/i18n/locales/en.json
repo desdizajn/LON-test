@@ -2079,6 +2079,24 @@
         "atRiskPO": "PO at risk",
         "lonAuthExpiring": "LON auth expiring"
       }
+    },
+    "alertEvents": {
+      "title": "Persistent alerts (auto-evaluated)",
+      "subtitle": "Alerts produced by the worker (evaluated every 5 minutes). Each rule emits one row per ongoing condition.",
+      "statusFilter": "Status",
+      "status": {
+        "all": "All",
+        "open": "Open",
+        "acknowledged": "Acknowledged",
+        "resolved": "Resolved"
+      },
+      "runEvaluator": "Run evaluator now",
+      "events": "events",
+      "empty": "No alerts. Worker will re-evaluate in 5 minutes.",
+      "acknowledge": "Acknowledge",
+      "resolve": "Resolve",
+      "acknowledgedBy": "acknowledged by {{user}}",
+      "resolvedBy": "resolved by {{user}}"
     }
   },
   "finance": {

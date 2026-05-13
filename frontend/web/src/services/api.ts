@@ -523,6 +523,15 @@ export const managementApi = {
   getByCustomer: (params?: { from?: string; to?: string }) =>
     api.get('/Management/by-customer', { params }),
   getAlerts: () => api.get('/Management/alerts'),
+  // Phase 17 §E10.5 — persistent alert events (AlertEvaluatorJob output).
+  getAlertEvents: (params?: { status?: 0 | 1 | 2; severity?: 1 | 2 | 3 | 4; from?: string; to?: string; page?: number; pageSize?: number }) =>
+    api.get('/Management/alert-events', { params }),
+  acknowledgeAlertEvent: (id: string, reason?: string) =>
+    api.post(`/Management/alert-events/${id}/acknowledge`, { reason }),
+  resolveAlertEvent: (id: string, reason?: string) =>
+    api.post(`/Management/alert-events/${id}/resolve`, { reason }),
+  runAlertEvaluator: () =>
+    api.post('/Management/alert-events/run-evaluator'),
   // Risks / Escalations
   getRisks: (kind?: 1 | 2) =>
     api.get('/Management/risks', { params: { kind } }),
