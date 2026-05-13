@@ -2,6 +2,93 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E10.5 — AlertRule + AlertEvent + 6 predefined rules + nightly evaluator + VPS-verified
+
+Commits `a3618e9` + `4b0cef9` (Include-on-Ignore() fix) + `a96a987` (dedupe
+suppression on Acknowledged). Persistent alerts layer driven by a new
+HostedService in `LON.Worker` and an on-demand "run-now" admin endpoint
+in the management API. Sits alongside the existing P13.5 computed alert
+feed (which stays — the two coexist).
+
+**New entities (Domain.Entities.Management):**
+- `AlertRule` (BaseEntity + ITenantScoped + IAuditable): Code (unique per
+  tenant) + Name/NameMk + Severity (Low/Medium/High/Critical) + IsActive +
+  TriggerKind (6 v1 kinds) + Threshold + RecipientsJson + DeliveryChannels.
+- `AlertEvent` (BaseEntity + ITenantScoped): AlertRuleId + OccurredAt +
+  EntityType + EntityId + Severity + Title + Body + Status (Open →
+  Acknowledged → Resolved) + Acknowledged{At,By,Reason} + Resolved{At,By,Reason}
+  + DedupKey for "don't re-fire while still in-flight".
+
+**Migration #56** `P17_E10_5_AddAlertRulesAndEvents`:
+- Creates AlertRules + AlertEvents tables + indexes.
+- Cursor-seeds the 6 predefined rules into every active tenant:
+  1. GUARANTEE_UTIL_90 (severity High, threshold 0.90)
+  2. ORDER_DUE_AT_RISK (severity High, threshold 7 days)
+  3. MACHINE_DOWN_2H (Medium, 2 hours)
+  4. CERT_EXPIRING_30 (Medium, 30 days)
+  5. RECEIPT_VAR_5 (Medium, 0.05)
+  6. SUBCONTRACTOR_LATE (High, 0.50)
+
+**Application:**
+- `IAlertRuleEvaluator` strategy + `AlertEventDraft` DTO.
+- 6 concrete evaluators (one per `AlertTriggerKind`) under
+  `Management/Alerts/Evaluators/`. Each scopes its DB query by `rule.TenantId`
+  (worker has no JWT, so the global tenant filter is bypassed; manual
+  filtering is essential).
+- `IAlertEvaluatorRunner` + `AlertEvaluatorRunner` orchestrate one pass:
+  load active rules, dispatch to matching evaluator, dedupe against
+  in-flight (Open OR Acknowledged) events with same DedupKey, persist
+  the rest with `CreatedBy='AlertEvaluator'`.
+- MediatR: `GetAlertEventsQuery`, `AcknowledgeAlertEventCommand`,
+  `ResolveAlertEventCommand`, `RunAlertEvaluatorCommand`.
+
+**LON.Worker:** new `Jobs/AlertEvaluatorJob` BackgroundService — first run
+30 s after startup, then every 5 minutes; resolves runner per pass.
+
+**API** (`ManagementController` extended): GET `/alert-events`, POST
+`/alert-events/{id}/acknowledge|resolve`, POST `/alert-events/run-evaluator`.
+
+**Frontend:** `pages/Management/Alerts.tsx` keeps the computed feed and
+appends `<AlertEventsSection />` with status filter + Acknowledge/Resolve
+buttons + "Run evaluator now" admin shortcut. i18n block
+`management.alertEvents.*` in mk.json + en.json.
+
+**Tests** (`AlertRulesTests.cs`, 5 [Fact]):
+- Migration_SeedsSixActiveRulesPerTenant — every active tenant gets 6 rules.
+- Evaluator_GuaranteeUtilizationOverThreshold_CreatesAlertEvent — 95%
+  utilisation triggers an Open event.
+- Evaluator_TwoPasses_DoesNotDuplicate — dedupe assertion (Open-state).
+- Acknowledge_FlipsStatusAndStampsAudit.
+- GetAlertEvents_FiltersByStatus.
+
+**Discoveries / follow-ups (caught on VPS):**
+- `GuaranteeAccount.LedgerEntries` is explicitly `.Ignore()`d in EF config
+  (`GuaranteeConfigurations.cs:22`) — so my initial
+  `.Include(a => a.LedgerEntries)` blew up at runtime with "expression is
+  invalid inside an Include operation". Swapped to a correlated subquery
+  that aggregates the balance server-side (commit `4b0cef9`).
+- Original dedupe filter was `Status == Open` only — acknowledging an
+  event freed the slot and the next evaluator pass duped. Fixed to
+  `Status != Resolved` so acked alerts keep the slot until manually
+  resolved (commit `a96a987`).
+- Worker hot-reload picks up code without explicit restart — `docker
+  compose up --build worker` is enough.
+
+**Verification on VPS:**
+- `SELECT Code, NameMk, Severity, IsActive FROM AlertRules` → 6 rows ✅
+- `POST /api/Management/alert-events/run-evaluator` → `rulesEvaluated=6,
+  eventsCreated=1` after seeding a 95%-utilised GuaranteeAccount ✅
+- `POST /api/Management/alert-events/{id}/acknowledge` → 200, Status flips
+  to Acknowledged with audit stamps ✅
+- Re-run evaluator → `eventsCreated=0`, dedupe correctly suppresses ✅
+- Worker log shows `AlertEvaluator pass complete: rules=6, newEvents=0`
+  every 5 min ✅
+
+**Status:** [x] done. Persistent alerts foundation laid (Phase 26 will add
+admin UI for rule CRUD + email channel). Next: §E11 (domain events).
+
+---
+
 ## 2026-05-14 — Phase 17 §E10 — AI helper service + 3 core recommendations + floating drawer UI + VPS-verified
 
 Commit `3cfc98e`. The first user-facing surface that the existing OpenAI RAG

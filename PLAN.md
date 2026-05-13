@@ -170,7 +170,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [ ] 17.13  Audit interceptor + AuditLogEntry writes + /admin/audit-log UI activation  → BLUEPRINT §6.5
 - [ ] 17.14  Soft-delete global filter + recycle bin UI  → BLUEPRINT §6.7
 - [ ] 17.7.5 Department + Position lookup promotion (CodeListItem reuse) — **D6 decided 2026-05-12**: prod-export path. Recommended: defer schema + backfill entirely to Phase 21.1.1. Alternative: land schema in Phase 17 (empty seed) and backfill in Phase 21.1.1.  → BLUEPRINT §5.12.1
-- [ ] 17.10.5 AlertRule + AlertEvent entities + 6 predefined rules + nightly worker evaluator (no UI editor — Phase 26 adds it)  → BLUEPRINT §5.13.4
+- [x] 17.10.5 AlertRule + AlertEvent entities + 6 predefined rules + nightly worker evaluator (no UI editor — Phase 26 adds it) — deployed `a3618e9`+`4b0cef9`+`a96a987`; VPS smoke evaluator-run created GUARANTEE_UTIL Open event, ack → status flips, second pass `eventsCreated=0` (dedupe). Worker hosted service running every 5min.  → BLUEPRINT §5.13.4
 - [ ] 17.X1  FxRate entity + manual maintenance UI `/finance/fx-rates`  → BLUEPRINT §5.14.8
 - [ ] 17.E   Playwright E2E happy-path test (the v1 acceptance loop, dev mode)  → BLUEPRINT §8.5
 
