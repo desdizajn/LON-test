@@ -151,6 +151,22 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasForeignKey(e => e.ShiftId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Phase 17 §E7.5 — Department + Position promoted to CodeListItem FK.
+        // Both FKs target the same parent table; SQL Server rejects two
+        // cascade paths from one child, so NoAction here — CodeListItems are
+        // soft-deleted (IsActive=false), they're never physically removed, so
+        // hanging refs aren't a real risk.
+        builder.HasOne(e => e.DepartmentRef)
+            .WithMany()
+            .HasForeignKey(e => e.DepartmentId)
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(e => e.PositionRef)
+            .WithMany()
+            .HasForeignKey(e => e.PositionId)
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.HasIndex(e => e.DepartmentId);
+        builder.HasIndex(e => e.PositionId);
+
         builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

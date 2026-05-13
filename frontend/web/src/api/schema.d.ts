@@ -4855,6 +4855,10 @@ export interface components {
       phone?: string | null;
       position?: string | null;
       department?: string | null;
+      /** Format: uuid */
+      departmentId?: string | null;
+      /** Format: uuid */
+      positionId?: string | null;
       hireDate?: string | null;
     };
     CreateExportDeclarationCommand: {
@@ -5883,6 +5887,10 @@ export interface components {
       phone?: string | null;
       position?: string | null;
       department?: string | null;
+      /** Format: uuid */
+      departmentId?: string | null;
+      /** Format: uuid */
+      positionId?: string | null;
       isActive?: boolean;
     };
     UpdatePayrollLineCommand: {

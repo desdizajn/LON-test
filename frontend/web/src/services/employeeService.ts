@@ -9,8 +9,15 @@ export interface Employee {
   lastName: string;
   email: string;
   phone?: string;
+  /** Phase 17 §E7.5 — free-text deprecated, kept for 1 release. */
   position: string;
   department: string;
+  /** Phase 17 §E7.5 — FK to CodeListItem (category EmployeePosition). */
+  positionId?: string | null;
+  positionName?: string | null;
+  /** Phase 17 §E7.5 — FK to CodeListItem (category EmployeeDepartment). */
+  departmentId?: string | null;
+  departmentName?: string | null;
   hireDate: string;
   isActive: boolean;
   user?: {
@@ -27,6 +34,8 @@ export interface CreateEmployeeRequest {
   phone?: string;
   position: string;
   department: string;
+  positionId?: string | null;
+  departmentId?: string | null;
   hireDate: string;
 }
 
@@ -37,6 +46,8 @@ export interface UpdateEmployeeRequest {
   phone?: string;
   position: string;
   department: string;
+  positionId?: string | null;
+  departmentId?: string | null;
   isActive: boolean;
 }
 

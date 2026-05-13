@@ -9002,6 +9002,16 @@
             "type": "string",
             "nullable": true
           },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "positionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "hireDate": {
             "type": "string",
             "nullable": true
@@ -11945,6 +11955,16 @@
           },
           "department": {
             "type": "string",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "positionId": {
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "isActive": {

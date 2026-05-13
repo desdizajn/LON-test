@@ -801,6 +801,15 @@ export const knowledgeBaseApi = {
   getCodeLists: (listType?: string, search?: string) =>
     api.get('/KnowledgeBase/code-lists', { params: { listType, search } }),
 
+  /** Phase 17 §E7.5 — create a CodeListItem inline from a dropdown. */
+  createCodeListItem: (payload: {
+    listType: string;
+    code: string;
+    descriptionMK: string;
+    descriptionEN?: string | null;
+    sortOrder?: number;
+  }) => api.post('/KnowledgeBase/code-lists/items', payload),
+
   getValidationRules: (fieldName?: string) =>
     api.get('/KnowledgeBase/validation-rules', { params: { fieldName } }),
 };

@@ -187,8 +187,35 @@ public class Employee : BaseEntity, ITenantScoped
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E7.5 — deprecated free-text. Kept for 1 release alongside
+    /// <see cref="DepartmentId"/> for backwards compat; final cleanup in Phase 18.
+    /// New rows leave this null and populate <see cref="DepartmentId"/>.
+    /// </summary>
     public string? Department { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E7.5 — deprecated free-text. See <see cref="Department"/>.
+    /// </summary>
     public string? Position { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E7.5 — FK to <see cref="CodeListItem"/> in category
+    /// `EmployeeDepartment`. Promotes the free-text <see cref="Department"/>
+    /// to a managed lookup so reports, filters, and HR analytics see canonical
+    /// values instead of typo variants ("Sewing" / "sewing" / "Шиење").
+    /// </summary>
+    public Guid? DepartmentId { get; set; }
+    public virtual CodeListItem? DepartmentRef { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E7.5 — FK to <see cref="CodeListItem"/> in category
+    /// `EmployeePosition`. See <see cref="DepartmentId"/>.
+    /// </summary>
+    public Guid? PositionId { get; set; }
+    public virtual CodeListItem? PositionRef { get; set; }
+
     public DateTime? HireDate { get; set; }
     public Guid? ShiftId { get; set; }
     public virtual Shift? Shift { get; set; }

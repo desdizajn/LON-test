@@ -19,6 +19,8 @@ public class EmployeesController : BaseController
     {
         var employees = await _context.Employees
             .Include(e => e.User)
+            .Include(e => e.DepartmentRef)
+            .Include(e => e.PositionRef)
             .ToListAsync();
 
         return Ok(employees.Select(MapEmployee).ToList());
@@ -29,6 +31,8 @@ public class EmployeesController : BaseController
     {
         var employee = await _context.Employees
             .Include(e => e.User)
+            .Include(e => e.DepartmentRef)
+            .Include(e => e.PositionRef)
             .FirstOrDefaultAsync(e => e.Id == id);
 
         if (employee == null)
@@ -57,8 +61,13 @@ public class EmployeesController : BaseController
             LastName = request.LastName,
             Email = request.Email,
             Phone = request.Phone,
+            // Phase 17 §E7.5 — DepartmentId/PositionId are the new canonical
+            // fields. Position/Department free-text persist for the deprecation
+            // window so legacy importers and reports keep working.
             Position = request.Position,
             Department = request.Department,
+            DepartmentId = request.DepartmentId,
+            PositionId = request.PositionId,
             HireDate = DateTime.Parse(request.HireDate),
             IsActive = true
         };
@@ -88,6 +97,8 @@ public class EmployeesController : BaseController
         employee.Phone = request.Phone;
         employee.Position = request.Position;
         employee.Department = request.Department;
+        employee.DepartmentId = request.DepartmentId;
+        employee.PositionId = request.PositionId;
         employee.IsActive = request.IsActive;
 
         await _context.SaveChangesAsync();
@@ -114,29 +125,37 @@ public class EmployeesController : BaseController
     {
         return await _context.Employees
             .Include(e => e.User)
+            .Include(e => e.DepartmentRef)
+            .Include(e => e.PositionRef)
             .FirstAsync(e => e.Id == id);
     }
 
     private static EmployeeDto MapEmployee(Employee employee)
     {
-        return new EmployeeDto(
-            employee.Id,
-            employee.UserId ?? Guid.Empty,
-            employee.FirstName,
-            employee.LastName,
-            employee.Email,
-            employee.Phone,
-            employee.Position ?? string.Empty,
-            employee.Department ?? string.Empty,
-            employee.HireDate?.ToString("o") ?? string.Empty,
-            employee.IsActive,
-            employee.User == null
+        return new EmployeeDto
+        {
+            Id = employee.Id,
+            UserId = employee.UserId ?? Guid.Empty,
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            Email = employee.Email,
+            Phone = employee.Phone,
+            Position = employee.Position ?? string.Empty,
+            Department = employee.Department ?? string.Empty,
+            DepartmentId = employee.DepartmentId,
+            DepartmentName = employee.DepartmentRef?.DescriptionMK ?? employee.DepartmentRef?.Code,
+            PositionId = employee.PositionId,
+            PositionName = employee.PositionRef?.DescriptionMK ?? employee.PositionRef?.Code,
+            HireDate = employee.HireDate?.ToString("o") ?? string.Empty,
+            IsActive = employee.IsActive,
+            User = employee.User == null
                 ? null
-                : new EmployeeUserDto(
-                    employee.User.Username,
-                    $"{employee.FirstName} {employee.LastName}".Trim()
-                )
-        );
+                : new EmployeeUserDto
+                {
+                    Username = employee.User.Username,
+                    FullName = $"{employee.FirstName} {employee.LastName}".Trim(),
+                },
+        };
     }
 
     private static string GenerateEmployeeNumber()
@@ -145,39 +164,56 @@ public class EmployeesController : BaseController
     }
 }
 
-public record EmployeeDto(
-    Guid Id,
-    Guid UserId,
-    string FirstName,
-    string LastName,
-    string Email,
-    string? Phone,
-    string Position,
-    string Department,
-    string HireDate,
-    bool IsActive,
-    EmployeeUserDto? User
-);
+// Phase 17 §E7.5 — init-only properties (not positional records) so System.Text.Json
+// can bind partial bodies. See `feedback_positional_records_trap.md` memory.
+public record EmployeeDto
+{
+    public Guid Id { get; init; }
+    public Guid UserId { get; init; }
+    public string FirstName { get; init; } = string.Empty;
+    public string LastName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Phone { get; init; }
+    public string Position { get; init; } = string.Empty;
+    public string Department { get; init; } = string.Empty;
+    public Guid? DepartmentId { get; init; }
+    public string? DepartmentName { get; init; }
+    public Guid? PositionId { get; init; }
+    public string? PositionName { get; init; }
+    public string HireDate { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public EmployeeUserDto? User { get; init; }
+}
 
-public record EmployeeUserDto(string Username, string FullName);
+public record EmployeeUserDto
+{
+    public string Username { get; init; } = string.Empty;
+    public string FullName { get; init; } = string.Empty;
+}
 
-public record CreateEmployeeRequest(
-    Guid UserId,
-    string FirstName,
-    string LastName,
-    string Email,
-    string? Phone,
-    string Position,
-    string Department,
-    string HireDate
-);
+public record CreateEmployeeRequest
+{
+    public Guid UserId { get; init; }
+    public string FirstName { get; init; } = string.Empty;
+    public string LastName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Phone { get; init; }
+    public string Position { get; init; } = string.Empty;
+    public string Department { get; init; } = string.Empty;
+    public Guid? DepartmentId { get; init; }
+    public Guid? PositionId { get; init; }
+    public string HireDate { get; init; } = string.Empty;
+}
 
-public record UpdateEmployeeRequest(
-    string FirstName,
-    string LastName,
-    string Email,
-    string? Phone,
-    string Position,
-    string Department,
-    bool IsActive
-);
+public record UpdateEmployeeRequest
+{
+    public string FirstName { get; init; } = string.Empty;
+    public string LastName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Phone { get; init; }
+    public string Position { get; init; } = string.Empty;
+    public string Department { get; init; } = string.Empty;
+    public Guid? DepartmentId { get; init; }
+    public Guid? PositionId { get; init; }
+    public bool IsActive { get; init; }
+}

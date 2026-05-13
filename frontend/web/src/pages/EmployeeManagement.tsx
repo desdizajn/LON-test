@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { employeeService, Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '../services/employeeService';
 import { authService, User } from '../services/authService';
+import { knowledgeBaseApi } from '../services/api';
 import './EmployeeManagement.css';
 
 interface EmployeeFormData {
@@ -9,15 +10,33 @@ interface EmployeeFormData {
   lastName: string;
   email: string;
   phone: string;
+  // Phase 17 §E7.5 — free-text kept for the deprecation window; new rows leave
+  // these empty and stamp `departmentId`/`positionId` instead.
   position: string;
   department: string;
+  departmentId: string;
+  positionId: string;
   hireDate: string;
   isActive: boolean;
 }
 
+interface CodeListRow {
+  id: string;
+  listType: string;
+  code: string;
+  descriptionMK: string;
+  descriptionEN?: string | null;
+  sortOrder?: number;
+}
+
+const DEPARTMENT_LIST_TYPE = 'EmployeeDepartment';
+const POSITION_LIST_TYPE = 'EmployeePosition';
+
 const EmployeeManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<CodeListRow[]>([]);
+  const [positions, setPositions] = useState<CodeListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -29,6 +48,8 @@ const EmployeeManagement: React.FC = () => {
     phone: '',
     position: '',
     department: '',
+    departmentId: '',
+    positionId: '',
     hireDate: new Date().toISOString().split('T')[0],
     isActive: true
   });
@@ -36,6 +57,7 @@ const EmployeeManagement: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
@@ -47,11 +69,60 @@ const EmployeeManagement: React.FC = () => {
       ]);
       setEmployees(employeesData);
       setUsers(usersData);
+      await Promise.all([
+        loadCodeList(DEPARTMENT_LIST_TYPE, setDepartments),
+        loadCodeList(POSITION_LIST_TYPE, setPositions),
+      ]);
     } catch (err) {
       setError('Грешка при вчитување на податоци');
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Phase 17 §E7.5 — pull a single CodeListItem category. Backend returns
+  // { listTypes, items, totalItems } grouped by listType; we just want the
+  // flat list for the requested type.
+  const loadCodeList = async (
+    listType: string,
+    setter: React.Dispatch<React.SetStateAction<CodeListRow[]>>,
+  ) => {
+    try {
+      const resp = await knowledgeBaseApi.getCodeLists(listType);
+      const items = resp.data?.items?.[listType] ?? [];
+      setter(items as CodeListRow[]);
+    } catch (err) {
+      console.error(`Failed to load code-list ${listType}`, err);
+      setter([]);
+    }
+  };
+
+  // Inline „+ Нов" — prompts for code + description, creates a CodeListItem
+  // in the chosen category, refreshes the dropdown, and selects the new id.
+  const handleAddCodeListItem = async (
+    listType: string,
+    setter: React.Dispatch<React.SetStateAction<CodeListRow[]>>,
+    onCreated: (id: string) => void,
+  ) => {
+    const code = window.prompt('Шифра (нпр. SEW, QC, SH-MGR):')?.trim();
+    if (!code) return;
+    const desc = window.prompt('Опис на македонски:')?.trim();
+    if (!desc) return;
+    try {
+      const resp = await knowledgeBaseApi.createCodeListItem({
+        listType,
+        code,
+        descriptionMK: desc,
+        sortOrder: 0,
+      });
+      const created = resp.data;
+      if (created?.id) {
+        await loadCodeList(listType, setter);
+        onCreated(created.id);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || `Грешка при создавање на ${listType}.`);
     }
   };
 
@@ -65,6 +136,8 @@ const EmployeeManagement: React.FC = () => {
       phone: '',
       position: '',
       department: '',
+      departmentId: '',
+      positionId: '',
       hireDate: new Date().toISOString().split('T')[0],
       isActive: true
     });
@@ -81,6 +154,8 @@ const EmployeeManagement: React.FC = () => {
       phone: employee.phone || '',
       position: employee.position,
       department: employee.department,
+      departmentId: employee.departmentId ?? '',
+      positionId: employee.positionId ?? '',
       hireDate: employee.hireDate.split('T')[0],
       isActive: employee.isActive
     });
@@ -90,14 +165,24 @@ const EmployeeManagement: React.FC = () => {
   const handleSave = async () => {
     try {
       setError('');
+      // Mirror the FK selection into the legacy free-text field until the
+      // deprecation window closes in Phase 18 — keeps any consumers that still
+      // read `position`/`department` working.
+      const departmentLabel =
+        departments.find((d) => d.id === formData.departmentId)?.descriptionMK ?? formData.department;
+      const positionLabel =
+        positions.find((p) => p.id === formData.positionId)?.descriptionMK ?? formData.position;
+
       if (editingEmployee) {
         const updateData: UpdateEmployeeRequest = {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone || undefined,
-          position: formData.position,
-          department: formData.department,
+          position: positionLabel,
+          department: departmentLabel,
+          departmentId: formData.departmentId || null,
+          positionId: formData.positionId || null,
           isActive: formData.isActive
         };
         await employeeService.updateEmployee(editingEmployee.id, updateData);
@@ -108,8 +193,10 @@ const EmployeeManagement: React.FC = () => {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone || undefined,
-          position: formData.position,
-          department: formData.department,
+          position: positionLabel,
+          department: departmentLabel,
+          departmentId: formData.departmentId || null,
+          positionId: formData.positionId || null,
           hireDate: formData.hireDate
         };
         await employeeService.createEmployee(createData);
@@ -178,8 +265,8 @@ const EmployeeManagement: React.FC = () => {
                 </td>
                 <td>{employee.email}</td>
                 <td>{employee.phone || 'N/A'}</td>
-                <td>{employee.position}</td>
-                <td>{employee.department}</td>
+                <td>{employee.positionName ?? employee.position ?? '—'}</td>
+                <td>{employee.departmentName ?? employee.department ?? '—'}</td>
                 <td>{new Date(employee.hireDate).toLocaleDateString('mk-MK')}</td>
                 <td>
                   <span className={`status-badge ${employee.isActive ? 'active' : 'inactive'}`}>
@@ -275,22 +362,64 @@ const EmployeeManagement: React.FC = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Позиција</label>
-                  <input
-                    type="text"
-                    value={formData.position}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    required
-                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select
+                      value={formData.positionId}
+                      onChange={(e) => setFormData({ ...formData, positionId: e.target.value })}
+                      style={{ flex: 1 }}
+                      required
+                    >
+                      <option value="">— избери —</option>
+                      {positions.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.descriptionMK} ({p.code})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() =>
+                        handleAddCodeListItem(POSITION_LIST_TYPE, setPositions, (id) =>
+                          setFormData((d) => ({ ...d, positionId: id })),
+                        )
+                      }
+                      title="Додај нова позиција"
+                    >
+                      + Нов
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label>Одделение</label>
-                  <input
-                    type="text"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    required
-                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <select
+                      value={formData.departmentId}
+                      onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
+                      style={{ flex: 1 }}
+                      required
+                    >
+                      <option value="">— избери —</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.descriptionMK} ({d.code})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() =>
+                        handleAddCodeListItem(DEPARTMENT_LIST_TYPE, setDepartments, (id) =>
+                          setFormData((d) => ({ ...d, departmentId: id })),
+                        )
+                      }
+                      title="Додај ново одделение"
+                    >
+                      + Нов
+                    </button>
+                  </div>
                 </div>
               </div>
 
