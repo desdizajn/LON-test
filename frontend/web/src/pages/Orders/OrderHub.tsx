@@ -26,6 +26,7 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import HistoryIcon from '@mui/icons-material/History';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import { useQuery } from '@tanstack/react-query';
 import {
   ClientOrderStatus,
@@ -39,6 +40,8 @@ import BomDialog from './BomDialog';
 import PodelbaDialog from './PodelbaDialog';
 import IssueMaterialDialog from './IssueMaterialDialog';
 import ProductionReceiptDialog from './ProductionReceiptDialog';
+import ExDeclarationDialog from './ExDeclarationDialog';
+import QcDialog from './QcDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -72,7 +75,13 @@ const ACTIONS: ActionDef[] = [
   { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7', enabled: true },
   // Phase 17 §E7 — record finished-good production receipt against a PO.
   { key: 'productionReceipt', labelKey: 'orders.actions.productionReceipt', icon: <FactoryIcon />, wiresInTask: 'E7', enabled: true },
-  { key: 'exDeclaration', labelKey: 'orders.actions.exDeclaration', icon: <FlightTakeoffIcon />, wiresInTask: 'E8' },
+  // Phase 17 §E8 — atomic Shipment + EX customs declaration; stamps both
+  // with ClientOrderId so hub Declarations + Shipments tabs filter cleanly.
+  { key: 'exDeclaration', labelKey: 'orders.actions.exDeclaration', icon: <FlightTakeoffIcon />, wiresInTask: 'E8', enabled: true },
+  // Phase 17 §E8 — quick-action QC dialog: pass non-OK FG balances to OK or
+  // park as Blocked with a reason. Rework PO / waste declaration spawn lands
+  // with BLUEPRINT §5.9.2 (post-v1 inspection entity).
+  { key: 'qcPackaging', labelKey: 'orders.actions.qcPackaging', icon: <VerifiedIcon />, wiresInTask: 'E8', enabled: true },
   { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9' },
   { key: 'audit', labelKey: 'orders.actions.audit', icon: <HistoryIcon />, wiresInTask: 'E13' },
   { key: 'ai', labelKey: 'orders.actions.ai', icon: <AutoAwesomeIcon />, wiresInTask: 'E10' },
@@ -98,6 +107,8 @@ const OrderHub: React.FC = () => {
   const [podelbaOpen, setPodelbaOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [exOpen, setExOpen] = useState(false);
+  const [qcOpen, setQcOpen] = useState(false);
 
   // Phase 17 §E7 — feed the produced-progress widget from real PO data.
   // Same query key as `ProductionOrdersTab` below — react-query dedupes.
@@ -123,6 +134,10 @@ const OrderHub: React.FC = () => {
       setIssueOpen(true);
     } else if (actionKey === 'productionReceipt') {
       setReceiptOpen(true);
+    } else if (actionKey === 'exDeclaration') {
+      setExOpen(true);
+    } else if (actionKey === 'qcPackaging') {
+      setQcOpen(true);
     }
     // Other action keys are still disabled in this phase.
   };
@@ -332,11 +347,7 @@ const OrderHub: React.FC = () => {
             <Box minHeight={200}>
               {tab === 0 && <DeclarationsTab clientOrderId={order.id} />}
               {tab === 1 && <ProductionOrdersTab clientOrderId={order.id} />}
-              {tab === 2 && (
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  {t('orders.hub.tabs.shipmentsPlaceholder')}
-                </Typography>
-              )}
+              {tab === 2 && <ShipmentsTab clientOrderId={order.id} />}
               {tab === 3 && <MaterialsTab clientOrderId={order.id} />}
               {tab === 4 && <ReceiptsTab clientOrderId={order.id} />}
             </Box>
@@ -441,6 +452,22 @@ const OrderHub: React.FC = () => {
         order={order}
         onClose={() => setReceiptOpen(false)}
         onCreated={() => setReceiptOpen(false)}
+      />
+
+      {/* Phase 17 §E8 — atomic EX customs declaration + Shipment. */}
+      <ExDeclarationDialog
+        open={exOpen}
+        order={order}
+        onClose={() => setExOpen(false)}
+        onCreated={() => setExOpen(false)}
+      />
+
+      {/* Phase 17 §E8 — Pass / Reject FG quality. */}
+      <QcDialog
+        open={qcOpen}
+        order={order}
+        onClose={() => setQcOpen(false)}
+        onCreated={() => setQcOpen(false)}
       />
     </Box>
   );
@@ -671,6 +698,83 @@ const ReceiptsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => 
             </Box>
             <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
               {totalQty.toFixed(2)}
+            </Box>
+          </React.Fragment>
+        );
+      })}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E8 — Shipments linked to this ClientOrder. Filled by the EX
+ * declaration dialog (which fires `BulkShipmentFromFGCommand` with
+ * `clientOrderId` set, stamping `Shipment.ClientOrderId`). Renders one row
+ * per Shipment header with its line + qty totals.
+ */
+interface ShipmentRow {
+  id: string;
+  shipmentNumber: string;
+  shipmentDate: string;
+  status?: number;
+  trackingNumber?: string | null;
+  salesOrderNumber?: string | null;
+  lines?: Array<{ id: string; quantity: number; mrn?: string | null }>;
+}
+
+const SHIPMENT_STATUS_LABEL: Record<number, string> = {
+  1: 'Draft',
+  2: 'PickingInProgress',
+  3: 'Picked',
+  4: 'Packed',
+  5: 'Shipped',
+  6: 'Delivered',
+  7: 'Cancelled',
+};
+
+const ShipmentsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'shipments', clientOrderId],
+    queryFn: async () => {
+      const resp = await wmsApi.getShipments({ clientOrderId, pageSize: 100 });
+      return (resp.data ?? []) as ShipmentRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.shipmentsEmpty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1.2fr 0.7fr 0.8fr 0.8fr', gap: 0, fontSize: 13 }}>
+      {[
+        t('orders.hub.tabs.shipCols.number'),
+        t('orders.hub.tabs.shipCols.date'),
+        t('orders.hub.tabs.shipCols.reference'),
+        t('orders.hub.tabs.shipCols.linesCount'),
+        t('orders.hub.tabs.shipCols.totalQty'),
+        t('orders.hub.tabs.shipCols.status'),
+      ].map((h, i) => (
+        <Box key={i} sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: i >= 3 && i <= 4 ? 'right' : 'left' }}>
+          {h}
+        </Box>
+      ))}
+      {rows.map((r) => {
+        const totalQty = (r.lines ?? []).reduce((s, l) => s + (l.quantity ?? 0), 0);
+        return (
+          <React.Fragment key={r.id}>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>{r.shipmentNumber}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{formatDate(r.shipmentDate)}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{r.salesOrderNumber ?? '—'}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{r.lines?.length ?? 0}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{totalQty.toFixed(2)}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+              {r.status !== undefined ? (SHIPMENT_STATUS_LABEL[r.status] ?? r.status) : '—'}
             </Box>
           </React.Fragment>
         );

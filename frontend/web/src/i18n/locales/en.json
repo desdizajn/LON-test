@@ -176,6 +176,15 @@
           "plannedEnd": "Planned end"
         },
         "shipmentsPlaceholder": "Shipments land here in §E8.",
+        "shipmentsEmpty": "No shipments yet. Use „Create export declaration (EX)“ in the actions panel.",
+        "shipCols": {
+          "number": "Number",
+          "date": "Date",
+          "reference": "Reference",
+          "linesCount": "Lines",
+          "totalQty": "Total qty",
+          "status": "Status"
+        },
         "materialsEmpty": "No materials on stock for this order yet. Receive into warehouse and distribute to a producer first.",
         "receipts": "Receipts",
         "receiptsEmpty": "No receipts yet. Use „Receive into warehouse“ in the actions panel.",
@@ -212,6 +221,7 @@
       "issueMaterial": "Issue material",
       "productionReceipt": "Record production receipt",
       "exDeclaration": "Create export declaration (EX)",
+      "qcPackaging": "QC + Packaging",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
       "ai": "💡 AI recommendations"
@@ -367,6 +377,66 @@
         "locationRequired": "Location is required.",
         "poMissingMetadata": "PO doesn't carry Item/UoM. Refresh and try again.",
         "failed": "Receipt failed."
+      }
+    },
+    "exDialog": {
+      "title": "Create export declaration (EX) + shipment",
+      "submit": "Submit export",
+      "hint": "Order",
+      "noFgs": "No finished goods on stock for this order yet. Record production first.",
+      "section": {
+        "fgs": "Finished goods",
+        "shipment": "Export + shipment"
+      },
+      "cols": {
+        "item": "Item",
+        "batch": "Batch",
+        "mrn": "MRN",
+        "location": "Location",
+        "available": "Available"
+      },
+      "fields": {
+        "procedure": "Customs procedure",
+        "consignee": "Consignee",
+        "countryDestination": "Destination ISO country",
+        "incoterm": "Incoterm",
+        "shipmentDate": "Shipment date",
+        "reference": "Reference"
+      },
+      "summary": "{{lines}} lines · {{qty}} total · MRN {{mrn}}",
+      "imSuggestionTitle": "Linked import declarations (IM) for this order",
+      "imSuggestionHint": "Highlighted ones share the MRN of the selected FG batches — chained discharge.",
+      "created": "Export submitted: {{shipment}} · {{qty}} total.",
+      "errors": {
+        "pickProcedure": "Pick an EX customs procedure.",
+        "pickAtLeastOne": "Select at least one FG line.",
+        "singleMrnRequired": "Bulk export requires exactly 1 MRN; selection covers {{count}}.",
+        "failed": "Export failed."
+      }
+    },
+    "qcDialog": {
+      "title": "QC + Packaging",
+      "hint": "Order",
+      "allClean": "No FG batches in Quarantine/Blocked for this order. Everything is ready to ship.",
+      "pass": "Pass (OK)",
+      "reject": "Reject",
+      "rejectReasonPrompt": "Reason for rejection (required):",
+      "passed": "Batch {{batch}} passed to OK.",
+      "rejected": "Batch {{batch}} marked Rejected.",
+      "failed": "QC change failed.",
+      "summary": {
+        "quarantine": "{{count}} in quarantine",
+        "blocked": "{{count}} blocked",
+        "totalQty": "total {{qty}}"
+      },
+      "cols": {
+        "item": "Item",
+        "batch": "Batch",
+        "mrn": "MRN",
+        "location": "Location",
+        "quantity": "Quantity",
+        "status": "Status",
+        "actions": "Actions"
       }
     },
     "imDialog": {

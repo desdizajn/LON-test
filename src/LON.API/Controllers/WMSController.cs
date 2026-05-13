@@ -214,10 +214,20 @@ public class WMSController : BaseController
     }
 
     [HttpGet("shipments")]
-    public async Task<IActionResult> GetShipments([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetShipments(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? clientOrderId = null)
     {
-        var shipments = await _context.Shipments
+        var query = _context.Shipments
             .Include(s => s.Lines)
+            .AsQueryable();
+
+        // Phase 17 §E8 — hub Shipments tab filters by parent ClientOrder.
+        if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
+            query = query.Where(s => s.ClientOrderId == clientOrderId.Value);
+
+        var shipments = await query
             .OrderByDescending(s => s.ShipmentDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -438,6 +448,65 @@ public class WMSController : BaseController
     {
         var result = await Mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Phase 17 §E8 — QC accept/reject. Sets <see cref="LON.Domain.Enums.QualityStatus"/>
+    /// on a single <see cref="LON.Domain.Entities.WMS.InventoryBalance"/>. The
+    /// hub's „QC + Packaging" action plus the standalone QcHold + BlockedInventory
+    /// pages all call this. Reject can carry a reason + notes for audit
+    /// traceability — both legacy `InventoryBalanceId` and shorter `BalanceId`
+    /// field names accepted on the wire.
+    /// </summary>
+    [HttpPost("inventory/quality-status")]
+    public async Task<IActionResult> UpdateQualityStatus([FromBody] UpdateQualityStatusBody body)
+    {
+        var id = body.InventoryBalanceId != Guid.Empty ? body.InventoryBalanceId : body.BalanceId;
+        if (id == Guid.Empty)
+            return BadRequest(new { errorMessage = "BalanceId (or InventoryBalanceId) is required." });
+        var balance = await _context.InventoryBalances
+            .FirstOrDefaultAsync(b => b.Id == id);
+        if (balance is null)
+            return NotFound(new { errorMessage = $"InventoryBalance '{id}' not found." });
+
+        var newStatus = (QualityStatus)body.NewQualityStatus;
+        if (!Enum.IsDefined(typeof(QualityStatus), newStatus))
+            return BadRequest(new { errorMessage = $"Invalid QualityStatus value: {body.NewQualityStatus}." });
+
+        balance.QualityStatus = newStatus;
+        var note = string.Join(" | ", new[] { body.Reason, body.Notes }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            await _context.InventoryMovements.AddAsync(new LON.Domain.Entities.WMS.InventoryMovement
+            {
+                Id = Guid.NewGuid(),
+                MovementNumber = $"QC-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString()[..6]}",
+                MovementDate = DateTime.UtcNow,
+                Type = MovementType.Adjustment,
+                ItemId = balance.ItemId,
+                BatchNumber = balance.BatchNumber,
+                MRN = balance.MRN,
+                FromLocationId = balance.LocationId,
+                ToLocationId = balance.LocationId,
+                Quantity = 0m,
+                UoMId = balance.UoMId,
+                ReferenceNumber = $"QC:{newStatus}",
+                Notes = note,
+            });
+        }
+        await _context.SaveChangesAsync();
+        return Ok(new { balanceId = balance.Id, qualityStatus = (int)balance.QualityStatus });
+    }
+
+    public record UpdateQualityStatusBody
+    {
+        /// <summary>Legacy field name used by QcHold + BlockedInventory + QualityStatusChangeForm.</summary>
+        public Guid InventoryBalanceId { get; init; }
+        /// <summary>Shorter alias accepted by the hub QC dialog.</summary>
+        public Guid BalanceId { get; init; }
+        public int NewQualityStatus { get; init; }
+        public string? Reason { get; init; }
+        public string? Notes { get; init; }
     }
 
     /// <summary>

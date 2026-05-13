@@ -30,6 +30,14 @@ public record CreateExportDeclarationCommand : ICommand<Result<Guid>>
     public string? CountryOfDestination { get; init; }
     public string? SpecialRemarks { get; init; }
 
+    /// <summary>
+    /// Phase 17 §E8 — optional FK back to the parent ClientOrder. When set,
+    /// the resulting CustomsDeclaration is stamped so the hub Declarations
+    /// tab + Razdolzuvanje aggregations can filter by parent order without
+    /// extra joins.
+    /// </summary>
+    public Guid? ClientOrderId { get; init; }
+
     public List<ExportLineDto> Lines { get; init; } = new();
 }
 
@@ -160,7 +168,9 @@ public class CreateExportDeclarationCommandHandler
             CountryOfDestination = request.CountryOfDestination,
             SpecialRemarks = request.SpecialRemarks,
             Status = DeclarationStatus.Registered,
-            IsCleared = false
+            IsCleared = false,
+            // Phase 17 §E8 — parent ClientOrder linkage.
+            ClientOrderId = request.ClientOrderId,
         };
 
         int lineNumber = 1;

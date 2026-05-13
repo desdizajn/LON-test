@@ -385,6 +385,21 @@ export interface paths {
       };
     };
   };
+  "/api/ClientOrders/{id}/available-fgs": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations": {
     get: {
       parameters: {
@@ -4265,6 +4280,7 @@ export interface paths {
         query?: {
           page?: number;
           pageSize?: number;
+          clientOrderId?: string;
         };
       };
       responses: {
@@ -4461,6 +4477,23 @@ export interface paths {
           "application/json": components["schemas"]["PodelbaToProducerCommand"];
           "text/json": components["schemas"]["PodelbaToProducerCommand"];
           "application/*+json": components["schemas"]["PodelbaToProducerCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/WMS/inventory/quality-status": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateQualityStatusBody"];
+          "text/json": components["schemas"]["UpdateQualityStatusBody"];
+          "application/*+json": components["schemas"]["UpdateQualityStatusBody"];
         };
       };
       responses: {
@@ -4779,6 +4812,8 @@ export interface components {
       shipmentDate?: string | null;
       reference?: string | null;
       createExportDeclaration?: boolean;
+      /** Format: uuid */
+      clientOrderId?: string | null;
     };
     BulkUpdateCustomsDeclarationLinesCommand: {
       /** Format: uuid */
@@ -4990,6 +5025,8 @@ export interface components {
       countryOfDispatch?: string | null;
       countryOfDestination?: string | null;
       specialRemarks?: string | null;
+      /** Format: uuid */
+      clientOrderId?: string | null;
       lines?: components["schemas"]["ExportLineDto"][] | null;
     };
     CreateInvoiceBody: {
@@ -6027,6 +6064,16 @@ export interface components {
       /** Format: double */
       netAmount?: number;
       currency?: string | null;
+    };
+    UpdateQualityStatusBody: {
+      /** Format: uuid */
+      inventoryBalanceId?: string;
+      /** Format: uuid */
+      balanceId?: string;
+      /** Format: int32 */
+      newQualityStatus?: number;
+      reason?: string | null;
+      notes?: string | null;
     };
     UpdateRiskRegisterItemCommand: {
       /** Format: uuid */

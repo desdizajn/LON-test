@@ -176,6 +176,15 @@
           "plannedEnd": "План крај"
         },
         "shipmentsPlaceholder": "Испратниците стигнуваат тука во §E8.",
+        "shipmentsEmpty": "Сè уште нема испратници. Користи „Креирај извозна декларација (EX)“ во акциите.",
+        "shipCols": {
+          "number": "Број",
+          "date": "Датум",
+          "reference": "Референца",
+          "linesCount": "Ставки",
+          "totalQty": "Вкупна количина",
+          "status": "Статус"
+        },
         "materialsEmpty": "Сè уште нема материјали на лагер за овој налог. Прво „Прими во магацин“ и „Распредели подизведувач“.",
         "receipts": "Приеми",
         "receiptsEmpty": "Сè уште нема приеми. Користи „Прими во магацин“ во акциите.",
@@ -212,6 +221,7 @@
       "issueMaterial": "Издади материјал",
       "productionReceipt": "Запиши производство",
       "exDeclaration": "Креирај извозна декларација (EX)",
+      "qcPackaging": "QC + Пакување",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Аудит / историја",
       "ai": "💡 AI препораки"
@@ -367,6 +377,66 @@
         "locationRequired": "Локација е задолжителна.",
         "poMissingMetadata": "PO не содржи Item/UoM. Освежи и пробај повторно.",
         "failed": "Записот не успеа."
+      }
+    },
+    "exDialog": {
+      "title": "Креирај извозна декларација (EX) + испратница",
+      "submit": "Поднеси извоз",
+      "hint": "Налог",
+      "noFgs": "Сè уште нема готови производи на лагер за овој налог. Прво „Запиши производство“ и доведи ги во магацин.",
+      "section": {
+        "fgs": "Готови производи",
+        "shipment": "Извоз + испратница"
+      },
+      "cols": {
+        "item": "Артикал",
+        "batch": "Партија",
+        "mrn": "MRN",
+        "location": "Локација",
+        "available": "Достапно"
+      },
+      "fields": {
+        "procedure": "Царинска постапка",
+        "consignee": "Прима страна",
+        "countryDestination": "ISO земја назначување",
+        "incoterm": "Inкотерм",
+        "shipmentDate": "Датум на испорака",
+        "reference": "Референца"
+      },
+      "summary": "{{lines}} ставки · {{qty}} вкупно · MRN {{mrn}}",
+      "imSuggestionTitle": "Поврзани увозни декларации (IM) од овој налог",
+      "imSuggestionHint": "Подвлечените се истиот MRN како избраните FG партии — chained раздолжување.",
+      "created": "Извозот е создаден: {{shipment}} · {{qty}} вкупно.",
+      "errors": {
+        "pickProcedure": "Избери EX царинска постапка.",
+        "pickAtLeastOne": "Избери барем една FG ставка.",
+        "singleMrnRequired": "Bulk извоз бара точно 1 MRN; избраното содржи {{count}}.",
+        "failed": "Извозот не успеа."
+      }
+    },
+    "qcDialog": {
+      "title": "QC + Пакување",
+      "hint": "Налог",
+      "allClean": "Нема FG партии во Quarantine/Blocked за овој налог. Сè е спремно за извоз.",
+      "pass": "Прифати (OK)",
+      "reject": "Одбиен",
+      "rejectReasonPrompt": "Причина за одбивање (задолжително):",
+      "passed": "Партија {{batch}} префрлена во OK.",
+      "rejected": "Партија {{batch}} означена како Одбиена.",
+      "failed": "QC промената не успеа.",
+      "summary": {
+        "quarantine": "{{count}} во карантин",
+        "blocked": "{{count}} блокирани",
+        "totalQty": "вкупно {{qty}}"
+      },
+      "cols": {
+        "item": "Артикал",
+        "batch": "Партија",
+        "mrn": "MRN",
+        "location": "Локација",
+        "quantity": "Количина",
+        "status": "Статус",
+        "actions": "Акции"
       }
     },
     "imDialog": {

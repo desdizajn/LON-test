@@ -40,7 +40,11 @@ public sealed record BulkShipmentFromFGCommand(
     string? DeclarationNumber,
     DateTime? ShipmentDate,
     string? Reference,
-    bool CreateExportDeclaration = false) : ICommand<Result<BulkShipmentFromFGResult>>;
+    bool CreateExportDeclaration = false,
+    /// <summary>Phase 17 §E8 — when supplied, stamps Shipment + chained EX
+    /// declaration with the parent ClientOrder so the hub Shipments tab +
+    /// Razdolzuvanje aggregations have a clean join path.</summary>
+    Guid? ClientOrderId = null) : ICommand<Result<BulkShipmentFromFGResult>>;
 
 public sealed record BulkShipmentFromFGResult(
     Guid ShipmentId,
@@ -127,6 +131,9 @@ public sealed class BulkShipmentFromFGHandler
             Status = ShipmentStatus.Draft,
             TrackingNumber = null,
             SalesOrderNumber = request.Reference,
+            // Phase 17 §E8 — link to parent ClientOrder so hub Shipments tab
+            // can filter via a single SQL IN-clause.
+            ClientOrderId = request.ClientOrderId,
         };
         _context.Shipments.Add(shipment);
 
@@ -203,6 +210,9 @@ public sealed class BulkShipmentFromFGHandler
                 PartnerId = request.PartnerId,
                 Currency = "EUR",
                 TotalCustomsValue = 0m,
+                // Phase 17 §E8 — propagate ClientOrder linkage so the hub
+                // Declarations tab sees both IM and EX without extra joins.
+                ClientOrderId = request.ClientOrderId,
                 Lines = shipment.Lines.Select(sl => new ExportLineDto
                 {
                     ItemId = sl.ItemId,

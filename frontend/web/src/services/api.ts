@@ -157,11 +157,23 @@ export const wmsApi = {
     shipmentDate?: string | null;
     reference?: string | null;
     createExportDeclaration?: boolean;
+    /** Phase 17 §E8 — stamps Shipment + chained EX declaration with this id. */
+    clientOrderId?: string | null;
   }) => api.post('/WMS/shipments/bulk-from-fg', data),
 
   // Shipments
-  getShipments: (page: number = 1, pageSize: number = 20) => 
-    api.get('/WMS/shipments', { params: { page, pageSize } }),
+  // Phase 17 §E8 — accepts either the legacy positional (page, pageSize) call
+  // or an object with optional clientOrderId filter for the hub Shipments tab.
+  getShipments: (
+    pageOrParams?: number | { page?: number; pageSize?: number; clientOrderId?: string },
+    pageSize?: number,
+  ) => {
+    const params =
+      typeof pageOrParams === 'object' && pageOrParams !== null
+        ? pageOrParams
+        : { page: pageOrParams ?? 1, pageSize: pageSize ?? 20 };
+    return api.get('/WMS/shipments', { params });
+  },
   getShipment: (id: string) => 
     api.get(`/WMS/shipments/${id}`),
   createShipment: (data: any) => 
@@ -186,8 +198,16 @@ export const wmsApi = {
     api.post('/WMS/transfers', data),
   
   // Quality Status
-  updateQualityStatus: (data: any) => 
-    api.post('/WMS/inventory/quality-status', data),
+  // Phase 17 §E8 — backend accepts both legacy `inventoryBalanceId` (used by
+  // QcHold / BlockedInventory) and the shorter `balanceId` (used by the new
+  // hub QC dialog). Optional notes carry the audit trail.
+  updateQualityStatus: (data: {
+    inventoryBalanceId?: string;
+    balanceId?: string;
+    newQualityStatus: number;
+    reason?: string | null;
+    notes?: string | null;
+  }) => api.post('/WMS/inventory/quality-status', data),
   
   // Cycle Count
   getCycleCounts: (status?: string) => 
@@ -472,6 +492,13 @@ export const clientOrdersApi = {
     currency?: string | null;
     notes?: string | null;
   }) => api.post(`/ClientOrders/${id}/finished-goods`, { clientOrderId: id, ...payload }),
+  /**
+   * Phase 17 §E8 — list of finished-goods (defined on this ClientOrder) joined
+   * with their current shippable InventoryBalance rows (non-Blocked, qty>0).
+   * Powers the EX wizard's FG picker.
+   */
+  getAvailableFinishedGoods: (id: string) =>
+    api.get(`/ClientOrders/${id}/available-fgs`),
 };
 
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)

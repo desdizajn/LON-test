@@ -730,6 +730,29 @@
         }
       }
     },
+    "/api/ClientOrders/{id}/available-fgs": {
+      "get": {
+        "tags": [
+          "ClientOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations": {
       "post": {
         "tags": [
@@ -7705,6 +7728,14 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -8065,6 +8096,37 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/PodelbaToProducerCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/WMS/inventory/quality-status": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQualityStatusBody"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQualityStatusBody"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQualityStatusBody"
               }
             }
           }
@@ -8694,6 +8756,11 @@
           },
           "createExportDeclaration": {
             "type": "boolean"
+          },
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9306,6 +9373,11 @@
           },
           "specialRemarks": {
             "type": "string",
+            "nullable": true
+          },
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "lines": {
@@ -12261,6 +12333,32 @@
             "format": "double"
           },
           "currency": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateQualityStatusBody": {
+        "type": "object",
+        "properties": {
+          "inventoryBalanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "balanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newQualityStatus": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
             "type": "string",
             "nullable": true
           }
