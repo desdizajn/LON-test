@@ -2,6 +2,121 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E.MIGRATE — LON.Migration refactor + Z2779 end-to-end + R1–R6 PASS
+
+Commit `e5980d5`. The most important checkpoint of Phase 17: bit-by-bit
+reconciliation that **LON's numbers match ELON's numbers**. Per the user's
+own framing, this validates the application: "ако се совпаднат нашите бројки
+со тие од старата апликација, сме ја завршиле работата на суштински".
+
+A full `dotnet run --project src/LON.Migration -- all --tenant TEKSPORT
+--zaklucok 2779` completes in **~10 seconds** and emits 6/6 PASS on the
+reconciliation queries (R1–R6 per `MAPPING.md §10`).
+
+**What was wrong before (PRE.7 findings):**
+- `AuthorizationMapper` conflated Zaklucok with LONAuthorization — both are
+  needed, but as distinct entities post-BLUEPRINT §3.1.
+- `DeclarationMapper` expected `INW-PROC` (long-dead legacy alias); LON now
+  uses 4200/3151/6121.
+- `InventoryMapper` aggregated to net `InventoryBalance` without preserving
+  the per-movement audit trail — couldn't reconcile Proces buckets.
+- 7 mappers missing: ClientOrder, BOM, FinishedGood, MaterialIssue,
+  WasteDeclaration, DeliveryNote (auto-gen), CommercialInvoice (stub).
+- No `--zaklucok` filter — could only do full-tenant runs.
+
+**Files (13 changed; 1,981 insertions / 477 deletions):**
+
+Programs/context:
+- `Program.cs` — new 12-command list + `--zaklucok` flag with help text.
+- `MigrationContext` — `Hydrate()` auto-seeds missing 4200/3151/6121/WASTE
+  CustomsProcedure rows; builds `UoMByCode` map with legacy aliases
+  (MTR→M, PRS→PCS, KGM→KG, LTR→L, etc.); picks
+  `DefaultProductionLocationId` alongside the receiving one.
+
+New mappers (replacing the old AuthorizationMapper):
+- `OdobrenijaMapper` — Odobrenija → LONAuthorization (BLUEPRINT §3.3),
+  carries `GuaranteeAmount` + `GuaranteeReference` + `CompetentCustomsOffice`.
+- `ClientOrderMapper` — Zaklucoci → ClientOrder (BLUEPRINT §3.1).
+  CustomerPartnerId resolved from `FakturiU5Z.Primac` first-found; Status
+  computed from `RazdolzenaDaNe` aggregation (Closed when all child
+  declarations razdolzheno).
+- `PartnerCatalogBuilder` — union of distinct numeric FK columns across
+  FakturiU5Z + Izdatnici + Ispratnici → `LEG-FIRM-{n}` Partner stubs.
+  Real names from `tblFirmi` land in Phase 21.1.1 prod-export.
+- `FinishedGoodMapper` — GotoviProizvodi → ClientOrderFinishedGood.
+- `BOMMapper` — Normativi → BOM + BOMLine. One BOM per FG-on-CO; lines
+  deduped per `(matCode, normativ, uom)`; delete-then-insert per BOM so
+  the `(BOMId, LineNumber)` UNIQUE index can't conflict on re-runs.
+- `MaterialIssueMapper` — synthesises ProductionOrder per FG, then
+  aggregates Proces=7 LagerMaterijali per `(Izdatnica × Item)` into
+  MaterialIssue + auto-gen DeliveryNote(ProducerDispatch). `IssueNumber`
+  suffixed with 8-char MD5 hash of the item code so the UNIQUE
+  `(TenantId, IssueNumber)` index stays clean across 5+ items per Izdatnica.
+- `WasteDeclarationMapper` — aggregates Proces=9 LagerMaterijali per
+  Ispratnica → CustomsDeclaration(`Type=Waste`) with `PreviousMRN`
+  back-link so the §E9 Razdolzuvanje view folds them as duty credits.
+
+Refactored:
+- `DeclarationMapper` — VidUIS → CustomsProcedure FK with default 4200
+  (IMA4/IMA5/IMC5 all map to inward-processing). Stamps `ClientOrderId`
+  FK so the hub Declarations tab filters cleanly. **Phantom headers**
+  synthesised for orphan `FakturiU5` lines that have no `FakturiU5Z`
+  parent (legacy archived headers — Z2779 has 4 such orphans across 2
+  distinct FakturaU5Broj values).
+- `InventoryMapper` — per-row `InventoryMovement` (one per LagerMaterijali
+  row, not aggregate) with Proces→MovementType resolver per `MAPPING §11.1`:
+  Receipt(1) / Adjustment(6) / ProductionIssue(7) / Return(8) / Shipment(9).
+  `ReferenceNumber` + `ReferenceId` link to the parent business doc.
+  Post-pass `InventoryBalance` recomputed: `SUM(±Quantity)` grouped by
+  `(Item, Location, Batch, MRN, UoM, QualityStatus)`.
+- `ReconciliationReporter` — six checks emitting PASS/FAIL log lines +
+  HTML artefact. Fixed a subtle T-SQL `LIKE` bug where `[` is a character
+  class — now escapes with `ESCAPE '!'`. Includes archived
+  `LONAuthorizations` (Arhivirano=1 → IsDeleted=1 is audit-only).
+  R6 normalises legacy `EdMer` to the canonical LON UoM code via Hydrate's
+  alias map so MTR/M groups collapse correctly.
+
+**Z2779 final state in LONDB:**
+
+| Entity | Rows |
+|---|---|
+| `LONAuthorization` (OdobrenieRBr=1, 77M MKD bond) | 1 |
+| `ClientOrder` (CO-2025-000001, RazdolzenaDaNe=Closed) | 1 |
+| `CustomsDeclaration` IM (1 real + 2 phantom for orphan FakturiU5) | 3 |
+| `CustomsDeclarationLine` IM | 5 |
+| `CustomsDeclaration` Waste (Ispratnica 9401) | 1 |
+| `CustomsDeclarationLine` Waste | 3 |
+| `InventoryMovement` (5 Receipt + 5 ProductionIssue + 3 Shipment) | 13 |
+| `InventoryBalance` (positive nets after replay) | 3 |
+| `ClientOrderFinishedGood` | 1 |
+| `BOM` + 5 `BOMLine` | 1 + 5 |
+| `ProductionOrder` (synthesised from FG) | 1 |
+| `MaterialIssue` (per Izdatnica×Item under Izdatnica 8232/2025) | 5 |
+| `DeliveryNote` (ProducerDispatch, auto-gen) | 1 |
+
+**6/6 R-queries PASS:**
+
+| Check | Legacy ELON | LON migrated | Verdict |
+|---|---|---|---|
+| R1 — Inventory by Proces/MovementType | Recv 5×2,481.78 / Issue 5×2,338.18 / Waste 3×143.60 | exact match | ✅ |
+| R2 — Guarantee per LONAuth | OdobrenieRBr=1 → 77,000,000.00 | 77,000,000.00 | ✅ |
+| R3 — Declaration totals spot-check | F2334 CV=28,335 Duty=674,977 | exact | ✅ |
+| R4 — ClientOrder count | 1 | 1 | ✅ |
+| R5 — BOMLine count (≤ legacy) | 5 Normativi | 5 BOMLines, 0 collapsed | ✅ |
+| R6 — NaimU5 re-aggregation | 5 tariff×country×UoM groups | all 5 exact match | ✅ |
+
+Full `all` run is idempotent: re-running produces identical state. Wall-clock
+~10 s on local SQL Server. Phase 21.1 (after Phase 17 wraps) scales this
+to all 269 Zaklucoci on the VPS LONDB.
+
+Per the AGENT-PROMPTS instruction, **no VPS deploy** — this is local
+validation only. VPS migration is the Phase 21.1 dry-run.
+
+**Status:** [x] done. Phase 17 hub-and-spoke flow is end-to-end reconciled
+against legacy. Next: §E10 (AI helper) or §E11 (domain events) per PLAN.md §3.
+
+---
+
 ## 2026-05-13 — Phase 17 §E9 — Razdolzuvanje view per ClientOrder + VPS-verified
 
 Commit `a8beb87`. Closing the loop on the hub-and-spoke flow: the new

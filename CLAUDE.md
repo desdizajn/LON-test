@@ -210,7 +210,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E8 | Wire EX declaration + Shipment + QC from hub | `[x]` (`0a2d458`) |
 | E8.5 | `CommercialInvoice` entity + EX hub chain (D4; replaces legacy `tblIzvozniFakturi`) | `[x]` (`39b6f10`) |
 | E9 | Razdolzuvanje view per ClientOrder | `[x]` (`a8beb87`) |
-| **E.MIGRATE** | **LON.Migration refactor + Z2779 end-to-end + 6 reconciliation queries** (deferred from PRE.7; see `docs/migration/PRE7_FINDINGS.md` §6) | `[ ]` |
+| **E.MIGRATE** | **LON.Migration refactor + Z2779 end-to-end + 6 reconciliation queries** (deferred from PRE.7; see `docs/migration/PRE7_FINDINGS.md` §6) | `[x]` (`e5980d5`) |
 | E10 | AI helper service + 3 core recommendations + floating UI | `[ ]` |
 | E10.5 | AlertRule + AlertEvent + 6 predefined rules + nightly evaluator | `[ ]` |
 | E11 | Domain events infrastructure + handler refactor | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E9 закучен (Razdolzuvanje view per ClientOrder: IM-vs-credited reconciliation + per-line RazdolzenaDaNe flag + GuaranteeBalanceSnapshot trigger + auto-Close + HTML PDF + PEE060 wrapper). Migration #54 applied. Хабот сега има 10 enabled акции; hub-and-spoke flow завршен end-to-end (BOM→IM→Receive→Podelba→Issue→Production→EX→QC→CI→Razd→Closed). VPS smoke `CO-2026-000001` mark→snapshot(rows=2)→Closed; PDF 1832B; PEE060 469B. Next: §E.MIGRATE (LON.Migration + Z2779), §E10 (AI helper) или §E11 (domain events).*
+*Последна ревизија: 2026-05-13 — Phase 17 §E.MIGRATE закучен (LON.Migration refactor + Z2779 end-to-end + 6/6 reconciliation queries PASS). 7 нови мапери (Odobrenija/ClientOrder/PartnerCatalog/FG/BOM/MaterialIssue+DN auto-gen/WasteDecl) + refactored Declaration/Inventory/Reconciliation. `dotnet run --project src/LON.Migration -- all --tenant TEKSPORT --zaklucok 2779` за ~10s, идемпотентен. Бројките на LON се совпаѓаат со ELON: 5 IM lines, 13 InventoryMovements, 1 BOM×5 lines, 5 MaterialIssues, 1 DeliveryNote, 1 Waste×3 lines; 77M MKD bond; NaimU5 5 групи exact match. Phase 17 main flow + migration plumbing завршени. Next: §E10 (AI helper) или §E11 (domain events).*
