@@ -1,6 +1,64 @@
 # LON — Session Log
 
-> Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
+> Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
+
+## 2026-05-13 — Phase 17 §E8.5 — CommercialInvoice entity + EX hub chain (D4) + VPS-verified
+
+Commit `39b6f10`. New customs document type that accompanies the EX shipment, replacing legacy `tblIzvozniFakturi` + `tblIzvozniFakturiStavki` (3,239 headers + 57,857 lines). Distinct from sales `Invoice` (BLUEPRINT §5.14.2 = Teksport billing customer for processing labor); finance margin reconciliation deferred to Phase 27.
+
+The hub now has 9 enabled actions: BOM / IM / Receive / Podelba / IssueMaterial / ProductionReceipt / EX+Shipment / QC / **CommercialInvoice**. EX action auto-chains into the CI dialog with the just-created Shipment as the suggestion source.
+
+Files (27 changed; 12,897 insertions):
+
+**Backend:**
+- `CommercialInvoice` + `CommercialInvoiceLine` (`src/LON.Domain/Entities/Customs/CommercialInvoice.cs`) — ITenantScoped + IAuditable + soft-delete extension fields (DeletedAt/DeletedBy) mirroring `ClientOrder`. `CommercialInvoiceStatus { Draft=1, Issued=2, Cancelled=3 }`.
+- EF migration `P17_E8_5_AddCommercialInvoice` (migration #53) — schema + per-tenant SQL SEQUENCE `seq_CommercialInvoice_<tenantId>` via the same cursor-over-tenants pattern §E1/§E7.6 use.
+- Configuration: unique `(TenantId, Number) WHERE IsDeleted=0`, indexes on `(TenantId, ClientOrderId)`, `(TenantId, InvoiceDate)`, `ShipmentId`, `CustomsDeclarationId`; FK Restrict on every relation.
+- Application layer: 6 handlers (Create / Update / Issue / Cancel / Delete / GetList / GetById) plus `ICommercialInvoiceSuggestionService.SuggestFromShipment` which fans out from a `Shipment` (lines → suggested CI lines, currency/incoterms/destination from a chained EX `CustomsDeclaration` if any). Totals always recomputed server-side from `quantity × unitPrice` regardless of caller hint.
+- `/api/Customs/commercial-invoices` controller: 9 endpoints — `GET list`, `GET /{id}`, `POST`, `PUT`, `DELETE` (soft), `POST /{id}/issue`, `POST /{id}/cancel`, `POST /suggest-from-shipment?shipmentId=…`, `GET /{id}/pdf` (HTML cover-sheet, same convention as DeliveryNote `/pdf`).
+- DI registration in `LON.Infrastructure.DependencyInjection`.
+- Schema-id rename `CancelBody → CancelCommercialInvoiceBody` to avoid Swashbuckle collision with `FinanceController.Cancel`.
+
+**Frontend:**
+- `commercialInvoicesApi` block in `services/api.ts` (9 calls + `pdfUrl` helper).
+- `pages/Customs/CommercialInvoiceList.tsx` — MUI grid list with status filter, total summary, click-through to detail.
+- `pages/Customs/CommercialInvoiceDetail.tsx` — editable header (consignor/consignee Autocomplete, incoterms select, currency/destination) + inline-editable lines + Save / Issue / Cancel / Print toolbar. Locks fields once Status≠Draft.
+- `pages/Orders/CommercialInvoiceDialog.tsx` — hub chain dialog that calls `/suggest-from-shipment`, lets user complete parties and tweak prices, then POSTs `create`.
+- `OrderHub.tsx`: new hub action `commercialInvoice` (9th enabled), new tab "Извозни фактури" filtering CIs by `clientOrderId` via react-query, EX dialog's `onCreated` callback now relays `shipmentId` so hub can immediately open the CI dialog on the just-created Shipment.
+- `ExDeclarationDialog.tsx`: callback signature widened to `onCreated(chain?: { shipmentId })`.
+- New routes `/customs/commercial-invoices` + `/:id` in `App.tsx`.
+- i18n keys added to **mk.json** + **en.json** (MK + EN active per CLAUDE.md). Hub tab columns, dialog labels, list/detail strings.
+
+**Tests:** `tests/LON.IntegrationTests/CommercialInvoiceTests.cs` — 12 [Fact]:
+- `Create_GeneratesCISequenceNumber_And_ComputesTotals` — number matches `CI-{year}-{seq:D6}`, subtotal/total computed server-side.
+- `Create_WithEmptyLines_Returns400`.
+- `GetById_ReturnsLinesAndPartyNames`.
+- `ParallelCreates_ProduceDistinctCINumbers` — 5 concurrent creates → 5 distinct numbers (SEQUENCE concurrency).
+- `Update_OnDraft_RecomputesTotals` — line replacement + tax + total = subtotal+tax.
+- `Issue_DraftFlipsToIssued_LocksUpdate` — second issue 400; update on Issued 400.
+- `Cancel_FromIssued_RecordsReason`.
+- `Delete_OnDraft_SoftDeletes`.
+- `SuggestFromShipment_ReturnsDraftWithLines`.
+- `Pdf_ReturnsHtmlContent_WithNumberAndLines`.
+- `GetList_FiltersByStatus`.
+
+(Local Docker not available — tests run on CI like the rest of the suite.)
+
+**How verified on VPS (end-to-end smoke):**
+- `git pull` + `docker compose up -d --build api frontend` clean; containers Healthy within ~6 s.
+- `SELECT name FROM sys.sequences WHERE name LIKE 'seq_CommercialInvoice%'` → `seq_CommercialInvoice_95DAF6D137234750BB30E1217540D622` (TEKSPORT tenant) ✅
+- `POST /api/auth/login` → admin token OK.
+- `POST /api/Customs/commercial-invoices` (consignor=CUS-001, consignee=SUP-001, qty 2.5 × €12.50) → `CI-2026-000001`, total `31.25 EUR`, status `Draft` ✅
+- `GET /api/Customs/commercial-invoices` → returns the just-created row with both party names + 1 line.
+- `POST /api/Customs/commercial-invoices/{id}/issue` → status flipped to `Issued` ✅
+- `GET /api/Customs/commercial-invoices/{id}/pdf` → 2,585 bytes `text/html; charset=utf-8` ✅
+- Frontend `/customs/commercial-invoices` reachable on `https://elon.elbosoft.click/`.
+
+**Z2779 fixture check:** Z2779 has no `tblIzvozniFakturi` correlation in the legacy slice (fully inward-processing single cycle), so PRE.7's happy-path does not produce a CommercialInvoice. Phase 21 dry-run on broader `Zaklucoci` is when this entity gets meaningful migration data.
+
+**Status:** [x] done. Next: §E9 (Razdolzuvanje view per ClientOrder) or §E.MIGRATE (LON.Migration refactor + Z2779 end-to-end) per PLAN.md §3.
+
+---
 
 ## 2026-05-13 — Phase 17 §E8 — wire EX declaration + Shipment + QC from hub + VPS-verified
 
