@@ -200,7 +200,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E0 | `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern | `[x]` (`06e6019`) |
 | E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[x]` (`2d166d8`) |
 | E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[x]` (`792361e`) |
-| E3 | Wire IM declaration creation from hub | `[ ]` |
+| E3 | Wire IM declaration creation from hub | `[x]` (`6e2add6`) |
 | E4 | Wire Receipt from hub | `[ ]` |
 | E5 | Wire BOM + ProductionOrder from hub | `[ ]` |
 | E6 | Wire Podelba from hub | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E2 закучен (ClientOrder list + hub UI shell live на VPS). Next: §E3.*
+*Последна ревизија: 2026-05-13 — Phase 17 §E3 закучен (IM declaration creation wired from hub; SEQUENCE-driven; Status → Active flips on first declaration; VPS-verified end-to-end). Next: §E4.*

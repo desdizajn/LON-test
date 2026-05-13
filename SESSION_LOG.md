@@ -2,6 +2,69 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E3 — wire IM declaration creation from ClientOrder hub + VPS-verified
+
+Hub-and-spoke comes alive: the first non-disabled action button. Commit `6e2add6`, VPS deploy verified end-to-end via real `IM-2026-000002` create + Status Draft → Active flip on `CO-2026-000001`.
+
+Files (11 changed; 8897 insertions):
+
+**Backend:**
+- `src/LON.Application/Customs/Commands/CreateCustomsDeclaration/CreateCustomsDeclarationCommand.cs`
+  - New optional `ClientOrderId` field; validates target exists + not Closed/Cancelled; persists on entity.
+  - Auto-generates `DeclarationNumber` when caller passes empty string: `INumberSequenceService.NextAsync("IMDeclaration"|"EXDeclaration", tenantId)` → `NumberFormatter.Declaration(prefix, year, seq)` → `IM/EX-{year}-{seq:D6}`.
+  - First declaration on a Draft ClientOrder transitions `Status → Active` inline (no §E11 domain events yet; per BLUEPRINT §5.1 status is computed/non-user-editable).
+  - DI added: `INumberSequenceService` + `ICurrentTenantService`.
+- `src/LON.Domain/Common/NumberFormatter.cs` — `Declaration(prefix, year, seq)` generic IM/EX dispatcher (kept `ImDeclaration` + `ExDeclaration` for §E12 backward compat).
+- `src/LON.API/Controllers/CustomsController.cs` — `GET /api/Customs/declarations` accepts new `clientOrderId` query param; filters server-side.
+- `src/LON.Infrastructure/Migrations/20260513131014_P17_E3_AddDeclarationSequences.cs` — per-tenant `seq_IMDeclaration_<tid>` + `seq_EXDeclaration_<tid>` (cursor over Tenants, idempotent IF NOT EXISTS). Migration #52 + #53 in the snapshot.
+
+**Frontend:**
+- `frontend/web/src/pages/Orders/ImDeclarationDialog.tsx` (new, 456 lines) — react-hook-form header (date + procedure + partner + sender name/country/dispatch/address + currency + total) + inline lines editor (9-col grid: item / tariff / qty / UoM / customsValue / origin / duty% / VAT% / delete). LON authorization + ClientOrder pre-filled and shown as a non-editable hint banner. Auto-fills sender* fields when partner is chosen. On submit: `POST /api/Customs/declarations { declarationNumber: '', clientOrderId: order.id, … }` → SEQUENCE auto-numbers. Invalidates `clientOrderKeys.all` (covers hub detail + declarations-tab query).
+- `frontend/web/src/pages/Orders/OrderHub.tsx`
+  - IM action button now `enabled` and click opens `<ImDeclarationDialog>`. Other 8 actions still disabled w/ §E… tooltip via per-action `enabled` flag on `ACTIONS[]`.
+  - Declarations tab placeholder replaced by `<DeclarationsTab>` — react-query against `customsApi.getDeclarations({ clientOrderId })`; renders 6-column grid: Број / Датум / MRN / Тип / Царинска вредност / Царина. Empty state CTA points back to the hub action.
+- `frontend/web/src/services/api.ts` — `customsApi.getDeclarations(params?: { isCleared?, clientOrderId? })` (params object, backwards-compatible with existing zero-arg callers).
+- i18n (en + mk): `orders.imDialog.*` (title / submit / created / createFailed / atLeastOneLine / lonAuthHint / clientOrderHint / addLine / linesTotal / section.{header,lines} / fields.* / cols.*) + `orders.hub.tabs.declarationsEmpty` + `orders.hub.tabs.declCols.*`.
+
+**Tests:**
+- `tests/LON.IntegrationTests/ClientOrderDeclarationLinkTests.cs` (new, 2 facts):
+  - `Create_FromHub_AutoNumbers_LinksClientOrder_AndTransitionsToActive` — POST with empty `declarationNumber` + `clientOrderId` → asserts regex `^IM-\d{4}-\d{6}$`, `decl.ClientOrderId == orderId`, `order.Status == Active`.
+  - `TwoParallelCreates_FromSameHub_YieldDistinctIMDeclarationNumbers` — concurrent POSTs against the same hub yield 2 distinct numbers (validates `NEXT VALUE FOR` atomicity).
+
+Local verification:
+- `dotnet build LON.sln`: 0 errors.
+- EF migration applied locally → LONDB now at 53 migrations; new sequences `seq_IMDeclaration_<tid>` + `seq_EXDeclaration_<tid>` per tenant.
+- `tsc --noEmit` clean on new files (only pre-existing react-hook-form .d.ts noise).
+- `CI=true npm run build`: Compiled successfully (bundle delta +~2 kB).
+- `eslint src/pages/Orders src/hooks/queries/useClientOrders.ts src/services/api.ts`: 0/0.
+
+VPS verification (real `CO-2026-000001`):
+- API path (PowerShell against `https://elon.elbosoft.click/api`):
+  - `POST /api/Customs/declarations { declarationNumber: "", clientOrderId: "4f41b642…", lonAuthorizationId, partnerId, customsProcedureId=4200, totalCustomsValue=500, currency=EUR, lines=[{ tariffCode=2905399500 (allowed by LON auth), netWeight=100, grossWeight=110, qty=50, customsValue=500, vat=18, duty=0 }] }` → 200 OK; `data: 388be0e0-…`.
+  - `GET /api/Customs/declarations/388be0e0-…` → `declarationNumber=IM-2026-000002, clientOrderId=4f41b642…, procedureCode=4200, status=1 (Registered), totalDuty=0, totalVAT=90`.
+  - `GET /api/Customs/declarations?clientOrderId=4f41b642…` → 1 row (filter works).
+  - `GET /api/ClientOrders/4f41b642…` → **`status=1 (Active)`** ← was Draft before the IM lands → confirms transition.
+  - `IM-2026-000001` was burned by an earlier failed attempt that hit rule-engine validation (tariff `0101210000` not in auth's allowed list, and missing `netWeight`). SEQUENCE numbers gap-on-failure is expected behavior — Phase 4.2 acknowledges this in NumberFormatter doc; legacy ELON also gapped on aborted entries.
+- Browser smoke (`Claude_in_Chrome`, admin@VPS):
+  - `/orders/4f41b642…` renders with **`Active` chip** (was `Draft`) in header.
+  - **`Декларации` tab** auto-loads `IM-2026-000002 | 05/13/2026 | 26MK02203754A1 | IM | 500.00 EUR | 0.00 EUR`.
+  - „Креирај увозна декларација (IM)" button **enabled** (no tooltip; primary outline).
+  - Click → dialog renders correctly: Заглавие (date / procedure / partner) + hint banner „LON одобрение: 26/TEKSPORT/0001 · Налог: CO-2026-000001" + sender fields + currency=EUR + Ставки grid (9 cols) + Откажи / Поднеси.
+
+Smoke screenshots captured:
+- `ss_6563cffwm` — hub with Active chip + Declarations tab populated.
+- `ss_7859mgdqa` — IM dialog open showing hub linkage hint banner.
+
+Phase 17 progress: §E0 + §E1 + §E2 + §E3 done (4/16 main + 7/7 PRE). Next: §E4 — wire Receipt creation from approved IM declarations.
+
+Open items (non-blocking):
+- Hub action launcher still shows 8 disabled actions; §E4–§E10 unlock them.
+- DeclarationsTab uses a custom CSS-grid table (not `DataTable` component) — fine for 6 columns + read-only; revisit if it grows.
+- `IM-2026-000001` SEQUENCE gap on VPS from earlier validation-fail attempt is normal; documented above.
+- ClientOrder.Status field is not yet emitted as a domain event (`ClientOrderActivatedEvent`); §E11 will refactor inline status transitions into event handlers.
+
+---
+
 ## 2026-05-13 — Phase 17 §E2 — ClientOrder list + hub UI shell shipped + VPS-verified
 
 Hub-and-spoke entry point (BLUEPRINT §7.1) live. Commit `792361e`, VPS deploy verified end-to-end (login → /orders → create → /orders/:id hub → hover tooltip).
