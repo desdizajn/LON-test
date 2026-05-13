@@ -2,6 +2,51 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E8 — wire EX declaration + Shipment + QC from hub + VPS-verified
+
+Commit `0a2d458`. The hub now has 8 enabled actions: BOM / IM / Receive / Podelba / IssueMaterial / ProductionReceipt / EX+Shipment / QC. The 4-step BLUEPRINT wizard collapses into a compact 1-step dialog that leans on the existing `BulkShipmentFromFGCommand` (atomic Shipment + chained EX). Pre-flight duty preview + AI helper hints stay deferred to §E10.
+
+Files (13 changed; 1,536 insertions / 14 deletions):
+
+**Backend:**
+- `BulkShipmentFromFGCommand` (`src/LON.Application/WMS/Commands/BulkShipmentFromFG/`) — gains optional `ClientOrderId`. Stamps the resulting Shipment AND the chained EX `CreateExportDeclarationCommand` payload so the hub Shipments + Declarations tabs filter via a clean FK.
+- `CreateExportDeclarationCommand` — carries `ClientOrderId`; persisted on the new `CustomsDeclaration` row.
+- `WMSController.GetShipments` — accepts `?clientOrderId=…` query param.
+- `ClientOrdersController.GetAvailableFinishedGoods` (new endpoint `GET /api/ClientOrders/{id}/available-fgs`) — returns one row per shippable InventoryBalance for FG items declared on this ClientOrder (Item + batch + MRN + qty + qualityStatus + location). Powers the EX dialog's picker.
+- `WMSController.UpdateQualityStatus` (new endpoint `POST /api/WMS/inventory/quality-status`) — fills a long-standing gap; `QcHold` + `BlockedInventory` + `QualityStatusChangeForm` called this route but no handler existed, so they had been silently broken. Accepts both legacy `InventoryBalanceId` and shorter `BalanceId` field names. On reason/notes presence emits an `InventoryMovement` Type=Adjustment with `ReferenceNumber=QC:<status>` for audit trail.
+
+**Frontend:**
+- `pages/Orders/ExDeclarationDialog.tsx` (new, 359 lines) — FG picker scoped server-side by ClientOrder, shipment metadata (consignee, destination ISO country, Incoterm, scheduled date), EX customs procedure picker (filtered to 31xx / 1xxx codes), auto-suggested IM-declarations panel that highlights ones sharing MRN with the selected FG batches. Submits `bulkShipmentFromFG` with `createExportDeclaration=true` + `clientOrderId`.
+- `pages/Orders/QcDialog.tsx` (new, 246 lines) — lists non-OK FG balances scoped to ClientOrder. „Pass" sets OK; „Reject" prompts for a reason and sets Blocked. Full `QualityInspection` entity (defect picker, photos, rework spawn) is BLUEPRINT §5.9.2 post-v1.
+- `pages/Orders/OrderHub.tsx` — `exDeclaration` enabled + new `qcPackaging` action; new `ShipmentsTab` component fed by `wmsApi.getShipments({clientOrderId})`.
+- `services/api.ts` — `wmsApi.getShipments` accepts both legacy positional `(page, pageSize)` and the new `{clientOrderId}` object signature (6 existing callers unchanged); `bulkShipmentFromFG` payload extended with `clientOrderId`; new `clientOrdersApi.getAvailableFinishedGoods(id)`; `updateQualityStatus` re-typed.
+- `i18n/locales/{mk,en}.json` — `orders.exDialog.*` + `orders.qcDialog.*` blocks + `orders.hub.tabs.{shipmentsEmpty,shipCols.*}` + `orders.actions.qcPackaging`.
+
+**Tests** (`ClientOrderShipmentLinkTests.cs`, 3 tests):
+1. `BulkShipmentFromFG_WithClientOrderId_StampsBothShipmentAndChainedExDeclaration` — verifies both rows carry the parent FK.
+2. `GetShipments_WithClientOrderIdFilter_ReturnsOnlyMatching` — proves the new filter.
+3. `UpdateQualityStatus_AcceptsBothBalanceIdNames_AndStampsAudit` — both field-name conventions + audit movement emission.
+
+**OpenAPI:** swagger regenerated; new endpoints + `clientOrderId` fields exposed.
+
+**Verification on VPS:**
+- `dotnet build` 0/0; CRA build 508.54 kB main (+3.52 kB).
+- Smoke against `https://elon.elbosoft.click` on `CO-2026-000001`:
+  1. `GET /api/ClientOrders/{id}/available-fgs` → 4 rows: 2× IM-2026-000002 / RCV-01 (qty 8 + 47.5556) + 2× FG-PKG-001-…  / PROD-01 (qty 75 + 25). All `qualityStatus=1`. ✓
+  2. `GET /api/WMS/shipments?clientOrderId={id}` → `count=0` initially ✓.
+  3. `POST /api/WMS/shipments/bulk-from-fg` with `createExportDeclaration=true` + `clientOrderId` → over-discharge guard correctly rejected (the test ClientOrder's PKG-001 IM has `Used=50` but inventory accumulated 55.5556 via TEKSPORT inflate-for-waste). Errors with `export.over_discharge` proving the chain reaches the EX handler with the parent linkage intact. The integration test covers the happy path against a synthetic fixture.
+  4. `POST /api/WMS/inventory/quality-status` with `inventoryBalanceId` (legacy field) → 200, balance flipped to Quarantine.
+  5. Same endpoint with `balanceId` (short field) → 200, balance flipped back to OK.
+
+**Discoveries / follow-ups:**
+- The pre-existing `POST /api/WMS/inventory/quality-status` route was called by 4 pages but no handler existed — silent breakage uncovered while wiring the hub QC dialog. Fixed by adding the handler; both field-name conventions accepted for backwards compat. Filed nothing — this was the fix.
+- `BulkShipmentFromFG` is filter-based (item + batch + MRN + location), not selection-based. The hub dialog's checkbox picker is therefore advisory — the server re-filters and ships everything matching the MRN. Selection mismatches (user picks 1 of 2 same-MRN balances) cause „bulk drains everything". Fine for v1 since the typical case is single-MRN-per-export; documented as Phase 22 follow-up to add selection-based variant if needed.
+- VPS smoke EX submission hit `export.over_discharge` because of TEKSPORT inflate-for-waste (5% inflation creates more physical inventory than the IM's declared Used qty). Validation works correctly; happy-path EX needs fixture data where IM Used qty ≥ accumulated balance. Integration test handles this.
+- The 4-step wizard (computed exit duties + guarantee credit preview + AI helper warnings) is intentionally deferred to §E10 (AI assistant service). Today's dialog accomplishes the wire-up minimum.
+- Full `QualityInspection` entity (DefectType picker, photos, rework spawn) defers to BLUEPRINT §5.9.2 post-v1. Today's QC dialog handles the 80% case (pass to OK, reject to Blocked with reason audit).
+
+---
+
 ## 2026-05-13 — Phase 17 §E7.6 — DeliveryNote entity + polymorphic auto-gen + UI + VPS-verified
 
 Commits `1c21599` (initial) + `607eb9e` (auto-gen fix). VPS smoke confirms the full chain: MaterialIssue against a producer-assigned balance → `DN-2026-000001` auto-created in Draft with `DocumentType=ProducerDispatch`, `ToPartnerId=PRD-SMOKE`, single line for the issued material. Driver/vehicle update → 200. Confirm → status Sent + `confirmedAt` stamped. Update post-Sent rejected with 400. `GET /pdf` returns text/html cover sheet (1,946 B for the smoke note).

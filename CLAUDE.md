@@ -207,7 +207,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E7 | Wire MaterialIssue + ProductionReceipt from hub | `[x]` (`d47f973`) |
 | E7.5 | Department + Position lookup promotion (CodeListItem categories) — Path B: schema + UI shipped Phase 17, backfill defers to **Phase 21.1.1** when prod-ELON export lands | `[x]` (`e50c3dd`) |
 | E7.6 | `DeliveryNote` entity + polymorphic auto-gen on commit events (D5; replaces legacy `Propratnici`) | `[x]` (`1c21599`+`607eb9e`) |
-| E8 | Wire EX declaration + Shipment + QC from hub | `[ ]` |
+| E8 | Wire EX declaration + Shipment + QC from hub | `[x]` (`0a2d458`) |
 | E8.5 | `CommercialInvoice` entity + EX hub chain (D4; replaces legacy `tblIzvozniFakturi`) | `[ ]` |
 | E9 | Razdolzuvanje view per ClientOrder | `[ ]` |
 | **E.MIGRATE** | **LON.Migration refactor + Z2779 end-to-end + 6 reconciliation queries** (deferred from PRE.7; see `docs/migration/PRE7_FINDINGS.md` §6) | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E7.6 закучен (DeliveryNote entity + polymorphic auto-gen on MaterialIssue commit; UI list+detail with Confirm/Cancel/Print; HTML cover-sheet at `/pdf`; VPS-verified end-to-end на CO-2026-000001 → DN-2026-000001 со Draft→Sent transition). EF migration count 51→52. Next: §E8 (EX + Shipment + QC) или §E8.5 (CommercialInvoice).*
+*Последна ревизија: 2026-05-13 — Phase 17 §E8 закучен (EX customs declaration + Shipment + QC wired from hub: atomic `BulkShipmentFromFG`-based dialog со ClientOrderId stamping + QC dialog со Pass/Reject + Audit; new `GET /ClientOrders/{id}/available-fgs` + missing `POST /WMS/inventory/quality-status` handler; ShipmentsTab сега real). Хабот сега има 8 enabled акции. Next: §E8.5 (CommercialInvoice — D4) или §E9 (Razdolzuvanje).*
