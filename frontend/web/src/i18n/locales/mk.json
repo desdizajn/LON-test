@@ -167,7 +167,15 @@
         },
         "productionOrdersPlaceholder": "Производните налози стигнуваат тука во §E5.",
         "shipmentsPlaceholder": "Испратниците стигнуваат тука во §E8.",
-        "materialsPlaceholder": "Состојбата на материјали стигнува тука во §E4/§E6."
+        "materialsPlaceholder": "Состојбата на материјали стигнува тука во §E4/§E6.",
+        "receiptsEmpty": "Сè уште нема приеми. Користи „Прими во магацин“ во акциите.",
+        "recCols": {
+          "number": "Број",
+          "date": "Датум",
+          "reference": "Референца",
+          "linesCount": "Ставки",
+          "totalQty": "Вкупна количина"
+        }
       },
       "actions": {
         "title": "Акции",
@@ -185,6 +193,22 @@
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Аудит / историја",
       "ai": "💡 AI препораки"
+    },
+    "receiveDialog": {
+      "title": "Прими во магацин",
+      "submit": "Прими",
+      "hint": "Налог",
+      "noDeclarations": "Нема декларации поврзани со налогот. Прво креирај IM декларација.",
+      "declaration": "Декларација",
+      "warehouse": "Магацин",
+      "location": "Локација",
+      "receiptDate": "Датум на прием",
+      "referenceNumber": "Референца",
+      "lines": "ставки",
+      "pickDeclaration": "Избери декларација.",
+      "pickWarehouse": "Избери магацин.",
+      "created": "Приемот е создаден.",
+      "failed": "Неуспешно создавање на прием."
     },
     "imDialog": {
       "title": "Креирај увозна декларација (IM)",

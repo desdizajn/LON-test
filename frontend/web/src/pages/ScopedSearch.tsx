@@ -105,7 +105,7 @@ const ScopedSearch: React.FC<Props> = ({ scope }) => {
 
         if (scope === 'warehouse') {
           const [receipts, shipments, inventory] = await Promise.all([
-            wmsApi.getReceipts(1, 500),
+            wmsApi.getReceipts({ page: 1, pageSize: 500 }),
             wmsApi.getShipments(1, 500),
             wmsApi.getInventory(),
           ]);

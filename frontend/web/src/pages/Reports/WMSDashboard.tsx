@@ -21,7 +21,7 @@ const WMSDashboard: React.FC = () => {
       setLoading(true);
       const [inventoryRes, receiptsRes, shipmentsRes, pickTasksRes] = await Promise.all([
         wmsApi.getInventory(),
-        wmsApi.getReceipts(1, 100), // Last 100
+        wmsApi.getReceipts({ page: 1, pageSize: 100 }), // Last 100
         wmsApi.getShipments(1, 100),
         wmsApi.getPickTasks(),
       ]);

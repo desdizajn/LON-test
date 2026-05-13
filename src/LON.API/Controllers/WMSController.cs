@@ -50,10 +50,29 @@ public class WMSController : BaseController
     }
 
     [HttpGet("receipts")]
-    public async Task<IActionResult> GetReceipts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetReceipts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? clientOrderId = null)
     {
-        var receipts = await _context.Receipts
+        var query = _context.Receipts
             .Include(r => r.Lines)
+            .AsQueryable();
+
+        // Phase 17 §E4 — hub Receipts tab filters via the ClientOrder linkage
+        // on the receipt's lines' CustomsDeclaration. A receipt belongs to the
+        // ClientOrder if at least one of its lines references a declaration
+        // tied to that order. EF translates this to a single SQL IN-clause.
+        if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
+        {
+            var declIds = _context.CustomsDeclarations
+                .Where(d => d.ClientOrderId == clientOrderId.Value)
+                .Select(d => d.Id);
+            query = query.Where(r =>
+                r.Lines.Any(l => l.CustomsDeclarationId.HasValue && declIds.Contains(l.CustomsDeclarationId.Value)));
+        }
+
+        var receipts = await query
             .OrderByDescending(r => r.ReceiptDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

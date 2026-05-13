@@ -31,9 +31,10 @@ import {
   ClientOrderStatus,
   useClientOrder,
 } from '../../hooks/queries/useClientOrders';
-import { customsApi } from '../../services/api';
+import { customsApi, wmsApi } from '../../services/api';
 import { formatDate } from '../../utils/format';
 import ImDeclarationDialog from './ImDeclarationDialog';
+import ReceiveDialog from './ReceiveDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -58,7 +59,8 @@ const ACTIONS: ActionDef[] = [
   { key: 'bom', labelKey: 'orders.actions.bom', icon: <FactoryIcon />, wiresInTask: 'E5' },
   // Phase 17 §E3 — IM action launches an inline dialog (handled below).
   { key: 'imDeclaration', labelKey: 'orders.actions.imDeclaration', icon: <InventoryIcon />, wiresInTask: 'E3', enabled: true },
-  { key: 'receive', labelKey: 'orders.actions.receive', icon: <LocalShippingIcon />, wiresInTask: 'E4' },
+  // Phase 17 §E4 — Receive launches BulkReceiptFromDeclaration dialog.
+  { key: 'receive', labelKey: 'orders.actions.receive', icon: <LocalShippingIcon />, wiresInTask: 'E4', enabled: true },
   { key: 'podelba', labelKey: 'orders.actions.podelba', icon: <CallSplitIcon />, wiresInTask: 'E6' },
   { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7' },
   { key: 'exDeclaration', labelKey: 'orders.actions.exDeclaration', icon: <FlightTakeoffIcon />, wiresInTask: 'E8' },
@@ -82,10 +84,13 @@ const OrderHub: React.FC = () => {
   const { data: order, isLoading, error } = useClientOrder(id);
   const [tab, setTab] = useState(0);
   const [imOpen, setImOpen] = useState(false);
+  const [receiveOpen, setReceiveOpen] = useState(false);
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'imDeclaration') {
       setImOpen(true);
+    } else if (actionKey === 'receive') {
+      setReceiveOpen(true);
     }
     // Other action keys are still disabled in this phase.
   };
@@ -304,7 +309,8 @@ const OrderHub: React.FC = () => {
                   {t('orders.hub.tabs.shipmentsPlaceholder')}
                 </Typography>
               )}
-              {tab === 3 && (
+              {tab === 3 && <ReceiptsTab clientOrderId={order.id} />}
+              {false && (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
                   {t('orders.hub.tabs.materialsPlaceholder')}
                 </Typography>
@@ -371,6 +377,14 @@ const OrderHub: React.FC = () => {
         order={order}
         onClose={() => setImOpen(false)}
         onCreated={() => setImOpen(false)}
+      />
+
+      {/* Phase 17 §E4 — Receive into warehouse dialog. */}
+      <ReceiveDialog
+        open={receiveOpen}
+        order={order}
+        onClose={() => setReceiveOpen(false)}
+        onCreated={() => setReceiveOpen(false)}
       />
     </Box>
   );
@@ -457,6 +471,81 @@ const DeclarationsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId })
           </Box>
         </React.Fragment>
       ))}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E4 — receipts created against any declaration linked to this
+ * ClientOrder. Backed by `GET /api/WMS/receipts?clientOrderId=…` (joins
+ * receipt.lines.customsDeclaration.clientOrderId server-side).
+ */
+interface ReceiptRow {
+  id: string;
+  receiptNumber: string;
+  receiptDate: string;
+  referenceNumber?: string | null;
+  lines?: Array<{ id: string; quantity: number; mrn?: string | null }>;
+}
+
+const ReceiptsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'receipts', clientOrderId],
+    queryFn: async () => {
+      const resp = await wmsApi.getReceipts({ clientOrderId, pageSize: 50 });
+      return (resp.data ?? []) as ReceiptRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.receiptsEmpty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1.2fr 0.6fr 0.8fr', gap: 0, fontSize: 13 }}>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.recCols.number')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.recCols.date')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.recCols.reference')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+        {t('orders.hub.tabs.recCols.linesCount')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+        {t('orders.hub.tabs.recCols.totalQty')}
+      </Box>
+      {rows.map((r) => {
+        const totalQty = (r.lines ?? []).reduce((s, l) => s + (l.quantity ?? 0), 0);
+        return (
+          <React.Fragment key={r.id}>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>
+              {r.receiptNumber}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+              {formatDate(r.receiptDate)}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+              {r.referenceNumber ?? '—'}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+              {r.lines?.length ?? 0}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+              {totalQty.toFixed(2)}
+            </Box>
+          </React.Fragment>
+        );
+      })}
     </Box>
   );
 };

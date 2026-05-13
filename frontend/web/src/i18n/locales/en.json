@@ -167,7 +167,15 @@
         },
         "productionOrdersPlaceholder": "Production orders land here in §E5.",
         "shipmentsPlaceholder": "Shipments land here in §E8.",
-        "materialsPlaceholder": "Material balance lands here in §E4/§E6."
+        "materialsPlaceholder": "Material balance lands here in §E4/§E6.",
+        "receiptsEmpty": "No receipts yet. Use „Receive into warehouse“ in the actions panel.",
+        "recCols": {
+          "number": "Number",
+          "date": "Date",
+          "reference": "Reference",
+          "linesCount": "Lines",
+          "totalQty": "Total qty"
+        }
       },
       "actions": {
         "title": "Actions",
@@ -185,6 +193,22 @@
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
       "ai": "💡 AI recommendations"
+    },
+    "receiveDialog": {
+      "title": "Receive into warehouse",
+      "submit": "Receive",
+      "hint": "Order",
+      "noDeclarations": "No declarations linked to this order yet. Create an IM declaration first.",
+      "declaration": "Declaration",
+      "warehouse": "Warehouse",
+      "location": "Location",
+      "receiptDate": "Receipt date",
+      "referenceNumber": "Reference",
+      "lines": "lines",
+      "pickDeclaration": "Pick a declaration.",
+      "pickWarehouse": "Pick a warehouse.",
+      "created": "Receipt created.",
+      "failed": "Failed to create receipt."
     },
     "imDialog": {
       "title": "Create import declaration (IM)",

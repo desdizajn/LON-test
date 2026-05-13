@@ -92,8 +92,9 @@ export const wmsApi = {
   }) => api.post('/WMS/inventory/mass-transfer', payload),
   
   // Receipts
-  getReceipts: (page: number = 1, pageSize: number = 20) => 
-    api.get('/WMS/receipts', { params: { page, pageSize } }),
+  // Phase 17 §E4 — `clientOrderId` filter added; joins receipt.lines.customsDeclaration.clientOrderId server-side.
+  getReceipts: (params?: { page?: number; pageSize?: number; clientOrderId?: string }) =>
+    api.get('/WMS/receipts', { params: params ?? { page: 1, pageSize: 20 } }),
   getReceipt: (id: string) => 
     api.get(`/WMS/receipts/${id}`),
   createReceipt: (data: any) =>
