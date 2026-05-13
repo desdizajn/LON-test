@@ -61,11 +61,13 @@ export function useStickyDefaults<TLine extends object>(
     (line: TLine) => {
       setDefaults((prev) => {
         const next: Partial<TLine> = { ...prev };
-        const keys = stickyFields ?? (Object.keys(line) as ReadonlyArray<keyof TLine>);
+        const keys: ReadonlyArray<keyof TLine> = stickyFields
+          ? stickyFields
+          : (Object.keys(line) as Array<keyof TLine>);
         for (const k of keys) {
           const value = line[k];
           if (value !== undefined && value !== null && value !== '') {
-            (next as Record<keyof TLine, TLine[keyof TLine]>)[k] = value;
+            (next as { [P in keyof TLine]?: TLine[P] })[k] = value;
           }
         }
         return next;
