@@ -2,6 +2,51 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E2 — ClientOrder list + hub UI shell shipped + VPS-verified
+
+Hub-and-spoke entry point (BLUEPRINT §7.1) live. Commit `792361e`, VPS deploy verified end-to-end (login → /orders → create → /orders/:id hub → hover tooltip).
+
+Files (9 changed; 1182 insertions):
+- **Pages (new):** `frontend/web/src/pages/Orders/OrderList.tsx` (382 lines) — DataTable + 4 filters (status / customer / fromDate / toDate) + „Нов налог" FormDialog (react-hook-form). Reuses `components/common/DataTable.tsx`, `components/common/FormDialog.tsx`, `components/forms/FormInput.tsx`, `components/forms/FormSelect.tsx`. Status pills colored per ClientOrderStatus. % Produced / % Guarantee columns rendered as `0%` placeholder — real numbers wire in §E3/§E7.
+- **Pages (new):** `frontend/web/src/pages/Orders/OrderHub.tsx` (351 lines) — 3-column grid (timeline / center / action launcher) per BLUEPRINT §5.1. Header: order number + status chip + customer link + auth link + dates. Left timeline: 3 stub events (Created filled with createdAt; FirstDeclaration + LastShipped pending). Center: 3 widgets (produced / guarantee / daysToShip — with overdue / no-ship-date copy) + 4 tabs (Declarations / ProductionOrders / Shipments / Materials — each with §EX placeholder). Right sticky panel: 9 action buttons all `disabled` with Tooltip „Стигнува во §E{3..13}".
+- **react-query hook (new):** `frontend/web/src/hooks/queries/useClientOrders.ts` (165 lines) — useClientOrders + useClientOrder + useCreateClientOrder + useUpdateClientOrder + useCancelClientOrder. Mirrors `useRisks` pattern; Envelope<T> unwrap.
+- **API client:** `frontend/web/src/services/api.ts` — `clientOrdersApi` block with 5 methods (list / get / create / update / cancel).
+- **Routing:** `App.tsx` adds `/orders` + `/orders/:id` routes + `resolveActiveModule('/orders') → 'orders-list'`.
+- **Nav:** `nav/types.ts` — `NavGroupKey` += `'orders'`. `nav/navGroups.ts` — new „📋 Налози" group as the first entry (hub-and-spoke is the centerpiece). allowedRoles: Administrator + Manager + ProductionPlanner + WhMgr + Customs + QC + Finance + Viewer (read-only for non-edit roles enforced server-side per action).
+- **i18n (en + mk only per BLUEPRINT §6.8 v1 scope):** +`nav.groups.orders`, +`nav.orders.list`. New top-level `orders.*` block: `statusNames.*` (draft / active / producing / shipped / closed / cancelled), `list.{title,subtitle,newOrder,filters.*,cols.*,dialog.*}`, `hub.{header.*,timeline.*,widgets.*,tabs.*,actions.*}`, `actions.{bom,imDeclaration,receive,podelba,issueMaterial,exDeclaration,razdolzuvanje,audit,ai}`.
+
+Local verification:
+- `tsc --noEmit` — clean on new files (only pre-existing `react-hook-form/dist/watch.d.ts` noise documented in handoff).
+- `CI=true npm run build` — Compiled successfully; main bundle 487.03 kB gzipped (+11.56 kB delta).
+- `eslint src/pages/Orders src/hooks/queries/useClientOrders.ts src/nav/*` — 0 errors / 0 warnings.
+
+VPS verification (login → list → create → hub flow against real prod data):
+- `POST /api/Auth/login admin/Admin123!` → JWT token.
+- `GET /api/ClientOrders` → 1 row (§E1's `CO-2026-000001`).
+- `POST /api/ClientOrders {customerPartnerId, lonAuthorizationId, customerOrderReference:"E2-SMOKE-001", orderDate, requestedShipDate, notes}` → new id `486e7222-…`, OrderNumber **`CO-2026-000002`** (SEQUENCE increments correctly).
+- `GET /api/ClientOrders/486e7222-…` → DTO returns orderNumber + customerOrderReference + requestedShipDate.
+- Browser smoke (Claude_in_Chrome, admin@VPS):
+  - `/orders` renders: 2 rows in DataTable, status chips (Draft), 4 filters, „Нов налог" button top-right, sidebar shows „📋 Налози → Сите налози" (active).
+  - „Нов налог" → modal opens with all 6 fields (Клиент select / LON одобрение select / Референца од клиент / Датум на налог prefilled today / Очекувана испорака / Белешки multiline) + Откажи / Зачувај footer.
+  - `/orders/4f41b642-…` (hub) renders: header (CO-2026-000001 + Draft chip + Italian Customer SRL link + 26/TEKSPORT/0001 link + dates) | left Хронологија (3 events; Налогот е создаден filled, two pending) | 3 widgets (0% / 0% / „— без рок") | 4 tabs (active „Декларации (0)" with §E3 placeholder copy) | right Акции panel with 9 disabled buttons.
+  - Hover на „Креирај увозна декларација (IM)" → tooltip „Стигнува во §E3" appears (verified via screenshot `ss_5258chuv5`).
+
+Smoke screenshots captured by Claude_in_Chrome (saved to disk):
+- `ss_9507f1g62` — /orders list page (2 rows, full sidebar, „Нов налог" button visible).
+- `ss_44388hjt1` — /orders/:id hub (header + timeline + widgets + tabs + action launcher).
+- `ss_5258chuv5` — hover tooltip „Стигнува во §E3" rendered.
+- `ss_111548j5z` — „Нов налог" dialog open with all fields.
+
+Phase 17 progress: §E0 + §E1 + §E2 done (3/16 main + 7/7 PRE). Next: §E3 — wire IM declaration creation from hub via inline dialog.
+
+Open items (non-blocking):
+- % Produced + % Guarantee columns + widgets render `0%` literal — backed by §E5 / §E7 (produced) and §E3 + GuaranteeLedger (guarantee).
+- Tabs render placeholder copy; real DataTables for declarations / POs / shipments / materials wire in §E3–§E8.
+- Timeline shows 3 stub events; real domain-event sourcing wires in §E11.
+- Daily-life test users (`tek-mgr`, `tek-customs`, etc.) inherit role gating from `navGroups.allowedRoles` — runtime role-based action enable / disable will land via permission checks alongside §E3.
+
+---
+
 ## 2026-05-13 — Phase 17 §E1 — ClientOrder entity + handlers + SQL SEQUENCE shipped + VPS-verified
 
 Per BLUEPRINT §3.1, the single biggest path-to-v1 gap (ClientOrder concept missing) closed. Commit `2d166d8`, VPS deploy verified.

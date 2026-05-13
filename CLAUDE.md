@@ -199,7 +199,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 |---|---|---|
 | E0 | `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern | `[x]` (`06e6019`) |
 | E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[x]` (`2d166d8`) |
-| E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[ ]` |
+| E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[x]` (`792361e`) |
 | E3 | Wire IM declaration creation from hub | `[ ]` |
 | E4 | Wire Receipt from hub | `[ ]` |
 | E5 | Wire BOM + ProductionOrder from hub | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-12 — Phase 17.PRE (migration foundations + Z2779 happy-path).*
+*Последна ревизија: 2026-05-13 — Phase 17 §E2 закучен (ClientOrder list + hub UI shell live на VPS). Next: §E3.*
