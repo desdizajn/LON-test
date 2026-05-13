@@ -78,7 +78,7 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 - **Test tenant:** `TEKSPORT` (мапира на истоимениот Uvoznik во legacy ELON). Локален ELON DB е TEKSPORT-only slice — `Uvoznik` колоната е NULL свугде; tenant discriminator се извлекува „DB-as-a-whole IS the tenant".
 - **TEKSPORT legacy quirks:** inflate-for-waste на import (`KolMat * 100/(100-otpad%)`) — реално користен на само 4 articles (од 8,960 materials, max 2%); зачувуваме како feature flag, default OFF. Invoice staging deletion после transfer — мора да се преслика ако сакаме bit-by-bit споредба.
 - **Состојба на проектот (May 2026):** Фази 0–15 ги поставија ядрата (~31.8k LoC backend, 122 FE pages, 154 [Fact] integration тестови, 174 BE routes, 85 FE endpoints — 100% покриеност). **Фаза 16 ЗАВРШЕНА** (cleanup + UI foundation — 13/13). **Сега сме во Фаза 17** (ClientOrder hub + flow wiring + AI helper; започнува со **Phase 17.PRE** — migration foundations + Z2779 happy-path) — види секција 11.
-- **EF migrations:** 51 applied (последно: Phase 17 §E7.5 `P17_E7_5_PromoteDeptPosition` — Employee.DepartmentId/PositionId FK на CodeListItem). Recreate count со `ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | grep -v ModelSnapshot | wc -l`.
+- **EF migrations:** 52 applied (последно: Phase 17 §E7.6 `P17_E7_6_AddDeliveryNote` — DeliveryNote entity + per-tenant SQL SEQUENCE). Recreate count со `ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | grep -v ModelSnapshot | wc -l`.
 - **Multi-tenant од почеток:** секоја нова ентитет мора да има `TenantId`. Секој нов query мора да биде tenant-scoped.
 
 ---
@@ -206,7 +206,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E6 | Wire Podelba from hub | `[x]` (`16f8711`) |
 | E7 | Wire MaterialIssue + ProductionReceipt from hub | `[x]` (`d47f973`) |
 | E7.5 | Department + Position lookup promotion (CodeListItem categories) — Path B: schema + UI shipped Phase 17, backfill defers to **Phase 21.1.1** when prod-ELON export lands | `[x]` (`e50c3dd`) |
-| E7.6 | `DeliveryNote` entity + polymorphic auto-gen on commit events (D5; replaces legacy `Propratnici`) | `[ ]` |
+| E7.6 | `DeliveryNote` entity + polymorphic auto-gen on commit events (D5; replaces legacy `Propratnici`) | `[x]` (`1c21599`+`607eb9e`) |
 | E8 | Wire EX declaration + Shipment + QC from hub | `[ ]` |
 | E8.5 | `CommercialInvoice` entity + EX hub chain (D4; replaces legacy `tblIzvozniFakturi`) | `[ ]` |
 | E9 | Razdolzuvanje view per ClientOrder | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E7.5 закучен (Path B: Employee.Department + Position promoted to FK на CodeListItem; empty seed, „+ Нов" inline create; backfill defers to Phase 21.1.1). EF migration count 50→51. Next: §E7.6 (DeliveryNote — polymorphic auto-gen).*
+*Последна ревизија: 2026-05-13 — Phase 17 §E7.6 закучен (DeliveryNote entity + polymorphic auto-gen on MaterialIssue commit; UI list+detail with Confirm/Cancel/Print; HTML cover-sheet at `/pdf`; VPS-verified end-to-end на CO-2026-000001 → DN-2026-000001 со Draft→Sent transition). EF migration count 51→52. Next: §E8 (EX + Shipment + QC) или §E8.5 (CommercialInvoice).*

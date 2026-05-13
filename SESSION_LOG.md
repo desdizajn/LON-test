@@ -2,6 +2,71 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E7.6 — DeliveryNote entity + polymorphic auto-gen + UI + VPS-verified
+
+Commits `1c21599` (initial) + `607eb9e` (auto-gen fix). VPS smoke confirms the full chain: MaterialIssue against a producer-assigned balance → `DN-2026-000001` auto-created in Draft with `DocumentType=ProducerDispatch`, `ToPartnerId=PRD-SMOKE`, single line for the issued material. Driver/vehicle update → 200. Confirm → status Sent + `confirmedAt` stamped. Update post-Sent rejected with 400. `GET /pdf` returns text/html cover sheet (1,946 B for the smoke note).
+
+Files (16 new, 12 modified):
+
+**Domain** (`src/LON.Domain/Entities/Logistics/`):
+- `DeliveryNote` (`BaseEntity` + `ITenantScoped` + `IAuditable`; soft-delete via `BaseEntity.IsDeleted` — `ISoftDeletable` interface itself lands in §E14) carries `Number`, `DocumentType`, `RelatedDocumentId` (polymorphic FK to `MaterialIssue.Id` / `Shipment.Id` per type), `DispatchDate`, `FromLocationId`, `ToLocationId`, `ToPartnerId`, `DriverName`, `VehicleRegistration`, `Remarks`, `Status`, `ConfirmedAt/By`, `CancelledAt/By`, `CancelReason`, navigation `Lines`.
+- `DeliveryNoteLine`: `ItemId`, `Description`, `Quantity`, `UoMId`, `BatchNumber`, `MRN`, `Notes`.
+- Two new enums: `DeliveryNoteType { ProducerDispatch=1, ProducerReturn=2, CustomerShipment=3 }`, `DeliveryNoteStatus { Draft=1, Sent=2, Confirmed=3, Cancelled=4 }`.
+
+**Infrastructure:**
+- `DeliveryNoteConfiguration` + `DeliveryNoteLineConfiguration` — unique `(TenantId, Number)` (filtered `IsDeleted=0`), polymorphic index on `RelatedDocumentId`, browsing index `(TenantId, DocumentType, DispatchDate)`, cascade Lines, tenant + soft-delete query filters.
+- `IApplicationDbContext` + `ApplicationDbContext` expose `DbSet<DeliveryNote>` + `DbSet<DeliveryNoteLine>`.
+- Migration #52 `P17_E7_6_AddDeliveryNote` creates the two tables + per-tenant SQL SEQUENCE `seq_DeliveryNote_<tenantId>` (cursor over `Tenants WHERE IsActive=1 AND IsDeleted=0`, identical pattern to §E1 / §E3).
+- `DependencyInjection.cs` wires `IDeliveryNoteFactory` → `DeliveryNoteFactory`.
+
+**Application:**
+- `DeliveryNoteFactory` (`Application/Logistics/DeliveryNotes/`) — inline auto-gen helper: pulls `seq_DeliveryNote_…`, formats via existing `NumberFormatter.DeliveryNote(year, seq)`, materialises `DeliveryNote` + `DeliveryNoteLine`s from a freshly-persisted `MaterialIssue` bundle. Adds to context but caller owns `SaveChangesAsync` — same transaction as the parent commit.
+- `DeliveryNoteCommands.cs` — DTOs (init-only) + `GetDeliveryNotesQuery` (filter by type/status/partnerId/dateRange + pagination), `GetDeliveryNoteByIdQuery`, `UpdateDeliveryNoteCommand` (Draft only — flips 400 otherwise), `ConfirmDeliveryNoteCommand` (Draft→Sent + `ConfirmedAt` stamp), `CancelDeliveryNoteCommand` (Draft→Cancelled + reason).
+- `CreateMaterialIssueCommandHandler` — injects `IDeliveryNoteFactory`. After persisting issues, captures the source `LocationId` from the InventoryMovement loop, resolves a producer from the most-common `AssignedProducerId` across touched balances, and calls `CreateProducerDispatchAsync`. Skips silently when no producer assigned (legacy direct-issue flow).
+
+**API:**
+- `DeliveryNotesController` (`api/Logistics/delivery-notes`): GET list / GET by id / PUT (Draft) / POST confirm / POST cancel / GET pdf. PDF endpoint returns `text/html` cover sheet (sized for browser-print → PDF); QuestPDF integration deferred (endpoint name kept for forward compat).
+
+**Frontend:**
+- `pages/Warehouse/DeliveryNotes.tsx` (list page, MUI) + `DeliveryNoteDetail.tsx` (detail with Confirm / Cancel / Save / Print buttons; disabled inputs when not Draft).
+- `App.tsx` routes `/warehouse/delivery-notes` + `/:id`.
+- `navGroups.ts` — new entry under Warehouse group (icon 📄, status `exists`).
+- `logisticsApi` in `services/api.ts`.
+- mk + en locale block `deliveryNotes.*` (title, summary, filters, types, statuses, cols, detail, prompts, error messages). sq/sr fall back to mk.
+
+**Tests** (`tests/LON.IntegrationTests/DeliveryNoteTests.cs` — 8 tests):
+- `GetById_ReturnsLinesAndStatusName` — happy-path projection.
+- `Update_OnDraft_PersistsDriverAndRemarks` — Draft is editable.
+- `Update_OnSent_Returns400` — terminal-state guard.
+- `Confirm_DraftFlipsToSent` + `Confirm_NonDraft_Returns400`.
+- `Cancel_DraftFlipsToCancelled_WithReason`.
+- `Pdf_ReturnsHtmlContent` — endpoint contract.
+- `GetList_FiltersByType` — filter param works.
+
+**OpenAPI:** `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated (new `/api/Logistics/delivery-notes` paths + DeliveryNote DTOs).
+
+**Verification on VPS:**
+- `dotnet build` 0/0; CRA build clean (505.02 kB main, +3.5 kB from §E7).
+- Migration #52 applied on VPS (`docker compose up -d --build` triggers `DatabaseInitializer`).
+- Smoke against `https://elon.elbosoft.click`:
+  1. `GET /api/Logistics/delivery-notes` (pre-issue) → `[]`.
+  2. New PO created against `CO-2026-000001` (item PKG-001, qty=10) + released → 200.
+  3. `POST /api/Production/orders/{id}/issues` qty=3 from `batch=IM-2026-000002 / mrn=26MK02203754A1` (producer-assigned via §E6) → 200 `MaterialIssue` id `2681b96e-…`.
+  4. `GET /api/Logistics/delivery-notes` → 1 row: `DN-2026-000001`, `documentType=ProducerDispatch`, `status=Draft`, `lines=1`, `toPartnerId=75d7780c-…` (PRD-SMOKE), `dispatchDate=2026-05-13`.
+  5. `PUT /{id}` `{driverName, vehicleRegistration, remarks}` → 200.
+  6. `POST /{id}/confirm` → 200, `status=Sent`, `confirmedAt=2026-05-13T17:24:40Z`.
+  7. `PUT /{id}` after confirm → 400 "Only Draft delivery notes can be edited; this one is Sent."
+  8. `GET /{id}/pdf` → 200 `Content-Type: text/html; charset=utf-8`, 1,946 B, first 300 chars include `<title>Propratnica DN-2026-000001</title>`.
+
+**Discoveries / follow-ups:**
+- First deploy auto-gen silently did nothing because the handler queried `_context.InventoryMovements` for the source location, but the movement was just `.Add()`-ed and not yet saved — the query against the underlying provider returned nothing. Fixed by capturing `balance.LocationId` directly into a local var (`capturedFromLocationId`) during the issue loop. Caught immediately via the smoke check (`DN list still empty after MaterialIssue`).
+- `ISoftDeletable` interface itself doesn't exist yet (slated for §E14 / soft-delete recycle bin). Until then, soft-delete behaviour comes from `BaseEntity.IsDeleted` + per-config `HasQueryFilter` — same pattern every other Phase 17 entity uses.
+- `MaterialIssueCommittedEvent` domain-event hook is the §E11 long-term replacement for the direct call. Documented in `DeliveryNoteFactory.cs` XML.
+- Phase 21 / `§E.MIGRATE` Z2779 fixture re-run will produce 1 ProducerDispatch DN against the single legacy Izdatnica (per PRE.7 expectation).
+- `ProducerReturn` / `CustomerShipment` auto-gen hooks ship with §E8 once the Shipment commit path is wired from the hub. The factory is already polymorphic — adding `CreateProducerReturnAsync` + `CreateCustomerShipmentAsync` is a copy-paste of the existing `CreateProducerDispatchAsync`.
+
+---
+
 ## 2026-05-13 — Phase 17 §E7.5 — Employee.Department + Position promoted to CodeListItem FKs + VPS-verified
 
 Commit `e50c3dd`. Per D6 (decided 2026-05-12): land schema in Phase 17, full backfill in Phase 21.1.1 after the prod-ELON export arrives. Empty seed today; new categories surface through the inline „+ Нов" button on EmployeeManagement.
