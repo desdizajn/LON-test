@@ -1,3 +1,4 @@
+using LON.Application.Customs.Commands.BulkUpdateCustomsDeclarationLines;
 using LON.Application.Customs.Commands.CertifyDeclaration;
 using LON.Application.Customs.Commands.CreateCustomsDeclaration;
 using LON.Application.Customs.Commands.CreateExportDeclaration;
@@ -49,6 +50,27 @@ public class CustomsController : BaseController
         if (result.IsSuccess)
             return Ok(result);
         return Conflict(result);
+    }
+
+    /// <summary>
+    /// Phase 17 §E0 — bulk-update one whitelisted field across every line of a
+    /// Draft declaration. Whitelist enforced server-side (see
+    /// <see cref="BulkUpdateCustomsDeclarationLinesCommandHandler"/>).
+    /// One <c>AuditLogEntry</c> per affected line.
+    /// </summary>
+    [HttpPost("declarations/{id:guid}/lines/bulk-update")]
+    public async Task<IActionResult> BulkUpdateDeclarationLines(
+        Guid id,
+        [FromBody] BulkUpdateCustomsDeclarationLinesCommand command)
+    {
+        if (command.DeclarationId != Guid.Empty && command.DeclarationId != id)
+            return BadRequest(new { errorMessage = "Route id and body declarationId do not match." });
+
+        var effective = command with { DeclarationId = id };
+        var result = await Mediator.Send(effective);
+        if (result.IsSuccess)
+            return Ok(result);
+        return BadRequest(result);
     }
 
     /// <summary>

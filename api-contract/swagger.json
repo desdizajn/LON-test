@@ -613,6 +613,48 @@
         }
       }
     },
+    "/api/Customs/declarations/{id}/lines/bulk-update": {
+      "post": {
+        "tags": [
+          "Customs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateCustomsDeclarationLinesCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateCustomsDeclarationLinesCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateCustomsDeclarationLinesCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations/export": {
       "post": {
         "tags": [
@@ -8051,6 +8093,28 @@
           },
           "createExportDeclaration": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BulkUpdateCustomsDeclarationLinesCommand": {
+        "type": "object",
+        "properties": {
+          "declarationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

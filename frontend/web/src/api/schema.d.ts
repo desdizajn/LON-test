@@ -337,6 +337,28 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/declarations/{id}/lines/bulk-update": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["BulkUpdateCustomsDeclarationLinesCommand"];
+          "text/json": components["schemas"]["BulkUpdateCustomsDeclarationLinesCommand"];
+          "application/*+json": components["schemas"]["BulkUpdateCustomsDeclarationLinesCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations/export": {
     post: {
       requestBody?: {
@@ -4481,6 +4503,13 @@ export interface components {
       shipmentDate?: string | null;
       reference?: string | null;
       createExportDeclaration?: boolean;
+    };
+    BulkUpdateCustomsDeclarationLinesCommand: {
+      /** Format: uuid */
+      declarationId?: string;
+      field?: string | null;
+      value?: string | null;
+      reason?: string | null;
     };
     CancelBody: {
       reason?: string | null;
