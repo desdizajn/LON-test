@@ -2681,5 +2681,41 @@
         "origin": "Потекло"
       }
     }
+  },
+  "razdolzuvanje": {
+    "backToHub": "Назад до хабот",
+    "notFound": "Не е најден razdolzuvanje податок.",
+    "authorization": "Одобрение",
+    "downloadPdf": "Печати",
+    "downloadPee060": "PEE060 XML",
+    "takeSnapshot": "Земи snapshot",
+    "snapshotTaken": "Snapshot земен: {{rows}} редови гаранциски сметки · variance {{variance}}",
+    "closed": "Усогласено — налогот е затворен ({{rows}} snapshot редови).",
+    "snapshotFailed": "Snapshot не успеа.",
+    "toggleFailed": "Промената на razdolzuvanje flag не успеа.",
+    "pee060Failed": "Преземањето на PEE060 XML не успеа.",
+    "tolerance": "толеранција €{{eur}}",
+    "linesTitle": "Линии од IM декларации",
+    "noLines": "Нема IM линии поврзани со овој ClientOrder.",
+    "totals": {
+      "im": "IM (задолжено)",
+      "ex": "EX (раздолжено)",
+      "waste": "Waste",
+      "return": "Return",
+      "credited": "Вкупно раздолжено",
+      "variance": "Variance",
+      "linesFlagged": "Означени линии: {{flagged}} / {{total}}"
+    },
+    "cols": {
+      "declaration": "Декларација",
+      "mrn": "MRN",
+      "date": "Датум",
+      "item": "Артикл",
+      "qty": "Количина",
+      "uom": "ЕМ",
+      "duty": "Царина",
+      "vat": "ДДВ",
+      "razd": "Razd."
+    }
   }
 }

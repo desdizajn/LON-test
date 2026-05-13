@@ -276,6 +276,22 @@ public class CustomsDeclarationLine : BaseEntity, ITenantScoped
     /// Употребено количество од претходна декларација
     /// </summary>
     public decimal? UsedQuantityFromPrevious { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E9 — per-line razdolzuvanje confirmation flag. Set by the
+    /// user from the ClientOrder hub Razdolzuvanje view once the customs
+    /// inspector has confirmed the line is discharged (debited IM vs.
+    /// credited EX/Waste/Return reconciled). When every line on a
+    /// ClientOrder's declarations carries `true`, the Take Snapshot action
+    /// auto-transitions the order to <c>Closed</c>.
+    /// </summary>
+    public bool RazdolzenaDaNe { get; set; }
+
+    /// <summary>UTC timestamp when <see cref="RazdolzenaDaNe"/> was last flipped.</summary>
+    public DateTime? RazdolzenaAt { get; set; }
+
+    /// <summary>Audit name of who flipped <see cref="RazdolzenaDaNe"/>.</summary>
+    public string? RazdolzenaBy { get; set; }
 }
 
 public class CustomsDocument : BaseEntity, ITenantScoped

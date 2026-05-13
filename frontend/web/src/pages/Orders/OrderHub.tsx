@@ -89,7 +89,9 @@ const ACTIONS: ActionDef[] = [
   // the most-recent Shipment on the ClientOrder. Opens immediately if a
   // shipment already exists; from the EX dialog onCreated callback if not.
   { key: 'commercialInvoice', labelKey: 'orders.actions.commercialInvoice', icon: <ReceiptIcon />, wiresInTask: 'E8.5', enabled: true },
-  { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9' },
+  // Phase 17 §E9 — Razdolzuvanje view: IM vs EX/Waste/Return reconciliation
+  // + per-line flag + GuaranteeBalanceSnapshot + auto-Close.
+  { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9', enabled: true },
   { key: 'audit', labelKey: 'orders.actions.audit', icon: <HistoryIcon />, wiresInTask: 'E13' },
   { key: 'ai', labelKey: 'orders.actions.ai', icon: <AutoAwesomeIcon />, wiresInTask: 'E10' },
 ];
@@ -147,6 +149,9 @@ const OrderHub: React.FC = () => {
       setExOpen(true);
     } else if (actionKey === 'qcPackaging') {
       setQcOpen(true);
+    } else if (actionKey === 'razdolzuvanje') {
+      navigate(`/orders/${order?.id}/razdolzuvanje`);
+      return;
     } else if (actionKey === 'commercialInvoice') {
       // Pick the most-recent shipment on this ClientOrder; if none, prompt
       // the user to ship first. CI must have a parent shipment.

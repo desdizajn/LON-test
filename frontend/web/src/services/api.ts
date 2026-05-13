@@ -499,6 +499,20 @@ export const clientOrdersApi = {
    */
   getAvailableFinishedGoods: (id: string) =>
     api.get(`/ClientOrders/${id}/available-fgs`),
+  // Phase 17 §E9 — Razdolzuvanje aggregate, per-line flag, snapshot, exports.
+  getRazdolzuvanje: (id: string) =>
+    api.get(`/ClientOrders/${id}/razdolzuvanje`),
+  markRazdolzuvanjeLine: (id: string, lineId: string, razdolzenaDaNe: boolean) =>
+    api.post(`/ClientOrders/${id}/razdolzuvanje/mark-line`, { lineId, razdolzenaDaNe }),
+  takeRazdolzuvanjeSnapshot: (id: string, body?: { snapshotDate?: string; notes?: string }) =>
+    api.post(`/ClientOrders/${id}/razdolzuvanje/snapshot`, body ?? {}),
+  razdolzuvanjePdfUrl: (id: string) =>
+    `${(api.defaults.baseURL ?? '').replace(/\/$/, '')}/ClientOrders/${id}/razdolzuvanje/pdf`,
+  downloadRazdolzuvanjePee060: (id: string, from?: string, to?: string) =>
+    api.get(`/ClientOrders/${id}/razdolzuvanje/pee060`, {
+      params: { from, to },
+      responseType: 'blob',
+    }),
 };
 
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)

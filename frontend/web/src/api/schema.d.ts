@@ -400,6 +400,99 @@ export interface paths {
       };
     };
   };
+  "/api/ClientOrders/{id}/razdolzuvanje": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/razdolzuvanje/mark-line": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["MarkLineBody"];
+          "text/json": components["schemas"]["MarkLineBody"];
+          "application/*+json": components["schemas"]["MarkLineBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/razdolzuvanje/snapshot": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["SnapshotBody"];
+          "text/json": components["schemas"]["SnapshotBody"];
+          "application/*+json": components["schemas"]["SnapshotBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/razdolzuvanje/pdf": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/razdolzuvanje/pee060": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/commercial-invoices": {
     get: {
       parameters: {
@@ -5756,6 +5849,11 @@ export interface components {
      * @enum {integer}
      */
     MachineState: 1 | 2 | 3 | 4 | 5;
+    MarkLineBody: {
+      /** Format: uuid */
+      lineId?: string;
+      razdolzenaDaNe?: boolean;
+    };
     MarkPaidBody: {
       /** Format: date-time */
       paidAt?: string | null;
@@ -6089,6 +6187,11 @@ export interface components {
      * @enum {integer}
      */
     SkartResolution: 0 | 1 | 2 | 3;
+    SnapshotBody: {
+      /** Format: date-time */
+      snapshotDate?: string | null;
+      notes?: string | null;
+    };
     SourceReference: {
       documentTitle?: string | null;
       reference?: string | null;

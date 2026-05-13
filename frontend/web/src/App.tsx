@@ -171,6 +171,7 @@ import Returns from './pages/FinishedGoods/Returns';
 // Phase 17 §E2 — ClientOrder hub
 import OrderList from './pages/Orders/OrderList';
 import OrderHub from './pages/Orders/OrderHub';
+import RazdolzuvanjeView from './pages/Orders/RazdolzuvanjeView';
 
 import { LayoutProvider } from './components/layout/LayoutContext';
 
@@ -329,6 +330,8 @@ const App: React.FC = () => {
             {/* ───────── Phase 17 §E2 — ClientOrder hub ───────── */}
             <Route path="/orders" element={<OrderList />} />
             <Route path="/orders/:id" element={<OrderHub />} />
+            {/* Phase 17 §E9 — per-order Razdolzuvanje view. */}
+            <Route path="/orders/:id/razdolzuvanje" element={<RazdolzuvanjeView />} />
 
             {/* ──────────────── P6.37.14 — legacy-route redirects ────────────────
              * Old top-level routes kept as `<Navigate>` so bookmarks / external

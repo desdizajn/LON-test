@@ -2681,5 +2681,41 @@
         "origin": "Origin"
       }
     }
+  },
+  "razdolzuvanje": {
+    "backToHub": "Back to hub",
+    "notFound": "Razdolzuvanje data not found.",
+    "authorization": "Authorization",
+    "downloadPdf": "Print",
+    "downloadPee060": "PEE060 XML",
+    "takeSnapshot": "Take snapshot",
+    "snapshotTaken": "Snapshot taken: {{rows}} guarantee-account rows · variance {{variance}}",
+    "closed": "Reconciled — ClientOrder closed ({{rows}} snapshot rows).",
+    "snapshotFailed": "Failed to take snapshot.",
+    "toggleFailed": "Failed to toggle razdolzuvanje flag.",
+    "pee060Failed": "Failed to download PEE060 XML.",
+    "tolerance": "tolerance €{{eur}}",
+    "linesTitle": "IM declaration lines",
+    "noLines": "No IM declaration lines linked to this ClientOrder.",
+    "totals": {
+      "im": "IM duty (debited)",
+      "ex": "EX duty (credited)",
+      "waste": "Waste duty",
+      "return": "Return duty",
+      "credited": "Total credited",
+      "variance": "Variance",
+      "linesFlagged": "Lines flagged: {{flagged}} / {{total}}"
+    },
+    "cols": {
+      "declaration": "Declaration",
+      "mrn": "MRN",
+      "date": "Date",
+      "item": "Item",
+      "qty": "Qty",
+      "uom": "UoM",
+      "duty": "Duty",
+      "vat": "VAT",
+      "razd": "Razd."
+    }
   }
 }
