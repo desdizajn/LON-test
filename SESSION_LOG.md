@@ -2,6 +2,93 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E9 — Razdolzuvanje view per ClientOrder + VPS-verified
+
+Commit `a8beb87`. Closing the loop on the hub-and-spoke flow: the new
+`/orders/:id/razdolzuvanje` page reconciles IM duty charged vs.
+EX+Waste+Return duty credited for a single ClientOrder, lets the user flip
+the per-CustomsDeclarationLine `RazdolzenaDaNe` flag, and Take Snapshot
+auto-transitions the order to **Closed** once reconciled. The hub now has
+10 enabled actions (BOM / IM / Receive / Podelba / IssueMaterial /
+ProductionReceipt / EX+Shipment / QC / CommercialInvoice / **Razdolzuvanje**).
+
+Files (17 changed; ~10k insertions counting Designer):
+
+**Backend:**
+- `CustomsDeclarationLine` gains `RazdolzenaDaNe` (bit) + `RazdolzenaAt` +
+  `RazdolzenaBy` audit columns. Migration #54
+  `P17_E9_AddRazdolzenaDaNeToDeclarationLine` (additive only — column defaults
+  false; no backfill).
+- `GetRazdolzuvanjeForClientOrderQuery` — aggregates Σ IM duty vs
+  Σ(EX+Waste+Return) duty. Tolerance fixed at €0.50 per BLUEPRINT §5.11.
+  Folds in orphan waste/return credits via `PreviousMRN` match (legacy data
+  without `ClientOrderId` stamp). Returns per-IM-line breakdown with the
+  flag state + timestamp + audit name.
+- `MarkLineRazdolzenaCommand` — idempotent toggle; rejects (a) lines from a
+  different ClientOrder, (b) non-IM lines, (c) deleted lines. Stamps
+  `RazdolzenaAt = UtcNow` + `RazdolzenaBy = ICurrentUserService.AuditName`.
+- `TakeRazdolzuvanjeSnapshotCommand` — delegates to existing
+  `CreateGuaranteeBalanceSnapshotCommand` (tags Notes with CO context),
+  then auto-transitions Status→Closed iff `IsReconciled && AllLinesFlagged`.
+  No-op on already-Closed orders; rejects Cancelled / soft-deleted orders.
+- `ClientOrdersController`: 5 new endpoints
+  - `GET    /api/ClientOrders/{id}/razdolzuvanje`
+  - `POST   /api/ClientOrders/{id}/razdolzuvanje/mark-line`
+  - `POST   /api/ClientOrders/{id}/razdolzuvanje/snapshot`
+  - `GET    /api/ClientOrders/{id}/razdolzuvanje/pdf` — HTML cover-sheet
+    (4-tile totals header + variance row + per-line table), same convention
+    as DeliveryNote / CommercialInvoice PDFs.
+  - `GET    /api/ClientOrders/{id}/razdolzuvanje/pee060` — delegates to
+    `GeneratePee060XmlQuery`, defaults window = `order.OrderDate..UtcNow`.
+
+**Frontend:**
+- New route `/orders/:id/razdolzuvanje` rendering `RazdolzuvanjeView`:
+  4 totals tiles (IM / EX / Waste / Return), variance + tolerance row +
+  flagged-lines counter, per-IM-line MUI grid with checkbox column,
+  Print / PEE060 / Take Snapshot toolbar. Locks the checkbox + Snapshot
+  button when `Status ∈ {Closed, Cancelled}`. Snapshot toast distinguishes
+  "closed" vs "still outstanding".
+- Hub action `razdolzuvanje` enabled (10th enabled action). Click navigates
+  straight to the new route — no dialog, full-page view since the breakdown
+  is wide.
+- `clientOrdersApi`: 5 new calls (`getRazdolzuvanje`, `markRazdolzuvanjeLine`,
+  `takeRazdolzuvanjeSnapshot`, `razdolzuvanjePdfUrl`,
+  `downloadRazdolzuvanjePee060` with `responseType: 'blob'`).
+- i18n: `razdolzuvanje` block added to **mk.json** + **en.json**.
+
+**Tests:** `tests/LON.IntegrationTests/RazdolzuvanjeFlowTests.cs` — 7 [Fact]:
+- `GetRazdolzuvanje_ReturnsImVsCreditedTotals_AndPerLineBreakdown` — IM €80
+  vs EX €80 → variance 0, IsReconciled true, 2 IM lines on the breakdown.
+- `MarkLine_OnDraftLine_FlipsFlagWithTimestamp` — flag flips, audit stamp.
+- `MarkLine_OnLineFromDifferentOrder_Returns400` — cross-order tamper guard.
+- `TakeSnapshot_ReconciledOrderWithAllLinesFlagged_AutoClosesOrder` — full
+  happy-path: 2 mark-lines + snapshot → Status=Closed.
+- `TakeSnapshot_WithUnflaggedLines_DoesNotClose` — partial flag → status
+  unchanged, snapshot still taken.
+- `Pdf_ReturnsHtmlContent_WithOrderNumber`.
+- `Pee060_ReturnsXmlForAuthorizationWindow`.
+
+(Local Docker not available; CI runs the suite. BE build is clean: 0/0.)
+
+**How verified on VPS (end-to-end smoke):**
+- `git pull` + `docker compose up -d --build api frontend` → containers Healthy.
+- `sys.columns WHERE name='RazdolzenaDaNe' AND object_id=OBJECT_ID('CustomsDeclarationLines')` returns 1 row.
+- `GET /api/ClientOrders/{CO-2026-000001}/razdolzuvanje` → `{ IM:0, EX:0, Variance:0, Reconciled:true, Lines:1 }`.
+- `POST /razdolzuvanje/mark-line {lineId, razdolzenaDaNe:true}` → 200.
+- Re-fetch → `Flagged: 1/1, AllFlagged:true`.
+- `POST /razdolzuvanje/snapshot {}` → `rows:2, closed:true, reconciled:true, variance:0` ✅
+- `GET /api/ClientOrders/{id}` → `statusName: "Closed"` ✅
+- `GET /razdolzuvanje/pdf` → 1,832 bytes `text/html`.
+- `GET /razdolzuvanje/pee060` → 469 bytes `application/xml`.
+
+**Status:** [x] done. Phase 17 hub-and-spoke flow now wraps end-to-end:
+BOM → IM → Receive → Podelba → Issue → Production → EX+Shipment → QC →
+CommercialInvoice → Razdolzuvanje (Closed). Next: §E.MIGRATE (LON.Migration
+refactor + Z2779 end-to-end), §E10 (AI helper), or §E11 (domain events) per
+PLAN.md §3.
+
+---
+
 ## 2026-05-13 — Phase 17 §E8.5 — CommercialInvoice entity + EX hub chain (D4) + VPS-verified
 
 Commit `39b6f10`. New customs document type that accompanies the EX shipment, replacing legacy `tblIzvozniFakturi` + `tblIzvozniFakturiStavki` (3,239 headers + 57,857 lines). Distinct from sales `Invoice` (BLUEPRINT §5.14.2 = Teksport billing customer for processing labor); finance margin reconciliation deferred to Phase 27.

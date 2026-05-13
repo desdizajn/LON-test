@@ -78,7 +78,7 @@ Server=localhost;Database=ELON;Trusted_Connection=True;TrustServerCertificate=Tr
 - **Test tenant:** `TEKSPORT` (мапира на истоимениот Uvoznik во legacy ELON). Локален ELON DB е TEKSPORT-only slice — `Uvoznik` колоната е NULL свугде; tenant discriminator се извлекува „DB-as-a-whole IS the tenant".
 - **TEKSPORT legacy quirks:** inflate-for-waste на import (`KolMat * 100/(100-otpad%)`) — реално користен на само 4 articles (од 8,960 materials, max 2%); зачувуваме како feature flag, default OFF. Invoice staging deletion после transfer — мора да се преслика ако сакаме bit-by-bit споредба.
 - **Состојба на проектот (May 2026):** Фази 0–15 ги поставија ядрата (~31.8k LoC backend, 122 FE pages, 154 [Fact] integration тестови, 174 BE routes, 85 FE endpoints — 100% покриеност). **Фаза 16 ЗАВРШЕНА** (cleanup + UI foundation — 13/13). **Сега сме во Фаза 17** (ClientOrder hub + flow wiring + AI helper; започнува со **Phase 17.PRE** — migration foundations + Z2779 happy-path) — види секција 11.
-- **EF migrations:** 53 applied (последно: Phase 17 §E8.5 `P17_E8_5_AddCommercialInvoice` — CommercialInvoice entity + per-tenant SQL SEQUENCE). Recreate count со `ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | grep -v ModelSnapshot | wc -l`.
+- **EF migrations:** 54 applied (последно: Phase 17 §E9 `P17_E9_AddRazdolzenaDaNeToDeclarationLine` — RazdolzenaDaNe/At/By columns on CustomsDeclarationLine). Recreate count со `ls src/LON.Infrastructure/Migrations/*.cs | grep -v Designer | grep -v ModelSnapshot | wc -l`.
 - **Multi-tenant од почеток:** секоја нова ентитет мора да има `TenantId`. Секој нов query мора да биде tenant-scoped.
 
 ---
@@ -209,7 +209,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E7.6 | `DeliveryNote` entity + polymorphic auto-gen on commit events (D5; replaces legacy `Propratnici`) | `[x]` (`1c21599`+`607eb9e`) |
 | E8 | Wire EX declaration + Shipment + QC from hub | `[x]` (`0a2d458`) |
 | E8.5 | `CommercialInvoice` entity + EX hub chain (D4; replaces legacy `tblIzvozniFakturi`) | `[x]` (`39b6f10`) |
-| E9 | Razdolzuvanje view per ClientOrder | `[ ]` |
+| E9 | Razdolzuvanje view per ClientOrder | `[x]` (`a8beb87`) |
 | **E.MIGRATE** | **LON.Migration refactor + Z2779 end-to-end + 6 reconciliation queries** (deferred from PRE.7; see `docs/migration/PRE7_FINDINGS.md` §6) | `[ ]` |
 | E10 | AI helper service + 3 core recommendations + floating UI | `[ ]` |
 | E10.5 | AlertRule + AlertEvent + 6 predefined rules + nightly evaluator | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E8.5 закучен (CommercialInvoice — D4: ITenantScoped entity + per-tenant SQL SEQUENCE + 9 endpoints + suggest-from-shipment + HTML PDF + EX hub auto-chain + list/detail/dialog UI + 12 integration tests). Migration #53 applied. Хабот сега има 9 enabled акции. VPS smoke `CI-2026-000001` Draft→Issued + PDF. Next: §E9 (Razdolzuvanje view per ClientOrder) или §E.MIGRATE (LON.Migration refactor + Z2779 end-to-end).*
+*Последна ревизија: 2026-05-13 — Phase 17 §E9 закучен (Razdolzuvanje view per ClientOrder: IM-vs-credited reconciliation + per-line RazdolzenaDaNe flag + GuaranteeBalanceSnapshot trigger + auto-Close + HTML PDF + PEE060 wrapper). Migration #54 applied. Хабот сега има 10 enabled акции; hub-and-spoke flow завршен end-to-end (BOM→IM→Receive→Podelba→Issue→Production→EX→QC→CI→Razd→Closed). VPS smoke `CO-2026-000001` mark→snapshot(rows=2)→Closed; PDF 1832B; PEE060 469B. Next: §E.MIGRATE (LON.Migration + Z2779), §E10 (AI helper) или §E11 (domain events).*

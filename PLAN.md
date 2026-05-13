@@ -162,7 +162,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [ ] 17.7.6 `DeliveryNote` entity + polymorphic auto-gen on commit events (D5 — replaces Propratnici/Stavki 1.6k+296k legacy rows)  → BLUEPRINT §3.8
 - [ ] 17.8   Wire EX declaration + Shipment from hub + FinishedGoodReceipt + QC  → BLUEPRINT §5.9, §5.10
 - [x] 17.8.5 `CommercialInvoice` entity + EX hub chain (D4 — replaces tblIzvozniFakturi/Stavki 3.2k+57.9k legacy rows; finance integration deferred to Phase 27)  → BLUEPRINT §3.2.1 — deployed `39b6f10`; VPS smoke `CI-2026-000001` Draft→Issued + PDF.
-- [ ] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11
+- [x] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11 — deployed `a8beb87`; VPS smoke `CO-2026-000001` mark-line → snapshot (rows=2) → auto-Closed; PDF 1832B; PEE060 XML 469B.
 - [ ] 17.E.MIGRATE  LON.Migration refactor (OdobrenijaMapper + ClientOrderMapper + BOMMapper + MaterialIssueMapper + WasteDeclarationMapper + DeliveryNoteMapper + CommercialInvoiceMapper + `--zaklucok` filter) → run `Z2779` end-to-end + assert 6 reconciliation queries pass (PRE.7 deferred deliverable; see `docs/migration/PRE7_FINDINGS.md` §6)  → BLUEPRINT §9.1 + MAPPING.md
 - [ ] 17.10  AI helper service + 3 core recommendations + floating UI  → BLUEPRINT §7.4
 - [ ] 17.11  Domain events infrastructure + handler refactor (guarantee, inventory transitions)  → BLUEPRINT §3.6, §6.1, §6.2
