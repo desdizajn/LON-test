@@ -14,9 +14,32 @@ public class CustomsProcedureConfiguration : IEntityTypeConfiguration<CustomsPro
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.GuaranteePercentage).HasColumnType("decimal(18,4)");
-        
+
         builder.HasIndex(e => e.Code).IsUnique().HasFilter("[IsDeleted] = 0");
         builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+/// <summary>
+/// Configures <see cref="CustomsProcedureDocument"/> so its required navigation
+/// to <see cref="CustomsProcedure"/> doesn't trip EF's
+/// PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning: the
+/// dependent filter matches the principal's soft-delete clause, so a deleted
+/// procedure transparently hides its required-documents too.
+/// </summary>
+public class CustomsProcedureDocumentConfiguration : IEntityTypeConfiguration<CustomsProcedureDocument>
+{
+    public void Configure(EntityTypeBuilder<CustomsProcedureDocument> builder)
+    {
+        builder.ToTable("CustomsProcedureDocuments");
+        builder.HasKey(e => e.Id);
+
+        builder.HasOne(e => e.CustomsProcedure)
+            .WithMany(p => p.RequiredDocuments)
+            .HasForeignKey(e => e.CustomsProcedureId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasQueryFilter(e => !e.IsDeleted && !e.CustomsProcedure.IsDeleted);
     }
 }
 

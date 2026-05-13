@@ -145,7 +145,7 @@ public class UserProvisioningTests : IClassFixture<LonApiFactory>
             .Except(new[] { foreignItemCode })
             .ToList();
         tekOnlyCodes.Should().NotBeEmpty("TEKSPORT must have seeded items to compare against");
-        visibleItems.Select(i => i.Code).Should().NotIntersectWith(tekOnlyCodes,
+        visibleItems!.Select(i => i.Code).Should().NotIntersectWith(tekOnlyCodes,
             "global query filter must hide TEKSPORT items from the DUP-CODE-TEST user");
     }
 

@@ -75,16 +75,22 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
     public void Configure(EntityTypeBuilder<UserRole> builder)
     {
         builder.HasKey(ur => new { ur.UserId, ur.RoleId });
-        
+
         builder.HasOne(ur => ur.User)
             .WithMany(u => u.UserRoles)
             .HasForeignKey(ur => ur.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         builder.HasOne(ur => ur.Role)
             .WithMany(r => r.UserRoles)
             .HasForeignKey(ur => ur.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Match User's soft-delete + tenant filter so a soft-deleted user
+        // transparently hides its UserRole join rows. Keeps EF's
+        // PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning
+        // quiet without making the FK optional.
+        builder.HasQueryFilter(ur => !ur.User.IsDeleted);
     }
 }
 

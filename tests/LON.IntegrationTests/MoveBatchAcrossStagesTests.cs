@@ -49,7 +49,7 @@ public class MoveBatchAcrossStagesTests : IClassFixture<LonApiFactory>
         }
 
         // Create a receipt that lands 50 units of a batch at Receiving.
-        var rcv = locations.First(l => l.Code.StartsWith("RCV"));
+        var rcv = locations!.First(l => l.Code.StartsWith("RCV"));
         var batch = $"MOVE-TEST-{Guid.NewGuid().ToString("N").Substring(0, 6)}";
         var rec = await client.PostAsJsonAsync("/api/wms/receipts", new
         {

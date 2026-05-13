@@ -243,7 +243,7 @@ public class HrOperationsTests : IClassFixture<LonApiFactory>
 
         var allResp = await client.GetFromJsonAsync<Envelope<List<AssignmentRow>>>(
             $"/api/Hr/assignments?employeeId={employeeId}");
-        allResp!.Data.Count.Should().BeGreaterThanOrEqualTo(2);
+        allResp!.Data!.Count.Should().BeGreaterThanOrEqualTo(2);
     }
 
     private sealed record LoginResponse(string AccessToken);
