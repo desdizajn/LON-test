@@ -21,18 +21,23 @@ public sealed class GuaranteeUtilizationEvaluator : IAlertRuleEvaluator
     {
         var threshold = rule.Threshold ?? 0.90m;
         var accounts = await _context.GuaranteeAccounts
-            .Where(a => a.TenantId == rule.TenantId && a.IsActive && !a.IsDeleted)
-            .Include(a => a.LedgerEntries)
+            .Where(a => a.TenantId == rule.TenantId && a.IsActive && !a.IsDeleted && a.TotalLimit > 0)
+            .Select(a => new
+            {
+                a.Id,
+                a.AccountNumber,
+                a.Currency,
+                a.TotalLimit,
+                Balance = _context.GuaranteeLedgerEntries
+                    .Where(e => e.GuaranteeAccountId == a.Id && !e.IsDeleted)
+                    .Sum(e => e.EntryType == GuaranteeEntryType.Debit ? e.Amount : -e.Amount),
+            })
             .ToListAsync(ct);
 
         var drafts = new List<AlertEventDraft>();
         foreach (var account in accounts)
         {
-            if (account.TotalLimit <= 0) continue;
-            var balance = account.LedgerEntries
-                .Where(e => !e.IsDeleted)
-                .Sum(e => e.EntryType == GuaranteeEntryType.Debit ? e.Amount : -e.Amount);
-            var utilisation = balance / account.TotalLimit;
+            var utilisation = account.Balance / account.TotalLimit;
             if (utilisation < threshold) continue;
 
             drafts.Add(new AlertEventDraft
@@ -41,7 +46,7 @@ public sealed class GuaranteeUtilizationEvaluator : IAlertRuleEvaluator
                 EntityType = "GuaranteeAccount",
                 EntityId = account.Id,
                 Title = $"Гаранцијата надмина {threshold:P0}: {account.AccountNumber}",
-                Body = $"Тековен биланс {balance:N2} {account.Currency} од {account.TotalLimit:N2} ({utilisation:P1}). Проверете дали нови IM ставки би ja надминале границата.",
+                Body = $"Тековен биланс {account.Balance:N2} {account.Currency} од {account.TotalLimit:N2} ({utilisation:P1}). Проверете дали нови IM ставки би ja надминале границата.",
             });
         }
 
