@@ -2,6 +2,51 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E1 — ClientOrder entity + handlers + SQL SEQUENCE shipped + VPS-verified
+
+Per BLUEPRINT §3.1, the single biggest path-to-v1 gap (ClientOrder concept missing) closed. Commit `2d166d8`, VPS deploy verified.
+
+Files (26 changed; 9837 insertions):
+- Domain: `Entities/Customs/ClientOrder.cs` + `ClientOrderFinishedGood.cs`; `Enums/Enums.cs` +ClientOrderStatus; nullable `ClientOrderId` FK added to CustomsDeclaration / ProductionOrder / Shipment; `Common/NumberFormatter.cs` (new, pure formatter).
+- Application: `Common/Interfaces/INumberSequenceService.cs` (new); `Customs/ClientOrders/` — 5 handlers (Create/Update/Cancel/GetList/GetById) + DTOs (ClientOrderDto + ClientOrderSummaryDto with linked-entity counts).
+- Infrastructure: `Persistence/Configurations/ClientOrderConfiguration.cs`; `Services/SqlNumberSequenceService.cs` (NEXT VALUE FOR seq_{entity}_{tenantId} with safe-identifier guard); DI registration; Migration `P17_E1_AddClientOrder` creates tables + nullable FKs + per-tenant `seq_ClientOrder_<tenantId>` via cursor over Tenants.
+- API: `ClientOrdersController.cs` — GET/POST/PUT/Cancel under `/api/clientorders`.
+- Tests: `ClientOrderTests.cs` — 5 integration tests (create-OK + create-no-LONAuth-400 + GetById + 5-parallel-distinct-numbers + cancel-soft-deletes).
+- Contract hygiene: api-contract/swagger.json + frontend/web/src/api/schema.d.ts regenerated.
+
+Local verification:
+- dotnet build: 0/0 warnings/errors across API + tests.
+- Migration applied locally to LONDB; `seq_ClientOrder_83921683E34D4D2BA4399ADCF8FCB943` present.
+
+VPS verification:
+- Auto-migration on API restart created `seq_ClientOrder_95DAF6D137234750BB30E1217540D622` (TEKSPORT prod tenant).
+- POST `/api/clientorders` with partner `b69ad5fe…` + auth `D9C0CD2C…` → ClientOrder id `4f41b642-0a1a-4d47-9d14-131a2d49c30e`, OrderNumber **`CO-2026-000001`**, Status `Draft`.
+- GET `/api/clientorders/{id}` returns full DTO with empty FinishedGoods.
+
+Phase 17 progress: §E0 + §E1 done. Next: §E2 (ClientOrder list + hub UI shell).
+
+---
+
+## 2026-05-13 — Phase 17 §E0 — sticky-defaults hook + bulk field-update foundation shipped
+
+Per BLUEPRINT §7.3.1 (reframed 2026-05-12 per Cowork audit) + AGENT-PROMPTS §E0. Commit `06e6019`, VPS deploy verified.
+
+Files:
+- Frontend hook `frontend/web/src/hooks/useStickyDefaults.ts` (78 lines) — generic per-document React state for line-form prefill. Optional `stickyFields` whitelist prevents capturing per-line variants (qty, lineTotal).
+- Frontend component `frontend/web/src/components/common/BulkFieldUpdateButton.tsx` (60 lines) — toolbar button + ConfirmDialog; generic over `fieldName`; optional `recalcWarning`.
+- i18n: 4 locales (en/mk/sq/sr) +`common.bulkUpdate.title/confirm/recalcWarning` + `common.stickyDefaults.tooltip`.
+- Backend: `src/LON.Application/Customs/Commands/BulkUpdateCustomsDeclarationLines/` (~150 lines). Whitelist: UoMId / CountryOfOrigin / TariffCode. Reason required. One AuditLogEntry per affected line. Refuses non-Draft declarations.
+- Endpoint: POST `/api/customs/declarations/{id}/lines/bulk-update`.
+- Tests: 13 frontend (7 useStickyDefaults + 6 BulkFieldUpdateButton); 4 integration (CountryOfOrigin happy path + audit log + non-whitelisted-field rejection + missing-reason rejection + TariffCode happy path).
+- Contract hygiene: OpenAPI types regenerated.
+
+Notes from E0:
+- Cowork audit reframe: TEKSPORT is 99.998% EUR → bulk currency change is degenerate. The pattern is **generic infrastructure** for variance fields (UoM/Country/TariffCode). Currency rides along free.
+- Currency on CustomsDeclaration is parent-level (not per-line in current schema) → not in this command's whitelist; `UpdateCustomsDeclarationCommand` already handles header currency.
+- TS strict-mode caught a cast that `tsc --noEmit` missed; fixed in followup `06e6019`.
+
+---
+
 ## 2026-05-12 — 🎯 Phase 17.PRE phase CLOSED (7/7 + deferred E.MIGRATE)
 
 PRE phase ги положи foundations пред Phase 17 main E0+. 7 sub-таскови, 9 commits.

@@ -151,8 +151,8 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 
 **Phase 17 main**
 
-- [ ] 17.0   `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern  → BLUEPRINT §7.3.1
-- [ ] 17.1   ClientOrder entity + migration + handlers + endpoints  → BLUEPRINT §3.1
+- [x] 17.0   `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern (foundation; 13 FE tests green; 4 integration tests; deployed `06e6019`)  → BLUEPRINT §7.3.1
+- [x] 17.1   ClientOrder entity + migration + 5 handlers + endpoints + SQL SEQUENCE + 5 integration tests (deployed `2d166d8`; VPS smoke: CO-2026-000001 Draft)  → BLUEPRINT §3.1
 - [ ] 17.2   ClientOrder list + hub UI  → BLUEPRINT §5.1, §7.1
 - [ ] 17.3   Wire IM declaration from hub  → BLUEPRINT §5.2
 - [ ] 17.4   Wire Receipt from hub  → BLUEPRINT §5.3

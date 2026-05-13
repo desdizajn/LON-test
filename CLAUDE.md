@@ -197,8 +197,8 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 | Таск | Опис | Status |
 |---|---|---|
-| E0 | `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern | `[ ]` |
-| E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[ ]` |
+| E0 | `useStickyDefaults` hook + `BulkFieldUpdateButton` + bulk-update endpoint pattern | `[x]` (`06e6019`) |
+| E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[x]` (`2d166d8`) |
 | E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[ ]` |
 | E3 | Wire IM declaration creation from hub | `[ ]` |
 | E4 | Wire Receipt from hub | `[ ]` |
