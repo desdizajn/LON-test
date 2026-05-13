@@ -2,6 +2,73 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E5 — wire BOM + ProductionOrder creation from hub + VPS-verified
+
+Commit `38f2b93`. VPS smoke OK: FG row + PO created on real `CO-2026-000001`; ClientOrder.Status flipped **Active → Producing** (1→2); `GET /Production/orders?clientOrderId=…` returns the new PO.
+
+Files (12 changed; 790 insertions):
+
+**Backend:**
+- `src/LON.Application/Customs/ClientOrders/AddClientOrderFinishedGoodCommand.cs` (new) — persists a ClientOrderFinishedGood row. Validates target order not Closed/Cancelled + optional BOM matches the item + non-empty qty/UoM.
+- `src/LON.API/Controllers/ClientOrdersController.cs` — new `POST /api/ClientOrders/{id}/finished-goods` endpoint.
+- `src/LON.Application/Production/Commands/CreateProductionOrder/CreateProductionOrderCommand.cs` — optional `ClientOrderId` field; validates exists + not Closed/Cancelled; persists FK; transitions ClientOrder.Status Draft/Active → Producing on first PO link.
+- `src/LON.API/Controllers/ProductionController.cs` — `GET /api/Production/orders` accepts optional `clientOrderId` query param.
+
+**Frontend:**
+- `frontend/web/src/pages/Orders/BomDialog.tsx` (new, 329 lines) — smart-prefill (BLUEPRINT §7.3): item picker → auto-fills UoM from item + auto-loads active BOMs via `productionApi.getBOMs(itemId)`. Default-selects the highest-version BOM. Inline „Also create a production order now" checkbox (default ON) with planned start/end dates → fires both `addFinishedGood` and `createOrder` in one submission. Toast warns when FG saved but PO failed (FG persists; user can retry PO from the dedicated page).
+- `frontend/web/src/pages/Orders/OrderHub.tsx` — „Внеси готови производи (BOM)" action enabled; Production tab placeholder replaced by `ProductionOrdersTab` (react-query against `/api/Production/orders?clientOrderId=…`; 6-col grid: number / item / status / order qty / produced qty / planned end).
+- `frontend/web/src/services/api.ts` — `productionApi.getOrders` accepts `{ status?, clientOrderId? }` params object (2 existing positional callers updated to object form); new `clientOrdersApi.addFinishedGood` helper.
+
+**Tests:**
+- `tests/LON.IntegrationTests/ClientOrderBomFlowTests.cs` (new, 1 fact) — full flow (`createOrder` → `addFinishedGood` → `createPO` with `clientOrderId`) → asserts FG persisted + `PO.ClientOrderId == orderId` + `Order.Status == Producing` + `?clientOrderId=` filter returns the PO.
+
+**i18n** (en + mk): `orders.bomDialog.*` + `orders.hub.tabs.productionOrdersEmpty/poCols.*`.
+
+Local: `dotnet build LON.sln` 0 errors; `npm run build` clean.
+
+VPS verification (real `CO-2026-000001`):
+- `POST /ClientOrders/{id}/finished-goods { itemId, quantity:100, uoMId, currency:"EUR", notes:"E5 smoke" }` → FG `469b6173-…`.
+- `POST /Production/orders { itemId, orderQuantity:100, plannedStart/End, clientOrderId, salesOrderReference:"E5-VPS-SMOKE" }` → PO `0f86913b-…` (`LON-20260513-fc945b61`).
+- `GET /Production/orders?clientOrderId=4f41b642…` → 1 row.
+- `GET /ClientOrders/4f41b642…` → `status: 2 (Producing)`, `finishedGoods.Count: 1`.
+
+Phase 17 progress: §E0+§E1+§E2+§E3+§E4+§E5 done (6/16 main + 7/7 PRE). Next: §E6 — Podelba.
+
+---
+
+## 2026-05-13 — Phase 17 §E4 — wire Receipt creation from hub + VPS-verified
+
+Commit `5ee4785`. VPS smoke OK: `IM-2026-000002` → bulk-receipt `RCP-20260513-7da4ee24`, 1 line, 50 qty; `GET /WMS/receipts?clientOrderId=…` returns the receipt.
+
+Files (9 changed; 561 insertions):
+
+**Backend:**
+- `src/LON.API/Controllers/WMSController.cs` — `GET /api/WMS/receipts` accepts optional `clientOrderId`; filters via `Receipt.Lines[].CustomsDeclarationId → CustomsDeclaration.ClientOrderId` (single SQL IN-clause).
+
+**Frontend:**
+- `frontend/web/src/pages/Orders/ReceiveDialog.tsx` (new, 245 lines) — lists declarations linked to the ClientOrder (filters out `status ∈ {Draft, Cancelled}`) + warehouse + landing-location pickers + date + reference. Submits `BulkReceiptFromDeclarationCommand` (P5.2.3 reuse) which explodes declaration lines into receipt lines atomically.
+- `frontend/web/src/pages/Orders/OrderHub.tsx` — „Прими во магацин" action enabled; Materials tab placeholder replaced by `ReceiptsTab` (react-query against `/api/WMS/receipts?clientOrderId=…`; 5-col grid: number / date / reference / lines / total qty).
+- `frontend/web/src/services/api.ts` — `wmsApi.getReceipts` accepts `{ page?, pageSize?, clientOrderId? }` params object (2 existing positional callers updated in same commit).
+
+**Tests:**
+- `tests/LON.IntegrationTests/ClientOrderReceiptLinkTests.cs` (new, 1 fact) — full flow (create order → IM decl → bulk-receipt → assert receipt appears via clientOrderId filter + DB cross-check via `Lines.CustomsDeclarationId` join).
+
+**i18n** (en + mk): `orders.receiveDialog.*` + `orders.hub.tabs.receiptsEmpty/recCols.*`.
+
+VPS verification (real `CO-2026-000001 / IM-2026-000002`):
+- `POST /WMS/receipts/bulk-from-declaration` → receipt `22767dbd-…` (`RCP-20260513-7da4ee24`), 1 line created, totalQty 50.
+- `GET /WMS/receipts?clientOrderId=4f41b642…` → 1 row.
+- Browser smoke: `/orders/4f41b642…` shows „Прими во магацин" button as enabled (primary outline, no tooltip).
+
+Open items (non-blocking):
+- Materials tab now shows receipts; real `InventoryBalance` join would let us show on-hand qty per item per location, but that's tracked via existing `/warehouse/receipts` page (deep-link possible later).
+- Variance handling („Партли примено") not in v1 dialog — handled on the existing per-receipt page; hub flow is the 95% case.
+- AI helper variance hint stub (§E10) not wired here; will plug in alongside the AI helper.
+
+---
+
+
+
 ## 2026-05-13 — Phase 17 §E3 — wire IM declaration creation from ClientOrder hub + VPS-verified
 
 Hub-and-spoke comes alive: the first non-disabled action button. Commit `6e2add6`, VPS deploy verified end-to-end via real `IM-2026-000002` create + Status Draft → Active flip on `CO-2026-000001`.

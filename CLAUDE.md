@@ -201,8 +201,8 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E1 | `ClientOrder` entity + migration + handlers + endpoints (+ FK to CustomsDeclaration/ProductionOrder/Shipment) | `[x]` (`2d166d8`) |
 | E2 | ClientOrder list + hub UI shell (action launcher placeholder) | `[x]` (`792361e`) |
 | E3 | Wire IM declaration creation from hub | `[x]` (`6e2add6`) |
-| E4 | Wire Receipt from hub | `[ ]` |
-| E5 | Wire BOM + ProductionOrder from hub | `[ ]` |
+| E4 | Wire Receipt from hub | `[x]` (`5ee4785`) |
+| E5 | Wire BOM + ProductionOrder from hub | `[x]` (`38f2b93`) |
 | E6 | Wire Podelba from hub | `[ ]` |
 | E7 | Wire MaterialIssue + ProductionReceipt from hub | `[ ]` |
 | E7.5 | Department + Position lookup promotion (CodeListItem categories) — **D6=deferred to Phase 21.1.1** or run with empty seed | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E3 закучен (IM declaration creation wired from hub; SEQUENCE-driven; Status → Active flips on first declaration; VPS-verified end-to-end). Next: §E4.*
+*Последна ревизија: 2026-05-13 — Phase 17 §E5 закучен (BOM + ProductionOrder wired from hub; Status → Producing flips on first PO; VPS-verified). Хабот сега има 3 enabled акции: IM/Receive/BOM. Next: §E6.*
