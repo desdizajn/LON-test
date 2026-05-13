@@ -54,10 +54,13 @@ public sealed class AlertEvaluatorRunner : IAlertEvaluatorRunner
             if (drafts.Count == 0) continue;
 
             var dedupKeys = drafts.Select(d => d.DedupKey).ToList();
+            // Suppress if there's already an Open OR Acknowledged event with the
+            // same DedupKey — those are "in-flight" and the user is aware. Only
+            // resolved events should free the slot for a new alert.
             var existing = await _context.AlertEvents
                 .Where(ev => ev.TenantId == rule.TenantId
                              && ev.AlertRuleId == rule.Id
-                             && ev.Status == AlertEventStatus.Open
+                             && ev.Status != AlertEventStatus.Resolved
                              && dedupKeys.Contains(ev.DedupKey))
                 .Select(ev => ev.DedupKey)
                 .ToListAsync(ct);
