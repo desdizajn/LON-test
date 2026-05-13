@@ -2,6 +2,106 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E10 — AI helper service + 3 core recommendations + floating drawer UI + VPS-verified
+
+Commit `3cfc98e`. The first user-facing surface that the existing OpenAI RAG
+endpoints feed into. The floating button lights up the recommendations tab on
+the hub (yellow badge dot when there are unresolved nudges), and the Q&A tab
+proxies into `IRAGService.AskQuestionAsync` so users don't need to go hunt for
+`/knowledge-base/chat`.
+
+Three deterministic engines (no LLM dependency for nudges — only the Q&A tab
+hits OpenAI):
+
+1. `ClientOrderHubRecommendationEngine` walks the hub state machine top-down:
+   Draft+no FGs → BOM nudge; Active+no IM → IM nudge; Cleared IM+no receipt →
+   receipt nudge; inventory with `AssignedProducerId=null` → Podelba nudge;
+   material issues without EX → EX nudge.
+2. `RazdolzuvanjePreflightRecommendationEngine` (also entityType=ClientOrder)
+   counts Cleared IM lines with `RazdolzenaDaNe=false` and nudges to flag them
+   before snapshot.
+3. `ReceiptVarianceRecommendationEngine` (entityType=Receipt) computes
+   per-line variance vs. `CustomsDeclarationLine.Quantity`; if max |variance|
+   > 5%, returns a warning with the supplier's last-10-receipts baseline
+   (skipped when < 3 prior receipts).
+
+Files (27 changed; 10,632 insertions / 10 deletions):
+
+**Domain + Infrastructure:**
+- `src/LON.Domain/Entities/Ai/AiSuggestionLog.cs` (BaseEntity + ITenantScoped;
+  EntityType + EntityId + RecommendationCode + RecommendationTitle + Severity
+  + StructuredDataJson + ActionLink + GeneratedAt + UserActedOn/At/By).
+- EF config `AiSuggestionLogConfiguration` with 3 indexes:
+  `(TenantId, EntityType, EntityId)`, `(TenantId, GeneratedAt)`,
+  `(TenantId, RecommendationCode, UserActedOn)`.
+- Migration #55 `P17_E10_AddAiSuggestionLog`.
+
+**Application:**
+- `IAiAssistantService` + `AiAssistantService` orchestrator. Dispatches to
+  every `IRecommendationEngine` whose `EntityType` matches, persists 1 log
+  row per surfaced rec, exposes `MarkActed` / `MarkDismissed` for the
+  analytics feedback path.
+- `IRecommendationEngine` strategy + `Recommendation` DTO.
+- The 3 engines listed above.
+
+**API:** `AiController` — `POST /api/Ai/recommendations`, `POST /api/Ai/ask`
+(proxies existing RAG), `POST /api/Ai/suggestions/{id}/acted|dismissed`.
+
+**Frontend:**
+- `frontend/web/src/contexts/AiHelperContext.tsx` — provider + `useSetAiContext`
+  hook so pages declare `{ entityType, entityId }`.
+- `frontend/web/src/components/common/AiHelperButton.tsx` — bottom-right FAB
+  (yellow dot when recs present) + MUI side drawer with two tabs. Renders
+  severity-coloured Alerts with "Open" deep-links and "Dismiss" buttons.
+  Q&A tab hits `/api/Ai/ask`. FAB hidden on /login.
+- `services/api.ts` — new `aiApi` block.
+- `App.tsx` wraps the authenticated layout in `AiHelperContextProvider` and
+  mounts `<AiHelperButton />` globally.
+- `OrderHub.tsx` calls `useSetAiContext('ClientOrder', id)` and reacts to
+  `?action=<key>` query params to open the matching dialog when the user
+  clicks an AI nudge's "Open" button.
+- `RazdolzuvanjeView.tsx` declares the same context.
+- i18n: new `ai.*` block in mk.json + en.json.
+
+**Tests** (`tests/LON.IntegrationTests/AiHelperTests.cs`, 6 [Fact]):
+- `ClientOrderHub_DraftWithoutFinishedGoods_ReturnsBomRecommendation`.
+- `RazdolzuvanjePreflight_ClearedImWithUnflaggedLines_ReturnsPreflightRecommendation`.
+- `ReceiptVariance_OverFivePercent_ReturnsVarianceWarning`.
+- `ReceiptVariance_WithinThreshold_ReturnsEmpty`.
+- `MarkActed_FlipsFlagAndStampsAudit`.
+- `MarkDismissed_FlipsFlagFalse`.
+
+(Local Docker not available — Testcontainers run on CI.)
+
+**OpenAPI:** swagger.json + schema.d.ts regenerated; 4 new endpoints + DTOs.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build api frontend` clean; containers Healthy.
+- `SELECT name FROM sys.tables WHERE name='AiSuggestionLogs'` → 1 row.
+- `POST /api/auth/login admin` → token.
+- `POST /api/ClientOrders {...}` → CO `adda9d93-...` Draft.
+- `POST /api/Ai/recommendations { entityType:'ClientOrder', entityId:<co> }`
+  → 1 rec `hub.draft.no-fgs` with localised MK title/body + actionLink
+  `orders.actions.bom`, suggestion id `14867425-...` ✅
+- `POST /api/Ai/suggestions/<id>/acted` → 204 ✅
+- `SELECT ... FROM AiSuggestionLogs ORDER BY GeneratedAt DESC` →
+  `hub.draft.no-fgs | 1 | admin | 2026-05-13 23:18:18` ✅ (UserActedOn flipped)
+- `POST /api/Ai/ask { question:'Што е процедура 4200?' }` →
+  `{"answer":"...", "sources":[{ documentTitle:'Рубрика 37 — Режим' ... }]}` ✅
+
+**Discoveries / follow-ups:**
+- VPS .env doesn't carry `LON_BOOTSTRAP_ADMIN_PASSWORD`, so the seeder falls
+  back to `Admin123!`. Harmless for now; should be tightened before Phase 21
+  cutover.
+- VPS sqlcmd lives at `/opt/mssql-tools18/bin/sqlcmd` (Tools v18 image); the
+  legacy path in VERIFICATION.md (`/opt/mssql-tools/bin/sqlcmd`) is stale.
+  Doc pass to follow once §E13/§E14 land.
+
+**Status:** [x] done. Phase 17 hub now has live AI recommendations. Next:
+§E10.5 (AlertRule + worker), §E11 (domain events), §E12–E14 per PLAN.md.
+
+---
+
 ## 2026-05-13 — Phase 17 §E.MIGRATE — LON.Migration refactor + Z2779 end-to-end + R1–R6 PASS
 
 Commit `e5980d5`. The most important checkpoint of Phase 17: bit-by-bit

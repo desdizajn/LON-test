@@ -164,7 +164,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [x] 17.8.5 `CommercialInvoice` entity + EX hub chain (D4 — replaces tblIzvozniFakturi/Stavki 3.2k+57.9k legacy rows; finance integration deferred to Phase 27)  → BLUEPRINT §3.2.1 — deployed `39b6f10`; VPS smoke `CI-2026-000001` Draft→Issued + PDF.
 - [x] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11 — deployed `a8beb87`; VPS smoke `CO-2026-000001` mark-line → snapshot (rows=2) → auto-Closed; PDF 1832B; PEE060 XML 469B.
 - [x] 17.E.MIGRATE  LON.Migration refactor (OdobrenijaMapper + ClientOrderMapper + BOMMapper + MaterialIssueMapper + WasteDeclarationMapper + DeliveryNote auto-gen + `--zaklucok` filter) → ran `Z2779` end-to-end in ~10s; 6/6 reconciliation queries PASS within tolerance; idempotent — deployed `e5980d5`. CommercialInvoiceMapper stubbed (Z2779 has 0 tblIzvozniFakturi rows; full impl deferred to Phase 21 prod-data drill).  → BLUEPRINT §9.1 + MAPPING.md
-- [ ] 17.10  AI helper service + 3 core recommendations + floating UI  → BLUEPRINT §7.4
+- [x] 17.10  AI helper service + 3 core recommendations + floating UI — deployed `3cfc98e`; VPS smoke CO + `hub.draft.no-fgs` rec + `MarkActed` (204) + Q&A all green.  → BLUEPRINT §7.4
 - [ ] 17.11  Domain events infrastructure + handler refactor (guarantee, inventory transitions)  → BLUEPRINT §3.6, §6.1, §6.2
 - [ ] 17.12  SQL SEQUENCE objects + NumberFormatter  → BLUEPRINT §6.6
 - [ ] 17.13  Audit interceptor + AuditLogEntry writes + /admin/audit-log UI activation  → BLUEPRINT §6.5
