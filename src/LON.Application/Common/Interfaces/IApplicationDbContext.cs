@@ -141,6 +141,9 @@ public interface IApplicationDbContext
     DbSet<LON.Domain.Entities.Management.AlertRule> AlertRules { get; }
     DbSet<LON.Domain.Entities.Management.AlertEvent> AlertEvents { get; }
 
+    // Domain events — Phase 17 §E11
+    DbSet<LON.Domain.Entities.Events.DomainEventLog> DomainEventLogs { get; }
+
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
     /// during seeders / background jobs / login flow. Exposed so handlers

@@ -137,6 +137,15 @@ public sealed class BulkShipmentFromFGHandler
         };
         _context.Shipments.Add(shipment);
 
+        // Phase 17 §E11 — emit ShipmentCreatedEvent so DomainEventLog
+        // captures the create alongside the audit interceptor.
+        shipment.AddDomainEvent(new LON.Domain.Events.ShipmentCreatedEvent
+        {
+            ShipmentId = shipment.Id,
+            ShipmentNumber = shipment.ShipmentNumber,
+            ShipmentDate = shipment.ShipmentDate,
+        });
+
         int lineIdx = 0;
         decimal totalQty = 0m;
         foreach (var b in balances)

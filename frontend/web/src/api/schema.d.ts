@@ -1203,6 +1203,25 @@ export interface paths {
       };
     };
   };
+  "/api/admin/domain-events": {
+    get: {
+      parameters: {
+        query?: {
+          eventType?: string;
+          from?: string;
+          to?: string;
+          page?: number;
+          pageSize?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Employees": {
     get: {
       responses: {

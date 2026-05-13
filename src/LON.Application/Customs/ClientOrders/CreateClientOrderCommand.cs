@@ -92,6 +92,18 @@ public class CreateClientOrderCommandHandler : ICommandHandler<CreateClientOrder
         };
 
         _context.ClientOrders.Add(order);
+
+        // Phase 17 §E11 — emit ClientOrderCreatedEvent so DomainEventLog
+        // captures the create alongside the audit interceptor.
+        order.AddDomainEvent(new Domain.Events.ClientOrderCreatedEvent
+        {
+            ClientOrderId = order.Id,
+            OrderNumber = order.OrderNumber,
+            CustomerPartnerId = order.CustomerPartnerId,
+            LONAuthorizationId = order.LONAuthorizationId,
+            OrderDate = order.OrderDate,
+        });
+
         await _context.SaveChangesAsync(cancellationToken);
         return Result<Guid>.Success(order.Id);
     }

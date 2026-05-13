@@ -99,6 +99,33 @@ public class ReceiptCreatedEvent : DomainEvent
 }
 
 /// <summary>
+/// Phase 17 §E11 — raised when a ClientOrder hub is created from any UI surface.
+/// Downstream uses: AlertEvaluator baselines, AI helper variance baselines,
+/// historical replay.
+/// </summary>
+public class ClientOrderCreatedEvent : DomainEvent
+{
+    public Guid ClientOrderId { get; set; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public Guid CustomerPartnerId { get; set; }
+    public Guid LONAuthorizationId { get; set; }
+    public DateTime OrderDate { get; set; }
+}
+
+/// <summary>
+/// Phase 17 §E11 — raised when a ClientOrder transitions status (Draft →
+/// Active → Producing → Shipped → Closed, or anything → Cancelled).
+/// </summary>
+public class ClientOrderStatusChangedEvent : DomainEvent
+{
+    public Guid ClientOrderId { get; set; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public int FromStatus { get; set; }
+    public int ToStatus { get; set; }
+    public string? Reason { get; set; }
+}
+
+/// <summary>
 /// Raised when a new CustomsDeclaration is successfully created.
 /// Phase 2.2 (GuaranteeLedger auto-debit) will subscribe to this.
 /// </summary>

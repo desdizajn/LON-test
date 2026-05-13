@@ -145,6 +145,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<LON.Domain.Entities.Management.AlertRule> AlertRules => Set<LON.Domain.Entities.Management.AlertRule>();
     public DbSet<LON.Domain.Entities.Management.AlertEvent> AlertEvents => Set<LON.Domain.Entities.Management.AlertEvent>();
 
+    // Domain events — Phase 17 §E11
+    public DbSet<LON.Domain.Entities.Events.DomainEventLog> DomainEventLogs => Set<LON.Domain.Entities.Events.DomainEventLog>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
@@ -286,23 +289,59 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             .SelectMany(e => e.DomainEvents)
             .ToList();
 
+        // Pair each entity with its events so we can route the event's
+        // tenantId to the audit-friendly DomainEventLog. The ITenantScoped
+        // shortcut works because every aggregate that emits an event is
+        // tenant-scoped today; if a non-scoped event surfaces in the future,
+        // it falls back to CurrentTenantId / Guid.Empty.
+        var eventsWithEntity = domainEntities
+            .SelectMany(e => e.DomainEvents.Select(de => (Entity: (object)e, Event: de)))
+            .ToList();
+
         domainEntities.ForEach(e => e.ClearDomainEvents());
 
-        foreach (var domainEvent in domainEvents)
+        var domainEventTenantId = CurrentTenantId ?? Guid.Empty;
+        foreach (var pair in eventsWithEntity)
         {
-            var outboxMessage = new OutboxMessage
+            var domainEvent = pair.Event;
+            var entityTenantId = pair.Entity is Domain.Common.ITenantScoped scoped
+                ? scoped.TenantId
+                : domainEventTenantId;
+            if (entityTenantId == Guid.Empty) entityTenantId = domainEventTenantId;
+
+            var payload = System.Text.Json.JsonSerializer.Serialize(domainEvent, domainEvent.GetType());
+
+            // Outbox: async delivery to external subscribers (EventProcessorWorker).
+            OutboxMessages.Add(new OutboxMessage
             {
                 Id = Guid.NewGuid(),
                 Type = domainEvent.GetType().Name,
-                Content = System.Text.Json.JsonSerializer.Serialize(domainEvent, domainEvent.GetType()),
+                Content = payload,
                 OccurredOnUtc = domainEvent.OccurredOn,
                 ProcessedOnUtc = null,
                 Error = null,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System"
-            };
+                CreatedBy = "System",
+            });
 
-            OutboxMessages.Add(outboxMessage);
+            // Phase 17 §E11 — DomainEventLog: explicit audit/replay surface,
+            // queried via /admin/event-log + integration tests. Idempotent on
+            // EventId (unique index); duplicate publishes are silently dropped.
+            if (entityTenantId != Guid.Empty)
+            {
+                DomainEventLogs.Add(new Domain.Entities.Events.DomainEventLog
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = entityTenantId,
+                    EventId = domainEvent.EventId,
+                    EventType = domainEvent.GetType().Name,
+                    OccurredAt = domainEvent.OccurredOn,
+                    PayloadJson = payload,
+                    Status = "published",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = auditName,
+                });
+            }
         }
 
         // I8 audit log — snapshot changes to IAuditable entities so every
