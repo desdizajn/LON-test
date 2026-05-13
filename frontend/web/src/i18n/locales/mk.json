@@ -210,6 +210,7 @@
       "receive": "Прими во магацин",
       "podelba": "Распредели подизведувач",
       "issueMaterial": "Издади материјал",
+      "productionReceipt": "Запиши производство",
       "exDeclaration": "Креирај извозна декларација (EX)",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Аудит / историја",
@@ -301,6 +302,71 @@
         "pickAtLeastOne": "Внеси количина за барем една ставка.",
         "overAllocated": "Барана количина надминува достапно за најмалку една ставка.",
         "failed": "Неуспешна распределба."
+      }
+    },
+    "issueDialog": {
+      "title": "Издади материјал кон производен налог",
+      "submit": "Издади ги сите",
+      "hint": "Налог",
+      "noEligiblePos": "Нема производни налози во статус Released/InProgress за овој налог. Прво пушти PO од хабот.",
+      "allIssued": "Сите материјали за овој PO се веќе издадени.",
+      "noMaterials": "Овој PO нема ставки за материјал. Провери дали е пуштен (Released).",
+      "bulkHint": "„Издади ги сите“ создава ставки само за преостаната количина по материјал (FEFO auto-pick освен ако партија/MRN се pre-assigned).",
+      "section": {
+        "materials": "Материјали"
+      },
+      "fields": {
+        "po": "Производен налог",
+        "poHelper": "Само POs со статус Released или InProgress",
+        "issueDate": "Датум на издавање"
+      },
+      "cols": {
+        "material": "Артикал",
+        "required": "Потребно",
+        "issued": "Издадено",
+        "remaining": "Останато",
+        "preAssigned": "Pre-assigned / FEFO",
+        "fefoAuto": "FEFO авто"
+      },
+      "summary": "{{lines}} ставки · {{qty}} вкупно",
+      "created": "Издадени се {{lines}} ставки · {{qty}} вкупно.",
+      "errors": {
+        "pickPo": "Избери производен налог.",
+        "nothingToIssue": "Нема преостанато за издавање.",
+        "failed": "Издавањето не успеа."
+      }
+    },
+    "receiptDialog": {
+      "title": "Запиши производство",
+      "submit": "Запиши",
+      "hint": "Налог",
+      "noEligiblePos": "Нема производни налози во статус Released/InProgress за овој налог. Прво пушти PO од хабот.",
+      "willComplete": "Со оваа количина POс ќе биде комплетиран (Status → Completed).",
+      "remainingAfter": "По овој запис: уште {{qty}} за производство.",
+      "created": "Запишано производство: {{qty}}.",
+      "fields": {
+        "po": "Производен налог",
+        "item": "Готов производ",
+        "uom": "ЕМ",
+        "orderQty": "Нар. количина",
+        "produced": "Произведено",
+        "scrap": "Шкарт (досега)",
+        "quantity": "Количина (произведено)",
+        "quantityHelper": "Default = преостанато",
+        "scrapQty": "Шкарт (овој запис)",
+        "batch": "FG партија",
+        "warehouse": "Магацин",
+        "location": "Локација",
+        "receiptDate": "Датум",
+        "qualityStatus": "Квалитетен статус"
+      },
+      "errors": {
+        "pickPo": "Избери производен налог.",
+        "qtyRequired": "Количина мора да биде > 0.",
+        "batchRequired": "FG партија е задолжителна.",
+        "locationRequired": "Локација е задолжителна.",
+        "poMissingMetadata": "PO не содржи Item/UoM. Освежи и пробај повторно.",
+        "failed": "Записот не успеа."
       }
     },
     "imDialog": {
@@ -1195,7 +1261,8 @@
   "qualityStatus": {
     "ok": "ОК",
     "blocked": "Блокирано",
-    "quarantine": "Карантин"
+    "quarantine": "Карантин",
+    "rejected": "Одбиен"
   },
   "inventory": {
     "title": "Магацин и залихи",

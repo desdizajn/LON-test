@@ -210,6 +210,7 @@
       "receive": "Receive into warehouse",
       "podelba": "Distribute to producer",
       "issueMaterial": "Issue material",
+      "productionReceipt": "Record production receipt",
       "exDeclaration": "Create export declaration (EX)",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
@@ -301,6 +302,71 @@
         "pickAtLeastOne": "Enter a quantity for at least one line.",
         "overAllocated": "Requested quantity exceeds available for at least one line.",
         "failed": "Distribution failed."
+      }
+    },
+    "issueDialog": {
+      "title": "Issue materials to a production order",
+      "submit": "Issue all",
+      "hint": "Order",
+      "noEligiblePos": "No production orders in Released/InProgress status for this order. Release a PO from the hub first.",
+      "allIssued": "All materials for this PO are already issued.",
+      "noMaterials": "This PO has no material rows. Make sure it has been Released.",
+      "bulkHint": "„Issue all“ creates lines only for the remaining qty per material (FEFO auto-pick unless a batch/MRN was pre-assigned).",
+      "section": {
+        "materials": "Materials"
+      },
+      "fields": {
+        "po": "Production order",
+        "poHelper": "Only POs with status Released or InProgress",
+        "issueDate": "Issue date"
+      },
+      "cols": {
+        "material": "Item",
+        "required": "Required",
+        "issued": "Issued",
+        "remaining": "Remaining",
+        "preAssigned": "Pre-assigned / FEFO",
+        "fefoAuto": "FEFO auto"
+      },
+      "summary": "{{lines}} lines · {{qty}} total",
+      "created": "Issued {{lines}} lines · {{qty}} total.",
+      "errors": {
+        "pickPo": "Pick a production order.",
+        "nothingToIssue": "Nothing left to issue.",
+        "failed": "Issue failed."
+      }
+    },
+    "receiptDialog": {
+      "title": "Record production receipt",
+      "submit": "Record",
+      "hint": "Order",
+      "noEligiblePos": "No production orders in Released/InProgress status for this order. Release a PO from the hub first.",
+      "willComplete": "This quantity will complete the PO (Status → Completed).",
+      "remainingAfter": "After this entry: {{qty}} more to produce.",
+      "created": "Recorded production: {{qty}}.",
+      "fields": {
+        "po": "Production order",
+        "item": "Finished good",
+        "uom": "UoM",
+        "orderQty": "Order qty",
+        "produced": "Produced",
+        "scrap": "Scrap (so far)",
+        "quantity": "Quantity (produced)",
+        "quantityHelper": "Default = remaining",
+        "scrapQty": "Scrap (this entry)",
+        "batch": "FG batch",
+        "warehouse": "Warehouse",
+        "location": "Location",
+        "receiptDate": "Date",
+        "qualityStatus": "Quality status"
+      },
+      "errors": {
+        "pickPo": "Pick a production order.",
+        "qtyRequired": "Quantity must be > 0.",
+        "batchRequired": "FG batch is required.",
+        "locationRequired": "Location is required.",
+        "poMissingMetadata": "PO doesn't carry Item/UoM. Refresh and try again.",
+        "failed": "Receipt failed."
       }
     },
     "imDialog": {
@@ -1195,7 +1261,8 @@
   "qualityStatus": {
     "ok": "OK",
     "blocked": "Blocked",
-    "quarantine": "Quarantine"
+    "quarantine": "Quarantine",
+    "rejected": "Rejected"
   },
   "inventory": {
     "title": "Warehouse & Inventory",

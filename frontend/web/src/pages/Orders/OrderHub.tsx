@@ -37,6 +37,8 @@ import ImDeclarationDialog from './ImDeclarationDialog';
 import ReceiveDialog from './ReceiveDialog';
 import BomDialog from './BomDialog';
 import PodelbaDialog from './PodelbaDialog';
+import IssueMaterialDialog from './IssueMaterialDialog';
+import ProductionReceiptDialog from './ProductionReceiptDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -66,7 +68,10 @@ const ACTIONS: ActionDef[] = [
   { key: 'receive', labelKey: 'orders.actions.receive', icon: <LocalShippingIcon />, wiresInTask: 'E4', enabled: true },
   // Phase 17 §E6 — Podelba launches the multi-balance, single-producer dialog.
   { key: 'podelba', labelKey: 'orders.actions.podelba', icon: <CallSplitIcon />, wiresInTask: 'E6', enabled: true },
-  { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7' },
+  // Phase 17 §E7 — Issue all remaining materials for a PO (FEFO).
+  { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7', enabled: true },
+  // Phase 17 §E7 — record finished-good production receipt against a PO.
+  { key: 'productionReceipt', labelKey: 'orders.actions.productionReceipt', icon: <FactoryIcon />, wiresInTask: 'E7', enabled: true },
   { key: 'exDeclaration', labelKey: 'orders.actions.exDeclaration', icon: <FlightTakeoffIcon />, wiresInTask: 'E8' },
   { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9' },
   { key: 'audit', labelKey: 'orders.actions.audit', icon: <HistoryIcon />, wiresInTask: 'E13' },
@@ -91,6 +96,19 @@ const OrderHub: React.FC = () => {
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [bomOpen, setBomOpen] = useState(false);
   const [podelbaOpen, setPodelbaOpen] = useState(false);
+  const [issueOpen, setIssueOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+
+  // Phase 17 §E7 — feed the produced-progress widget from real PO data.
+  // Same query key as `ProductionOrdersTab` below — react-query dedupes.
+  const { data: productionOrders = [] } = useQuery({
+    queryKey: ['clientOrders', 'productionOrders', id ?? ''],
+    queryFn: async () => {
+      const resp = await productionApi.getOrders({ clientOrderId: id });
+      return (resp.data ?? []) as Array<{ orderQuantity: number; producedQuantity: number }>;
+    },
+    enabled: !!id,
+  });
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'imDeclaration') {
@@ -101,6 +119,10 @@ const OrderHub: React.FC = () => {
       setBomOpen(true);
     } else if (actionKey === 'podelba') {
       setPodelbaOpen(true);
+    } else if (actionKey === 'issueMaterial') {
+      setIssueOpen(true);
+    } else if (actionKey === 'productionReceipt') {
+      setReceiptOpen(true);
     }
     // Other action keys are still disabled in this phase.
   };
@@ -140,8 +162,12 @@ const OrderHub: React.FC = () => {
       )
     : null;
 
-  // Real numbers wire in §E3/§E7. Placeholders for now.
-  const producedPct = 0;
+  // Phase 17 §E7 — `producedPct` is the order-level progress: Σ producedQty /
+  // Σ orderQty across all linked POs. Falls to 0 when no POs exist.
+  const totalOrderQty = productionOrders.reduce((s, p) => s + (p.orderQuantity ?? 0), 0);
+  const totalProducedQty = productionOrders.reduce((s, p) => s + (p.producedQuantity ?? 0), 0);
+  const producedPct = totalOrderQty > 0 ? Math.min(100, Math.round((totalProducedQty / totalOrderQty) * 100)) : 0;
+  // §E9 wires real guarantee numbers; placeholder until then.
   const guaranteePct = 0;
 
   return (
@@ -399,6 +425,22 @@ const OrderHub: React.FC = () => {
         order={order}
         onClose={() => setPodelbaOpen(false)}
         onCreated={() => setPodelbaOpen(false)}
+      />
+
+      {/* Phase 17 §E7 — bulk-issue all remaining materials for a PO. */}
+      <IssueMaterialDialog
+        open={issueOpen}
+        order={order}
+        onClose={() => setIssueOpen(false)}
+        onCreated={() => setIssueOpen(false)}
+      />
+
+      {/* Phase 17 §E7 — record finished-good production receipt against a PO. */}
+      <ProductionReceiptDialog
+        open={receiptOpen}
+        order={order}
+        onClose={() => setReceiptOpen(false)}
+        onCreated={() => setReceiptOpen(false)}
       />
     </Box>
   );

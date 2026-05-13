@@ -238,10 +238,28 @@ export const productionApi = {
     api.post('/Production/material-issues', data),
   
   // Production Receipts
-  getReceipts: (orderId: string) => 
+  getReceipts: (orderId: string) =>
     api.get(`/Production/orders/${orderId}/receipts`),
-  createProductionReceipt: (data: any) => 
+  createProductionReceipt: (data: any) =>
     api.post('/Production/receipts', data),
+  /**
+   * Phase 17 §E7 — hits the canonical controller route
+   * `POST /api/Production/orders/{id}/receipts`. The legacy
+   * `createProductionReceipt` above hits `/Production/receipts` which doesn't
+   * match the controller; left in place for backwards compat with the
+   * standalone ProductionReceiptForm.
+   */
+  createReceiptForOrder: (orderId: string, payload: {
+    receiptDate: string;
+    itemId: string;
+    quantity: number;
+    scrapQuantity?: number | null;
+    uoMId: string;
+    locationId: string;
+    batchNumber: string;
+    qualityStatus?: number | null;
+    receivedByEmployeeId?: string | null;
+  }) => api.post(`/Production/orders/${orderId}/receipts`, payload),
   
   // Scrap Report
   reportScrap: (data: any) => 
