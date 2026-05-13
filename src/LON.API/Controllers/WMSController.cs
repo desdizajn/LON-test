@@ -4,6 +4,7 @@ using LON.Application.WMS.Commands.CreateReceipt;
 using LON.Application.WMS.Commands.MassLocationTransfer;
 using LON.Application.WMS.Commands.MoveBatchAcrossStages;
 using LON.Application.WMS.Commands.Podelba;
+using LON.Application.WMS.Commands.PodelbaToProducer;
 using LON.Application.WMS.Commands.ReportSkart;
 using LON.Application.WMS.Queries.GenerateIspratnica;
 using LON.Application.WMS.Queries.GetSkart;
@@ -98,12 +99,19 @@ public class WMSController : BaseController
     }
 
     [HttpGet("inventory")]
-    public async Task<IActionResult> GetInventory([FromQuery] Guid? itemId = null, [FromQuery] Guid? locationId = null)
+    public async Task<IActionResult> GetInventory(
+        [FromQuery] Guid? itemId = null,
+        [FromQuery] Guid? locationId = null,
+        [FromQuery] Guid? warehouseId = null,
+        [FromQuery] Guid? clientOrderId = null,
+        [FromQuery] bool? unassignedOnly = null,
+        [FromQuery] Guid? assignedProducerId = null)
     {
         var query = _context.InventoryBalances
             .Include(i => i.Item)
             .Include(i => i.Location)
             .Include(i => i.UoM)
+            .Include(i => i.AssignedProducer)
             .AsQueryable();
 
         if (itemId.HasValue)
@@ -111,6 +119,31 @@ public class WMSController : BaseController
 
         if (locationId.HasValue)
             query = query.Where(i => i.LocationId == locationId.Value);
+
+        if (warehouseId.HasValue)
+            query = query.Where(i => i.Location.WarehouseId == warehouseId.Value);
+
+        if (unassignedOnly == true)
+            query = query.Where(i => i.AssignedProducerId == null);
+
+        if (assignedProducerId.HasValue)
+            query = query.Where(i => i.AssignedProducerId == assignedProducerId.Value);
+
+        // Phase 17 §E6 — Podelba dialog scopes its picker to materials referenced
+        // by any ProductionOrderMaterial on a ProductionOrder linked to this
+        // ClientOrder. Single SQL IN-clause; falls open (returns 0 rows) when
+        // no POs/materials exist yet, so the UI can warn the user.
+        if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
+        {
+            var poIds = _context.ProductionOrders
+                .Where(p => p.ClientOrderId == clientOrderId.Value)
+                .Select(p => p.Id);
+            var itemIds = _context.ProductionOrderMaterials
+                .Where(m => poIds.Contains(m.ProductionOrderId))
+                .Select(m => m.ItemId)
+                .Distinct();
+            query = query.Where(i => itemIds.Contains(i.ItemId));
+        }
 
         var inventory = await query.ToListAsync();
         return Ok(inventory);
@@ -389,6 +422,19 @@ public class WMSController : BaseController
     /// </summary>
     [HttpPost("podelba")]
     public async Task<IActionResult> Podelba([FromBody] PodelbaCommand command)
+    {
+        var result = await Mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Phase 17 §E6 — assign N balances to ONE producer in one atomic call.
+    /// Dual of <see cref="Podelba"/>: that flow splits one balance across many
+    /// producers (full distribution required); this routes many balances to one
+    /// producer with partial quantities allowed. Sources keep their remainder.
+    /// </summary>
+    [HttpPost("inventory/podelba-to-producer")]
+    public async Task<IActionResult> PodelbaToProducer([FromBody] PodelbaToProducerCommand command)
     {
         var result = await Mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);

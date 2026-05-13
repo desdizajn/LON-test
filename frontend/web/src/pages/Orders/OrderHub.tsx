@@ -36,6 +36,7 @@ import { formatDate } from '../../utils/format';
 import ImDeclarationDialog from './ImDeclarationDialog';
 import ReceiveDialog from './ReceiveDialog';
 import BomDialog from './BomDialog';
+import PodelbaDialog from './PodelbaDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -63,7 +64,8 @@ const ACTIONS: ActionDef[] = [
   { key: 'imDeclaration', labelKey: 'orders.actions.imDeclaration', icon: <InventoryIcon />, wiresInTask: 'E3', enabled: true },
   // Phase 17 §E4 — Receive launches BulkReceiptFromDeclaration dialog.
   { key: 'receive', labelKey: 'orders.actions.receive', icon: <LocalShippingIcon />, wiresInTask: 'E4', enabled: true },
-  { key: 'podelba', labelKey: 'orders.actions.podelba', icon: <CallSplitIcon />, wiresInTask: 'E6' },
+  // Phase 17 §E6 — Podelba launches the multi-balance, single-producer dialog.
+  { key: 'podelba', labelKey: 'orders.actions.podelba', icon: <CallSplitIcon />, wiresInTask: 'E6', enabled: true },
   { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7' },
   { key: 'exDeclaration', labelKey: 'orders.actions.exDeclaration', icon: <FlightTakeoffIcon />, wiresInTask: 'E8' },
   { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9' },
@@ -88,6 +90,7 @@ const OrderHub: React.FC = () => {
   const [imOpen, setImOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [bomOpen, setBomOpen] = useState(false);
+  const [podelbaOpen, setPodelbaOpen] = useState(false);
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'imDeclaration') {
@@ -96,6 +99,8 @@ const OrderHub: React.FC = () => {
       setReceiveOpen(true);
     } else if (actionKey === 'bom') {
       setBomOpen(true);
+    } else if (actionKey === 'podelba') {
+      setPodelbaOpen(true);
     }
     // Other action keys are still disabled in this phase.
   };
@@ -295,32 +300,19 @@ const OrderHub: React.FC = () => {
               <Tab label={t('orders.hub.tabs.productionOrders')} />
               <Tab label={t('orders.hub.tabs.shipments')} />
               <Tab label={t('orders.hub.tabs.materials')} />
+              <Tab label={t('orders.hub.tabs.receipts')} />
             </Tabs>
             <Divider sx={{ my: 2 }} />
             <Box minHeight={200}>
               {tab === 0 && <DeclarationsTab clientOrderId={order.id} />}
-              {false && (
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  {t('orders.hub.tabs.declarationsPlaceholder')}
-                </Typography>
-              )}
               {tab === 1 && <ProductionOrdersTab clientOrderId={order.id} />}
-              {false && (
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  {t('orders.hub.tabs.productionOrdersPlaceholder')}
-                </Typography>
-              )}
               {tab === 2 && (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
                   {t('orders.hub.tabs.shipmentsPlaceholder')}
                 </Typography>
               )}
-              {tab === 3 && <ReceiptsTab clientOrderId={order.id} />}
-              {false && (
-                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-                  {t('orders.hub.tabs.materialsPlaceholder')}
-                </Typography>
-              )}
+              {tab === 3 && <MaterialsTab clientOrderId={order.id} />}
+              {tab === 4 && <ReceiptsTab clientOrderId={order.id} />}
             </Box>
           </Paper>
         </Grid>
@@ -399,6 +391,14 @@ const OrderHub: React.FC = () => {
         order={order}
         onClose={() => setBomOpen(false)}
         onCreated={() => setBomOpen(false)}
+      />
+
+      {/* Phase 17 §E6 — distribute materials to a sub-contractor producer. */}
+      <PodelbaDialog
+        open={podelbaOpen}
+        order={order}
+        onClose={() => setPodelbaOpen(false)}
+        onCreated={() => setPodelbaOpen(false)}
       />
     </Box>
   );
@@ -633,6 +633,166 @@ const ReceiptsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => 
           </React.Fragment>
         );
       })}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E6 — InventoryBalance scoped to this ClientOrder. Materials are
+ * those referenced by any ProductionOrderMaterial on a ProductionOrder linked
+ * to the order. Groups rows by producer assignment so the Podelba flow is
+ * legible: unassigned (HQ pool) rendered first, then per-producer buckets.
+ */
+interface MaterialRow {
+  id: string;
+  itemId: string;
+  batchNumber?: string | null;
+  mrn?: string | null;
+  quantity: number;
+  qualityStatus: number;
+  assignedProducerId?: string | null;
+  assignedProducer?: { id: string; code: string; name?: string } | null;
+  item?: { code: string; name?: string } | null;
+  location?: { code: string; name?: string } | null;
+  uoM?: { code: string } | null;
+}
+
+const MaterialsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'materials', clientOrderId],
+    queryFn: async () => {
+      const resp = await wmsApi.getInventory(undefined, undefined, { clientOrderId });
+      return (resp.data ?? []) as MaterialRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) return <LinearProgress />;
+
+  const positive = rows.filter((r) => (r.quantity ?? 0) > 0);
+  if (positive.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.materialsEmpty')}
+      </Typography>
+    );
+  }
+
+  const unassigned = positive.filter((r) => !r.assignedProducerId);
+  const byProducer = new Map<string, { name: string; code: string; rows: MaterialRow[] }>();
+  for (const r of positive) {
+    if (!r.assignedProducerId) continue;
+    const key = r.assignedProducerId;
+    if (!byProducer.has(key)) {
+      byProducer.set(key, {
+        code: r.assignedProducer?.code ?? '?',
+        name: r.assignedProducer?.name ?? r.assignedProducer?.code ?? '?',
+        rows: [],
+      });
+    }
+    byProducer.get(key)!.rows.push(r);
+  }
+
+  const renderTable = (group: MaterialRow[]) => (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1.6fr 1fr 1.2fr 1fr 0.8fr',
+        gap: 0,
+        fontSize: 13,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1,
+        overflow: 'hidden',
+        mb: 2,
+      }}
+    >
+      {[
+        t('orders.hub.tabs.matCols.item'),
+        t('orders.hub.tabs.matCols.batch'),
+        t('orders.hub.tabs.matCols.mrn'),
+        t('orders.hub.tabs.matCols.location'),
+        t('orders.hub.tabs.matCols.quantity'),
+      ].map((h, i) => (
+        <Box
+          key={i}
+          sx={{
+            fontWeight: 600,
+            p: 1,
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.default',
+            textAlign: i >= 4 ? 'right' : 'left',
+          }}
+        >
+          {h}
+        </Box>
+      ))}
+      {group.map((r) => (
+        <React.Fragment key={r.id}>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.item ? (r.item.name ? `${r.item.code} — ${r.item.name}` : r.item.code) : '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>
+            {r.batchNumber ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>
+            {r.mrn ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.location?.code ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+            {r.quantity.toFixed(2)} {r.uoM?.code ?? ''}
+          </Box>
+        </React.Fragment>
+      ))}
+    </Box>
+  );
+
+  return (
+    <Box>
+      {unassigned.length > 0 && (
+        <>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+            <Typography variant="overline" color="text.secondary">
+              {t('orders.hub.tabs.matGroup.unassigned')}
+            </Typography>
+            <Chip
+              label={
+                t('orders.hub.tabs.matGroup.count', {
+                  count: unassigned.length,
+                  qty: unassigned.reduce((s, r) => s + r.quantity, 0).toFixed(2),
+                }) as string
+              }
+              size="small"
+            />
+          </Stack>
+          {renderTable(unassigned)}
+        </>
+      )}
+      {Array.from(byProducer.entries()).map(([producerId, group]) => (
+        <Box key={producerId}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+            <Typography variant="overline" color="text.secondary">
+              {group.code} — {group.name}
+            </Typography>
+            <Chip
+              label={
+                t('orders.hub.tabs.matGroup.count', {
+                  count: group.rows.length,
+                  qty: group.rows.reduce((s, r) => s + r.quantity, 0).toFixed(2),
+                }) as string
+              }
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+          </Stack>
+          {renderTable(group.rows)}
+        </Box>
+      ))}
     </Box>
   );
 };

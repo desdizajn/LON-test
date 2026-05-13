@@ -688,6 +688,48 @@
         }
       }
     },
+    "/api/ClientOrders/{id}/finished-goods": {
+      "post": {
+        "tags": [
+          "ClientOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddClientOrderFinishedGoodCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddClientOrderFinishedGoodCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddClientOrderFinishedGoodCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations": {
       "post": {
         "tags": [
@@ -728,6 +770,14 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5329,6 +5379,14 @@
             "schema": {
               "$ref": "#/components/schemas/ProductionOrderStatus"
             }
+          },
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -6210,6 +6268,28 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Suggestions/producer": {
+      "get": {
+        "tags": [
+          "Suggestions"
+        ],
+        "parameters": [
+          {
+            "name": "clientOrderId",
+            "in": "query",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -7111,6 +7191,14 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -7190,6 +7278,37 @@
           },
           {
             "name": "locationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "warehouseId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unassignedOnly",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "assignedProducerId",
             "in": "query",
             "schema": {
               "type": "string",
@@ -7703,6 +7822,37 @@
         }
       }
     },
+    "/api/WMS/inventory/podelba-to-producer": {
+      "post": {
+        "tags": [
+          "WMS"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaToProducerCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaToProducerCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PodelbaToProducerCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/WMS/shipments/{id}/ispratnica": {
       "get": {
         "tags": [
@@ -8035,6 +8185,46 @@
         ],
         "type": "integer",
         "format": "int32"
+      },
+      "AddClientOrderFinishedGoodCommand": {
+        "type": "object",
+        "properties": {
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "uoMId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bomId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "unitPriceForeign": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ApplyMappingRequest": {
         "type": "object",
@@ -8647,6 +8837,11 @@
             "format": "uuid",
             "nullable": true
           },
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
           "totalCustomsValue": {
             "type": "number",
             "format": "double"
@@ -9010,6 +9205,11 @@
             "nullable": true
           },
           "partnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "clientOrderId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -10695,6 +10895,46 @@
               "$ref": "#/components/schemas/PodelbaAllocation"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PodelbaToProducerCommand": {
+        "type": "object",
+        "properties": {
+          "producerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PodelbaToProducerLine"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PodelbaToProducerLine": {
+        "type": "object",
+        "properties": {
+          "sourceBalanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false

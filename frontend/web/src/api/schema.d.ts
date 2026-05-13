@@ -363,11 +363,34 @@ export interface paths {
       };
     };
   };
+  "/api/ClientOrders/{id}/finished-goods": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["AddClientOrderFinishedGoodCommand"];
+          "text/json": components["schemas"]["AddClientOrderFinishedGoodCommand"];
+          "application/*+json": components["schemas"]["AddClientOrderFinishedGoodCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations": {
     get: {
       parameters: {
         query?: {
           isCleared?: boolean;
+          clientOrderId?: string;
         };
       };
       responses: {
@@ -2946,6 +2969,7 @@ export interface paths {
       parameters: {
         query?: {
           status?: components["schemas"]["ProductionOrderStatus"];
+          clientOrderId?: string;
         };
       };
       responses: {
@@ -3501,6 +3525,21 @@ export interface paths {
       };
     };
   };
+  "/api/Suggestions/producer": {
+    get: {
+      parameters: {
+        query?: {
+          clientOrderId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Tenants": {
     get: {
       responses: {
@@ -3956,6 +3995,7 @@ export interface paths {
         query?: {
           page?: number;
           pageSize?: number;
+          clientOrderId?: string;
         };
       };
       responses: {
@@ -4019,6 +4059,10 @@ export interface paths {
         query?: {
           itemId?: string;
           locationId?: string;
+          warehouseId?: string;
+          clientOrderId?: string;
+          unassignedOnly?: boolean;
+          assignedProducerId?: string;
         };
       };
       responses: {
@@ -4302,6 +4346,23 @@ export interface paths {
       };
     };
   };
+  "/api/WMS/inventory/podelba-to-producer": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["PodelbaToProducerCommand"];
+          "text/json": components["schemas"]["PodelbaToProducerCommand"];
+          "application/*+json": components["schemas"]["PodelbaToProducerCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/WMS/shipments/{id}/ispratnica": {
     get: {
       parameters: {
@@ -4504,6 +4565,22 @@ export interface components {
      * @enum {integer}
      */
     AbsenceType: 1 | 2 | 3 | 4 | 5 | 99;
+    AddClientOrderFinishedGoodCommand: {
+      /** Format: uuid */
+      clientOrderId?: string;
+      /** Format: uuid */
+      itemId?: string;
+      /** Format: double */
+      quantity?: number;
+      /** Format: uuid */
+      uoMId?: string;
+      /** Format: uuid */
+      bomId?: string | null;
+      /** Format: double */
+      unitPriceForeign?: number | null;
+      currency?: string | null;
+      notes?: string | null;
+    };
     ApplyMappingRequest: {
       mapping?: components["schemas"]["ImportMapping"];
       targetEntity?: string | null;
@@ -4725,6 +4802,8 @@ export interface components {
       partnerId?: string | null;
       /** Format: uuid */
       lonAuthorizationId?: string | null;
+      /** Format: uuid */
+      clientOrderId?: string | null;
       /** Format: double */
       totalCustomsValue?: number;
       currency?: string | null;
@@ -4848,6 +4927,8 @@ export interface components {
       notes?: string | null;
       /** Format: uuid */
       partnerId?: string | null;
+      /** Format: uuid */
+      clientOrderId?: string | null;
     };
     CreateProductionReceiptCommand: {
       /** Format: uuid */
@@ -5442,6 +5523,20 @@ export interface components {
       /** Format: uuid */
       sourceBalanceId?: string;
       allocations?: components["schemas"]["PodelbaAllocation"][] | null;
+    };
+    PodelbaToProducerCommand: {
+      /** Format: uuid */
+      producerId?: string;
+      /** Format: uuid */
+      clientOrderId?: string | null;
+      reason?: string | null;
+      lines?: components["schemas"]["PodelbaToProducerLine"][] | null;
+    };
+    PodelbaToProducerLine: {
+      /** Format: uuid */
+      sourceBalanceId?: string;
+      /** Format: double */
+      quantity?: number;
     };
     /**
      * Format: int32

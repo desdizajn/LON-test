@@ -176,7 +176,8 @@
           "plannedEnd": "Planned end"
         },
         "shipmentsPlaceholder": "Shipments land here in §E8.",
-        "materialsPlaceholder": "Material balance lands here in §E4/§E6.",
+        "materialsEmpty": "No materials on stock for this order yet. Receive into warehouse and distribute to a producer first.",
+        "receipts": "Receipts",
         "receiptsEmpty": "No receipts yet. Use „Receive into warehouse“ in the actions panel.",
         "recCols": {
           "number": "Number",
@@ -184,6 +185,17 @@
           "reference": "Reference",
           "linesCount": "Lines",
           "totalQty": "Total qty"
+        },
+        "matCols": {
+          "item": "Item",
+          "batch": "Batch",
+          "mrn": "MRN",
+          "location": "Location",
+          "quantity": "Quantity"
+        },
+        "matGroup": {
+          "unassigned": "Unassigned (HQ pool)",
+          "count": "{{count}} rows · {{qty}}"
         }
       },
       "actions": {
@@ -247,6 +259,49 @@
       "pickWarehouse": "Pick a warehouse.",
       "created": "Receipt created.",
       "failed": "Failed to create receipt."
+    },
+    "podelbaDialog": {
+      "title": "Distribute materials to a producer",
+      "submit": "Distribute",
+      "hint": "Order",
+      "showAll": "Show all unassigned materials",
+      "refresh": "Refresh",
+      "noScopedInventory": "No unassigned materials on stock linked to this order's BOMs. Tick „Show all“ to widen the scope.",
+      "noInventory": "No unassigned materials at the chosen warehouse.",
+      "section": {
+        "materials": "Materials to distribute"
+      },
+      "fields": {
+        "warehouse": "Warehouse (source)",
+        "producer": "Producer",
+        "reason": "Reason / note (optional)",
+        "reasonPlaceholder": "e.g. cycle Z-2779 / lot A"
+      },
+      "cols": {
+        "item": "Item",
+        "batch": "Batch",
+        "mrn": "MRN",
+        "location": "Location",
+        "available": "Available",
+        "qtyToAssign": "Qty to assign",
+        "fillMax": "Fill max",
+        "overAvailable": "exceeds available"
+      },
+      "summary": "{{lines}} lines · {{qty}} total",
+      "suggestion": {
+        "title": "Recommended producer",
+        "history": "Most used over the last 90 days ({{count}} assignments)",
+        "fallback": "First active producer — no recent history",
+        "accept": "Accept",
+        "accepted": "Accepted"
+      },
+      "created": "{{count}} lines distributed · {{qty}} total.",
+      "errors": {
+        "pickProducer": "Pick a producer.",
+        "pickAtLeastOne": "Enter a quantity for at least one line.",
+        "overAllocated": "Requested quantity exceeds available for at least one line.",
+        "failed": "Distribution failed."
+      }
     },
     "imDialog": {
       "title": "Create import declaration (IM)",

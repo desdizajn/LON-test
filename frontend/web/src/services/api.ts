@@ -42,8 +42,28 @@ export const analyticsApi = {
 
 export const wmsApi = {
   // Inventory
-  getInventory: (itemId?: string, locationId?: string) =>
-    api.get('/WMS/inventory', { params: { itemId, locationId } }),
+  // Phase 17 §E6 — added warehouseId / clientOrderId / unassignedOnly / assignedProducerId
+  // filters so the Podelba dialog and Materials tab can scope server-side.
+  getInventory: (
+    itemId?: string,
+    locationId?: string,
+    extras?: {
+      warehouseId?: string | null;
+      clientOrderId?: string | null;
+      unassignedOnly?: boolean | null;
+      assignedProducerId?: string | null;
+    },
+  ) =>
+    api.get('/WMS/inventory', {
+      params: {
+        itemId,
+        locationId,
+        warehouseId: extras?.warehouseId ?? undefined,
+        clientOrderId: extras?.clientOrderId ?? undefined,
+        unassignedOnly: extras?.unassignedOnly ?? undefined,
+        assignedProducerId: extras?.assignedProducerId ?? undefined,
+      },
+    }),
 
   // P4.3 — MozniMinusi (negative-stock reconciliation)
   getMozniMinusi: () => api.get('/WMS/inventory/mozni-minusi'),
@@ -76,6 +96,15 @@ export const wmsApi = {
     targetLocationId: string;
     reason?: string | null;
   }) => api.post('/WMS/inventory/bulk-move-balances', payload),
+
+  // Phase 17 §E6 — assign N balances to ONE sub-contractor producer; partial
+  // quantities allowed; sources keep their remainder.
+  podelbaToProducer: (payload: {
+    producerId: string;
+    clientOrderId?: string | null;
+    reason?: string | null;
+    lines: Array<{ sourceBalanceId: string; quantity: number }>;
+  }) => api.post('/WMS/inventory/podelba-to-producer', payload),
 
   // P5.2.7 — bulk transfer every inventory row matching the filter to
   // a single explicit target location in one atomic call.
@@ -181,6 +210,13 @@ export const wmsApi = {
     api.get('/WMS/skart', { params }),
   resolveSkart: (id: string, data: { resolution: number; resolutionNote?: string }) =>
     api.post(`/WMS/skart/${id}/resolve`, data),
+};
+
+// Phase 17 §E6 — AI helper "smart suggestion" surface. Stub today (deterministic
+// heuristics in `SuggestionsController`); §E10 swaps in `AiAssistantService`.
+export const suggestionsApi = {
+  producer: (clientOrderId?: string | null) =>
+    api.get('/Suggestions/producer', { params: { clientOrderId } }),
 };
 
 export const productionApi = {
