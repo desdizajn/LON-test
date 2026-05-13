@@ -76,6 +76,108 @@
       "tooltip": "Стандардните вредности се копираат од претходниот ред."
     }
   },
+  "orders": {
+    "statusNames": {
+      "draft": "Драфт",
+      "active": "Активен",
+      "producing": "Во производство",
+      "shipped": "Испратен",
+      "closed": "Завршен",
+      "cancelled": "Откажан"
+    },
+    "list": {
+      "title": "Налози од клиенти",
+      "subtitle": "Сите ClientOrders — централно место за hub-and-spoke процесот.",
+      "newOrder": "Нов налог",
+      "empty": "Сè уште нема налози. Кликни „Нов налог“ за да започнеш.",
+      "searchPlaceholder": "Пребарај по број / клиент / референца…",
+      "created": "Налогот е создаден.",
+      "createFailed": "Неуспешно создавање на налогот.",
+      "filters": {
+        "status": "Статус",
+        "statusAll": "Сите статуси",
+        "customer": "Клиент",
+        "customerAll": "Сите клиенти",
+        "fromDate": "Од датум",
+        "toDate": "До датум"
+      },
+      "cols": {
+        "orderNumber": "Број",
+        "customer": "Клиент",
+        "status": "Статус",
+        "orderDate": "Датум",
+        "requestedShipDate": "Рок испорака",
+        "producedPct": "% Произведено",
+        "guaranteePct": "% Гаранција",
+        "declarations": "Декларации",
+        "productionOrders": "Производство"
+      },
+      "dialog": {
+        "title": "Нов налог од клиент",
+        "customer": "Клиент",
+        "customerRequired": "Клиент е задолжителен.",
+        "authorization": "LON одобрение",
+        "authorizationRequired": "LON одобрение е задолжително.",
+        "customerRef": "Референца од клиент",
+        "orderDate": "Датум на налог",
+        "requestedShipDate": "Очекувана испорака",
+        "notes": "Белешки"
+      }
+    },
+    "hub": {
+      "notFound": "Налогот не е пронајден.",
+      "backToList": "Назад до листа",
+      "header": {
+        "customer": "Клиент",
+        "authorization": "Одобрение",
+        "customerRef": "Реф. од клиент",
+        "orderDate": "Датум",
+        "requestedShip": "Рок испорака"
+      },
+      "timeline": {
+        "title": "Хронологија",
+        "placeholderHint": "Реални domain events стигнуваат во §E11.",
+        "pending": "(пендинг)",
+        "created": "Налогот е создаден",
+        "firstDeclaration": "Прва декларација приклучена",
+        "lastShipped": "Последна пратка испратена"
+      },
+      "widgets": {
+        "produced": "Произведено",
+        "guarantee": "Гаранција",
+        "daysToShip": "Денови до испорака",
+        "daysRemaining": "преостанати",
+        "overdue": "доцни",
+        "noShipDate": "без рок"
+      },
+      "tabs": {
+        "declarations": "Декларации",
+        "productionOrders": "Производни налози",
+        "shipments": "Испратници",
+        "materials": "Материјали на лагер",
+        "declarationsPlaceholder": "Декларациите стигнуваат тука во §E3.",
+        "productionOrdersPlaceholder": "Производните налози стигнуваат тука во §E5.",
+        "shipmentsPlaceholder": "Испратниците стигнуваат тука во §E8.",
+        "materialsPlaceholder": "Состојбата на материјали стигнува тука во §E4/§E6."
+      },
+      "actions": {
+        "title": "Акции",
+        "hint": "Контекстни акции за овој налог. Се отклучуваат низ §E3–§E10.",
+        "comingInTask": "Стигнува во §{{task}}"
+      }
+    },
+    "actions": {
+      "bom": "Внеси готови производи (BOM)",
+      "imDeclaration": "Креирај увозна декларација (IM)",
+      "receive": "Прими во магацин",
+      "podelba": "Распредели подизведувач",
+      "issueMaterial": "Издади материјал",
+      "exDeclaration": "Креирај извозна декларација (EX)",
+      "razdolzuvanje": "Razdolzuvanje",
+      "audit": "Аудит / историја",
+      "ai": "💡 AI препораки"
+    }
+  },
   "bulkActions": {
     "selected": "{{count}} означени",
     "clear": "Отстрани селекција",
@@ -742,6 +844,7 @@
     "groupEmpty": "Ставките сè уште не се пополнети",
     "groupEmptyHint": "Групата чека item-wire-up во следен P6.37 подтаск",
     "groups": {
+      "orders": "Налози",
       "warehouse": "Магацин",
       "customs": "Царински оддел",
       "production": "Производство",
@@ -751,6 +854,9 @@
       "finance": "Финансии",
       "management": "Менаџмент",
       "settings": "Поставки"
+    },
+    "orders": {
+      "list": "Сите налози"
     },
     "settings": {
       "partners": "Клиенти / Партнери",

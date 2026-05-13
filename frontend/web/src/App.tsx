@@ -164,6 +164,10 @@ import Packing from './pages/FinishedGoods/Packing';
 import PackLists from './pages/FinishedGoods/PackLists';
 import Returns from './pages/FinishedGoods/Returns';
 
+// Phase 17 §E2 — ClientOrder hub
+import OrderList from './pages/Orders/OrderList';
+import OrderHub from './pages/Orders/OrderHub';
+
 import { LayoutProvider } from './components/layout/LayoutContext';
 
 // Protected Route Component
@@ -179,6 +183,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
  * entry here whenever a route is introduced that should show as active.
  */
 const resolveActiveModule = (path: string) => {
+  // Phase 17 §E2 — Orders hub
+  if (path.startsWith('/orders')) return 'orders-list';
+
   // Warehouse
   if (path.startsWith('/warehouse/receipts') || path.startsWith('/inventory')) return 'warehouse-receipts';
   if (path.startsWith('/warehouse/incoming')) return 'warehouse-incoming';
@@ -314,6 +321,10 @@ const App: React.FC = () => {
             }
           >
             <Route path="/" element={<Navigate to="/management/dashboard" replace />} />
+
+            {/* ───────── Phase 17 §E2 — ClientOrder hub ───────── */}
+            <Route path="/orders" element={<OrderList />} />
+            <Route path="/orders/:id" element={<OrderHub />} />
 
             {/* ──────────────── P6.37.14 — legacy-route redirects ────────────────
              * Old top-level routes kept as `<Navigate>` so bookmarks / external

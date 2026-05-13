@@ -76,6 +76,108 @@
       "tooltip": "Default values copy from the previous line."
     }
   },
+  "orders": {
+    "statusNames": {
+      "draft": "Draft",
+      "active": "Active",
+      "producing": "Producing",
+      "shipped": "Shipped",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "list": {
+      "title": "Client orders",
+      "subtitle": "All ClientOrders — the hub-and-spoke entry point for each customer order.",
+      "newOrder": "New order",
+      "empty": "No orders yet. Click \"New order\" to start.",
+      "searchPlaceholder": "Search by number / customer / reference…",
+      "created": "Order created.",
+      "createFailed": "Failed to create order.",
+      "filters": {
+        "status": "Status",
+        "statusAll": "All statuses",
+        "customer": "Customer",
+        "customerAll": "All customers",
+        "fromDate": "From date",
+        "toDate": "To date"
+      },
+      "cols": {
+        "orderNumber": "Number",
+        "customer": "Customer",
+        "status": "Status",
+        "orderDate": "Date",
+        "requestedShipDate": "Ship by",
+        "producedPct": "% Produced",
+        "guaranteePct": "% Guarantee",
+        "declarations": "Declarations",
+        "productionOrders": "Production"
+      },
+      "dialog": {
+        "title": "New client order",
+        "customer": "Customer",
+        "customerRequired": "Customer is required.",
+        "authorization": "LON authorization",
+        "authorizationRequired": "LON authorization is required.",
+        "customerRef": "Customer reference",
+        "orderDate": "Order date",
+        "requestedShipDate": "Requested ship date",
+        "notes": "Notes"
+      }
+    },
+    "hub": {
+      "notFound": "Order not found.",
+      "backToList": "Back to list",
+      "header": {
+        "customer": "Customer",
+        "authorization": "Authorization",
+        "customerRef": "Customer ref",
+        "orderDate": "Date",
+        "requestedShip": "Ship by"
+      },
+      "timeline": {
+        "title": "Timeline",
+        "placeholderHint": "Real domain events arrive in §E11.",
+        "pending": "(pending)",
+        "created": "Order created",
+        "firstDeclaration": "First declaration linked",
+        "lastShipped": "Last shipment dispatched"
+      },
+      "widgets": {
+        "produced": "Produced",
+        "guarantee": "Guarantee",
+        "daysToShip": "Days to ship",
+        "daysRemaining": "remaining",
+        "overdue": "overdue",
+        "noShipDate": "no ship date"
+      },
+      "tabs": {
+        "declarations": "Declarations",
+        "productionOrders": "Production orders",
+        "shipments": "Shipments",
+        "materials": "Materials on hand",
+        "declarationsPlaceholder": "Declarations land here in §E3.",
+        "productionOrdersPlaceholder": "Production orders land here in §E5.",
+        "shipmentsPlaceholder": "Shipments land here in §E8.",
+        "materialsPlaceholder": "Material balance lands here in §E4/§E6."
+      },
+      "actions": {
+        "title": "Actions",
+        "hint": "Contextual actions for this order. Each unlocks in §E3–§E10.",
+        "comingInTask": "Coming in §{{task}}"
+      }
+    },
+    "actions": {
+      "bom": "Add finished goods (BOM)",
+      "imDeclaration": "Create import declaration (IM)",
+      "receive": "Receive into warehouse",
+      "podelba": "Distribute to producer",
+      "issueMaterial": "Issue material",
+      "exDeclaration": "Create export declaration (EX)",
+      "razdolzuvanje": "Razdolzuvanje",
+      "audit": "Audit / history",
+      "ai": "💡 AI recommendations"
+    }
+  },
   "bulkActions": {
     "selected": "{{count}} selected",
     "clear": "Clear selection",
@@ -742,6 +844,7 @@
     "groupEmpty": "Items not wired up yet",
     "groupEmptyHint": "Group awaits item wire-up in an upcoming P6.37 subtask",
     "groups": {
+      "orders": "Orders",
       "warehouse": "Warehouse",
       "customs": "Customs",
       "production": "Production",
@@ -751,6 +854,9 @@
       "finance": "Finance",
       "management": "Management",
       "settings": "Settings"
+    },
+    "orders": {
+      "list": "All orders"
     },
     "settings": {
       "partners": "Customers / Partners",

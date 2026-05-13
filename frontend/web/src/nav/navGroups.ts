@@ -21,6 +21,36 @@ import { NavGroup } from './types';
  * backend status inventory.
  */
 export const NAV_GROUPS: NavGroup[] = [
+  // Phase 17 §E2 — ClientOrder hub. Listed first so the hub-and-spoke entry
+  // point is the most visible item in the sidebar. Most roles can see it;
+  // edit rights are enforced server-side per-action.
+  {
+    key: 'orders',
+    icon: '📋',
+    labelKey: 'nav.groups.orders',
+    allowedRoles: [
+      'Administrator',
+      'Manager',
+      'ProductionPlanner',
+      'Production Planner',
+      'Warehouse Manager',
+      'Customs Officer',
+      'Quality Controller',
+      'Finance Clerk',
+      'Viewer',
+    ],
+    items: [
+      {
+        key: 'orders-list',
+        labelKey: 'nav.orders.list',
+        icon: '📋',
+        path: '/orders',
+        backendStatus: 'exists',
+        existingDataHint:
+          'Phase 17 §E1 — ClientOrder entity + 5 handlers. Hub UI shell §E2; action launcher wires in §E3–§E9.',
+      },
+    ],
+  },
   {
     key: 'warehouse',
     icon: '🏭',

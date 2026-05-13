@@ -8,6 +8,7 @@
  */
 
 export type NavGroupKey =
+  | 'orders'
   | 'warehouse'
   | 'customs'
   | 'production'

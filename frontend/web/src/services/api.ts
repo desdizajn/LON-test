@@ -351,6 +351,36 @@ export const hrApi = {
     api.delete(`/Hr/certifications/${id}`),
 };
 
+// Phase 17 §E1 — ClientOrder CRUD (consumed by §E2 hub UI)
+export const clientOrdersApi = {
+  list: (params?: {
+    status?: number;
+    customerPartnerId?: string;
+    fromDate?: string;
+    toDate?: string;
+    includeCancelled?: boolean;
+  }) => api.get('/ClientOrders', { params }),
+  get: (id: string) => api.get(`/ClientOrders/${id}`),
+  create: (payload: {
+    customerPartnerId: string;
+    lonAuthorizationId: string;
+    customerOrderReference?: string | null;
+    orderDate?: string | null;
+    requestedShipDate?: string | null;
+    notes?: string | null;
+  }) => api.post('/ClientOrders', payload),
+  update: (
+    id: string,
+    payload: {
+      customerOrderReference?: string | null;
+      requestedShipDate?: string | null;
+      notes?: string | null;
+    },
+  ) => api.put(`/ClientOrders/${id}`, { id, ...payload }),
+  cancel: (id: string, reason: string) =>
+    api.post(`/ClientOrders/${id}/cancel`, { id, reason }),
+};
+
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)
 // P16.C1 — risks/escalations CRUD
 export const managementApi = {
