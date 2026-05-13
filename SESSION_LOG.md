@@ -2,6 +2,39 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E7 — wire MaterialIssue + ProductionReceipt from hub + VPS-verified
+
+Commit `d47f973`. VPS smoke OK on `CO-2026-000001` / `PO LON-20260513-fc945b61`: released PO (status 1→2) → bulk-issue correctly rejected (no BOM materials yet) with explanatory `PO has no materials to issue. Release the PO first.` → first production receipt qty=25 succeeded (status 2→3, produced 0→25) → second receipt qty=75 completed the PO (status 3→4, produced 100, `ActualEndDate` set). No server changes; the hub layer adds purely UI plumbing.
+
+Files (6 changed; 968 insertions / 7 deletions):
+
+**Frontend:**
+- `frontend/web/src/pages/Orders/IssueMaterialDialog.tsx` (new, 288 lines) — PO picker filters by `Status ∈ {Released, InProgress}` for this ClientOrder; on PO pick loads `productionApi.getOrder(id)` and renders a 5-column grid (Material / Required / Issued / Remaining / Pre-assigned-or-FEFO). „Issue all" hits `POST /api/Production/orders/{id}/issues/bulk` with the chosen `issueDate`; server's `IssueAllMaterialsCommand` (P5.2.1) walks `ProductionOrderMaterial` rows, computes per-line remainder, delegates to `CreateMaterialIssueCommand` with FEFO auto-pick (or honors `PreAssignedBatchNumber`/`PreAssignedMRN` when set by textile imports). Disabled submit when no PO picked or nothing left to issue.
+- `frontend/web/src/pages/Orders/ProductionReceiptDialog.tsx` (new, 360 lines) — PO picker (Released/InProgress); on pick loads detail and auto-suggests `quantity = orderQty − produced − scrap`, batch `FG-{ItemCode}-{YYYYMMDD}`, Quality OK. Warehouse + location pickers (prefers `LocationType.Production` or `PROD`/`FG` code prefix). Live „will complete the PO" info banner when `produced + scrap + newQty + newScrap ≥ orderQty`. Submits `POST /api/Production/orders/{id}/receipts` via new `productionApi.createReceiptForOrder` helper (the legacy `createProductionReceipt` posts to `/Production/receipts` which doesn't match the controller; kept untouched for `ProductionReceiptForm`'s standalone use).
+- `frontend/web/src/pages/Orders/OrderHub.tsx` — two new enabled actions: `issueMaterial` (already labeled „Издади материјал") + new `productionReceipt` („Запиши производство"). Both dialogs rendered. `producedPct` widget now real: `Σ producedQuantity / Σ orderQuantity * 100` across linked POs via the same `['clientOrders','productionOrders', id]` react-query key the Production tab uses (deduped).
+- `frontend/web/src/services/api.ts` — new `productionApi.createReceiptForOrder(orderId, payload)` typed against the canonical controller route.
+- `frontend/web/src/i18n/locales/{mk,en}.json` — `orders.issueDialog.*` (title, hint, section.materials, fields.{po,poHelper,issueDate}, cols.{material,required,issued,remaining,preAssigned,fefoAuto}, summary, created, bulkHint, allIssued, noMaterials, noEligiblePos, errors.{pickPo,nothingToIssue,failed}); `orders.receiptDialog.*` (title, hint, willComplete, remainingAfter, fields.{po,item,uom,orderQty,produced,scrap,quantity,quantityHelper,scrapQty,batch,warehouse,location,receiptDate,qualityStatus}, errors.{pickPo,qtyRequired,batchRequired,locationRequired,poMissingMetadata,failed}, created); `orders.actions.productionReceipt`; added missing `qualityStatus.rejected` key in both locales. sq/sr fall back to mk (existing precedent — `orders.*` block lives only in mk/en).
+
+**Tests:** none added — the hub layer adds no new server logic. `IssueAllMaterialsCommand` + `CreateMaterialIssueCommand` + `CreateProductionReceiptCommand` are fully covered by `MaterialIssueTests.cs` and `ProductionReceiptTests.cs` (LON state splits, FEFO, over-draw, status transitions Released→InProgress→Completed, `ActualEndDate` stamping, TraceLink fan-out).
+
+**OpenAPI:** no regen — no new endpoints or DTOs.
+
+**Verification on VPS:**
+- `dotnet build` 0/0; CRA build compiles successfully (500.74 kB main, +3.75 kB from §E6).
+- Containers rebuilt + restarted; `/health` 200.
+- Smoke against `https://elon.elbosoft.click` on real `CO-2026-000001`:
+  1. `POST /api/Production/orders/{id}/release` → 200, status 1→2.
+  2. `POST /api/Production/orders/{id}/issues/bulk` (PO has no BOM → no materials) → HTTP 400, message: „PO has no materials to issue. Release the PO first.". Confirms the dialog will surface this guidance.
+  3. `POST /api/Production/orders/{id}/receipts` qty=25 → 200, receipt `6770094d-868b-…`; PO status 2→3, `producedQuantity` 0→25.
+  4. `POST … /receipts` qty=75 → 200, receipt `47ec136b-…`; PO status 3→4 (Completed), `producedQuantity` 25→100, `actualEndDate` set to `2026-05-13`.
+
+**Discoveries / follow-ups:**
+- Existing PO `LON-20260513-fc945b61` was created in §E5 without a BOM (E5's BomDialog defaulted to „create PO" with `bomId=null` when no BOMs exist for the item). This made bulk-issue a no-op — correct behavior, but worth noting: §E7's IssueDialog will show the same „no materials" warning for any PO created BOM-less. Long-term fix is in §E11/§E5 (BomTemplate auto-apply or refuse PO creation without a BOM); out of E7 scope.
+- The legacy `productionApi.createProductionReceipt` points at `/Production/receipts` which isn't a real route (controller routes are `/Production/orders/{id}/receipts`). The standalone `ProductionReceiptForm.tsx` is therefore already broken in production — pre-existing bug, surfaced but not fixed by E7. Filed as Phase 22 follow-up.
+- `actualStartDate` was NOT set by the first receipt despite handler claims — needs investigation. Possibly only set on first issue, not first receipt. Out of E7 scope (server behavior unchanged).
+
+---
+
 ## 2026-05-13 — Phase 17 §E6 — wire Podelba (multi-balance, single-producer) from hub + VPS-verified
 
 Commit `16f8711`. VPS smoke OK: Producer-type partner created → `/api/Suggestions/producer` returns fallback (200) → POST `/api/WMS/inventory/podelba-to-producer` with 1.5 units against `PKG-001` succeeded → source row 55.5556 → 54.0556, new sibling at RCV-01 with `AssignedProducerId=PRD-SMOKE` qty=1.5, podelbaNumber `PDL-20260513150744-26bd45`. Over-allocation rejected with explicit available-vs-requested message + HTTP 400.
