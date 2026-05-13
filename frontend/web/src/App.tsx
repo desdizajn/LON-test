@@ -174,6 +174,8 @@ import OrderHub from './pages/Orders/OrderHub';
 import RazdolzuvanjeView from './pages/Orders/RazdolzuvanjeView';
 
 import { LayoutProvider } from './components/layout/LayoutContext';
+import { AiHelperContextProvider } from './contexts/AiHelperContext';
+import AiHelperButton from './components/common/AiHelperButton';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -279,15 +281,19 @@ const ProtectedLayout: React.FC<{
 
   return (
     <LayoutProvider>
-      <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
-      <div className="main-content">
-        <TopBar />
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          <ErrorBoundary routeLabel={location.pathname} key={location.pathname}>
-            <Outlet />
-          </ErrorBoundary>
+      <AiHelperContextProvider>
+        <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+        <div className="main-content">
+          <TopBar />
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            <ErrorBoundary routeLabel={location.pathname} key={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
+          </div>
         </div>
-      </div>
+        {/* Phase 17 §E10 — floating AI helper button, always rendered when authenticated. */}
+        <AiHelperButton />
+      </AiHelperContextProvider>
     </LayoutProvider>
   );
 };

@@ -41,6 +41,16 @@ public static class DependencyInjection
         services.AddScoped<LON.Application.Customs.CommercialInvoices.ICommercialInvoiceSuggestionService,
             LON.Application.Customs.CommercialInvoices.CommercialInvoiceSuggestionService>();
 
+        // Phase 17 §E10 — AI helper service + recommendation engines.
+        services.AddScoped<LON.Application.Ai.IAiAssistantService,
+            LON.Application.Ai.AiAssistantService>();
+        services.AddScoped<LON.Application.Ai.IRecommendationEngine,
+            LON.Application.Ai.Engines.ClientOrderHubRecommendationEngine>();
+        services.AddScoped<LON.Application.Ai.IRecommendationEngine,
+            LON.Application.Ai.Engines.RazdolzuvanjePreflightRecommendationEngine>();
+        services.AddScoped<LON.Application.Ai.IRecommendationEngine,
+            LON.Application.Ai.Engines.ReceiptVarianceRecommendationEngine>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         

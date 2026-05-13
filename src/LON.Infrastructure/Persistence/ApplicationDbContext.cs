@@ -138,6 +138,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<LON.Domain.Entities.Logistics.DeliveryNote> DeliveryNotes => Set<LON.Domain.Entities.Logistics.DeliveryNote>();
     public DbSet<LON.Domain.Entities.Logistics.DeliveryNoteLine> DeliveryNoteLines => Set<LON.Domain.Entities.Logistics.DeliveryNoteLine>();
 
+    // AI assistant — Phase 17 §E10
+    public DbSet<LON.Domain.Entities.Ai.AiSuggestionLog> AiSuggestionLogs => Set<LON.Domain.Entities.Ai.AiSuggestionLog>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

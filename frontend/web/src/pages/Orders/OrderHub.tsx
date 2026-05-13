@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useSetAiContext } from '../../contexts/AiHelperContext';
 import {
   Alert,
   Box,
@@ -107,6 +108,11 @@ const OrderHub: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Phase 17 §E10 — declare this page's entity so the AI helper drawer's
+  // recommendations tab can light up with ClientOrder-scoped nudges.
+  useSetAiContext('ClientOrder', id ?? null);
 
   const { data: order, isLoading, error } = useClientOrder(id);
   const [tab, setTab] = useState(0);
@@ -173,6 +179,20 @@ const OrderHub: React.FC = () => {
     }
     // Other action keys are still disabled in this phase.
   };
+
+  // Phase 17 §E10 — AI helper deep-links to the hub with ?action=<key>;
+  // open the matching dialog and clear the query param so a reload doesn't
+  // re-trigger.
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (!action) return;
+    const key = action.startsWith('orders.actions.') ? action.split('.').pop() ?? action : action;
+    handleActionClick(key);
+    const next = new URLSearchParams(searchParams);
+    next.delete('action');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (isLoading) {
     return (

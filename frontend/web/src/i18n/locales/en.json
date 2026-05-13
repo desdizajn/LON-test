@@ -25,6 +25,33 @@
       "exists": "✅ Backend exists — alternative view"
     }
   },
+  "ai": {
+    "fab": { "tooltip": "AI assistant" },
+    "drawer": { "title": "AI assistant" },
+    "tabs": {
+      "recommendations": "Recommendations",
+      "ask": "Ask"
+    },
+    "recs": {
+      "loading": "Analysing context...",
+      "empty": "No recommendations right now. Everything looks fine.",
+      "noContext": "No context on this page. Open an order for recommendations or switch to the Ask tab.",
+      "refresh": "Refresh",
+      "openAction": "Open",
+      "dismiss": "Dismiss"
+    },
+    "ask": {
+      "placeholder": "Ask a question about customs, inventory or procedures...",
+      "hint": "Ask a question about customs regulations or procedures. The answer is based on what's loaded into the Knowledge Base.",
+      "you": "You",
+      "assistant": "Assistant"
+    },
+    "errors": {
+      "recsFailed": "Failed to load recommendations.",
+      "askFailed": "Error fetching answer. Try again.",
+      "emptyAnswer": "I don't have an answer for that right now."
+    }
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

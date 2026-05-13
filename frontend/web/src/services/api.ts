@@ -961,6 +961,36 @@ export const importApi = {
   },
 };
 
+// Phase 17 §E10 — AI helper (floating drawer recommendations + Q&A).
+export interface AiRecommendation {
+  id: string;
+  code: string;
+  title: string;
+  body: string;
+  severity: 'info' | 'warning' | 'success';
+  confidence: number;
+  actionLink?: string | null;
+  actionLabel?: string | null;
+  structuredData?: Record<string, unknown> | null;
+}
+
+export interface AiAskResponse {
+  answer: string;
+  contextChunks?: Array<{ documentTitle?: string | null; snippet?: string | null }>;
+  [key: string]: unknown;
+}
+
+export const aiApi = {
+  getRecommendations: (entityType: string, entityId: string) =>
+    api.post<AiRecommendation[]>('/Ai/recommendations', { entityType, entityId }),
+  ask: (question: string, maxContextChunks: number = 3) =>
+    api.post<AiAskResponse>('/Ai/ask', { question, maxContextChunks }),
+  markActed: (suggestionId: string) =>
+    api.post(`/Ai/suggestions/${suggestionId}/acted`),
+  markDismissed: (suggestionId: string) =>
+    api.post(`/Ai/suggestions/${suggestionId}/dismissed`),
+};
+
 // P6.30/P6.31 — admin-only item backfill + per-item import-attributes drill-in.
 export const itemsAdminApi = {
   backfillBaseVariants: (dryRun: boolean = true) =>

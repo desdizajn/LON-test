@@ -134,6 +134,9 @@ public interface IApplicationDbContext
     DbSet<DeliveryNote> DeliveryNotes { get; }
     DbSet<DeliveryNoteLine> DeliveryNoteLines { get; }
 
+    // AI assistant — Phase 17 §E10
+    DbSet<LON.Domain.Entities.Ai.AiSuggestionLog> AiSuggestionLogs { get; }
+
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
     /// during seeders / background jobs / login flow. Exposed so handlers

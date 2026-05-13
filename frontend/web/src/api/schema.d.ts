@@ -5,6 +5,78 @@
 
 
 export interface paths {
+  "/api/Ai/recommendations": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["RecommendationsRequest"];
+          "text/json": components["schemas"]["RecommendationsRequest"];
+          "application/*+json": components["schemas"]["RecommendationsRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["Recommendation"][];
+            "application/json": components["schemas"]["Recommendation"][];
+            "text/json": components["schemas"]["Recommendation"][];
+          };
+        };
+      };
+    };
+  };
+  "/api/Ai/suggestions/{id}/acted": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Ai/suggestions/{id}/dismissed": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Ai/ask": {
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["AskRequest"];
+          "text/json": components["schemas"]["AskRequest"];
+          "application/*+json": components["schemas"]["AskRequest"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "text/plain": components["schemas"]["RAGResponse"];
+            "application/json": components["schemas"]["RAGResponse"];
+            "text/json": components["schemas"]["RAGResponse"];
+          };
+        };
+      };
+    };
+  };
   "/api/Analytics/dashboard": {
     get: {
       responses: {
@@ -4973,6 +5045,11 @@ export interface components {
       partnerContextId?: string | null;
       saveAsProfileLabel?: string | null;
     };
+    AskRequest: {
+      question?: string | null;
+      /** Format: int32 */
+      maxContextChunks?: number;
+    };
     BOMLineRequest: {
       /** Format: uuid */
       componentItemId?: string;
@@ -6038,6 +6115,27 @@ export interface components {
       expiryDate?: string | null;
       /** Format: uuid */
       customsDeclarationId?: string | null;
+    };
+    Recommendation: {
+      /** Format: uuid */
+      id?: string;
+      code?: string | null;
+      title?: string | null;
+      body?: string | null;
+      severity?: string | null;
+      /** Format: double */
+      confidence?: number;
+      actionLink?: string | null;
+      actionLabel?: string | null;
+      structuredData?: {
+        [key: string]: unknown;
+      } | null;
+    };
+    RecommendationsRequest: {
+      entityType?: string | null;
+      /** Format: uuid */
+      entityId?: string;
+      mode?: string | null;
     };
     RecordFieldValueRequest: {
       fieldKey?: string | null;

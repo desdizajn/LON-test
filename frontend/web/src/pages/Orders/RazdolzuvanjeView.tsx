@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useSetAiContext } from '../../contexts/AiHelperContext';
 import {
   Alert,
   Box,
@@ -71,6 +72,11 @@ const RazdolzuvanjeView: React.FC = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+
+  // Phase 17 §E10 — same entity context as OrderHub so the AI helper drawer's
+  // recommendations tab keeps showing the order-level nudges (including the
+  // Razdolzuvanje pre-flight check).
+  useSetAiContext('ClientOrder', id || null);
 
   const { data: report, isLoading, error } = useQuery<RazdolzuvanjeReport>({
     queryKey: ['clientOrders', 'razdolzuvanje', id],
