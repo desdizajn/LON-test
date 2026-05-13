@@ -132,6 +132,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PayrollLine> PayrollLines => Set<PayrollLine>();
     public DbSet<SupplierInvoice> SupplierInvoices => Set<SupplierInvoice>();
 
+    // Logistics — Phase 17 §E7.6 (D5)
+    public DbSet<LON.Domain.Entities.Logistics.DeliveryNote> DeliveryNotes => Set<LON.Domain.Entities.Logistics.DeliveryNote>();
+    public DbSet<LON.Domain.Entities.Logistics.DeliveryNoteLine> DeliveryNoteLines => Set<LON.Domain.Entities.Logistics.DeliveryNoteLine>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

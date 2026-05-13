@@ -81,6 +81,8 @@ import IncomingShipments from './pages/Warehouse/IncomingShipments';
 import QcHold from './pages/Warehouse/QcHold';
 import Skart from './pages/Warehouse/Skart';
 import Podelba from './pages/Warehouse/Podelba';
+import DeliveryNotes from './pages/Warehouse/DeliveryNotes';
+import DeliveryNoteDetail from './pages/Warehouse/DeliveryNoteDetail';
 import TariffBrowser from './pages/MasterData/TariffCodes/TariffBrowser';
 import SizeBreakdown from './pages/Production/SizeBreakdown';
 import VarianceReport from './pages/Warehouse/VarianceReport';
@@ -371,6 +373,8 @@ const App: React.FC = () => {
             <Route path="/warehouse/qc-hold" element={<QcHold />} />
             <Route path="/warehouse/skart" element={<Skart />} />
             <Route path="/warehouse/podelba" element={<Podelba />} />
+            <Route path="/warehouse/delivery-notes" element={<DeliveryNotes />} />
+            <Route path="/warehouse/delivery-notes/:id" element={<DeliveryNoteDetail />} />
             <Route path="/warehouse/issues-today" element={<PickTaskList />} />
             <Route path="/warehouse/transfers" element={<MassTransfer />} />
             <Route path="/warehouse/bulk-receipt" element={<BulkReceiptFromDeclaration />} />

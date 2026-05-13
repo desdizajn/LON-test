@@ -219,6 +219,33 @@ export const suggestionsApi = {
     api.get('/Suggestions/producer', { params: { clientOrderId } }),
 };
 
+// Phase 17 §E7.6 (D5) — DeliveryNote (legacy „Propratnica") CRUD. Most rows
+// are auto-created in `Draft` by parent commits (MaterialIssue / Shipment);
+// these helpers wire up the operator-facing list + detail.
+export const logisticsApi = {
+  getDeliveryNotes: (params?: {
+    type?: number | null;
+    status?: number | null;
+    partnerId?: string | null;
+    from?: string | null;
+    to?: string | null;
+    page?: number;
+    pageSize?: number;
+  }) => api.get('/Logistics/delivery-notes', { params }),
+  getDeliveryNote: (id: string) =>
+    api.get(`/Logistics/delivery-notes/${id}`),
+  updateDeliveryNote: (id: string, payload: {
+    driverName?: string | null;
+    vehicleRegistration?: string | null;
+    remarks?: string | null;
+    dispatchDate?: string | null;
+  }) => api.put(`/Logistics/delivery-notes/${id}`, payload),
+  confirmDeliveryNote: (id: string) =>
+    api.post(`/Logistics/delivery-notes/${id}/confirm`),
+  cancelDeliveryNote: (id: string, reason: string | null) =>
+    api.post(`/Logistics/delivery-notes/${id}/cancel`, { reason }),
+};
+
 export const productionApi = {
   // Production Orders
   // Phase 17 §E5 — clientOrderId filter added so the hub Production tab can list POs.

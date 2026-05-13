@@ -1111,6 +1111,7 @@
       "qcHold": "On QC hold",
       "skart": "Skart (defective on intake)",
       "podelba": "Podelba (distribute to producers)",
+      "deliveryNotes": "Delivery notes",
       "issuesToday": "Issues today",
       "transfers": "Transfers",
       "bulkReceipt": "Bulk receipt",
@@ -2447,5 +2448,58 @@
     "lines": "Lines",
     "value": "Value",
     "empty": "No returns."
+  },
+  "deliveryNotes": {
+    "title": "Delivery notes",
+    "summary": "{{rows}} notes · {{lines}} lines",
+    "empty": "No delivery notes yet. They are auto-generated on MaterialIssue / Shipment commits.",
+    "filters": {
+      "type": "Type",
+      "status": "Status"
+    },
+    "types": {
+      "producerDispatch": "Producer dispatch",
+      "producerReturn": "Producer return",
+      "customerShipment": "Customer shipment"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "cols": {
+      "number": "Number",
+      "type": "Type",
+      "relatedDoc": "Related doc",
+      "driver": "Driver",
+      "dispatchDate": "Dispatch date",
+      "lines": "Lines",
+      "status": "Status",
+      "description": "Description",
+      "batch": "Batch",
+      "mrn": "MRN",
+      "quantity": "Quantity"
+    },
+    "detail": {
+      "backToList": "Back to list",
+      "printCoverSheet": "Print cover sheet",
+      "notFound": "Delivery note not found.",
+      "driver": "Driver",
+      "vehicle": "Vehicle registration",
+      "remarks": "Remarks",
+      "save": "Save",
+      "confirm": "Confirm (Send)",
+      "cancel": "Cancel",
+      "lines": "Lines",
+      "updated": "Delivery note updated.",
+      "updateFailed": "Update failed.",
+      "confirmed": "Delivery note confirmed.",
+      "confirmFailed": "Confirm failed.",
+      "cancelled": "Delivery note cancelled.",
+      "cancelFailed": "Cancel failed.",
+      "cancelReason": "Cancel reason",
+      "cancelReasonPrompt": "Reason for cancellation (optional):"
+    }
   }
 }

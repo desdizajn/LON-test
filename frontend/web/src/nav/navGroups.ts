@@ -110,6 +110,15 @@ export const NAV_GROUPS: NavGroup[] = [
           'P15.8 — распределба на примени материјали кон подизведувачи (legacy frmPodeliBaranjaBrz).',
       },
       {
+        key: 'warehouse-delivery-notes',
+        labelKey: 'nav.warehouse.deliveryNotes',
+        icon: '📄',
+        path: '/warehouse/delivery-notes',
+        backendStatus: 'exists',
+        existingDataHint:
+          'Phase 17 §E7.6 (D5) — Propratnica replacement; auto-generated on MaterialIssue / Shipment commit.',
+      },
+      {
         key: 'warehouse-issues-today',
         labelKey: 'nav.warehouse.issuesToday',
         icon: '📤',

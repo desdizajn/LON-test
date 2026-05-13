@@ -1,6 +1,7 @@
 using LON.Application.Common.Commands;
 using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
+using LON.Application.Logistics.DeliveryNotes;
 using LON.Domain.Entities.Production;
 using LON.Domain.Entities.WMS;
 using LON.Domain.Enums;
@@ -34,10 +35,14 @@ public record MaterialIssueLineDto
 public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialIssueCommand, Result<Guid>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IDeliveryNoteFactory _deliveryNotes;
 
-    public CreateMaterialIssueCommandHandler(IApplicationDbContext context)
+    public CreateMaterialIssueCommandHandler(
+        IApplicationDbContext context,
+        IDeliveryNoteFactory deliveryNotes)
     {
         _context = context;
+        _deliveryNotes = deliveryNotes;
     }
 
     public async Task<Result<Guid>> Handle(CreateMaterialIssueCommand request, CancellationToken cancellationToken)
@@ -168,9 +173,64 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
             order.ActualStartDate ??= request.IssueDate;
         }
 
+        // Phase 17 §E7.6 — auto-gen the legacy `Propratnica` delivery note. The
+        // producer is inferred from the source balances' `AssignedProducerId`
+        // (stamped by the E6 Podelba flow). When the issue isn't preceded by a
+        // Podelba (legacy / direct issues), there's no producer — skip silently,
+        // the cover sheet only makes sense when goods are leaving HQ.
+        if (created.Count > 0)
+        {
+            var producerId = await ResolveProducerForIssuesAsync(created, cancellationToken);
+            if (producerId.HasValue)
+            {
+                var fromLocationId = created[0].BatchNumber is null
+                    ? Guid.Empty
+                    : await _context.InventoryMovements
+                        .Where(m => m.ReferenceNumber == created[0].IssueNumber)
+                        .Select(m => m.FromLocationId ?? Guid.Empty)
+                        .FirstOrDefaultAsync(cancellationToken);
+                if (fromLocationId != Guid.Empty)
+                {
+                    await _deliveryNotes.CreateProducerDispatchAsync(
+                        order.TenantId,
+                        producerId.Value,
+                        created,
+                        request.IssueDate,
+                        fromLocationId,
+                        cancellationToken);
+                }
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(created[0].Id);
+    }
+
+    /// <summary>
+    /// Best-effort producer resolution: pick the most-common AssignedProducerId
+    /// across InventoryBalance rows touched by the issued lines. Returns null
+    /// when no source balance has a producer set (legacy / direct-issue flow).
+    /// </summary>
+    private async Task<Guid?> ResolveProducerForIssuesAsync(
+        IReadOnlyList<MaterialIssue> issues,
+        CancellationToken ct)
+    {
+        var itemIds = issues.Select(i => i.ItemId).Distinct().ToList();
+        var batches = issues.Where(i => i.BatchNumber != null).Select(i => i.BatchNumber!).Distinct().ToList();
+
+        var candidates = await _context.InventoryBalances
+            .Where(b => itemIds.Contains(b.ItemId)
+                        && b.AssignedProducerId != null
+                        && (batches.Count == 0 || batches.Contains(b.BatchNumber!)))
+            .Select(b => b.AssignedProducerId!.Value)
+            .ToListAsync(ct);
+
+        if (candidates.Count == 0) return null;
+        return candidates
+            .GroupBy(g => g)
+            .OrderByDescending(g => g.Count())
+            .First().Key;
     }
 
     private sealed class BalanceResolution

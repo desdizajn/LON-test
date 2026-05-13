@@ -3,6 +3,7 @@ using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Finance;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Entities.Importing;
+using LON.Domain.Entities.Logistics;
 using LON.Domain.Entities.Management;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.Production;
@@ -126,6 +127,10 @@ public interface IApplicationDbContext
     DbSet<PayrollPeriod> PayrollPeriods { get; }
     DbSet<PayrollLine> PayrollLines { get; }
     DbSet<SupplierInvoice> SupplierInvoices { get; }
+
+    // Logistics — Phase 17 §E7.6 (D5)
+    DbSet<DeliveryNote> DeliveryNotes { get; }
+    DbSet<DeliveryNoteLine> DeliveryNoteLines { get; }
 
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null

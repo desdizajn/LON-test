@@ -1111,6 +1111,7 @@
       "qcHold": "Блокирано од QC",
       "skart": "Шкарт (дефект на прием)",
       "podelba": "Podelba (распределба по производител)",
+      "deliveryNotes": "Пропратници",
       "issuesToday": "Издавање денес",
       "transfers": "Трансфери",
       "bulkReceipt": "Bulk прием",
@@ -2447,5 +2448,58 @@
     "lines": "Линии",
     "value": "Вредност",
     "empty": "Нема враќања."
+  },
+  "deliveryNotes": {
+    "title": "Пропратници",
+    "summary": "{{rows}} пропратници · {{lines}} ставки",
+    "empty": "Нема пропратници. Автоматски се создаваат на commit на издавање материјал / испорака.",
+    "filters": {
+      "type": "Тип",
+      "status": "Статус"
+    },
+    "types": {
+      "producerDispatch": "Кон производител",
+      "producerReturn": "Враќање од производител",
+      "customerShipment": "Кон клиент"
+    },
+    "statuses": {
+      "draft": "Нацрт",
+      "sent": "Испратено",
+      "confirmed": "Потврдено",
+      "cancelled": "Откажано"
+    },
+    "cols": {
+      "number": "Број",
+      "type": "Тип",
+      "relatedDoc": "Поврзан документ",
+      "driver": "Возач",
+      "dispatchDate": "Датум",
+      "lines": "Ставки",
+      "status": "Статус",
+      "description": "Опис",
+      "batch": "Серија",
+      "mrn": "MRN",
+      "quantity": "Количина"
+    },
+    "detail": {
+      "backToList": "Назад до листата",
+      "printCoverSheet": "Печати пропратница",
+      "notFound": "Пропратницата не е пронајдена.",
+      "driver": "Возач",
+      "vehicle": "Регистрација на возилото",
+      "remarks": "Забелешки",
+      "save": "Зачувај",
+      "confirm": "Потврди (Испрати)",
+      "cancel": "Откажи",
+      "lines": "Ставки",
+      "updated": "Пропратницата е ажурирана.",
+      "updateFailed": "Неуспешно ажурирање.",
+      "confirmed": "Пропратницата е потврдена.",
+      "confirmFailed": "Неуспешно потврдување.",
+      "cancelled": "Пропратницата е откажана.",
+      "cancelFailed": "Неуспешно откажување.",
+      "cancelReason": "Причина за откажување",
+      "cancelReasonPrompt": "Причина за откажување (опционо):"
+    }
   }
 }

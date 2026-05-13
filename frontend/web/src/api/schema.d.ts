@@ -764,6 +764,114 @@ export interface paths {
       };
     };
   };
+  "/api/Logistics/delivery-notes": {
+    get: {
+      parameters: {
+        query?: {
+          type?: number;
+          status?: number;
+          partnerId?: string;
+          from?: string;
+          to?: string;
+          page?: number;
+          pageSize?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Logistics/delivery-notes/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateDeliveryNoteBody"];
+          "text/json": components["schemas"]["UpdateDeliveryNoteBody"];
+          "application/*+json": components["schemas"]["UpdateDeliveryNoteBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Logistics/delivery-notes/{id}/confirm": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Logistics/delivery-notes/{id}/cancel": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CancelDeliveryNoteBody"];
+          "text/json": components["schemas"]["CancelDeliveryNoteBody"];
+          "application/*+json": components["schemas"]["CancelDeliveryNoteBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Logistics/delivery-notes/{id}/pdf": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Employees": {
     get: {
       responses: {
@@ -4687,6 +4795,9 @@ export interface components {
       id?: string;
       reason?: string | null;
     };
+    CancelDeliveryNoteBody: {
+      reason?: string | null;
+    };
     CertifyDeclarationBody: {
       zaverkaNumber?: string | null;
       /** Format: date-time */
@@ -5866,6 +5977,13 @@ export interface components {
       countryOfDestination?: string | null;
       specialRemarks?: string | null;
       notes?: string | null;
+    };
+    UpdateDeliveryNoteBody: {
+      driverName?: string | null;
+      vehicleRegistration?: string | null;
+      remarks?: string | null;
+      /** Format: date-time */
+      dispatchDate?: string | null;
     };
     UpdateEmployeeCertificationCommand: {
       /** Format: uuid */

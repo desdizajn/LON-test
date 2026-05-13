@@ -32,6 +32,11 @@ public static class DependencyInjection
         services.AddScoped<LON.Application.Common.Interfaces.INumberSequenceService,
             LON.Infrastructure.Services.SqlNumberSequenceService>();
 
+        // Phase 17 §E7.6 — auto-gen DeliveryNotes alongside MaterialIssue /
+        // Shipment / FinishedGoodReceipt commits.
+        services.AddScoped<LON.Application.Logistics.DeliveryNotes.IDeliveryNoteFactory,
+            LON.Application.Logistics.DeliveryNotes.DeliveryNoteFactory>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         
