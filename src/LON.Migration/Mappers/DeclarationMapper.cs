@@ -4,15 +4,17 @@ using static LON.Migration.Helpers;
 namespace LON.Migration.Mappers;
 
 /// <summary>
-/// FakturiU5Z (header) + FakturiU5 (lines) → CustomsDeclarations + CustomsDeclarationLines.
+/// FakturiU5Z (header) + FakturiU5 (lines) → CustomsDeclarations + Lines.
 ///
-/// Mapping notes:
-///  - FakturiU5Z rows are the invoice/declaration headers; FakturiU5 rows are individual
-///    commodity lines (one per Box 31/32/33 entry on the SAD).
-///  - The declaration is keyed in legacy by (OdobrenieRBr, ZaklucokBroj, FakturaU5Broj).
-///  - ZaverkaBroj/ZaverkaDatum on the header = customs certification ("заверка"), set when
-///    an inspector stamps the declaration. When present, we flag Status=Submitted
-///    (closer to legacy semantics than Cleared).
+/// Phase 17 §E.MIGRATE refactor:
+///   * Procedure code resolution: VidUIS legacy code → 4200 (default for
+///     inward processing import; ALL local TEKSPORT FakturiU5Z rows fall
+///     into this bucket). Phase 21 expands the mapping table per real data.
+///   * ClientOrderId: stamped via composite (OdobrenieRBr, ZaklucokBroj)
+///     lookup so the hub query reaches this declaration without joins.
+///   * Status: RazdolzenaDaNe=1 → Cleared; ZaverkaBroj non-empty → Submitted;
+///     else Registered.
+///   * Totals: server-side recomputation from line aggregation.
 /// </summary>
 internal sealed class DeclarationMapper
 {
@@ -25,23 +27,28 @@ internal sealed class DeclarationMapper
         using var legacy = _ctx.OpenLegacy();
         using var lon = _ctx.OpenLon();
 
-        var itemByArtRBr = LoadItemsByArtRBr(lon);
-        var authByZakBroj = LoadAuthsByZaklucokBroj(lon);
-        Console.WriteLine($"[decls] item map size={itemByArtRBr.Count} auth map size={authByZakBroj.Count}");
+        var itemByCode = LoadItemsByCode(lon);
+        var odMap = OdobrenijaMapper.Lookup(_ctx, legacy, lon);
+        Console.WriteLine($"[decls] item map size={itemByCode.Count} auth map size={odMap.Count}");
 
-        if (_ctx.InwardProcessingProcedureId == null)
+        if (!_ctx.ProcedureByCode.TryGetValue("4200", out var procDefault))
         {
-            Console.Error.WriteLine("[decls] ABORT: no 'INW-PROC' CustomsProcedure in LON; seed it first.");
+            Console.Error.WriteLine("[decls] ABORT: '4200' CustomsProcedure not found after Hydrate; check seed.");
             return 3;
         }
 
         string top = limit > 0 ? $"TOP {limit}" : "";
-        var sel = new SqlCommand(
-            $"SELECT {top} OdobrenieRBr, ZaklucokBroj, FakturaU5Broj, FakturaU5Datum, " +
-            "ZaverkaBroj, ZaverkaDatum, RazdolzenaDaNe, Kurs, Valuta, CarOE, Zabeleska, " +
-            "Primac, Ispracac, KoletiBr, TezinaBrutoVk, DatumRokDo, Proizvoditel " +
-            "FROM FakturiU5Z ORDER BY FakturaU5Datum, FakturaU5Broj", legacy);
-
+        var sql = $"""
+                  SELECT {top} OdobrenieRBr, ZaklucokBroj, FakturaU5Broj, FakturaU5Datum,
+                         ZaverkaBroj, ZaverkaDatum, RazdolzenaDaNe, Kurs, Valuta, CarOE,
+                         Zabeleska, Primac, Ispracac, KoletiBr, TezinaBrutoVk, DatumRokDo,
+                         Proizvoditel, VidUIS
+                    FROM FakturiU5Z
+                   WHERE 1=1{_ctx.ZaklucokWhere()}
+                   ORDER BY FakturaU5Datum, FakturaU5Broj
+                  """;
+        using var sel = new SqlCommand(sql, legacy);
+        _ctx.AddZaklucokParam(sel);
         using var rd = sel.ExecuteReader();
 
         int total = 0, written = 0, withoutAuth = 0;
@@ -58,7 +65,7 @@ internal sealed class DeclarationMapper
                 ZaverkaDatum = AsDate(rd["ZaverkaDatum"]),
                 Razdolzena = AsBool(rd["RazdolzenaDaNe"]),
                 Kurs = AsDecimal(rd["Kurs"]),
-                Valuta = AsString(rd["Valuta"]) ?? "EUR",
+                Valuta = string.IsNullOrWhiteSpace(AsString(rd["Valuta"])) ? "EUR" : AsString(rd["Valuta"])!,
                 CarOE = AsString(rd["CarOE"]),
                 Zabeleska = AsString(rd["Zabeleska"]),
                 Primac = AsInt(rd["Primac"]),
@@ -66,11 +73,50 @@ internal sealed class DeclarationMapper
                 KoletiBr = AsDecimal(rd["KoletiBr"]),
                 TezinaBruto = AsDecimal(rd["TezinaBrutoVk"]),
                 DatumRokDo = AsDate(rd["DatumRokDo"]),
+                Proizvoditel = AsInt(rd["Proizvoditel"]),
+                VidUIS = AsString(rd["VidUIS"]),
             });
         }
         rd.Close();
 
-        Console.WriteLine($"[decls] loaded {headers.Count} FakturiU5Z headers");
+        // Phantom headers: FakturiU5 has lines whose (OdobrenieRBr, ZaklucokBroj,
+        // FakturaU5Broj) combination isn't represented in FakturiU5Z. Legacy data
+        // quirk — most likely an archived header. We synthesize a placeholder
+        // header per orphan FakturaU5Broj so the lines still land in LON and the
+        // R6 NaimU5 aggregation matches legacy totals.
+        var existingKeys = new HashSet<(int, string, string)>(
+            headers.Select(h => (h.OdobrenieRBr, h.ZaklucokBroj, h.FakturaU5Broj)));
+        var phantomSql = $"""
+                         SELECT OdobrenieRBr, ZaklucokBroj, FakturaU5Broj,
+                                MIN(FakturaU5Datum) AS Datum, MIN(Valuta) AS Valuta
+                           FROM FakturiU5
+                          WHERE FakturaU5Broj IS NOT NULL{_ctx.ZaklucokWhere()}
+                          GROUP BY OdobrenieRBr, ZaklucokBroj, FakturaU5Broj
+                         """;
+        using (var phantomCmd = new SqlCommand(phantomSql, legacy))
+        {
+            _ctx.AddZaklucokParam(phantomCmd);
+            using var pr = phantomCmd.ExecuteReader();
+            while (pr.Read())
+            {
+                var k = (AsInt(pr["OdobrenieRBr"]), AsStringOrEmpty(pr["ZaklucokBroj"]),
+                         AsStringOrEmpty(pr["FakturaU5Broj"]));
+                if (existingKeys.Contains(k)) continue;
+                headers.Add(new HeaderRow
+                {
+                    OdobrenieRBr = k.Item1,
+                    ZaklucokBroj = k.Item2,
+                    FakturaU5Broj = k.Item3,
+                    FakturaU5Datum = AsDateOrNow(pr["Datum"]),
+                    Valuta = string.IsNullOrWhiteSpace(AsString(pr["Valuta"])) ? "EUR" : AsString(pr["Valuta"])!,
+                    Razdolzena = false,
+                    VidUIS = "(phantom-no-header)",
+                    Zabeleska = "(synthesised — no FakturiU5Z header for this FakturaU5Broj)",
+                });
+            }
+        }
+
+        Console.WriteLine($"[decls] loaded {headers.Count} headers (incl. phantoms for orphan FakturiU5 lines)");
 
         foreach (var h in headers)
         {
@@ -79,17 +125,31 @@ internal sealed class DeclarationMapper
 
             var declId = DeterministicGuid("CustomsDecl",
                 $"{_ctx.TenantId}|{h.OdobrenieRBr}|{h.ZaklucokBroj}|{h.FakturaU5Broj}|{h.FakturaU5Datum:yyyyMMdd}");
-            authByZakBroj.TryGetValue(h.ZaklucokBroj, out var lonAuthId);
-            if (lonAuthId == Guid.Empty) withoutAuth++;
 
-            // Status: Razdolzena=1 → Cleared, ZaverkaBroj present → Submitted, else Registered.
-            int status = h.Razdolzena ? 3 /*Cleared*/
-                       : !string.IsNullOrWhiteSpace(h.ZaverkaBroj) ? 2 /*Submitted*/
-                       : 1 /*Registered*/;
+            if (!odMap.TryGetValue(h.OdobrenieRBr, out var lonAuthId))
+                withoutAuth++;
+            var clientOrderId = ClientOrderMapper.ResolveId(_ctx, h.OdobrenieRBr, h.ZaklucokBroj);
 
-            decimal totalCustomsValue = 0, totalDuty = 0, totalVAT = 0;
+            // Status: Razdolzena=1 → Cleared (3), ZaverkaBroj present → Submitted (2), else Registered (1).
+            int status = h.Razdolzena ? 3
+                       : !string.IsNullOrWhiteSpace(h.ZaverkaBroj) ? 2
+                       : 1;
+
+            // Procedure resolution from VidUIS. Local data has IMA4/IMA5/IMC5
+            // all of which are legacy aliases for inward processing → 4200.
+            // Phase 21 expands this map as we see prod data.
+            var procId = procDefault;
+
+            // Declaration type from procedure context (IM for the legacy IM bucket;
+            // EX rows aren't present in local TEKSPORT slice's FakturiU5Z).
+            string declType = "IM";
 
             var lines = LoadLines(legacy, h);
+            decimal totalCV = 0, totalDuty = 0;
+
+            Guid? customerId = h.Primac > 0
+                ? DeterministicGuid("Partner", $"{_ctx.TenantId}|LEG-FIRM-{h.Primac}")
+                : _ctx.DefaultSupplierPartnerId;
 
             if (!_ctx.DryRun)
             {
@@ -100,61 +160,62 @@ internal sealed class DeclarationMapper
                     WHEN MATCHED THEN UPDATE SET
                         DeclarationNumber = @num, MRN = @mrn, DeclarationDate = @date,
                         CustomsProcedureId = @procId, LONAuthorizationId = @authId,
-                        DeclarationType = 'IM', ProcedureCode = '4200',
+                        ClientOrderId = @coId, PartnerId = @partner,
+                        DeclarationType = @declType, ProcedureCode = @procCode,
                         Currency = @currency, ExchangeRate = @kurs,
-                        TotalCustomsValue = @tcv, TotalDuty = @tdu, TotalVAT = @tvat,
+                        TotalCustomsValue = @tcv, TotalDuty = @tdu, TotalVAT = 0,
                         TotalOtherCharges = 0, Status = @status, IsCleared = @cleared,
                         DueDate = @due, ClearedDate = @cleared_date,
                         SpecialRemarks = @notes,
                         ModifiedAt = SYSUTCDATETIME(), ModifiedBy = 'migration', IsDeleted = 0
                     WHEN NOT MATCHED THEN INSERT (Id, TenantId, DeclarationNumber, MRN,
-                        DeclarationDate, CustomsProcedureId, LONAuthorizationId, DeclarationType,
-                        Currency, TotalInvoiceAmount, ExchangeRate, HasContainer, ProcedureCode,
-                        TotalCustomsValue, TotalDuty, TotalVAT, TotalOtherCharges,
-                        Status, IsCleared, DueDate, ClearedDate, SpecialRemarks,
-                        CreatedAt, CreatedBy, IsDeleted)
-                        VALUES (@id, @tenant, @num, @mrn, @date, @procId, @authId, 'IM',
-                                @currency, 0, @kurs, 0, '4200',
-                                @tcv, @tdu, @tvat, 0, @status, @cleared, @due, @cleared_date,
-                                @notes, SYSUTCDATETIME(), 'migration', 0);
+                        DeclarationDate, CustomsProcedureId, LONAuthorizationId, ClientOrderId,
+                        PartnerId, DeclarationType, Currency, TotalInvoiceAmount, ExchangeRate,
+                        HasContainer, ProcedureCode, TotalCustomsValue, TotalDuty, TotalVAT,
+                        TotalOtherCharges, Status, IsCleared, DueDate, ClearedDate,
+                        SpecialRemarks, CreatedAt, CreatedBy, IsDeleted, AverageDutyRate, UseAverageRate)
+                        VALUES (@id, @tenant, @num, @mrn, @date, @procId, @authId, @coId,
+                                @partner, @declType, @currency, 0, @kurs, 0, @procCode,
+                                @tcv, @tdu, 0, 0, @status, @cleared, @due, @cleared_date,
+                                @notes, SYSUTCDATETIME(), 'migration', 0, NULL, 0);
                     """,
                     ("@id", declId),
                     ("@tenant", _ctx.TenantId),
-                    // legacy FakturaU5Broj is NOT unique across time/auth; compose a stable key
                     ("@num", $"{h.FakturaU5Broj}/{h.FakturaU5Datum:yyMMdd}/{h.OdobrenieRBr}"),
-                    ("@mrn", (h.ZaverkaBroj is { } zb && zb.Length > 0 ? zb : $"LEG-{h.FakturaU5Broj}-{h.FakturaU5Datum:yyMMdd}-{h.OdobrenieRBr}")),
+                    ("@mrn", (h.ZaverkaBroj is { } zb && zb.Length > 0
+                              ? zb : $"LEG-{h.FakturaU5Broj}-{h.FakturaU5Datum:yyMMdd}-{h.OdobrenieRBr}")),
                     ("@date", h.FakturaU5Datum),
-                    ("@procId", _ctx.InwardProcessingProcedureId!.Value),
+                    ("@procId", procId),
                     ("@authId", (object?)(lonAuthId == Guid.Empty ? null : (Guid?)lonAuthId) ?? DBNull.Value),
+                    ("@coId", clientOrderId),
+                    ("@partner", customerId ?? (object)DBNull.Value),
+                    ("@declType", declType),
+                    ("@procCode", "4200"),
                     ("@currency", h.Valuta),
                     ("@kurs", h.Kurs),
-                    ("@tcv", totalCustomsValue),
-                    ("@tdu", totalDuty),
-                    ("@tvat", totalVAT),
+                    ("@tcv", 0m),
+                    ("@tdu", 0m),
                     ("@status", status),
                     ("@cleared", status == 3),
                     ("@due", (object?)h.DatumRokDo ?? DBNull.Value),
                     ("@cleared_date", (object?)h.ZaverkaDatum ?? DBNull.Value),
-                    ("@notes", (object?)$"[LEGACY OdobrenieRBr={h.OdobrenieRBr} ZaklucokBroj={h.ZaklucokBroj}] {h.Zabeleska}".Trim()));
+                    ("@notes", $"[LEGACY VidUIS={h.VidUIS} OdobrenieRBr={h.OdobrenieRBr} ZaklucokBroj={h.ZaklucokBroj}] {h.Zabeleska}".Trim()));
             }
 
-            // Lines
             int lineNo = 0;
             foreach (var ln in lines)
             {
                 lineNo++;
-                if (!itemByArtRBr.TryGetValue(ln.ArtRBrMat, out var itemId))
+                if (!itemByCode.TryGetValue(ln.ArtKatBrMat, out var itemId))
                 {
-                    // skip lines for items we didn't migrate (archived/missing)
+                    Console.WriteLine($"[decls]   skip line {lineNo} item code '{ln.ArtKatBrMat}' not in Items table");
                     continue;
                 }
 
-                var lid = DeterministicGuid("CustomsDeclLine", $"{declId}|{lineNo}|{ln.ArtRBrMat}");
-
-                decimal dutyAmt = ln.Davacki;
-                decimal cv = ln.Vrednost;
-                totalCustomsValue += cv;
-                totalDuty += dutyAmt;
+                var lid = DeterministicGuid("CustomsDeclLine", $"{declId}|{lineNo}|{ln.ArtKatBrMat}");
+                totalCV += ln.Vrednost;
+                totalDuty += ln.Davacki;
+                var uomId = ResolveUoM(ln.EdMer);
 
                 if (_ctx.DryRun) continue;
 
@@ -172,9 +233,9 @@ internal sealed class DeclarationMapper
                     WHEN NOT MATCHED THEN INSERT (Id, TenantId, CustomsDeclarationId, LineNumber,
                         ItemId, TariffCode, CountryOfOrigin, Quantity, UoMId, ItemPrice,
                         StatisticalValue, CustomsValue, DutyAmount, DutyRate, VATRate, VATAmount,
-                        NetWeight, GrossWeight, OtherCharges, CreatedAt, CreatedBy, IsDeleted)
+                        NetWeight, GrossWeight, OtherCharges, CreatedAt, CreatedBy, IsDeleted, RazdolzenaDaNe)
                         VALUES (@id, @tenant, @d, @line, @item, @tar, @country, @q, @uom, @price,
-                                @sv, @cv, @duty, 0, 0, 0, @net, @gross, 0, SYSUTCDATETIME(), 'migration', 0);
+                                @sv, @cv, @duty, 0, 0, 0, @net, @gross, 0, SYSUTCDATETIME(), 'migration', 0, 0);
                     """,
                     ("@id", lid),
                     ("@tenant", _ctx.TenantId),
@@ -184,41 +245,45 @@ internal sealed class DeclarationMapper
                     ("@tar", (object?)ln.TarBr ?? DBNull.Value),
                     ("@country", (object?)ln.ZemjaPoteklo ?? DBNull.Value),
                     ("@q", ln.Kol),
-                    ("@uom", _ctx.DefaultUoMId),
+                    ("@uom", uomId),
                     ("@price", ln.Cena),
                     ("@sv", ln.StatVred),
                     ("@cv", ln.Vrednost),
-                    ("@duty", dutyAmt),
+                    ("@duty", ln.Davacki),
                     ("@net", ln.Tezina),
                     ("@gross", ln.TezinaBruto));
             }
 
-            // Update totals on declaration now that we know the sum
             if (!_ctx.DryRun && lineNo > 0)
             {
                 _ctx.Exec(lon,
                     "UPDATE CustomsDeclarations SET TotalCustomsValue=@tcv, TotalDuty=@tdu WHERE Id=@id",
-                    ("@tcv", totalCustomsValue),
+                    ("@tcv", totalCV),
                     ("@tdu", totalDuty),
                     ("@id", declId));
             }
 
             written++;
-            if (total % 50 == 0) Console.WriteLine($"[decls] progress total={total} written={written} noauth={withoutAuth}");
         }
 
         Console.WriteLine($"[decls] done total={total} written={written} headers_without_matched_auth={withoutAuth}");
         return 0;
     }
 
-    private record struct LineRow(int ArtRBrMat, decimal Kol, decimal Cena, string? Valuta,
-        decimal Vrednost, decimal StatVred, decimal Davacki, decimal Tezina, decimal TezinaBruto,
-        string? TarBr, string? ZemjaPoteklo);
+    private Guid ResolveUoM(string? edMer)
+    {
+        if (string.IsNullOrWhiteSpace(edMer)) return _ctx.DefaultUoMId;
+        return _ctx.UoMByCode.TryGetValue(edMer.Trim(), out var id) ? id : _ctx.DefaultUoMId;
+    }
 
-    private static List<LineRow> LoadLines(SqlConnection legacy, HeaderRow h)
+    private record struct LineRow(string ArtKatBrMat, decimal Kol, decimal Cena, string? Valuta,
+        decimal Vrednost, decimal StatVred, decimal Davacki, decimal Tezina, decimal TezinaBruto,
+        string? TarBr, string? ZemjaPoteklo, string? EdMer);
+
+    private List<LineRow> LoadLines(SqlConnection legacy, HeaderRow h)
     {
         using var cmd = new SqlCommand(
-            "SELECT ArtRBrMat, Kol, Cena, Valuta, Vrednost, StatVred, Davacki, Tezina, TezinaBruto, TarBr, ZemjaPoteklo " +
+            "SELECT ArtKatBrMat, Kol, Cena, Valuta, Vrednost, StatVred, Davacki, Tezina, TezinaBruto, TarBr, ZemjaPoteklo, EdMer " +
             "FROM FakturiU5 WHERE OdobrenieRBr=@o AND ZaklucokBroj=@z AND FakturaU5Broj=@f AND FakturaU5Datum=@d",
             legacy);
         cmd.Parameters.AddWithValue("@o", h.OdobrenieRBr);
@@ -229,7 +294,7 @@ internal sealed class DeclarationMapper
         var list = new List<LineRow>();
         while (r.Read())
             list.Add(new LineRow(
-                AsInt(r["ArtRBrMat"]),
+                AsStringOrEmpty(r["ArtKatBrMat"]),
                 AsDecimal(r["Kol"]),
                 AsDecimal(r["Cena"]),
                 AsString(r["Valuta"]),
@@ -239,7 +304,8 @@ internal sealed class DeclarationMapper
                 AsDecimal(r["Tezina"]),
                 AsDecimal(r["TezinaBruto"]),
                 AsString(r["TarBr"]),
-                AsString(r["ZemjaPoteklo"])));
+                AsString(r["ZemjaPoteklo"]),
+                AsString(r["EdMer"])));
         return list;
     }
 
@@ -261,44 +327,18 @@ internal sealed class DeclarationMapper
         public decimal KoletiBr;
         public decimal TezinaBruto;
         public DateTime? DatumRokDo;
+        public int Proizvoditel;
+        public string? VidUIS;
     }
 
-    private Dictionary<int, Guid> LoadItemsByArtRBr(SqlConnection lon)
-    {
-        // We embedded [LEGACY ArtRBr=N] in the description.
-        using var cmd = new SqlCommand(
-            "SELECT Id, Description FROM Items WHERE TenantId=@t AND Description LIKE '[[]LEGACY ArtRBr=%'",
-            lon);
-        cmd.Parameters.AddWithValue("@t", _ctx.TenantId);
-        using var r = cmd.ExecuteReader();
-        var map = new Dictionary<int, Guid>();
-        while (r.Read())
-        {
-            var id = r.GetGuid(0);
-            var d = r.GetString(1);
-            // parse: [LEGACY ArtRBr=N] ...
-            int eq = d.IndexOf('=');
-            int end = d.IndexOf(']', eq);
-            if (eq > 0 && end > eq && int.TryParse(d.AsSpan(eq + 1, end - eq - 1), out var rbr))
-                map[rbr] = id;
-        }
-        return map;
-    }
-
-    private Dictionary<string, Guid> LoadAuthsByZaklucokBroj(SqlConnection lon)
+    private Dictionary<string, Guid> LoadItemsByCode(SqlConnection lon)
     {
         using var cmd = new SqlCommand(
-            "SELECT Id, AuthorizationNumber FROM LONAuthorizations WHERE TenantId=@t AND IsDeleted=0",
-            lon);
+            "SELECT Id, Code FROM Items WHERE TenantId=@t", lon);
         cmd.Parameters.AddWithValue("@t", _ctx.TenantId);
         using var r = cmd.ExecuteReader();
         var map = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
-        while (r.Read())
-        {
-            var id = r.GetGuid(0);
-            var num = r.GetString(1);
-            map[num] = id;
-        }
+        while (r.Read()) map[r.GetString(1)] = r.GetGuid(0);
         return map;
     }
 }
