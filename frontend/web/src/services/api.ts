@@ -185,8 +185,9 @@ export const wmsApi = {
 
 export const productionApi = {
   // Production Orders
-  getOrders: (status?: string) => 
-    api.get('/Production/orders', { params: { status } }),
+  // Phase 17 §E5 — clientOrderId filter added so the hub Production tab can list POs.
+  getOrders: (params?: { status?: string; clientOrderId?: string }) =>
+    api.get('/Production/orders', { params }),
   getOrder: (id: string) => 
     api.get(`/Production/orders/${id}`),
   createOrder: (data: any) => 
@@ -380,6 +381,16 @@ export const clientOrdersApi = {
   ) => api.put(`/ClientOrders/${id}`, { id, ...payload }),
   cancel: (id: string, reason: string) =>
     api.post(`/ClientOrders/${id}/cancel`, { id, reason }),
+  // Phase 17 §E5 — add a ClientOrderFinishedGood row from the hub BOM dialog.
+  addFinishedGood: (id: string, payload: {
+    itemId: string;
+    quantity: number;
+    uoMId: string;
+    bomId?: string | null;
+    unitPriceForeign?: number | null;
+    currency?: string | null;
+    notes?: string | null;
+  }) => api.post(`/ClientOrders/${id}/finished-goods`, { clientOrderId: id, ...payload }),
 };
 
 // P13.1 / P13.3 / P13.5 — Management KPIs (on-time, by-customer, alerts)

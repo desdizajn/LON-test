@@ -166,6 +166,15 @@
           "duty": "Duty"
         },
         "productionOrdersPlaceholder": "Production orders land here in §E5.",
+        "productionOrdersEmpty": "No production orders yet. Use „Add finished goods (BOM)“ in the actions panel.",
+        "poCols": {
+          "number": "Number",
+          "item": "Item",
+          "status": "Status",
+          "orderQty": "Order qty",
+          "producedQty": "Produced",
+          "plannedEnd": "Planned end"
+        },
         "shipmentsPlaceholder": "Shipments land here in §E8.",
         "materialsPlaceholder": "Material balance lands here in §E4/§E6.",
         "receiptsEmpty": "No receipts yet. Use „Receive into warehouse“ in the actions panel.",
@@ -193,6 +202,35 @@
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
       "ai": "💡 AI recommendations"
+    },
+    "bomDialog": {
+      "title": "Add finished good + BOM",
+      "submit": "Save",
+      "hint": "Order",
+      "missingRequired": "Item, quantity and UoM are required.",
+      "created": "Finished good added.",
+      "failedFG": "Failed to add finished good.",
+      "fgCreatedButPOFailed": "FG saved, but production-order creation failed",
+      "bomCount": "{{count}} active BOM(s) for this item.",
+      "noBomsForItem": "No active BOMs for this item. Create one first in Master Data → BOMs.",
+      "section": {
+        "fg": "Finished good",
+        "po": "Production order (optional)"
+      },
+      "fields": {
+        "item": "Finished item",
+        "itemRequired": "Item is required.",
+        "quantity": "Quantity",
+        "uom": "UoM",
+        "bom": "BOM",
+        "noBom": "(no BOM)",
+        "unitPrice": "Unit price",
+        "currency": "Currency",
+        "notes": "Notes",
+        "alsoCreatePO": "Also create a production order now",
+        "plannedStart": "Planned start",
+        "plannedEnd": "Planned end"
+      }
     },
     "receiveDialog": {
       "title": "Receive into warehouse",

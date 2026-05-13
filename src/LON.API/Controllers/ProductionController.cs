@@ -32,7 +32,9 @@ public class ProductionController : BaseController
     }
 
     [HttpGet("orders")]
-    public async Task<IActionResult> GetProductionOrders([FromQuery] ProductionOrderStatus? status = null)
+    public async Task<IActionResult> GetProductionOrders(
+        [FromQuery] ProductionOrderStatus? status = null,
+        [FromQuery] Guid? clientOrderId = null)
     {
         var query = _context.ProductionOrders
             .Include(p => p.Item)
@@ -41,6 +43,10 @@ public class ProductionController : BaseController
 
         if (status.HasValue)
             query = query.Where(p => p.Status == status.Value);
+
+        // Phase 17 §E5 — hub Production-orders tab filters by parent ClientOrder.
+        if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
+            query = query.Where(p => p.ClientOrderId == clientOrderId.Value);
 
         var orders = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
         return Ok(orders);

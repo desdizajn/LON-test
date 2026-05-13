@@ -58,7 +58,7 @@ const ProductionWip: React.FC = () => {
       setLoading(true);
       try {
         const [ordersResp, invResp] = await Promise.all([
-          productionApi.getOrders('InProgress'),
+          productionApi.getOrders({ status: 'InProgress' }),
           wmsApi.getInventory(),
         ]);
         if (cancelled) return;

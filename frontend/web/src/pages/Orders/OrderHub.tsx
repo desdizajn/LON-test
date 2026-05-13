@@ -31,10 +31,11 @@ import {
   ClientOrderStatus,
   useClientOrder,
 } from '../../hooks/queries/useClientOrders';
-import { customsApi, wmsApi } from '../../services/api';
+import { customsApi, productionApi, wmsApi } from '../../services/api';
 import { formatDate } from '../../utils/format';
 import ImDeclarationDialog from './ImDeclarationDialog';
 import ReceiveDialog from './ReceiveDialog';
+import BomDialog from './BomDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -56,7 +57,8 @@ interface ActionDef {
 }
 
 const ACTIONS: ActionDef[] = [
-  { key: 'bom', labelKey: 'orders.actions.bom', icon: <FactoryIcon />, wiresInTask: 'E5' },
+  // Phase 17 §E5 — adds ClientOrderFinishedGood + optional ProductionOrder.
+  { key: 'bom', labelKey: 'orders.actions.bom', icon: <FactoryIcon />, wiresInTask: 'E5', enabled: true },
   // Phase 17 §E3 — IM action launches an inline dialog (handled below).
   { key: 'imDeclaration', labelKey: 'orders.actions.imDeclaration', icon: <InventoryIcon />, wiresInTask: 'E3', enabled: true },
   // Phase 17 §E4 — Receive launches BulkReceiptFromDeclaration dialog.
@@ -85,12 +87,15 @@ const OrderHub: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [imOpen, setImOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
+  const [bomOpen, setBomOpen] = useState(false);
 
   const handleActionClick = (actionKey: string) => {
     if (actionKey === 'imDeclaration') {
       setImOpen(true);
     } else if (actionKey === 'receive') {
       setReceiveOpen(true);
+    } else if (actionKey === 'bom') {
+      setBomOpen(true);
     }
     // Other action keys are still disabled in this phase.
   };
@@ -299,7 +304,8 @@ const OrderHub: React.FC = () => {
                   {t('orders.hub.tabs.declarationsPlaceholder')}
                 </Typography>
               )}
-              {tab === 1 && (
+              {tab === 1 && <ProductionOrdersTab clientOrderId={order.id} />}
+              {false && (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
                   {t('orders.hub.tabs.productionOrdersPlaceholder')}
                 </Typography>
@@ -386,6 +392,14 @@ const OrderHub: React.FC = () => {
         onClose={() => setReceiveOpen(false)}
         onCreated={() => setReceiveOpen(false)}
       />
+
+      {/* Phase 17 §E5 — Add FG + optional ProductionOrder. */}
+      <BomDialog
+        open={bomOpen}
+        order={order}
+        onClose={() => setBomOpen(false)}
+        onCreated={() => setBomOpen(false)}
+      />
     </Box>
   );
 };
@@ -469,6 +483,79 @@ const DeclarationsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId })
           <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
             {r.totalDuty?.toFixed?.(2) ?? '—'} {r.currency}
           </Box>
+        </React.Fragment>
+      ))}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E5 — production orders linked to this ClientOrder via the new
+ * ProductionOrder.ClientOrderId FK. Backed by
+ * `GET /api/Production/orders?clientOrderId=…`.
+ */
+interface ProductionOrderRow {
+  id: string;
+  orderNumber: string;
+  status: number;
+  orderQuantity: number;
+  producedQuantity: number;
+  plannedStartDate: string;
+  plannedEndDate: string;
+  item?: { code: string; name?: string } | null;
+}
+
+const PO_STATUS_LABEL: Record<number, string> = {
+  1: 'Draft',
+  2: 'Released',
+  3: 'InProgress',
+  4: 'Completed',
+  5: 'Closed',
+  6: 'Cancelled',
+};
+
+const ProductionOrdersTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'productionOrders', clientOrderId],
+    queryFn: async () => {
+      const resp = await productionApi.getOrders({ clientOrderId });
+      return (resp.data ?? []) as ProductionOrderRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.productionOrdersEmpty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1.6fr 1.4fr 0.8fr 0.8fr 0.8fr 0.8fr', gap: 0, fontSize: 13 }}>
+      {[
+        t('orders.hub.tabs.poCols.number'),
+        t('orders.hub.tabs.poCols.item'),
+        t('orders.hub.tabs.poCols.status'),
+        t('orders.hub.tabs.poCols.orderQty'),
+        t('orders.hub.tabs.poCols.producedQty'),
+        t('orders.hub.tabs.poCols.plannedEnd'),
+      ].map((h, i) => (
+        <Box key={i} sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: i >= 3 && i <= 4 ? 'right' : 'left' }}>
+          {h}
+        </Box>
+      ))}
+      {rows.map((r) => (
+        <React.Fragment key={r.id}>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>{r.orderNumber}</Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.item ? (r.item.name ? `${r.item.code} — ${r.item.name}` : r.item.code) : '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{PO_STATUS_LABEL[r.status] ?? r.status}</Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{r.orderQuantity?.toFixed?.(2)}</Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{r.producedQuantity?.toFixed?.(2)}</Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{formatDate(r.plannedEndDate)}</Box>
         </React.Fragment>
       ))}
     </Box>

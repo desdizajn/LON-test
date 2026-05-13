@@ -50,7 +50,7 @@ const ProductionCompleted: React.FC = () => {
     (async () => {
       setLoading(true);
       try {
-        const resp = await productionApi.getOrders('Completed');
+        const resp = await productionApi.getOrders({ status: 'Completed' });
         if (!cancelled) setOrders((resp.data as Order[]) ?? []);
       } catch (err) {
         if (!cancelled) setError(translateError(err));

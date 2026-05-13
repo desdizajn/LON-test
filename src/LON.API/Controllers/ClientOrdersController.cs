@@ -58,4 +58,16 @@ public class ClientOrdersController : BaseController
         var result = await Mediator.Send(effective);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Phase 17 §E5 — add a <see cref="ClientOrderFinishedGood"/> row to an
+    /// existing ClientOrder. Used by the hub's „Внеси готови производи (BOM)" action.
+    /// </summary>
+    [HttpPost("{id:guid}/finished-goods")]
+    public async Task<IActionResult> AddFinishedGood(Guid id, [FromBody] AddClientOrderFinishedGoodCommand command)
+    {
+        var effective = command with { ClientOrderId = id };
+        var result = await Mediator.Send(effective);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
