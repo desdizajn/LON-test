@@ -2,6 +2,40 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E7.5 — Employee.Department + Position promoted to CodeListItem FKs + VPS-verified
+
+Commit `e50c3dd`. Per D6 (decided 2026-05-12): land schema in Phase 17, full backfill in Phase 21.1.1 after the prod-ELON export arrives. Empty seed today; new categories surface through the inline „+ Нов" button on EmployeeManagement.
+
+Files (11 changed; 8,327 insertions incl. snapshot regen / 71 deletions):
+
+**Backend:**
+- `src/LON.Domain/Entities/MasterData/MasterData.cs` — `Employee` gains `DepartmentId: Guid?`, `PositionId: Guid?` + nav properties `DepartmentRef` / `PositionRef` (CodeListItem). Existing `Department: string?` / `Position: string?` kept for the deprecation window (final cleanup in Phase 18).
+- `src/LON.Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` — `EmployeeConfiguration` adds the two FKs with `OnDelete(NoAction)` (two FKs to the same parent table tripped SQL Server's multiple-cascade-path rule on first attempt; CodeListItems are soft-deleted via `IsActive=false` so hanging refs are not a real risk) plus indexes on each FK column.
+- `src/LON.Infrastructure/Migrations/20260513164817_P17_E7_5_PromoteDeptPosition.{cs,Designer.cs}` (new, migration #51) — `AddColumn DepartmentId`, `AddColumn PositionId`, `CreateIndex` per column, `AddForeignKey → CodeListItems` per column. Applied locally + VPS.
+- `src/LON.API/Controllers/EmployeesController.cs` — `GetEmployees` / `GetEmployee` / `LoadEmployee` add `.Include(e => e.DepartmentRef)` + `.Include(e => e.PositionRef)`. `Create` / `Update` persist the new FK fields and mirror the dropdown selection into the legacy free-text columns (so anything still reading `Department`/`Position` keeps working through the deprecation window). DTO records converted from positional records to init-only properties per `feedback_positional_records_trap` memory.
+
+**Frontend:**
+- `frontend/web/src/services/employeeService.ts` — `Employee`, `CreateEmployeeRequest`, `UpdateEmployeeRequest` gain `departmentId?: string | null`, `positionId?: string | null` + read-only `departmentName?`, `positionName?` on `Employee`.
+- `frontend/web/src/services/api.ts` — new `knowledgeBaseApi.createCodeListItem` helper for the inline create flow.
+- `frontend/web/src/pages/EmployeeManagement.tsx` — Department + Position raw `<input>` replaced by native `<select>` populated from `/api/KnowledgeBase/code-lists?listType=EmployeeDepartment` (and `EmployeePosition`). Each select sits beside a „+ Нов" button which `window.prompt`s for code + description, POSTs to `/api/KnowledgeBase/code-lists/items`, refreshes the dropdown, and auto-selects the new id. Form submit mirrors the FK selection into the legacy free-text columns so existing reports / importers stay green. Table row renders `positionName ?? position ?? '—'` (same pattern for department).
+
+**OpenAPI:** `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated; +20 / +8 lines (new optional fields on the Employee DTOs).
+
+**Verification:**
+- `dotnet build` 0/0. CRA build compiled clean (501.54 kB main, +0.8 kB).
+- Migration applied locally (`dotnet ef database update`) — count is now **51**.
+- VPS deploy successful, `/health` 200.
+- Smoke against `https://elon.elbosoft.click`:
+  1. `POST /api/KnowledgeBase/code-lists/items` `{listType:"EmployeeDepartment", code:"SEW", descriptionMK:"Шиење"}` → 200 with id; same for `EmployeePosition / STAFF / Работник`. Categories now render 1 row each via `GET /code-lists?listType=…`.
+  2. `POST /api/Employees` with `departmentId` + `positionId` → 200; response carries `departmentId`, `departmentName="Шиење"`, `positionId`, `positionName="Работник"`. Mirror into legacy `department`/`position` strings confirmed.
+
+**Discoveries / follow-ups:**
+- `OnDelete(SetNull)` for two FKs to the same parent fails on SQL Server with error 1785 („Introducing FOREIGN KEY constraint … may cause cycles or multiple cascade paths"). Resolved by switching to `NoAction`. Documented inline at `MasterDataConfigurations.cs:160-172`.
+- bash on Windows mangles Cyrillic when curl payloads are passed via `-d` shell-quoted; switched to file-based POSTs (`curl --data @file.json`) for smoke. Backend handles UTF-8 fine — purely a terminal-encoding artifact.
+- D6 backfill still pending: when the prod-ELON export lands at Phase 21, a one-time `SELECT DISTINCT Department FROM staging.Employees` → `INSERT CodeListItem` → `UPDATE Employee.DepartmentId` runs against the cutover snapshot. Captured as Phase 21.1.1 task in PLAN.
+
+---
+
 ## 2026-05-13 — Phase 17 §E7 — wire MaterialIssue + ProductionReceipt from hub + VPS-verified
 
 Commit `d47f973`. VPS smoke OK on `CO-2026-000001` / `PO LON-20260513-fc945b61`: released PO (status 1→2) → bulk-issue correctly rejected (no BOM materials yet) with explanatory `PO has no materials to issue. Release the PO first.` → first production receipt qty=25 succeeded (status 2→3, produced 0→25) → second receipt qty=75 completed the PO (status 3→4, produced 100, `ActualEndDate` set). No server changes; the hub layer adds purely UI plumbing.
