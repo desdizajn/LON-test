@@ -27,7 +27,11 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
-        
+
+        // Phase 17 §E1 — per-tenant SQL SEQUENCE provider.
+        services.AddScoped<LON.Application.Common.Interfaces.INumberSequenceService,
+            LON.Infrastructure.Services.SqlNumberSequenceService>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         

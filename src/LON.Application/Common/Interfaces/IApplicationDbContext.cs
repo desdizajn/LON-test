@@ -86,6 +86,8 @@ public interface IApplicationDbContext
     DbSet<CustomsDeclarationLine> CustomsDeclarationLines { get; }
     DbSet<CustomsDocument> CustomsDocuments { get; }
     DbSet<MRNRegistry> MRNRegistries { get; }
+    DbSet<ClientOrder> ClientOrders { get; }
+    DbSet<ClientOrderFinishedGood> ClientOrderFinishedGoods { get; }
 
     // LON (Inward Processing)
     DbSet<LONAuthorization> LONAuthorizations { get; }

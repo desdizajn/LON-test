@@ -272,6 +272,97 @@ export interface paths {
       };
     };
   };
+  "/api/ClientOrders": {
+    get: {
+      parameters: {
+        query?: {
+          status?: number;
+          customerPartnerId?: string;
+          fromDate?: string;
+          toDate?: string;
+          includeCancelled?: boolean;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateClientOrderCommand"];
+          "text/json": components["schemas"]["CreateClientOrderCommand"];
+          "application/*+json": components["schemas"]["CreateClientOrderCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateClientOrderCommand"];
+          "text/json": components["schemas"]["UpdateClientOrderCommand"];
+          "application/*+json": components["schemas"]["UpdateClientOrderCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/cancel": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CancelClientOrderCommand"];
+          "text/json": components["schemas"]["CancelClientOrderCommand"];
+          "application/*+json": components["schemas"]["CancelClientOrderCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations": {
     get: {
       parameters: {
@@ -4514,6 +4605,11 @@ export interface components {
     CancelBody: {
       reason?: string | null;
     };
+    CancelClientOrderCommand: {
+      /** Format: uuid */
+      id?: string;
+      reason?: string | null;
+    };
     CertifyDeclarationBody: {
       zaverkaNumber?: string | null;
       /** Format: date-time */
@@ -4575,6 +4671,18 @@ export interface components {
       validFrom?: string;
       /** Format: date-time */
       validTo?: string | null;
+      notes?: string | null;
+    };
+    CreateClientOrderCommand: {
+      /** Format: uuid */
+      customerPartnerId?: string;
+      /** Format: uuid */
+      lonAuthorizationId?: string;
+      customerOrderReference?: string | null;
+      /** Format: date-time */
+      orderDate?: string | null;
+      /** Format: date-time */
+      requestedShipDate?: string | null;
       notes?: string | null;
     };
     CreateContractBody: {
@@ -5610,6 +5718,14 @@ export interface components {
       name?: string | null;
       description?: string | null;
       isActive?: boolean | null;
+    };
+    UpdateClientOrderCommand: {
+      /** Format: uuid */
+      id?: string;
+      customerOrderReference?: string | null;
+      /** Format: date-time */
+      requestedShipDate?: string | null;
+      notes?: string | null;
     };
     UpdateContractBody: {
       /** Format: date-time */

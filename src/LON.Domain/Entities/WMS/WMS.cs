@@ -213,6 +213,12 @@ public class Shipment : BaseEntity, ITenantScoped
     public string? SalesOrderNumber { get; set; }
 
     /// <summary>
+    /// Phase 17 §E1 — optional FK back to the ClientOrder this shipment fulfils.
+    /// NULL on legacy / migrated rows. New shipments from the hub (§E8) populate this.
+    /// </summary>
+    public Guid? ClientOrderId { get; set; }
+
+    /// <summary>
     /// P15.9 — legacy <c>Ispratnici.VidUIS</c>. Customs regime marker that
     /// changes how the shipping document prints and which PEE XML envelope
     /// it belongs to. Typical values:

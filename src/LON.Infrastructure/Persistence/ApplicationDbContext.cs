@@ -91,7 +91,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CustomsDeclarationLine> CustomsDeclarationLines => Set<CustomsDeclarationLine>();
     public DbSet<CustomsDocument> CustomsDocuments => Set<CustomsDocument>();
     public DbSet<MRNRegistry> MRNRegistries => Set<MRNRegistry>();
-    
+    public DbSet<ClientOrder> ClientOrders => Set<ClientOrder>();
+    public DbSet<ClientOrderFinishedGood> ClientOrderFinishedGoods => Set<ClientOrderFinishedGood>();
+
     // LON (Inward Processing)
     public DbSet<LONAuthorization> LONAuthorizations => Set<LONAuthorization>();
     public DbSet<LONAuthorizationItem> LONAuthorizationItems => Set<LONAuthorizationItem>();

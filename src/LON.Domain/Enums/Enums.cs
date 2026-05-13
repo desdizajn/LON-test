@@ -280,3 +280,28 @@ public enum InvoiceStatus
     Paid = 3,
     Cancelled = 4
 }
+
+/// <summary>
+/// Phase 17 §E1 — ClientOrder lifecycle. Mostly computed (not user-edited);
+/// the only direct user transition is `Cancelled` (manual cancel).
+///
+///   Draft     — created, no linked IM/PO/Shipment yet
+///   Active    — at least one IM declaration linked
+///   Producing — at least one active ProductionOrder linked
+///   Shipped   — every ClientOrderFinishedGood has >= 1 EX shipment
+///   Closed    — every EX shipment is razdolzeno + guarantee ledger balanced
+///   Cancelled — manually marked; cascades soft-delete on linked entities
+///
+/// Phase 17 §E1 ships the enum + manual Cancel; computed transitions
+/// (Active → Producing → Shipped → Closed) wire up in subsequent E-tasks
+/// (E3 marks Active, E5 marks Producing, E8 marks Shipped, E9 marks Closed).
+/// </summary>
+public enum ClientOrderStatus
+{
+    Draft = 0,
+    Active = 1,
+    Producing = 2,
+    Shipped = 3,
+    Closed = 4,
+    Cancelled = 99
+}

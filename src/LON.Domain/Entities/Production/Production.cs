@@ -108,6 +108,13 @@ public class ProductionOrder : BaseEntity, ITenantScoped
     public Guid? RoutingId { get; set; }
     public virtual Routing? Routing { get; set; }
     public string? SalesOrderReference { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E1 — optional FK back to the ClientOrder that prompted this PO.
+    /// NULL on legacy rows. New POs from the hub (§E5) populate this.
+    /// </summary>
+    public Guid? ClientOrderId { get; set; }
+
     public string? Notes { get; set; }
 
     // G6 — customer-side partner (the client that placed the order). Distinct

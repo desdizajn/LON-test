@@ -46,6 +46,14 @@ public class CustomsDeclaration : BaseEntity, ITenantScoped, IAuditable
     /// LON Одобрение (за процедури 42 00, 51 00)
     /// </summary>
     public Guid? LONAuthorizationId { get; set; }
+
+    /// <summary>
+    /// Phase 17 §E1 — optional FK back to the ClientOrder that prompted this
+    /// declaration. NULL on legacy / migrated rows. New IM declarations from
+    /// the ClientOrder hub (§E3) populate this.
+    /// </summary>
+    public Guid? ClientOrderId { get; set; }
+    public virtual ClientOrder? ClientOrder { get; set; }
     public virtual LONAuthorization? LONAuthorization { get; set; }
     
     // ===== Box 01 - Декларација =====
