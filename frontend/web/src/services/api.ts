@@ -532,8 +532,8 @@ export const financeApi = {
 
 export const customsApi = {
   // Declarations
-  getDeclarations: (isCleared?: boolean) => 
-    api.get('/Customs/declarations', { params: { isCleared } }),
+  getDeclarations: (params?: { isCleared?: boolean; clientOrderId?: string }) =>
+    api.get('/Customs/declarations', { params }),
   getDeclaration: (id: string) => 
     api.get(`/Customs/declarations/${id}`),
   createDeclaration: (data: any) => 

@@ -2,6 +2,7 @@ using LON.Application.Common.Commands;
 using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
 using LON.Application.Customs.Validation;
+using LON.Domain.Common;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.Guarantee;
 using LON.Domain.Enums;
@@ -31,6 +32,13 @@ public record CreateCustomsDeclarationCommand : ICommand<Result<Guid>>
     /// Required for procedure codes 4200, 5100 and other LON-suspension types.
     /// </summary>
     public Guid? LONAuthorizationId { get; init; }
+
+    /// <summary>
+    /// Phase 17 §E3 — parent ClientOrder. Optional (legacy ad-hoc declarations
+    /// still allowed), but when set, first link transitions ClientOrder.Status
+    /// Draft → Active and the hub's Declarations tab will show the new entry.
+    /// </summary>
+    public Guid? ClientOrderId { get; init; }
 
     public decimal TotalCustomsValue { get; init; }
     public string Currency { get; init; } = "EUR";
@@ -115,21 +123,41 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
     private readonly IApplicationDbContext _context;
     private readonly IDeclarationRuleEngine _ruleEngine;
     private readonly ILogger<CreateCustomsDeclarationCommandHandler> _logger;
+    private readonly INumberSequenceService _sequence;
+    private readonly ICurrentTenantService _currentTenant;
 
     public CreateCustomsDeclarationCommandHandler(
         IApplicationDbContext context,
         IDeclarationRuleEngine ruleEngine,
-        ILogger<CreateCustomsDeclarationCommandHandler> logger)
+        ILogger<CreateCustomsDeclarationCommandHandler> logger,
+        INumberSequenceService sequence,
+        ICurrentTenantService currentTenant)
     {
         _context = context;
         _ruleEngine = ruleEngine;
         _logger = logger;
+        _sequence = sequence;
+        _currentTenant = currentTenant;
     }
 
     public async Task<Result<Guid>> Handle(CreateCustomsDeclarationCommand request, CancellationToken cancellationToken)
     {
         if (request.Lines.Count == 0)
             return Result<Guid>.Failure("Declaration must contain at least one line.");
+
+        // Phase 17 §E3 — validate optional ClientOrder linkage early so we
+        // fail fast before any guarantee debits run.
+        ClientOrder? clientOrder = null;
+        if (request.ClientOrderId.HasValue && request.ClientOrderId.Value != Guid.Empty)
+        {
+            clientOrder = await _context.ClientOrders
+                .FirstOrDefaultAsync(o => o.Id == request.ClientOrderId.Value, cancellationToken);
+            if (clientOrder is null)
+                return Result<Guid>.Failure($"ClientOrder '{request.ClientOrderId.Value}' does not exist.");
+            if (clientOrder.Status is ClientOrderStatus.Closed or ClientOrderStatus.Cancelled)
+                return Result<Guid>.Failure(
+                    $"ClientOrder '{clientOrder.OrderNumber}' is {clientOrder.Status} and cannot accept new declarations.");
+        }
 
         var procedure = await _context.CustomsProcedures
             .FirstOrDefaultAsync(p => p.Id == request.CustomsProcedureId, cancellationToken);
@@ -183,11 +211,30 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
         if (mrnRegistryCollision)
             return Result<Guid>.Failure($"MRN '{mrn}' is already present in the MRN registry.");
 
+        // Phase 17 §E3 — auto-generate DeclarationNumber when caller leaves it
+        // blank. Format mirrors §6.6: IM-{year}-{seq:D6} or EX-{year}-{seq:D6},
+        // matched to the procedure's customs-side direction. Legacy ELON also
+        // pre-fills via VBA on frmNovaFakturaU5; LON moves this to the
+        // server so concurrent hub-driven creates from different operators
+        // can't collide (each NextAsync hits SQL SEQUENCE).
+        var declarationNumber = request.DeclarationNumber;
+        if (string.IsNullOrWhiteSpace(declarationNumber))
+        {
+            var tenantId = await _currentTenant.GetTenantIdAsync(cancellationToken);
+            if (tenantId is null || tenantId.Value == Guid.Empty)
+                return Result<Guid>.Failure("Tenant context not resolved while auto-numbering declaration.");
+
+            var prefix = procedure.Type == CustomsProcedureType.Export ? "EX" : "IM";
+            var seq = await _sequence.NextAsync($"{prefix}Declaration", tenantId.Value, cancellationToken);
+            declarationNumber = NumberFormatter.Declaration(prefix, request.DeclarationDate.Year, seq);
+        }
+
         var declaration = new CustomsDeclaration
         {
             Id = Guid.NewGuid(),
-            DeclarationNumber = request.DeclarationNumber,
+            DeclarationNumber = declarationNumber,
             MRN = mrn,
+            ClientOrderId = clientOrder?.Id,
             DeclarationDate = request.DeclarationDate,
             CustomsProcedureId = request.CustomsProcedureId,
             PartnerId = request.PartnerId,
@@ -358,6 +405,16 @@ public class CreateCustomsDeclarationCommandHandler : ICommandHandler<CreateCust
             var debitResult = await TryDebitGuaranteeAsync(declaration, procedure, auth, effectiveGuaranteePct, cancellationToken);
             if (!debitResult.IsSuccess)
                 return debitResult;
+        }
+
+        // Phase 17 §E3 — first declaration link transitions ClientOrder.Status
+        // Draft → Active. Done inline (no E11 domain-event handlers yet); the
+        // status field is computed/non-user-editable per BLUEPRINT §5.1, so
+        // the entity itself remains the source of truth.
+        if (clientOrder is not null && clientOrder.Status == ClientOrderStatus.Draft)
+        {
+            clientOrder.Status = ClientOrderStatus.Active;
+            clientOrder.ModifiedAt = DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync(cancellationToken);

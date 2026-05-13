@@ -29,6 +29,12 @@ public static class NumberFormatter
     public static string ExDeclaration(int year, long seq) =>
         $"EX-{year:D4}-{seq:D6}";
 
+    /// <summary>Generic IM/EX dispatcher used by CreateCustomsDeclarationCommand
+    /// (Phase 17 §E3). The handler decides the prefix from procedure.Type;
+    /// this helper keeps the formatting in one place.</summary>
+    public static string Declaration(string prefix, int year, long seq) =>
+        $"{prefix}-{year:D4}-{seq:D6}";
+
     /// <summary>`DN-{year}-{seq:D6}` — DeliveryNote (§E7.6, D5).</summary>
     public static string DeliveryNote(int year, long seq) =>
         $"DN-{year:D4}-{seq:D6}";

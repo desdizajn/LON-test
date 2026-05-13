@@ -156,6 +156,15 @@
         "shipments": "Shipments",
         "materials": "Materials on hand",
         "declarationsPlaceholder": "Declarations land here in §E3.",
+        "declarationsEmpty": "No declarations yet. Use „Create import declaration (IM)“ in the actions panel.",
+        "declCols": {
+          "number": "Number",
+          "date": "Date",
+          "mrn": "MRN",
+          "type": "Type",
+          "customsValue": "Customs value",
+          "duty": "Duty"
+        },
         "productionOrdersPlaceholder": "Production orders land here in §E5.",
         "shipmentsPlaceholder": "Shipments land here in §E8.",
         "materialsPlaceholder": "Material balance lands here in §E4/§E6."
@@ -176,6 +185,43 @@
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
       "ai": "💡 AI recommendations"
+    },
+    "imDialog": {
+      "title": "Create import declaration (IM)",
+      "submit": "Submit",
+      "created": "Declaration created.",
+      "createFailed": "Failed to create declaration.",
+      "atLeastOneLine": "At least one line is required.",
+      "lonAuthHint": "LON authorization",
+      "clientOrderHint": "Order",
+      "addLine": "Add line",
+      "linesTotal": "Total",
+      "section": {
+        "header": "Header",
+        "lines": "Lines"
+      },
+      "fields": {
+        "declarationDate": "Declaration date",
+        "procedure": "Customs procedure",
+        "procedureRequired": "Procedure is required.",
+        "partner": "Partner (sender)",
+        "senderName": "Sender name",
+        "senderAddress": "Address",
+        "senderCountry": "Country (ISO)",
+        "countryOfDispatch": "Country of dispatch (ISO)",
+        "totalCustomsValue": "Total customs value",
+        "currency": "Currency"
+      },
+      "cols": {
+        "item": "Item",
+        "tariff": "Tariff",
+        "qty": "Qty",
+        "uom": "UoM",
+        "customsValue": "Customs value",
+        "origin": "Origin",
+        "dutyRate": "Duty %",
+        "vatRate": "VAT %"
+      }
     }
   },
   "bulkActions": {

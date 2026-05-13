@@ -278,7 +278,9 @@ public class CustomsController : BaseController
     }
 
     [HttpGet("declarations")]
-    public async Task<IActionResult> GetDeclarations([FromQuery] bool? isCleared = null)
+    public async Task<IActionResult> GetDeclarations(
+        [FromQuery] bool? isCleared = null,
+        [FromQuery] Guid? clientOrderId = null)
     {
         var query = _context.CustomsDeclarations
             .Include(d => d.CustomsProcedure)
@@ -288,6 +290,10 @@ public class CustomsController : BaseController
 
         if (isCleared.HasValue)
             query = query.Where(d => d.IsCleared == isCleared.Value);
+
+        // Phase 17 §E3 — hub Declarations tab filters by parent ClientOrder.
+        if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
+            query = query.Where(d => d.ClientOrderId == clientOrderId.Value);
 
         var declarations = await query.OrderByDescending(d => d.DeclarationDate).ToListAsync();
         return Ok(declarations);

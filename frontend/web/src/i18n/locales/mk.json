@@ -156,6 +156,15 @@
         "shipments": "Испратници",
         "materials": "Материјали на лагер",
         "declarationsPlaceholder": "Декларациите стигнуваат тука во §E3.",
+        "declarationsEmpty": "Сè уште нема декларации. Користи „Креирај увозна декларација (IM)“ во акциите.",
+        "declCols": {
+          "number": "Број",
+          "date": "Датум",
+          "mrn": "MRN",
+          "type": "Тип",
+          "customsValue": "Царинска вредност",
+          "duty": "Царина"
+        },
         "productionOrdersPlaceholder": "Производните налози стигнуваат тука во §E5.",
         "shipmentsPlaceholder": "Испратниците стигнуваат тука во §E8.",
         "materialsPlaceholder": "Состојбата на материјали стигнува тука во §E4/§E6."
@@ -176,6 +185,43 @@
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Аудит / историја",
       "ai": "💡 AI препораки"
+    },
+    "imDialog": {
+      "title": "Креирај увозна декларација (IM)",
+      "submit": "Поднеси",
+      "created": "Декларацијата е создадена.",
+      "createFailed": "Неуспешно создавање на декларацијата.",
+      "atLeastOneLine": "Потребна е најмалку една ставка.",
+      "lonAuthHint": "LON одобрение",
+      "clientOrderHint": "Налог",
+      "addLine": "Додај ставка",
+      "linesTotal": "Вкупно",
+      "section": {
+        "header": "Заглавие",
+        "lines": "Ставки"
+      },
+      "fields": {
+        "declarationDate": "Датум на декларација",
+        "procedure": "Царинска постапка",
+        "procedureRequired": "Постапка е задолжителна.",
+        "partner": "Партнер (испраќач)",
+        "senderName": "Име на испраќач",
+        "senderAddress": "Адреса",
+        "senderCountry": "Земја (ISO)",
+        "countryOfDispatch": "Земја на испорака (ISO)",
+        "totalCustomsValue": "Вкупна царинска вредност",
+        "currency": "Валута"
+      },
+      "cols": {
+        "item": "Артикал",
+        "tariff": "Тарифа",
+        "qty": "Количина",
+        "uom": "ЕМ",
+        "customsValue": "Цар. вредност",
+        "origin": "Потекло",
+        "dutyRate": "Carina %",
+        "vatRate": "ДДВ %"
+      }
     }
   },
   "bulkActions": {

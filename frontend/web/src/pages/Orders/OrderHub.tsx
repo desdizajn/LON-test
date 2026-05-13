@@ -26,11 +26,14 @@ import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import HistoryIcon from '@mui/icons-material/History';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { useQuery } from '@tanstack/react-query';
 import {
   ClientOrderStatus,
   useClientOrder,
 } from '../../hooks/queries/useClientOrders';
+import { customsApi } from '../../services/api';
 import { formatDate } from '../../utils/format';
+import ImDeclarationDialog from './ImDeclarationDialog';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -47,11 +50,14 @@ interface ActionDef {
   icon: React.ReactNode;
   /** Reference back to the AGENT-PROMPTS task that wires this action. */
   wiresInTask: 'E3' | 'E4' | 'E5' | 'E6' | 'E7' | 'E8' | 'E9' | 'E10' | 'E13';
+  /** When false, the button is disabled with the "Coming in §E…" tooltip. */
+  enabled?: boolean;
 }
 
 const ACTIONS: ActionDef[] = [
   { key: 'bom', labelKey: 'orders.actions.bom', icon: <FactoryIcon />, wiresInTask: 'E5' },
-  { key: 'imDeclaration', labelKey: 'orders.actions.imDeclaration', icon: <InventoryIcon />, wiresInTask: 'E3' },
+  // Phase 17 §E3 — IM action launches an inline dialog (handled below).
+  { key: 'imDeclaration', labelKey: 'orders.actions.imDeclaration', icon: <InventoryIcon />, wiresInTask: 'E3', enabled: true },
   { key: 'receive', labelKey: 'orders.actions.receive', icon: <LocalShippingIcon />, wiresInTask: 'E4' },
   { key: 'podelba', labelKey: 'orders.actions.podelba', icon: <CallSplitIcon />, wiresInTask: 'E6' },
   { key: 'issueMaterial', labelKey: 'orders.actions.issueMaterial', icon: <HandymanIcon />, wiresInTask: 'E7' },
@@ -75,6 +81,14 @@ const OrderHub: React.FC = () => {
 
   const { data: order, isLoading, error } = useClientOrder(id);
   const [tab, setTab] = useState(0);
+  const [imOpen, setImOpen] = useState(false);
+
+  const handleActionClick = (actionKey: string) => {
+    if (actionKey === 'imDeclaration') {
+      setImOpen(true);
+    }
+    // Other action keys are still disabled in this phase.
+  };
 
   if (isLoading) {
     return (
@@ -267,16 +281,15 @@ const OrderHub: React.FC = () => {
 
           <Paper sx={{ p: 2 }}>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable">
-              <Tab
-                label={`${t('orders.hub.tabs.declarations')} (${order.finishedGoods.length === 0 ? 0 : '…'})`}
-              />
+              <Tab label={t('orders.hub.tabs.declarations')} />
               <Tab label={t('orders.hub.tabs.productionOrders')} />
               <Tab label={t('orders.hub.tabs.shipments')} />
               <Tab label={t('orders.hub.tabs.materials')} />
             </Tabs>
             <Divider sx={{ my: 2 }} />
             <Box minHeight={200}>
-              {tab === 0 && (
+              {tab === 0 && <DeclarationsTab clientOrderId={order.id} />}
+              {false && (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
                   {t('orders.hub.tabs.declarationsPlaceholder')}
                 </Typography>
@@ -320,30 +333,130 @@ const OrderHub: React.FC = () => {
               {t('orders.hub.actions.hint')}
             </Typography>
             <Stack spacing={1}>
-              {ACTIONS.map((action) => (
-                <Tooltip
-                  key={action.key}
-                  title={t('orders.hub.actions.comingInTask', { task: action.wiresInTask }) as string}
-                  arrow
-                  placement="left"
-                >
-                  <span>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={action.icon}
-                      disabled
-                      sx={{ justifyContent: 'flex-start', textAlign: 'left' }}
-                    >
-                      {t(action.labelKey)}
-                    </Button>
-                  </span>
-                </Tooltip>
-              ))}
+              {ACTIONS.map((action) => {
+                const button = (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={action.icon}
+                    disabled={!action.enabled}
+                    onClick={() => action.enabled && handleActionClick(action.key)}
+                    sx={{ justifyContent: 'flex-start', textAlign: 'left' }}
+                  >
+                    {t(action.labelKey)}
+                  </Button>
+                );
+                if (action.enabled) {
+                  return <React.Fragment key={action.key}>{button}</React.Fragment>;
+                }
+                return (
+                  <Tooltip
+                    key={action.key}
+                    title={t('orders.hub.actions.comingInTask', { task: action.wiresInTask }) as string}
+                    arrow
+                    placement="left"
+                  >
+                    <span>{button}</span>
+                  </Tooltip>
+                );
+              })}
             </Stack>
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Phase 17 §E3 — IM declaration creation dialog. */}
+      <ImDeclarationDialog
+        open={imOpen}
+        order={order}
+        onClose={() => setImOpen(false)}
+        onCreated={() => setImOpen(false)}
+      />
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E3 — list of declarations linked to this ClientOrder.
+ * Re-fetches automatically via react-query when the IM dialog invalidates
+ * `clientOrderKeys.detail(id)` after a successful create.
+ */
+interface DeclarationRow {
+  id: string;
+  declarationNumber: string;
+  declarationDate: string;
+  mrn: string;
+  declarationType: string;
+  procedureCode: string;
+  status: number;
+  totalCustomsValue: number;
+  totalDuty: number;
+  currency: string;
+}
+
+const DeclarationsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'declarations', clientOrderId],
+    queryFn: async () => {
+      const resp = await customsApi.getDeclarations({ clientOrderId });
+      return (resp.data ?? []) as DeclarationRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) {
+    return <LinearProgress />;
+  }
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.declarationsEmpty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1.4fr 0.6fr 1fr 1fr', gap: 0, fontSize: 13 }}>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.declCols.number')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.declCols.date')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.declCols.mrn')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        {t('orders.hub.tabs.declCols.type')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+        {t('orders.hub.tabs.declCols.customsValue')}
+      </Box>
+      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+        {t('orders.hub.tabs.declCols.duty')}
+      </Box>
+      {rows.map((r) => (
+        <React.Fragment key={r.id}>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>
+            {r.declarationNumber}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {formatDate(r.declarationDate)}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>
+            {r.mrn}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.declarationType}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+            {r.totalCustomsValue?.toFixed?.(2) ?? '—'} {r.currency}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+            {r.totalDuty?.toFixed?.(2) ?? '—'} {r.currency}
+          </Box>
+        </React.Fragment>
+      ))}
     </Box>
   );
 };
