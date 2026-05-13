@@ -63,6 +63,7 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
 
         var issueNumber = $"ISS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}";
         var created = new List<MaterialIssue>(request.Lines.Count);
+        Guid? capturedFromLocationId = null; // Phase 17 §E7.6 — passed to DeliveryNote auto-gen
         int lineIdx = 0;
 
         foreach (var line in request.Lines)
@@ -129,6 +130,7 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
                 ReferenceId = order.Id
             };
             _context.InventoryMovements.Add(movement);
+            capturedFromLocationId ??= balance.LocationId;
 
             var issue = new MaterialIssue
             {
@@ -178,27 +180,18 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
         // (stamped by the E6 Podelba flow). When the issue isn't preceded by a
         // Podelba (legacy / direct issues), there's no producer — skip silently,
         // the cover sheet only makes sense when goods are leaving HQ.
-        if (created.Count > 0)
+        if (created.Count > 0 && capturedFromLocationId.HasValue)
         {
             var producerId = await ResolveProducerForIssuesAsync(created, cancellationToken);
             if (producerId.HasValue)
             {
-                var fromLocationId = created[0].BatchNumber is null
-                    ? Guid.Empty
-                    : await _context.InventoryMovements
-                        .Where(m => m.ReferenceNumber == created[0].IssueNumber)
-                        .Select(m => m.FromLocationId ?? Guid.Empty)
-                        .FirstOrDefaultAsync(cancellationToken);
-                if (fromLocationId != Guid.Empty)
-                {
-                    await _deliveryNotes.CreateProducerDispatchAsync(
-                        order.TenantId,
-                        producerId.Value,
-                        created,
-                        request.IssueDate,
-                        fromLocationId,
-                        cancellationToken);
-                }
+                await _deliveryNotes.CreateProducerDispatchAsync(
+                    order.TenantId,
+                    producerId.Value,
+                    created,
+                    request.IssueDate,
+                    capturedFromLocationId.Value,
+                    cancellationToken);
             }
         }
 
