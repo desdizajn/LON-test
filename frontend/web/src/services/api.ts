@@ -705,6 +705,35 @@ export const customsApi = {
     api.post('/Customs/declarations/return', data),
 };
 
+// Phase 17 §E8.5 (D4) — CommercialInvoice (customs commercial invoice that
+// accompanies an EX). Distinct from sales `Invoice` (Teksport billing customer
+// for processing labor) — see BLUEPRINT §3.2.1.
+export const commercialInvoicesApi = {
+  getList: (params?: {
+    clientOrderId?: string;
+    consigneePartnerId?: string;
+    status?: number;
+    from?: string;
+    to?: string;
+    page?: number;
+    pageSize?: number;
+  }) => api.get('/Customs/commercial-invoices', { params }),
+  getById: (id: string) => api.get(`/Customs/commercial-invoices/${id}`),
+  create: (data: any) => api.post('/Customs/commercial-invoices', data),
+  update: (id: string, data: any) =>
+    api.put(`/Customs/commercial-invoices/${id}`, data),
+  remove: (id: string) => api.delete(`/Customs/commercial-invoices/${id}`),
+  issue: (id: string) => api.post(`/Customs/commercial-invoices/${id}/issue`),
+  cancel: (id: string, reason?: string) =>
+    api.post(`/Customs/commercial-invoices/${id}/cancel`, { reason }),
+  suggestFromShipment: (shipmentId: string) =>
+    api.post('/Customs/commercial-invoices/suggest-from-shipment', null, {
+      params: { shipmentId },
+    }),
+  pdfUrl: (id: string) =>
+    `${(api.defaults.baseURL ?? '').replace(/\/$/, '')}/Customs/commercial-invoices/${id}/pdf`,
+};
+
 export const guaranteeApi = {
   // Accounts
   getAccounts: () => api.get('/Guarantee/accounts'),

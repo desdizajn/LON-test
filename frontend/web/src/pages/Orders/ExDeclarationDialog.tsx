@@ -22,7 +22,12 @@ interface Props {
   open: boolean;
   order: ClientOrderDto;
   onClose: () => void;
-  onCreated: () => void;
+  /**
+   * Called after a successful create. The optional second arg carries the
+   * Shipment id so callers can chain into the §E8.5 CommercialInvoice flow
+   * (suggest-from-shipment) without an extra round-trip.
+   */
+  onCreated: (chain?: { shipmentId: string }) => void;
 }
 
 interface FgRow {
@@ -198,7 +203,9 @@ const ExDeclarationDialog: React.FC<Props> = ({ open, order, onClose, onCreated 
       qc.invalidateQueries({ queryKey: ['clientOrders', 'declarations', order.id] });
       qc.invalidateQueries({ queryKey: ['clientOrders', 'shipments', order.id] });
       qc.invalidateQueries({ queryKey: ['clientOrders', 'materials', order.id] });
-      onCreated();
+      qc.invalidateQueries({ queryKey: ['clientOrders', 'commercialInvoices', order.id] });
+      const shipmentId = env.data?.shipmentId as string | undefined;
+      onCreated(shipmentId ? { shipmentId } : undefined);
     } catch (err: any) {
       toast.error(
         err?.response?.data?.errorMessage ||

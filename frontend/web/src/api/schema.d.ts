@@ -400,6 +400,157 @@ export interface paths {
       };
     };
   };
+  "/api/Customs/commercial-invoices": {
+    get: {
+      parameters: {
+        query?: {
+          clientOrderId?: string;
+          consigneePartnerId?: string;
+          status?: number;
+          from?: string;
+          to?: string;
+          page?: number;
+          pageSize?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateCommercialInvoiceCommand"];
+          "text/json": components["schemas"]["CreateCommercialInvoiceCommand"];
+          "application/*+json": components["schemas"]["CreateCommercialInvoiceCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/commercial-invoices/{id}": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateCommercialInvoiceCommand"];
+          "text/json": components["schemas"]["UpdateCommercialInvoiceCommand"];
+          "application/*+json": components["schemas"]["UpdateCommercialInvoiceCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/commercial-invoices/{id}/issue": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/commercial-invoices/{id}/cancel": {
+    post: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CancelCommercialInvoiceBody"];
+          "text/json": components["schemas"]["CancelCommercialInvoiceBody"];
+          "application/*+json": components["schemas"]["CancelCommercialInvoiceBody"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/commercial-invoices/suggest-from-shipment": {
+    post: {
+      parameters: {
+        query?: {
+          shipmentId?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Customs/commercial-invoices/{id}/pdf": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Customs/declarations": {
     get: {
       parameters: {
@@ -4830,6 +4981,9 @@ export interface components {
       id?: string;
       reason?: string | null;
     };
+    CancelCommercialInvoiceBody: {
+      reason?: string | null;
+    };
     CancelDeliveryNoteBody: {
       reason?: string | null;
     };
@@ -4859,6 +5013,21 @@ export interface components {
       descriptionEN?: string | null;
       /** Format: int32 */
       sortOrder?: number;
+    };
+    CommercialInvoiceLineInput: {
+      /** Format: uuid */
+      itemId?: string;
+      description?: string | null;
+      /** Format: double */
+      quantity?: number;
+      /** Format: uuid */
+      uoMId?: string;
+      /** Format: double */
+      unitPrice?: number;
+      countryOfOrigin?: string | null;
+      /** Format: uuid */
+      tariffCodeId?: string | null;
+      notes?: string | null;
     };
     CompleteWorkOrderBody: {
       /** Format: date-time */
@@ -4907,6 +5076,28 @@ export interface components {
       /** Format: date-time */
       requestedShipDate?: string | null;
       notes?: string | null;
+    };
+    CreateCommercialInvoiceCommand: {
+      /** Format: uuid */
+      clientOrderId?: string | null;
+      /** Format: uuid */
+      shipmentId?: string | null;
+      /** Format: uuid */
+      customsDeclarationId?: string | null;
+      /** Format: uuid */
+      consigneePartnerId?: string;
+      /** Format: uuid */
+      consignorPartnerId?: string;
+      /** Format: date-time */
+      invoiceDate?: string | null;
+      currency?: string | null;
+      countryOfDestination?: string | null;
+      incoterms?: string | null;
+      paymentTerms?: string | null;
+      /** Format: double */
+      taxAmount?: number | null;
+      notes?: string | null;
+      lines?: components["schemas"]["CommercialInvoiceLineInput"][] | null;
     };
     CreateContractBody: {
       number?: string | null;
@@ -5973,6 +6164,30 @@ export interface components {
       /** Format: date-time */
       requestedShipDate?: string | null;
       notes?: string | null;
+    };
+    UpdateCommercialInvoiceCommand: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      clientOrderId?: string | null;
+      /** Format: uuid */
+      shipmentId?: string | null;
+      /** Format: uuid */
+      customsDeclarationId?: string | null;
+      /** Format: uuid */
+      consigneePartnerId?: string | null;
+      /** Format: uuid */
+      consignorPartnerId?: string | null;
+      /** Format: date-time */
+      invoiceDate?: string | null;
+      currency?: string | null;
+      countryOfDestination?: string | null;
+      incoterms?: string | null;
+      paymentTerms?: string | null;
+      /** Format: double */
+      taxAmount?: number | null;
+      notes?: string | null;
+      lines?: components["schemas"]["CommercialInvoiceLineInput"][] | null;
     };
     UpdateContractBody: {
       /** Format: date-time */

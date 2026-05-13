@@ -42,6 +42,9 @@ import IssueMaterialDialog from './IssueMaterialDialog';
 import ProductionReceiptDialog from './ProductionReceiptDialog';
 import ExDeclarationDialog from './ExDeclarationDialog';
 import QcDialog from './QcDialog';
+import CommercialInvoiceDialog from './CommercialInvoiceDialog';
+import ReceiptIcon from '@mui/icons-material/ReceiptLong';
+import { commercialInvoicesApi } from '../../services/api';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -57,7 +60,7 @@ interface ActionDef {
   labelKey: string;
   icon: React.ReactNode;
   /** Reference back to the AGENT-PROMPTS task that wires this action. */
-  wiresInTask: 'E3' | 'E4' | 'E5' | 'E6' | 'E7' | 'E8' | 'E9' | 'E10' | 'E13';
+  wiresInTask: 'E3' | 'E4' | 'E5' | 'E6' | 'E7' | 'E8' | 'E8.5' | 'E9' | 'E10' | 'E13';
   /** When false, the button is disabled with the "Coming in §E…" tooltip. */
   enabled?: boolean;
 }
@@ -82,6 +85,10 @@ const ACTIONS: ActionDef[] = [
   // park as Blocked with a reason. Rework PO / waste declaration spawn lands
   // with BLUEPRINT §5.9.2 (post-v1 inspection entity).
   { key: 'qcPackaging', labelKey: 'orders.actions.qcPackaging', icon: <VerifiedIcon />, wiresInTask: 'E8', enabled: true },
+  // Phase 17 §E8.5 — chain action after EX: draft a CommercialInvoice from
+  // the most-recent Shipment on the ClientOrder. Opens immediately if a
+  // shipment already exists; from the EX dialog onCreated callback if not.
+  { key: 'commercialInvoice', labelKey: 'orders.actions.commercialInvoice', icon: <ReceiptIcon />, wiresInTask: 'E8.5', enabled: true },
   { key: 'razdolzuvanje', labelKey: 'orders.actions.razdolzuvanje', icon: <LocalAtmIcon />, wiresInTask: 'E9' },
   { key: 'audit', labelKey: 'orders.actions.audit', icon: <HistoryIcon />, wiresInTask: 'E13' },
   { key: 'ai', labelKey: 'orders.actions.ai', icon: <AutoAwesomeIcon />, wiresInTask: 'E10' },
@@ -109,6 +116,8 @@ const OrderHub: React.FC = () => {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [exOpen, setExOpen] = useState(false);
   const [qcOpen, setQcOpen] = useState(false);
+  const [ciOpen, setCiOpen] = useState(false);
+  const [ciShipmentId, setCiShipmentId] = useState<string | null>(null);
 
   // Phase 17 §E7 — feed the produced-progress widget from real PO data.
   // Same query key as `ProductionOrdersTab` below — react-query dedupes.
@@ -121,7 +130,7 @@ const OrderHub: React.FC = () => {
     enabled: !!id,
   });
 
-  const handleActionClick = (actionKey: string) => {
+  const handleActionClick = async (actionKey: string) => {
     if (actionKey === 'imDeclaration') {
       setImOpen(true);
     } else if (actionKey === 'receive') {
@@ -138,6 +147,24 @@ const OrderHub: React.FC = () => {
       setExOpen(true);
     } else if (actionKey === 'qcPackaging') {
       setQcOpen(true);
+    } else if (actionKey === 'commercialInvoice') {
+      // Pick the most-recent shipment on this ClientOrder; if none, prompt
+      // the user to ship first. CI must have a parent shipment.
+      try {
+        const resp = await wmsApi.getShipments({ clientOrderId: order?.id, pageSize: 1 });
+        const list = (resp.data ?? []) as Array<{ id: string }>;
+        if (!list.length) {
+          // eslint-disable-next-line no-alert
+          alert(t('orders.ciDialog.errors.noShipment') as string);
+          return;
+        }
+        setCiShipmentId(list[0].id);
+        setCiOpen(true);
+      } catch {
+        // Fall back to opening with null — dialog shows its own error.
+        setCiShipmentId(null);
+        setCiOpen(true);
+      }
     }
     // Other action keys are still disabled in this phase.
   };
@@ -342,6 +369,7 @@ const OrderHub: React.FC = () => {
               <Tab label={t('orders.hub.tabs.shipments')} />
               <Tab label={t('orders.hub.tabs.materials')} />
               <Tab label={t('orders.hub.tabs.receipts')} />
+              <Tab label={t('orders.hub.tabs.commercialInvoices')} />
             </Tabs>
             <Divider sx={{ my: 2 }} />
             <Box minHeight={200}>
@@ -350,6 +378,7 @@ const OrderHub: React.FC = () => {
               {tab === 2 && <ShipmentsTab clientOrderId={order.id} />}
               {tab === 3 && <MaterialsTab clientOrderId={order.id} />}
               {tab === 4 && <ReceiptsTab clientOrderId={order.id} />}
+              {tab === 5 && <CommercialInvoicesTab clientOrderId={order.id} />}
             </Box>
           </Paper>
         </Grid>
@@ -454,12 +483,20 @@ const OrderHub: React.FC = () => {
         onCreated={() => setReceiptOpen(false)}
       />
 
-      {/* Phase 17 §E8 — atomic EX customs declaration + Shipment. */}
+      {/* Phase 17 §E8 — atomic EX customs declaration + Shipment.
+          On success, chains directly into the §E8.5 CommercialInvoice dialog
+          with the just-created Shipment as the suggestion source. */}
       <ExDeclarationDialog
         open={exOpen}
         order={order}
         onClose={() => setExOpen(false)}
-        onCreated={() => setExOpen(false)}
+        onCreated={(chain) => {
+          setExOpen(false);
+          if (chain?.shipmentId) {
+            setCiShipmentId(chain.shipmentId);
+            setCiOpen(true);
+          }
+        }}
       />
 
       {/* Phase 17 §E8 — Pass / Reject FG quality. */}
@@ -468,6 +505,15 @@ const OrderHub: React.FC = () => {
         order={order}
         onClose={() => setQcOpen(false)}
         onCreated={() => setQcOpen(false)}
+      />
+
+      {/* Phase 17 §E8.5 — draft + create CommercialInvoice from a Shipment. */}
+      <CommercialInvoiceDialog
+        open={ciOpen}
+        order={order}
+        shipmentId={ciShipmentId}
+        onClose={() => setCiOpen(false)}
+        onCreated={() => setCiOpen(false)}
       />
     </Box>
   );
@@ -938,6 +984,113 @@ const MaterialsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) =>
           </Stack>
           {renderTable(group.rows)}
         </Box>
+      ))}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 §E8.5 — list of CommercialInvoices linked to this ClientOrder.
+ * Re-fetches automatically via react-query when CommercialInvoiceDialog
+ * invalidates `['clientOrders', 'commercialInvoices', id]`.
+ */
+interface CommercialInvoiceRow {
+  id: string;
+  number: string;
+  invoiceDate: string;
+  consigneeName?: string | null;
+  consignorName?: string | null;
+  currency: string;
+  totalAmount: number;
+  status: number;
+  statusName: string;
+  shipmentNumber?: string | null;
+}
+
+const CI_STATUS_LABEL: Record<number, string> = {
+  1: 'Draft',
+  2: 'Issued',
+  3: 'Cancelled',
+};
+
+const CommercialInvoicesTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'commercialInvoices', clientOrderId],
+    queryFn: async () => {
+      const resp = await commercialInvoicesApi.getList({ clientOrderId, pageSize: 100 });
+      return (resp.data?.data ?? []) as CommercialInvoiceRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.commercialInvoicesEmpty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.4fr 1.4fr 1fr 0.7fr 0.7fr', gap: 0, fontSize: 13 }}>
+      {[
+        t('orders.hub.tabs.ciCols.number'),
+        t('orders.hub.tabs.ciCols.date'),
+        t('orders.hub.tabs.ciCols.consignor'),
+        t('orders.hub.tabs.ciCols.consignee'),
+        t('orders.hub.tabs.ciCols.shipment'),
+        t('orders.hub.tabs.ciCols.total'),
+        t('orders.hub.tabs.ciCols.status'),
+      ].map((h, i) => (
+        <Box
+          key={i}
+          sx={{
+            fontWeight: 600,
+            p: 1,
+            borderBottom: 1,
+            borderColor: 'divider',
+            textAlign: i === 5 ? 'right' : 'left',
+          }}
+        >
+          {h}
+        </Box>
+      ))}
+      {rows.map((r) => (
+        <React.Fragment key={r.id}>
+          <Box
+            sx={{
+              p: 1,
+              borderBottom: 1,
+              borderColor: 'divider',
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+              color: 'primary.main',
+            }}
+            onClick={() => navigate(`/customs/commercial-invoices/${r.id}`)}
+          >
+            {r.number}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {formatDate(r.invoiceDate)}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.consignorName ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {r.consigneeName ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 12 }}>
+            {r.shipmentNumber ?? '—'}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+            {(r.totalAmount ?? 0).toFixed(2)} {r.currency}
+          </Box>
+          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+            {CI_STATUS_LABEL[r.status] ?? r.status}
+          </Box>
+        </React.Fragment>
       ))}
     </Box>
   );

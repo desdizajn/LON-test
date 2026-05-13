@@ -83,6 +83,8 @@ import Skart from './pages/Warehouse/Skart';
 import Podelba from './pages/Warehouse/Podelba';
 import DeliveryNotes from './pages/Warehouse/DeliveryNotes';
 import DeliveryNoteDetail from './pages/Warehouse/DeliveryNoteDetail';
+import CommercialInvoiceList from './pages/Customs/CommercialInvoiceList';
+import CommercialInvoiceDetail from './pages/Customs/CommercialInvoiceDetail';
 import TariffBrowser from './pages/MasterData/TariffCodes/TariffBrowser';
 import SizeBreakdown from './pages/Production/SizeBreakdown';
 import VarianceReport from './pages/Warehouse/VarianceReport';
@@ -402,6 +404,9 @@ const App: React.FC = () => {
             <Route path="/customs/open-items" element={<MrnDeadlines />} />
             <Route path="/customs/guarantees" element={<Guarantees />} />
             <Route path="/customs/search" element={<ScopedSearch scope="customs" />} />
+            {/* Phase 17 §E8.5 — CommercialInvoice (D4 — new entity). */}
+            <Route path="/customs/commercial-invoices" element={<CommercialInvoiceList />} />
+            <Route path="/customs/commercial-invoices/:id" element={<CommercialInvoiceDetail />} />
 
             {/* ───────── P6.37.7 — ✂️ Production group ───────── */}
             <Route path="/production/today" element={<ProductionToday />} />

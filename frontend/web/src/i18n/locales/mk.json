@@ -155,6 +155,17 @@
         "productionOrders": "Производни налози",
         "shipments": "Испратници",
         "materials": "Материјали на лагер",
+        "commercialInvoices": "Извозни фактури",
+        "commercialInvoicesEmpty": "Сè уште нема извозни фактури. Креирај една преку „Извозна фактура“ во акциите.",
+        "ciCols": {
+          "number": "Број",
+          "date": "Датум",
+          "consignor": "Испраќач",
+          "consignee": "Примач",
+          "shipment": "Испратница",
+          "total": "Вкупно",
+          "status": "Статус"
+        },
         "declarationsPlaceholder": "Декларациите стигнуваат тука во §E3.",
         "declarationsEmpty": "Сè уште нема декларации. Користи „Креирај увозна декларација (IM)“ во акциите.",
         "declCols": {
@@ -222,9 +233,43 @@
       "productionReceipt": "Запиши производство",
       "exDeclaration": "Креирај извозна декларација (EX)",
       "qcPackaging": "QC + Пакување",
+      "commercialInvoice": "Извозна фактура",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Аудит / историја",
       "ai": "💡 AI препораки"
+    },
+    "ciDialog": {
+      "title": "Креирај извозна (commercial) фактура",
+      "submit": "Зачувај",
+      "hint": "Налог",
+      "consignor": "Испраќач (consignor)",
+      "consignee": "Примач (consignee)",
+      "invoiceDate": "Датум на фактура",
+      "currency": "Валута",
+      "incoterms": "Inкотерм",
+      "destinationCountry": "ISO земја назначување",
+      "paymentTerms": "Услови на плаќање",
+      "linesTitle": "Ставки (предложени од испратницата)",
+      "subtotal": "Поднабиено",
+      "tax": "Данок",
+      "total": "Вкупно",
+      "created": "Извозната фактура е создадена.",
+      "lineCols": {
+        "item": "Артикал",
+        "description": "Опис",
+        "qty": "Количина",
+        "uom": "ЕМ",
+        "unitPrice": "Цена/единица",
+        "lineTotal": "Збир",
+        "origin": "Потекло"
+      },
+      "errors": {
+        "noShipment": "Прво создади испратница (преку EX акцијата) па пробај повторно.",
+        "suggestFailed": "Не успеа предлог од испратницата.",
+        "missingParties": "Избери испраќач и примач.",
+        "missingLines": "Потребна е најмалку една ставка.",
+        "createFailed": "Создавањето на фактурата не успеа."
+      }
     },
     "bomDialog": {
       "title": "Внеси готов производ + нормативи (BOM)",
@@ -2570,6 +2615,71 @@
       "cancelFailed": "Неуспешно откажување.",
       "cancelReason": "Причина за откажување",
       "cancelReasonPrompt": "Причина за откажување (опционо):"
+    }
+  },
+  "commercialInvoices": {
+    "title": "Извозни (commercial) фактури",
+    "summary": "{{rows}} фактури · {{total}} вкупно",
+    "empty": "Нема извозни фактури. Создавај од испратница преку „Извозна фактура“ во хабот.",
+    "filters": {
+      "status": "Статус"
+    },
+    "statuses": {
+      "draft": "Нацрт",
+      "issued": "Издадена",
+      "cancelled": "Откажана"
+    },
+    "cols": {
+      "number": "Број",
+      "invoiceDate": "Датум",
+      "consignor": "Испраќач",
+      "consignee": "Примач",
+      "incoterms": "Inкотерм",
+      "total": "Вкупно",
+      "currency": "Валута",
+      "status": "Статус"
+    },
+    "detail": {
+      "backToList": "Назад до листата",
+      "notFound": "Фактурата не е пронајдена.",
+      "clientOrder": "Налог",
+      "shipment": "Испратница",
+      "consignor": "Испраќач",
+      "consignee": "Примач",
+      "invoiceDate": "Датум",
+      "currency": "Валута",
+      "incoterms": "Inкотерм",
+      "destinationCountry": "ISO земја назначување",
+      "paymentTerms": "Услови на плаќање",
+      "notes": "Забелешки",
+      "linesTitle": "Ставки",
+      "subtotal": "Поднабиено",
+      "tax": "Данок",
+      "total": "Вкупно",
+      "save": "Зачувај",
+      "issue": "Издади",
+      "cancel": "Откажи",
+      "print": "Печати",
+      "updated": "Фактурата е ажурирана.",
+      "updateFailed": "Неуспешно ажурирање.",
+      "issued": "Фактурата е издадена.",
+      "issueFailed": "Неуспешно издавање.",
+      "cancelled": "Фактурата е откажана.",
+      "cancelFailed": "Неуспешно откажување.",
+      "cancelReason": "Причина за откажување",
+      "cancelReasonPrompt": "Причина за откажување (опционо):",
+      "missingParties": "Избери испраќач и примач.",
+      "missingLines": "Потребна е најмалку една ставка.",
+      "onlyDraft": "Само нацрт-фактури можат да се издадат.",
+      "lines": {
+        "item": "Артикл",
+        "description": "Опис",
+        "qty": "Количина",
+        "uom": "ЕМ",
+        "unitPrice": "Цена/единица",
+        "lineTotal": "Збир",
+        "origin": "Потекло"
+      }
     }
   }
 }

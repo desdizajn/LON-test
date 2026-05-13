@@ -89,6 +89,8 @@ public interface IApplicationDbContext
     DbSet<MRNRegistry> MRNRegistries { get; }
     DbSet<ClientOrder> ClientOrders { get; }
     DbSet<ClientOrderFinishedGood> ClientOrderFinishedGoods { get; }
+    DbSet<CommercialInvoice> CommercialInvoices { get; }
+    DbSet<CommercialInvoiceLine> CommercialInvoiceLines { get; }
 
     // LON (Inward Processing)
     DbSet<LONAuthorization> LONAuthorizations { get; }

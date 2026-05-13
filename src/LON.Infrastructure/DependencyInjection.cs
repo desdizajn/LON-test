@@ -37,6 +37,10 @@ public static class DependencyInjection
         services.AddScoped<LON.Application.Logistics.DeliveryNotes.IDeliveryNoteFactory,
             LON.Application.Logistics.DeliveryNotes.DeliveryNoteFactory>();
 
+        // Phase 17 §E8.5 — CommercialInvoice draft-from-Shipment helper.
+        services.AddScoped<LON.Application.Customs.CommercialInvoices.ICommercialInvoiceSuggestionService,
+            LON.Application.Customs.CommercialInvoices.CommercialInvoiceSuggestionService>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         

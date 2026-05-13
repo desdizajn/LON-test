@@ -753,6 +753,301 @@
         }
       }
     },
+    "/api/Customs/commercial-invoices": {
+      "get": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "clientOrderId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "consigneePartnerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommercialInvoiceCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommercialInvoiceCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommercialInvoiceCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/commercial-invoices/{id}": {
+      "get": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommercialInvoiceCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommercialInvoiceCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommercialInvoiceCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/commercial-invoices/{id}/issue": {
+      "post": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/commercial-invoices/{id}/cancel": {
+      "post": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelCommercialInvoiceBody"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelCommercialInvoiceBody"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelCommercialInvoiceBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/commercial-invoices/suggest-from-shipment": {
+      "post": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "shipmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Customs/commercial-invoices/{id}/pdf": {
+      "get": {
+        "tags": [
+          "CommercialInvoices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Customs/declarations": {
       "post": {
         "tags": [
@@ -8811,6 +9106,16 @@
         },
         "additionalProperties": false
       },
+      "CancelCommercialInvoiceBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CancelDeliveryNoteBody": {
         "type": "object",
         "properties": {
@@ -8896,6 +9201,45 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommercialInvoiceLineInput": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "uoMId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "countryOfOrigin": {
+            "type": "string",
+            "nullable": true
+          },
+          "tariffCodeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9020,6 +9364,72 @@
           },
           "notes": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateCommercialInvoiceCommand": {
+        "type": "object",
+        "properties": {
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "shipmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customsDeclarationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consigneePartnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "consignorPartnerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryOfDestination": {
+            "type": "string",
+            "nullable": true
+          },
+          "incoterms": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentTerms": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommercialInvoiceLineInput"
+            },
             "nullable": true
           }
         },
@@ -12072,6 +12482,78 @@
           },
           "notes": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateCommercialInvoiceCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientOrderId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "shipmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customsDeclarationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consigneePartnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consignorPartnerId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryOfDestination": {
+            "type": "string",
+            "nullable": true
+          },
+          "incoterms": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentTerms": {
+            "type": "string",
+            "nullable": true
+          },
+          "taxAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommercialInvoiceLineInput"
+            },
             "nullable": true
           }
         },

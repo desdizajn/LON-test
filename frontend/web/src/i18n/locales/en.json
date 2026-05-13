@@ -155,6 +155,17 @@
         "productionOrders": "Production orders",
         "shipments": "Shipments",
         "materials": "Materials on hand",
+        "commercialInvoices": "Commercial invoices",
+        "commercialInvoicesEmpty": "No commercial invoices yet. Create one via „Commercial invoice“ in the actions panel.",
+        "ciCols": {
+          "number": "Number",
+          "date": "Date",
+          "consignor": "Consignor",
+          "consignee": "Consignee",
+          "shipment": "Shipment",
+          "total": "Total",
+          "status": "Status"
+        },
         "declarationsPlaceholder": "Declarations land here in §E3.",
         "declarationsEmpty": "No declarations yet. Use „Create import declaration (IM)“ in the actions panel.",
         "declCols": {
@@ -222,9 +233,43 @@
       "productionReceipt": "Record production receipt",
       "exDeclaration": "Create export declaration (EX)",
       "qcPackaging": "QC + Packaging",
+      "commercialInvoice": "Commercial invoice",
       "razdolzuvanje": "Razdolzuvanje",
       "audit": "Audit / history",
       "ai": "💡 AI recommendations"
+    },
+    "ciDialog": {
+      "title": "Create commercial (export) invoice",
+      "submit": "Save",
+      "hint": "Order",
+      "consignor": "Consignor",
+      "consignee": "Consignee",
+      "invoiceDate": "Invoice date",
+      "currency": "Currency",
+      "incoterms": "Incoterms",
+      "destinationCountry": "Destination country (ISO)",
+      "paymentTerms": "Payment terms",
+      "linesTitle": "Lines (suggested from shipment)",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "total": "Total",
+      "created": "Commercial invoice created.",
+      "lineCols": {
+        "item": "Item",
+        "description": "Description",
+        "qty": "Qty",
+        "uom": "UoM",
+        "unitPrice": "Unit price",
+        "lineTotal": "Total",
+        "origin": "Origin"
+      },
+      "errors": {
+        "noShipment": "Create a shipment first (via EX action), then retry.",
+        "suggestFailed": "Could not draft from shipment.",
+        "missingParties": "Pick consignor and consignee.",
+        "missingLines": "At least one line is required.",
+        "createFailed": "Failed to create the invoice."
+      }
     },
     "bomDialog": {
       "title": "Add finished good + BOM",
@@ -2570,6 +2615,71 @@
       "cancelFailed": "Cancel failed.",
       "cancelReason": "Cancel reason",
       "cancelReasonPrompt": "Reason for cancellation (optional):"
+    }
+  },
+  "commercialInvoices": {
+    "title": "Commercial (export) invoices",
+    "summary": "{{rows}} invoices · {{total}} total",
+    "empty": "No commercial invoices yet. Create one from a shipment via „Commercial invoice“ on the hub.",
+    "filters": {
+      "status": "Status"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "cancelled": "Cancelled"
+    },
+    "cols": {
+      "number": "Number",
+      "invoiceDate": "Date",
+      "consignor": "Consignor",
+      "consignee": "Consignee",
+      "incoterms": "Incoterms",
+      "total": "Total",
+      "currency": "Currency",
+      "status": "Status"
+    },
+    "detail": {
+      "backToList": "Back to list",
+      "notFound": "Invoice not found.",
+      "clientOrder": "Order",
+      "shipment": "Shipment",
+      "consignor": "Consignor",
+      "consignee": "Consignee",
+      "invoiceDate": "Date",
+      "currency": "Currency",
+      "incoterms": "Incoterms",
+      "destinationCountry": "Destination country (ISO)",
+      "paymentTerms": "Payment terms",
+      "notes": "Notes",
+      "linesTitle": "Lines",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "total": "Total",
+      "save": "Save",
+      "issue": "Issue",
+      "cancel": "Cancel",
+      "print": "Print",
+      "updated": "Invoice updated.",
+      "updateFailed": "Update failed.",
+      "issued": "Invoice issued.",
+      "issueFailed": "Issue failed.",
+      "cancelled": "Invoice cancelled.",
+      "cancelFailed": "Cancel failed.",
+      "cancelReason": "Cancel reason",
+      "cancelReasonPrompt": "Reason for cancellation (optional):",
+      "missingParties": "Pick consignor and consignee.",
+      "missingLines": "At least one line is required.",
+      "onlyDraft": "Only draft invoices can be issued.",
+      "lines": {
+        "item": "Item",
+        "description": "Description",
+        "qty": "Qty",
+        "uom": "UoM",
+        "unitPrice": "Unit price",
+        "lineTotal": "Total",
+        "origin": "Origin"
+      }
     }
   }
 }
