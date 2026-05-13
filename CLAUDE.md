@@ -203,7 +203,7 @@ PRE phase се додаде врз основа на prep session findings (comm
 | E3 | Wire IM declaration creation from hub | `[x]` (`6e2add6`) |
 | E4 | Wire Receipt from hub | `[x]` (`5ee4785`) |
 | E5 | Wire BOM + ProductionOrder from hub | `[x]` (`38f2b93`) |
-| E6 | Wire Podelba from hub | `[ ]` |
+| E6 | Wire Podelba from hub | `[x]` (`16f8711`) |
 | E7 | Wire MaterialIssue + ProductionReceipt from hub | `[ ]` |
 | E7.5 | Department + Position lookup promotion (CodeListItem categories) — **D6=deferred to Phase 21.1.1** or run with empty seed | `[ ]` |
 | E7.6 | `DeliveryNote` entity + polymorphic auto-gen on commit events (D5; replaces legacy `Propratnici`) | `[ ]` |
@@ -236,4 +236,4 @@ PRE phase се додаде врз основа на prep session findings (comm
 
 ---
 
-*Последна ревизија: 2026-05-13 — Phase 17 §E5 закучен (BOM + ProductionOrder wired from hub; Status → Producing flips on first PO; VPS-verified). Хабот сега има 3 enabled акции: IM/Receive/BOM. Next: §E6.*
+*Последна ревизија: 2026-05-13 — Phase 17 §E6 закучен (Podelba wired from hub: many balances → one producer, partial qty, producer suggestion stub at `/api/Suggestions/producer`; VPS-verified end-to-end including over-allocate reject). Хабот сега има 4 enabled акции: IM/Receive/BOM/Podelba. Materials tab е реален — групиран по producer; добавен е 5-ти Receipts tab. Next: §E7 (MaterialIssue + ProductionReceipt).*

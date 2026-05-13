@@ -2,6 +2,49 @@
 
 > Append-only хронолошки запис. Секој таск добива еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-13 — Phase 17 §E6 — wire Podelba (multi-balance, single-producer) from hub + VPS-verified
+
+Commit `16f8711`. VPS smoke OK: Producer-type partner created → `/api/Suggestions/producer` returns fallback (200) → POST `/api/WMS/inventory/podelba-to-producer` with 1.5 units against `PKG-001` succeeded → source row 55.5556 → 54.0556, new sibling at RCV-01 with `AssignedProducerId=PRD-SMOKE` qty=1.5, podelbaNumber `PDL-20260513150744-26bd45`. Over-allocation rejected with explicit available-vs-requested message + HTTP 400.
+
+Files (11 changed; 1,848 insertions / 22 deletions):
+
+**Backend:**
+- `src/LON.Application/WMS/Commands/PodelbaToProducer/PodelbaToProducerCommand.cs` (new, 178 lines) — dual of `PodelbaCommand`: many balances → one producer, partial qty allowed, sources keep remainder. Per-line: validates producer is `PartnerType.Producer` + active, balance qty ≥ line qty, then finds/creates sibling at same location with same natural key (item/location/batch/MRN/UoM/QualityStatus/LonProcessState) + `AssignedProducerId=ProducerId`; sibling.Quantity += line.qty, src.Quantity -= line.qty. One `InventoryMovement` Type=Transfer per line with `ReferenceNumber=Podelba:{producerId}`; Notes carries `ClientOrderId` when provided.
+- `src/LON.API/Controllers/WMSController.cs` — new `POST /api/WMS/inventory/podelba-to-producer`. `GET /api/WMS/inventory` extended with `warehouseId`, `clientOrderId`, `unassignedOnly`, `assignedProducerId` query params; when `clientOrderId` is set it joins on `ProductionOrderMaterials` of POs linked to the order — single SQL IN-clause.
+- `src/LON.API/Controllers/SuggestionsController.cs` (new) — `GET /api/Suggestions/producer?clientOrderId=…` returns most-used producer in past 90 days via `InventoryBalance.AssignedProducerId` count; falls back to first active Producer partner; `204 No Content` when tenant has no Producer-type partners. Same JSON shape `AiAssistantService` will return in §E10.
+
+**Frontend:**
+- `frontend/web/src/pages/Orders/PodelbaDialog.tsx` (new, 384 lines) — hub dialog. Loads producers (`type=6`) + warehouses + scope-filtered inventory (`clientOrderId` server-side) + producer suggestion. Smart suggestion panel renders `💡 препорачан подизведувач: <name>` with reason (history vs fallback) + „Прифати" button that pre-selects the producer. Per-row qty inputs with `max` button and over-available helperText error. Scope toggle „Прикажи ги сите unassigned материјали" widens beyond ClientOrder PO materials. Summary chip shows lines + total qty.
+- `frontend/web/src/pages/Orders/OrderHub.tsx` — `podelba` action enabled; added 5th „Receipts" tab so Materials slot can house actual InventoryBalance state (was previously hosting ReceiptsTab as a temporary E4 hack). New `MaterialsTab` component groups rows by producer with "Unassigned (HQ pool)" header + per-producer headers + count/qty chips.
+- `frontend/web/src/services/api.ts` — `wmsApi.podelbaToProducer` + `suggestionsApi.producer`; `wmsApi.getInventory` keeps its old (itemId, locationId) positional signature, with a 3rd optional extras object for warehouseId / clientOrderId / unassignedOnly / assignedProducerId. All 24 existing callers compatible.
+- `frontend/web/src/i18n/locales/{mk,en}.json` — `orders.podelbaDialog.*` block (title, hint, suggestion.{title,history,fallback,accept,accepted}, fields.{warehouse,producer,reason,reasonPlaceholder}, section.materials, cols.{item,batch,mrn,location,available,qtyToAssign,fillMax,overAvailable}, summary, showAll, refresh, noScopedInventory, noInventory, created, errors.{pickProducer,pickAtLeastOne,overAllocated,failed}); `orders.hub.tabs.{receipts,materialsEmpty,matCols.*,matGroup.{unassigned,count}}` added. sq/sr fall back to mk per existing E1–E5 precedent (the entire `orders.*` block already lives only in mk/en).
+
+**Tests:**
+- `tests/LON.IntegrationTests/PodelbaToProducerTests.cs` (new, 5 tests) — partial multi-line allocation (60/100 + 30/50 → sources keep remainders), natural-key consolidation on re-run (50 + 30 = one sibling qty=80), over-allocation rejection (HTTP 400), non-Producer partner rejection, InventoryMovement audit emission (Transfer + ReferenceNumber=Podelba:{producerId} + PDL- prefix). Plus one smoke for `/api/Suggestions/producer` — accepts either 200 or 204 (depending on seed).
+
+**OpenAPI:**
+- `api-contract/swagger.json` + `frontend/web/src/api/schema.d.ts` regenerated; +240 / +95 lines exposing the new schemas (`PodelbaToProducerCommand`, `PodelbaToProducerLine`, endpoints).
+
+**Verification on VPS:**
+- `dotnet build` 0/0; integration tests project builds 0/0 (4 pre-existing warnings).
+- `npm run build` (CRA) compiles successfully, bundle +3.55 kB.
+- VPS containers rebuilt + restarted (api + frontend); `/health` 200; frontend HTTP 200.
+- Smoke against `https://elon.elbosoft.click`:
+  1. `POST /api/MasterData/partners` `partnerType=6` → producer `PRD-SMOKE` created.
+  2. `GET /api/Suggestions/producer` → 200 `{producerId, code:"PRD-SMOKE", reason:"fallback.firstActive", score:0}`.
+  3. `POST /api/WMS/inventory/podelba-to-producer` `lines=[{src, qty:1.5}]` → `isSuccess=true`, `podelbaNumber:"PDL-20260513150744-26bd45"`.
+  4. `GET /api/WMS/inventory?assignedProducerId=…` → 1 row qty=1.5 at RCV-01 for `PKG-001`.
+  5. `GET /api/WMS/inventory` → both rows visible (`(unassigned) qty=54.0556` + `PRD-SMOKE qty=1.5`); source decreased by exactly 1.5.
+  6. Over-allocation (`quantity:9999`) → HTTP 400 with explicit `Source balance … has 54.0556 available; cannot allocate 9999.`
+
+**Discoveries / follow-ups:**
+- After PRE.5 wipe the VPS had **zero** Producer-type partners. Suggestion endpoint correctly returned 204; the dialog handles 204 gracefully (suggestion=null). Real fixture data lands in `E.MIGRATE` (Z2779 import).
+- Materials tab was previously rendering `ReceiptsTab` (an E4 tactical hack); E6 fixes it by adding a 5th Receipts tab and a real `MaterialsTab` that groups InventoryBalance by producer. No regression — Receipts data still reachable.
+- `useInventory.ts` hook still uses the old 2-arg `getInventory(itemId, locationId)` signature. Left untouched (backwards-compatible); the dialog calls the underlying api fn directly with extras.
+- sq/sr locale gap: `orders.*` block doesn't exist there (precedent set in §E1). When user switches to sq/sr, podelba UI falls back to mk. Out of scope for E6; tracked as a Phase 22 i18n catch-up backlog item.
+
+---
+
 ## 2026-05-13 — Phase 17 §E5 — wire BOM + ProductionOrder creation from hub + VPS-verified
 
 Commit `38f2b93`. VPS smoke OK: FG row + PO created on real `CO-2026-000001`; ClientOrder.Status flipped **Active → Producing** (1→2); `GET /Production/orders?clientOrderId=…` returns the new PO.
