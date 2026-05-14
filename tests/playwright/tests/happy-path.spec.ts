@@ -1,13 +1,14 @@
 /**
  * Phase 17 §E15 — v1 acceptance happy-path E2E.
  *
- * Pragmatic hybrid: API for setup (login + master-data + ClientOrder
- * creation), UI for the user-facing hub experience (navigation, AI helper
+ * Pragmatic hybrid: API for setup (login + master-data + ClientOrder lookup
+ * / creation), UI for the user-facing hub experience (navigation, AI helper
  * drawer, audit tab, action buttons). The full IM → Receive → BOM → PO →
  * Podelba → MaterialIssue → ProductionReceipt → EX → Razdolzuvanje chain
- * is covered by the integration suite (200+ tests); this spec proves the
- * hub renders + the AI helper + audit + razdolzuvanje surface light up
- * end-to-end on a live system.
+ * is covered by the integration suite (200+ tests) and reconciled bit-by-bit
+ * against ELON by the §E.MIGRATE LON.Migration runner; this Playwright spec
+ * proves the live system surfaces light up against the canonical Zaklucok
+ * 2779 fixture when it has been imported.
  *
  * Run locally:
  *   cd tests/playwright && npm ci && npx playwright install --with-deps chromium
@@ -15,6 +16,10 @@
  *
  * Run against VPS:
  *   BASE_URL=https://elon.elbosoft.click npx playwright test
+ *
+ * The spec prefers the migrated Z2779 ClientOrder when it can be located
+ * via `CustomerOrderReference='2779'`. Override the reference with the
+ * `LON_E2E_REFERENCE` env var if you want to target a different fixture.
  */
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './setup/auth';
@@ -24,25 +29,37 @@ import {
   getFirstCustomerPartnerId,
   getFirstLonAuthorizationId,
   createClientOrder,
+  findClientOrderByReference,
   API_URL,
 } from './setup/api';
 
+const Z2779_REFERENCE = process.env.LON_E2E_REFERENCE || '2779';
+
+async function resolveTargetOrder(api: import('@playwright/test').APIRequestContext, token: string) {
+  const fixture = await findClientOrderByReference(api, token, Z2779_REFERENCE);
+  if (fixture) {
+    return { id: fixture.id, orderNumber: fixture.orderNumber, kind: 'migrated' as const };
+  }
+  const partnerId = await getFirstCustomerPartnerId(api, token);
+  const lonAuthId = await getFirstLonAuthorizationId(api, token);
+  const id = await createClientOrder(api, token, {
+    customerPartnerId: partnerId,
+    lonAuthorizationId: lonAuthId,
+    customerOrderReference: `E15-PLAYWRIGHT-${Date.now()}`,
+  });
+  return { id, orderNumber: 'CO-XXXX-XXXXXX', kind: 'synthetic' as const };
+}
+
 test.describe('Phase 17 happy-path', () => {
-  test('Login → create order → hub renders all critical widgets', async ({ page }) => {
-    // ─── Setup ─────────────────────────────────────────────────────────
+  test('Login → load Z2779 (or fallback) → hub renders all critical widgets', async ({ page }) => {
     const api = await newApiContext();
     const token = await login(api);
-    const partnerId = await getFirstCustomerPartnerId(api, token);
-    const lonAuthId = await getFirstLonAuthorizationId(api, token);
-    const orderId = await createClientOrder(api, token, {
-      customerPartnerId: partnerId,
-      lonAuthorizationId: lonAuthId,
-      customerOrderReference: `E15-PLAYWRIGHT-${Date.now()}`,
-    });
+    const target = await resolveTargetOrder(api, token);
+    console.log(`[happy-path] target: ${target.orderNumber} (${target.kind})`);
 
     // ─── UI: login + hub navigation ────────────────────────────────────
     await uiLogin(page);
-    await page.goto(`/orders/${orderId}`);
+    await page.goto(`/orders/${target.id}`);
 
     // Hub header carries the OrderNumber chip + customer/LON-auth strip.
     await expect(page.locator('h4').first()).toContainText(/CO-\d{4}-\d{6}/);
@@ -50,7 +67,7 @@ test.describe('Phase 17 happy-path', () => {
     // Action launcher: at least the "BOM" and "IM declaration" actions are visible.
     await expect(page.getByText(/BOM|Креирај BOM/).first()).toBeVisible();
 
-    // Hub tabs: declarations / production orders / shipments / materials / receipts / CI / audit
+    // Hub tabs: ≥6 (declarations / production / shipments / materials / receipts / CI / audit).
     await expect(page.getByRole('tab').first()).toBeVisible();
     const tabCount = await page.getByRole('tab').count();
     expect(tabCount).toBeGreaterThanOrEqual(6);
@@ -59,44 +76,54 @@ test.describe('Phase 17 happy-path', () => {
     const fab = page.locator('[data-testid="ai-helper-fab"]');
     await expect(fab).toBeVisible();
     await fab.click();
-    // Drawer opens with the Recommendations tab selected. For a fresh
-    // Draft ClientOrder with no FGs, the engine emits `hub.draft.no-fgs`.
-    await expect(page.getByRole('button', { name: /Креирај BOM|Open/ })).toBeVisible({ timeout: 10_000 });
-    // Close the drawer (Escape or X).
+    // For a Draft order with no FGs the engine emits `hub.draft.no-fgs`.
+    // For a migrated Active order with already-Cleared IM but unflagged
+    // razdolzuvanje lines, the engine emits the preflight nudge. Either is
+    // a valid green signal; assert that *some* actionable button appears.
+    const recButton = page.getByRole('button', { name: /Креирај BOM|Открова Razdolzuvanje|Открова Razdolžuvanje|Open|Отвори/i });
+    await expect(recButton.first()).toBeVisible({ timeout: 10_000 });
     await page.keyboard.press('Escape');
 
     // ─── Audit tab ─────────────────────────────────────────────────────
     await page.getByRole('tab', { name: /Аудит|Audit/ }).click();
-    await expect(page.getByText(/Create/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Create|Update/).first()).toBeVisible({ timeout: 10_000 });
 
     // ─── Razdolzuvanje navigation ──────────────────────────────────────
-    await page.goto(`/orders/${orderId}/razdolzuvanje`);
-    // The view loads and shows the 4-tile totals header even on a draft
-    // order with no IM lines (everything is zero).
+    await page.goto(`/orders/${target.id}/razdolzuvanje`);
     await expect(page.locator('h4, h5').first()).toBeVisible();
   });
 
-  test('AI helper recommendations endpoint returns a hub recommendation', async () => {
-    // Pure API check — guards the contract the UI smoke depends on.
+  test('Z2779 (or fallback) — recommendations endpoint returns ≥1 hub recommendation', async () => {
     const api = await newApiContext();
     const token = await login(api);
-    const partnerId = await getFirstCustomerPartnerId(api, token);
-    const lonAuthId = await getFirstLonAuthorizationId(api, token);
-    const orderId = await createClientOrder(api, token, {
-      customerPartnerId: partnerId,
-      lonAuthorizationId: lonAuthId,
-      customerOrderReference: `E15-API-${Date.now()}`,
-    });
+    const target = await resolveTargetOrder(api, token);
 
     const resp = await api.post(`${API_URL}/Ai/recommendations`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { entityType: 'ClientOrder', entityId: orderId },
+      data: { entityType: 'ClientOrder', entityId: target.id },
     });
     expect(resp.ok()).toBeTruthy();
     const recs = await resp.json();
     expect(Array.isArray(recs)).toBeTruthy();
     expect(recs.length).toBeGreaterThan(0);
     expect(recs[0].code).toBeTruthy();
+  });
+
+  test('Z2779 (or fallback) — razdolzuvanje endpoint returns IM vs EX totals', async () => {
+    const api = await newApiContext();
+    const token = await login(api);
+    const target = await resolveTargetOrder(api, token);
+
+    const resp = await api.get(`${API_URL}/ClientOrders/${target.id}/razdolzuvanje`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    const data = body?.data ?? body;
+    // Both real Z2779 and a fresh CO should expose the totals envelope.
+    expect(data).toBeTruthy();
+    expect(typeof data.imTotal !== 'undefined' || typeof data.imDutyTotal !== 'undefined' || data.lines !== undefined)
+      .toBeTruthy();
   });
 
   test('FxRates endpoint returns the seeded EUR/MKD rate', async () => {

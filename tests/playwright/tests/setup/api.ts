@@ -70,3 +70,33 @@ export async function createClientOrder(
 export async function newApiContext(): Promise<APIRequestContext> {
   return await request.newContext();
 }
+
+/**
+ * Phase 17 §E15 + §E.MIGRATE — find the ClientOrder seeded from the legacy
+ * Zaklucok (canonical happy-path fixture). The LON.Migration mapper stamps
+ * `CustomerOrderReference` with the bare Zaklucok number.
+ *
+ * Returns null when the fixture hasn't been imported yet (so the test can
+ * fall back to a synthetic CO and still pass).
+ */
+export async function findClientOrderByReference(
+  api: APIRequestContext,
+  token: string,
+  reference: string
+): Promise<{ id: string; orderNumber: string } | null> {
+  // Page through up to 5 pages of 100; the legacy slice has ~270 Zaklucoci,
+  // so 500 max is generous.
+  for (let page = 1; page <= 5; page++) {
+    const resp = await api.get(`${API_URL}/clientorders?page=${page}&pageSize=100`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok()) return null;
+    const body = await resp.json();
+    const rows = Array.isArray(body) ? body : body?.data ?? [];
+    if (!rows.length) return null;
+    const match = rows.find((r: any) => r.customerOrderReference === reference);
+    if (match) return { id: match.id, orderNumber: match.orderNumber };
+    if (rows.length < 100) return null;
+  }
+  return null;
+}
