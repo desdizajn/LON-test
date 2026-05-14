@@ -38,14 +38,17 @@ public class GetClientOrderByIdQueryHandler
             .Select(a => a.AuthorizationNumber)
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Phase 17 cutover: IgnoreQueryFilters for Item / UoM lookups so
+        // FGs whose master Item is Arhivirano=1 (legacy soft-delete) still
+        // render with full code/name. Same pattern as the Materials tab fix.
         var fgs = await _context.ClientOrderFinishedGoods
             .Where(g => g.ClientOrderId == order.Id)
             .Select(g => new
             {
                 Fg = g,
-                ItemCode = _context.Items.Where(i => i.Id == g.ItemId).Select(i => i.Code).FirstOrDefault(),
-                ItemName = _context.Items.Where(i => i.Id == g.ItemId).Select(i => i.Name).FirstOrDefault(),
-                UoMCode = _context.UnitsOfMeasure.Where(u => u.Id == g.UoMId).Select(u => u.Code).FirstOrDefault(),
+                ItemCode = _context.Items.IgnoreQueryFilters().Where(i => i.Id == g.ItemId).Select(i => i.Code).FirstOrDefault(),
+                ItemName = _context.Items.IgnoreQueryFilters().Where(i => i.Id == g.ItemId).Select(i => i.Name).FirstOrDefault(),
+                UoMCode = _context.UnitsOfMeasure.IgnoreQueryFilters().Where(u => u.Id == g.UoMId).Select(u => u.Code).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 

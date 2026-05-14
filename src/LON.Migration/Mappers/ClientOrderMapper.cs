@@ -53,7 +53,23 @@ internal sealed class ClientOrderMapper
         _ctx.AddZaklucokParam(sel);
         using var rd = sel.ExecuteReader();
 
-        int total = 0, written = 0, missingAuth = 0, missingCustomer = 0, sequenceCounter = 0;
+        // Seed the local counter from the existing MAX(seq) per (tenant, year)
+        // in LON. Without this, two single-Zaklucok migrations against the
+        // same tenant both start at 1 and collide on the unique
+        // (TenantId, OrderNumber) index. The counter is per-year because the
+        // OrderNumber format `CO-{year}-{seq:D6}` namespaces the sequence by
+        // year. Sequence is bumped per Zaklucok within the same year.
+        int total = 0, written = 0, missingAuth = 0, missingCustomer = 0;
+        var perYearSeed = new Dictionary<int, int>();
+        using (var seedCmd = new SqlCommand(
+            "SELECT YEAR(OrderDate) AS Y, MAX(CAST(SUBSTRING(OrderNumber, 9, 6) AS int)) AS Seq " +
+            "FROM ClientOrders WHERE TenantId = @t AND OrderNumber LIKE 'CO-%' GROUP BY YEAR(OrderDate)", lon))
+        {
+            seedCmd.Parameters.AddWithValue("@t", _ctx.TenantId);
+            using var srd = seedCmd.ExecuteReader();
+            while (srd.Read())
+                perYearSeed[Convert.ToInt32(srd["Y"])] = Convert.ToInt32(srd["Seq"]);
+        }
         var rows = new List<(int OdobrenieRBr, string ZaklucokBroj, DateTime Date, string? Name, bool Archived, int Zakluceno, int? PrimacInt, bool AllRazdolzeno)>();
         while (rd.Read())
         {
@@ -90,9 +106,32 @@ internal sealed class ClientOrderMapper
                 missingCustomer++;
             }
 
-            sequenceCounter++;
-            var orderNumber = $"CO-{row.Date.Year:D4}-{sequenceCounter:D6}";
+            // Reuse an existing OrderNumber on re-run (so the second pass of
+            // the SAME zaklucok doesn't fight the unique index); otherwise
+            // bump the per-year seed and stamp a fresh number.
             var id = DeterministicGuid("ClientOrder", $"{_ctx.TenantId}|{row.OdobrenieRBr}|{row.ZaklucokBroj}");
+            string? existingOrderNumber = null;
+            using (var existCmd = new SqlCommand(
+                "SELECT OrderNumber FROM ClientOrders WHERE Id = @id", lon))
+            {
+                existCmd.Parameters.AddWithValue("@id", id);
+                var r = existCmd.ExecuteScalar();
+                if (r is string s) existingOrderNumber = s;
+            }
+
+            string orderNumber;
+            if (existingOrderNumber != null)
+            {
+                orderNumber = existingOrderNumber;
+            }
+            else
+            {
+                var year = row.Date.Year;
+                perYearSeed.TryGetValue(year, out var seed);
+                seed++;
+                perYearSeed[year] = seed;
+                orderNumber = $"CO-{year:D4}-{seed:D6}";
+            }
 
             // Status: Closed if all FakturiU5Z.RazdolzenaDaNe=true; Cancelled if archived; else Active.
             int status = row.Archived ? 99 : (row.AllRazdolzeno ? 4 : 1);

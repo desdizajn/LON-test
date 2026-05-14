@@ -95,11 +95,15 @@ test.describe('Phase 17 happy-path', () => {
       await expect(page.getByText(/PO PO-/).first()).toBeVisible({ timeout: 10_000 });
 
       await page.getByRole('tab', { name: /Издадени материјали|Issued materials/i }).click();
-      await expect(page.getByText(/8232\/2025|MI-\d{4}-/).first()).toBeVisible({ timeout: 10_000 });
+      // Migrated issue numbers carry `<IzdatnicaRBr>/<Year>-<hash>` for Z2779 (8232/…)
+      // and Z2783 (8294/…, 8316/…); fresh hub-created issues use `MI-<year>-<seq>`.
+      // Match any of those patterns.
+      await expect(page.getByText(/\d{3,5}\/\d{4}-|MI-\d{4}-/).first()).toBeVisible({ timeout: 10_000 });
 
-      // Materials tab should now show at least one item.
+      // Materials tab should now show at least one item with a migrated MRN
+      // (LEG-…) OR a real-flow MRN (^\d{2}MK…).
       await page.getByRole('tab', { name: /Материјали на лагер|Materials on hand/i }).click();
-      await expect(page.locator('text=/^LEG-23/').first()).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('text=/LEG-|^\\d{2}MK/').first()).toBeVisible({ timeout: 10_000 });
     }
 
     // ─── AI helper FAB ─────────────────────────────────────────────────

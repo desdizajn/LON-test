@@ -56,23 +56,51 @@ internal sealed class BOMMapper
 
             if (!_ctx.DryRun)
             {
+                // Resolve a free Version for this ItemId. Legacy ELON ties one
+                // BOM to one finished good per (Odobrenie, Zaklucok, GP_RBr) —
+                // when the same Article is the FG of multiple FG-rows (e.g.
+                // size variants of the same jacket OR the same article reused
+                // across different Zaklucoci), all of them collide at v=1 on
+                // the LON unique index (ItemId, Version).
+                // Strategy: keep the existing version if this BOM Id is
+                // already in the table; else pick MAX(Version)+1 for the
+                // ItemId. Idempotent across re-runs.
+                int version;
+                using (var verCmd = new SqlCommand(
+                    "SELECT TOP 1 Version FROM BOMs WHERE Id = @id", lon))
+                {
+                    verCmd.Parameters.AddWithValue("@id", bomId);
+                    var existing = verCmd.ExecuteScalar();
+                    if (existing != null && existing != DBNull.Value)
+                        version = Convert.ToInt32(existing);
+                    else
+                    {
+                        using var maxCmd = new SqlCommand(
+                            "SELECT ISNULL(MAX(Version), 0) FROM BOMs WHERE ItemId = @item AND TenantId = @t", lon);
+                        maxCmd.Parameters.AddWithValue("@item", fgItemId);
+                        maxCmd.Parameters.AddWithValue("@t", _ctx.TenantId);
+                        version = Convert.ToInt32(maxCmd.ExecuteScalar()) + 1;
+                    }
+                }
+
                 _ctx.Exec(lon,
                     """
                     MERGE BOMs AS T
                     USING (SELECT @id AS Id) S ON T.Id = S.Id
                     WHEN MATCHED THEN UPDATE SET
-                        Code = @code, ItemId = @item, Version = 1, ValidFrom = @from,
+                        Code = @code, ItemId = @item, Version = @ver, ValidFrom = @from,
                         IsActive = 1, BaseQuantity = 1, ModifiedAt = SYSUTCDATETIME(),
                         ModifiedBy = 'migration', IsDeleted = 0
                     WHEN NOT MATCHED THEN INSERT (Id, TenantId, Code, ItemId, Version,
                         ValidFrom, IsActive, BaseQuantity, CreatedAt, CreatedBy, IsDeleted)
-                        VALUES (@id, @tenant, @code, @item, 1, @from, 1, 1,
+                        VALUES (@id, @tenant, @code, @item, @ver, @from, 1, 1,
                                 SYSUTCDATETIME(), 'migration', 0);
                     """,
                     ("@id", bomId),
                     ("@tenant", _ctx.TenantId),
                     ("@code", bomCode),
                     ("@item", fgItemId),
+                    ("@ver", version),
                     ("@from", DateTime.UtcNow.Date));
                 written++;
 
