@@ -36,13 +36,19 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
 {
     private readonly IApplicationDbContext _context;
     private readonly IDeliveryNoteFactory _deliveryNotes;
+    private readonly INumberSequenceService _sequence;
+    private readonly ICurrentTenantService _tenantService;
 
     public CreateMaterialIssueCommandHandler(
         IApplicationDbContext context,
-        IDeliveryNoteFactory deliveryNotes)
+        IDeliveryNoteFactory deliveryNotes,
+        INumberSequenceService sequence,
+        ICurrentTenantService tenantService)
     {
         _context = context;
         _deliveryNotes = deliveryNotes;
+        _sequence = sequence;
+        _tenantService = tenantService;
     }
 
     public async Task<Result<Guid>> Handle(CreateMaterialIssueCommand request, CancellationToken cancellationToken)
@@ -61,7 +67,11 @@ public class CreateMaterialIssueCommandHandler : ICommandHandler<CreateMaterialI
                 ErrorCodes.PoInvalidStatus,
                 $"Cannot issue material to ProductionOrder in status {order.Status}.");
 
-        var issueNumber = $"ISS-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}";
+        // Phase 17 §E12 — per-tenant SQL SEQUENCE for monotonic issue numbers.
+        var tenantId = await _tenantService.GetTenantIdAsync(cancellationToken)
+            ?? throw new InvalidOperationException("No active tenant context for MaterialIssue numbering.");
+        var seq = await _sequence.NextAsync("MaterialIssue", tenantId, cancellationToken);
+        var issueNumber = LON.Domain.Common.NumberFormatter.MaterialIssue(request.IssueDate.Year, seq);
         var created = new List<MaterialIssue>(request.Lines.Count);
         Guid? capturedFromLocationId = null; // Phase 17 §E7.6 — passed to DeliveryNote auto-gen
         int lineIdx = 0;

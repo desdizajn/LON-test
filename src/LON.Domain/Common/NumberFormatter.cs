@@ -42,4 +42,20 @@ public static class NumberFormatter
     /// <summary>`CI-{year}-{seq:D6}` — CommercialInvoice (§E8.5, D4).</summary>
     public static string CommercialInvoice(int year, long seq) =>
         $"CI-{year:D4}-{seq:D6}";
+
+    /// <summary>`RC-{year}-{seq:D6}` — Receipt (§E12).</summary>
+    public static string Receipt(int year, long seq) =>
+        $"RC-{year:D4}-{seq:D6}";
+
+    /// <summary>`SH-{year}-{seq:D6}` — Shipment (§E12).</summary>
+    public static string Shipment(int year, long seq) =>
+        $"SH-{year:D4}-{seq:D6}";
+
+    /// <summary>`MI-{year}-{seq:D6}` — MaterialIssue (§E12).</summary>
+    public static string MaterialIssue(int year, long seq) =>
+        $"MI-{year:D4}-{seq:D6}";
+
+    /// <summary>`PO-{year}-{seq:D6}` — ProductionOrder (§E12).</summary>
+    public static string ProductionOrder(int year, long seq) =>
+        $"PO-{year:D4}-{seq:D6}";
 }

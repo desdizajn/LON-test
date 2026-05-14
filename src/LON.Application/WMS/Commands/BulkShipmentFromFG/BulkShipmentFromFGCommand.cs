@@ -58,11 +58,19 @@ public sealed class BulkShipmentFromFGHandler
 {
     private readonly IApplicationDbContext _context;
     private readonly ISender _mediator;
+    private readonly INumberSequenceService _sequence;
+    private readonly ICurrentTenantService _tenantService;
 
-    public BulkShipmentFromFGHandler(IApplicationDbContext context, ISender mediator)
+    public BulkShipmentFromFGHandler(
+        IApplicationDbContext context,
+        ISender mediator,
+        INumberSequenceService sequence,
+        ICurrentTenantService tenantService)
     {
         _context = context;
         _mediator = mediator;
+        _sequence = sequence;
+        _tenantService = tenantService;
     }
 
     public async Task<Result<BulkShipmentFromFGResult>> Handle(
@@ -122,10 +130,14 @@ public sealed class BulkShipmentFromFGHandler
                 "No positive-quantity finished-goods inventory matched the filter.");
 
         var shipmentDate = request.ShipmentDate ?? DateTime.UtcNow;
+        // Phase 17 §E12 — per-tenant SQL SEQUENCE for monotonic shipment numbers.
+        var tenantId = await _tenantService.GetTenantIdAsync(cancellationToken)
+            ?? throw new InvalidOperationException("No active tenant context for Shipment numbering.");
+        var seq = await _sequence.NextAsync("Shipment", tenantId, cancellationToken);
         var shipment = new Shipment
         {
             Id = Guid.NewGuid(),
-            ShipmentNumber = $"SHP-{shipmentDate:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+            ShipmentNumber = LON.Domain.Common.NumberFormatter.Shipment(shipmentDate.Year, seq),
             ShipmentDate = shipmentDate,
             CustomerId = request.PartnerId,
             Status = ShipmentStatus.Draft,

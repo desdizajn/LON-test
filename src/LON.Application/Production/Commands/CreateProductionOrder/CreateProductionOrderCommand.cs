@@ -38,10 +38,17 @@ public record CreateProductionOrderCommand : ICommand<Result<Guid>>
 public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProductionOrderCommand, Result<Guid>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly INumberSequenceService _sequence;
+    private readonly ICurrentTenantService _tenantService;
 
-    public CreateProductionOrderCommandHandler(IApplicationDbContext context)
+    public CreateProductionOrderCommandHandler(
+        IApplicationDbContext context,
+        INumberSequenceService sequence,
+        ICurrentTenantService tenantService)
     {
         _context = context;
+        _sequence = sequence;
+        _tenantService = tenantService;
     }
 
     public async Task<Result<Guid>> Handle(CreateProductionOrderCommand request, CancellationToken cancellationToken)
@@ -108,10 +115,14 @@ public class CreateProductionOrderCommandHandler : ICommandHandler<CreateProduct
                     $"ClientOrder '{clientOrder.OrderNumber}' is {clientOrder.Status} and cannot accept new production orders.");
         }
 
+        // Phase 17 §E12 — per-tenant SQL SEQUENCE for monotonic PO numbers.
+        var tenantId = await _tenantService.GetTenantIdAsync(cancellationToken)
+            ?? throw new InvalidOperationException("No active tenant context for ProductionOrder numbering.");
+        var seq = await _sequence.NextAsync("ProductionOrder", tenantId, cancellationToken);
         var order = new ProductionOrder
         {
             Id = Guid.NewGuid(),
-            OrderNumber = $"LON-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+            OrderNumber = LON.Domain.Common.NumberFormatter.ProductionOrder(request.PlannedStartDate.Year, seq),
             ItemId = request.ItemId,
             OrderQuantity = request.OrderQuantity,
             ProducedQuantity = 0,

@@ -1,6 +1,7 @@
 using LON.Application.Common.Commands;
 using LON.Application.Common.Interfaces;
 using LON.Application.Common.Models;
+using LON.Domain.Common;
 using LON.Domain.Entities.Customs;
 using LON.Domain.Entities.MasterData;
 using LON.Domain.Entities.WMS;
@@ -44,10 +45,17 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
     };
 
     private readonly IApplicationDbContext _context;
+    private readonly INumberSequenceService _sequence;
+    private readonly ICurrentTenantService _tenantService;
 
-    public CreateReceiptCommandHandler(IApplicationDbContext context)
+    public CreateReceiptCommandHandler(
+        IApplicationDbContext context,
+        INumberSequenceService sequence,
+        ICurrentTenantService tenantService)
     {
         _context = context;
+        _sequence = sequence;
+        _tenantService = tenantService;
     }
 
     public async Task<Result<Guid>> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
@@ -66,10 +74,14 @@ public class CreateReceiptCommandHandler : ICommandHandler<CreateReceiptCommand,
                 ? Result<Guid>.Failure(code, mrnContext.ErrorMessage!)
                 : Result<Guid>.Failure(mrnContext.ErrorMessage!);
 
+        // Phase 17 §E12 — per-tenant SQL SEQUENCE for monotonic receipt numbers.
+        var tenantId = await _tenantService.GetTenantIdAsync(cancellationToken)
+            ?? throw new InvalidOperationException("No active tenant context for Receipt numbering.");
+        var seq = await _sequence.NextAsync("Receipt", tenantId, cancellationToken);
         var receipt = new Receipt
         {
             Id = Guid.NewGuid(),
-            ReceiptNumber = $"RCP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8]}",
+            ReceiptNumber = NumberFormatter.Receipt(request.ReceiptDate.Year, seq),
             ReceiptDate = request.ReceiptDate,
             PartnerId = request.PartnerId,
             WarehouseId = request.WarehouseId,
