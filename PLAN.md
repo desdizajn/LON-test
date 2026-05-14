@@ -165,7 +165,7 @@ Phases 18 + 19 may run in parallel (independent role implementations).
 - [x] 17.9   Razdolzuvanje view per ClientOrder  → BLUEPRINT §5.11 — deployed `a8beb87`; VPS smoke `CO-2026-000001` mark-line → snapshot (rows=2) → auto-Closed; PDF 1832B; PEE060 XML 469B.
 - [x] 17.E.MIGRATE  LON.Migration refactor (OdobrenijaMapper + ClientOrderMapper + BOMMapper + MaterialIssueMapper + WasteDeclarationMapper + DeliveryNote auto-gen + `--zaklucok` filter) → ran `Z2779` end-to-end in ~10s; 6/6 reconciliation queries PASS within tolerance; idempotent — deployed `e5980d5`. CommercialInvoiceMapper stubbed (Z2779 has 0 tblIzvozniFakturi rows; full impl deferred to Phase 21 prod-data drill).  → BLUEPRINT §9.1 + MAPPING.md
 - [x] 17.10  AI helper service + 3 core recommendations + floating UI — deployed `3cfc98e`; VPS smoke CO + `hub.draft.no-fgs` rec + `MarkActed` (204) + Q&A all green.  → BLUEPRINT §7.4
-- [ ] 17.11  Domain events infrastructure + handler refactor (guarantee, inventory transitions)  → BLUEPRINT §3.6, §6.1, §6.2
+- [x] 17.11  Domain events infrastructure (DomainEventLog + dispatcher + ClientOrderCreated/ShipmentCreated emission + admin /event-log API) — deployed `0ac47dc`; VPS smoke create-CO → DomainEventLogs row visible with payload. Side-effect refactor (move guarantee debit out of declaration handler) deferred to post-v1.  → BLUEPRINT §3.6, §6.1, §6.2
 - [ ] 17.12  SQL SEQUENCE objects + NumberFormatter  → BLUEPRINT §6.6
 - [ ] 17.13  Audit interceptor + AuditLogEntry writes + /admin/audit-log UI activation  → BLUEPRINT §6.5
 - [ ] 17.14  Soft-delete global filter + recycle bin UI  → BLUEPRINT §6.7

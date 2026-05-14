@@ -2,6 +2,70 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E11 — Domain events infrastructure (DomainEventLog) + dispatcher + VPS-verified
+
+Commit `0ac47dc`. Building on the existing Outbox + DomainEvent harvest
+already in `ApplicationDbContext.SaveChangesAsync`, this adds a parallel
+write to a queryable `DomainEventLog` table (TenantId + EventId unique +
+EventType + OccurredAt + PayloadJson + Status) so audit + replay can be
+served without going through the outbox.
+
+**New entities:**
+- `DomainEventLog` (BaseEntity + ITenantScoped). Indexes:
+  `(TenantId, OccurredAt)`, `(TenantId, EventType, OccurredAt)`,
+  unique on `EventId`.
+
+**Domain events (new):**
+- `ClientOrderCreatedEvent`
+- `ClientOrderStatusChangedEvent`
+
+Sit alongside the pre-existing CustomsDeclarationCreatedEvent /
+CustomsDeclarationCertifiedEvent / GuaranteeDebitedEvent /
+GuaranteeCreditedEvent / MaterialIssuedEvent / FGReceivedEvent /
+InventoryMovedEvent / ShipmentCreatedEvent / ReceiptCreatedEvent /
+ProductionOrderCompletedEvent / CustomsClearedEvent.
+
+**Dispatcher:** `ApplicationDbContext.SaveChangesAsync` now persists one
+`DomainEventLogs` row per emitted event in addition to the existing
+`OutboxMessages` row. TenantId is sourced from the emitting entity (most
+aggregates are ITenantScoped) or falls back to CurrentTenantId. Idempotent
+via the unique `EventId` index.
+
+**Migration #57** `P17_E11_AddDomainEventLog`.
+
+**Handler updates:**
+- `CreateClientOrderCommandHandler` — emits `ClientOrderCreatedEvent`.
+- `BulkShipmentFromFGCommandHandler` — emits `ShipmentCreatedEvent` on the
+  Shipment aggregate (in addition to the existing event chain).
+
+**API:** `DomainEventsController` at `/api/admin/domain-events` (admin-only)
+with filters for eventType + time window.
+
+**Tests** (`DomainEventLogTests.cs`, 3 [Fact]):
+- `CreatingClientOrder_PersistsClientOrderCreatedEvent`
+- `EventIdsAreUnique_AcrossMultipleCreates`
+- `AdminEndpoint_FiltersByEventType`
+
+**Scope deferral:** The spec's "refactor existing handlers to move
+GuaranteeLedgerEntry creation out of `ApproveCustomsDeclarationCommandHandler`
+into a separate event handler" is deferred. Today's path emits events for
+audit/replay while keeping side-effects inline — additive + zero-risk.
+The event-driven refactor lands in Phase 22+ once Alert + AI helper
+analytics need to consume the events.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build api worker` clean.
+- `SELECT TOP 1 name FROM sys.tables WHERE name='DomainEventLogs'` → 1 row.
+- POST /api/ClientOrders → CO `26bccf3e-...`.
+- `GET /api/admin/domain-events?eventType=ClientOrderCreatedEvent&pageSize=3`
+  → returns the persisted row with payload including the new CO id, status
+  "published", and a stable EventId (UUID) ✅
+
+**Status:** [x] done. Foundation laid for Phase 22+ event-driven refactor.
+Next: §E12 (SQL SEQUENCE consolidation), §E13 (audit interceptor).
+
+---
+
 ## 2026-05-14 — Phase 17 §E10.5 — AlertRule + AlertEvent + 6 predefined rules + nightly evaluator + VPS-verified
 
 Commits `a3618e9` + `4b0cef9` (Include-on-Ignore() fix) + `a96a987` (dedupe
