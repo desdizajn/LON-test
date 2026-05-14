@@ -107,7 +107,16 @@ public class WMSController : BaseController
         [FromQuery] bool? unassignedOnly = null,
         [FromQuery] Guid? assignedProducerId = null)
     {
+        // §E6 + cutover-gap fix: bypass the auto-applied soft-delete filter so
+        // that inventory tied to an archived (legacy `Arhivirano=1`) master
+        // Item still shows up. Re-apply only the InventoryBalance filters
+        // (soft-delete + tenant scope) explicitly. Archived-item inventory
+        // is real physical stock that must remain visible for audit /
+        // razdolzuvanje use.
         var query = _context.InventoryBalances
+            .IgnoreQueryFilters()
+            .Where(i => !i.IsDeleted
+                        && (_context.CurrentTenantId == null || i.TenantId == _context.CurrentTenantId))
             .Include(i => i.Item)
             .Include(i => i.Location)
             .Include(i => i.UoM)
