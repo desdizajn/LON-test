@@ -2,6 +2,50 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E13 — Audit history tab on ClientOrder hub + interceptor tests + VPS-verified
+
+Commit `ebd2fce`. The SaveChanges-time audit capture and the `/api/audit`
+read endpoint already shipped in earlier P15.x work — `CaptureAuditEntries()`
+in `ApplicationDbContext` emits one `AuditLogEntry` per modification to an
+`IAuditable` entity, with field-level diffs serialised as JSON. The admin
+`/admin/audit-log` page was already wired in App.tsx. This commit completes
+§E13 by:
+
+1. Adding integration tests that prove the audit row is written on Create
+   and Update flows.
+2. Adding a per-entity `AuditHistoryTab` to the ClientOrder hub (reusable
+   across detail pages). Reads last 20 audit rows for the entity, renders
+   a small MUI table with action chips + pretty-printed change diffs, and
+   links to the full `/admin/audit-log?entityType=…&entityId=…` view.
+3. i18n: `audit.tab.*` block + `orders.hub.tabs.audit` label in mk.json +
+   en.json.
+
+**Tests** (`AuditInterceptorTests.cs`, 3 [Fact]):
+- `CreatingClientOrder_WritesCreateAuditEntry` — POST `/api/clientorders` →
+  exactly one Create row in AuditLogEntries with matching EntityId.
+- `UpdatingClientOrder_WritesUpdateAuditEntryWithFieldDiff` — PUT changes
+  `CustomerOrderReference` → Update row with the changed field in JSON.
+- `AdminEndpoint_FiltersByEntityTypeAndId` — `/api/audit?entityType=…&entityId=…`
+  returns the relevant rows.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build frontend` clean.
+- `GET /api/audit?entityType=ClientOrder&take=3` returns 3 rows including
+  recent Create entries (CO-2026-000003, CO-2026-000004) with rich
+  changesJson + userName=admin, and an Update row showing
+  `Status: Producing→Closed` field diff ✅
+
+**Note on side-effect refactor:** The spec example "move
+GuaranteeAccount update out of `ApproveCustomsDeclarationCommandHandler` into
+a separate audit-aware handler" is the same deferral as §E11. Today's
+SaveChanges-time capture works without that refactor — the AuditLogEntry
+row lands in the same transaction as the entity change.
+
+**Status:** [x] done. Hub gets a 7th tab with the rolling 20-entry audit
+history per ClientOrder. Next: §E14 (soft-delete + recycle bin).
+
+---
+
 ## 2026-05-14 — Phase 17 §E12 — SQL SEQUENCEs + NumberFormatter for Receipt/Shipment/MaterialIssue/ProductionOrder + VPS-verified
 
 Commit `81269ba`. Replaces the random-guid-suffix numbering pattern on the
