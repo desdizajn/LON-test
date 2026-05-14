@@ -118,10 +118,11 @@ import PackagingStock from './pages/FinishedGoods/PackagingStock';
 // P5.2.8 — quick-entry command bar
 import QuickEntry from './pages/QuickEntry';
 
-// Admin — tenant policy settings + audit log
+// Admin — tenant policy settings + audit log + recycle bin
 import TenantSettings from './pages/Admin/TenantSettings';
 import TenantList from './pages/Admin/TenantList';
 import AuditLog from './pages/Admin/AuditLog';
+import RecycleBin from './pages/Admin/RecycleBin';
 
 // P12.2 / P12.3 — Finance
 import ClientContracts from './pages/Finance/ClientContracts';
@@ -371,6 +372,7 @@ const App: React.FC = () => {
             <Route path="/admin/tenant-settings" element={<TenantSettings />} />
             <Route path="/admin/tenants" element={<TenantList />} />
             <Route path="/admin/audit-log" element={<AuditLog />} />
+            <Route path="/admin/recycle-bin" element={<RecycleBin />} />
 
             {/* Advanced Features Routes */}
             <Route path="/advanced/batch-traceability" element={<BatchTraceability />} />

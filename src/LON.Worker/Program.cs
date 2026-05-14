@@ -10,6 +10,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<EventProcessorWorker>();
 builder.Services.AddHostedService<AlertEvaluatorJob>();
+builder.Services.AddHostedService<SoftDeleteRetentionJob>();
 
 var host = builder.Build();
 host.Run();

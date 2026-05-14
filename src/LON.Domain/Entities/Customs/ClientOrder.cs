@@ -20,7 +20,7 @@ namespace LON.Domain.Entities.Customs;
 /// Cascading soft-delete behavior (cancel cascades to linked declarations etc.)
 /// lands with §E14.
 /// </summary>
-public class ClientOrder : BaseEntity, ITenantScoped, IAuditable
+public class ClientOrder : BaseEntity, ITenantScoped, IAuditable, ISoftDeletable
 {
     public Guid TenantId { get; set; }
 

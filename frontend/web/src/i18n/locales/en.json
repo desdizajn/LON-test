@@ -25,6 +25,22 @@
       "exists": "✅ Backend exists — alternative view"
     }
   },
+  "recycleBin": {
+    "title": "Recycle bin",
+    "subtitle": "Soft-deleted entities. After 90 days they're permanently deleted automatically.",
+    "loadError": "Failed to load the recycle bin.",
+    "empty": "Recycle bin is empty.",
+    "restore": "Restore",
+    "permanentDelete": "Delete permanently",
+    "confirmPermanent": "Are you sure you want to permanently delete „{{label}}\"? This cannot be undone.",
+    "col": {
+      "type": "Type",
+      "label": "Label",
+      "deletedAt": "Deleted at",
+      "deletedBy": "By",
+      "reason": "Reason"
+    }
+  },
   "audit": {
     "tab": {
       "heading": "Audit history ({{count}} entries)",
