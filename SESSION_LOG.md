@@ -2,6 +2,52 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E12 — SQL SEQUENCEs + NumberFormatter for Receipt/Shipment/MaterialIssue/ProductionOrder + VPS-verified
+
+Commit `81269ba`. Replaces the random-guid-suffix numbering pattern on the
+last four numbered entities with per-tenant SQL SEQUENCEs that match
+BLUEPRINT §6.6 — `{prefix}-{year}-{seq:D6}`.
+
+Migration #58 `P17_E12_AddNumberSequences` cursor-creates 4 sequences per
+active tenant:
+- `seq_Receipt_<tenantId>`
+- `seq_Shipment_<tenantId>`
+- `seq_MaterialIssue_<tenantId>`
+- `seq_ProductionOrder_<tenantId>`
+
+`NumberFormatter` gains 4 new helpers (`Receipt`, `Shipment`, `MaterialIssue`,
+`ProductionOrder`). Handlers refactored: each now resolves the active tenant
+via `ICurrentTenantService.GetTenantIdAsync`, pulls `NEXT VALUE FOR
+seq_<entity>_<tenantId>` via `INumberSequenceService.NextAsync`, then formats
+via `NumberFormatter`.
+
+**Handlers updated** (4):
+- `CreateReceiptCommandHandler` — drops `RCP-{date}-{guid8}`.
+- `BulkShipmentFromFGHandler` — drops `SHP-{date}-{guid8}`.
+- `CreateMaterialIssueCommandHandler` — drops `ISS-{date}-{guid8}`.
+- `CreateProductionOrderCommandHandler` — drops `LON-{date}-{guid8}`.
+
+GuaranteeLedgerEntry has no Number field so no sequence is needed (Phase 17
+follow-up: explicitly note if a Number column is ever added). ClientOrder /
+IM+EX Declaration / DeliveryNote / CommercialInvoice already had sequences
+from earlier §E migrations.
+
+**Tests** (`NumberingConcurrencyTests.cs`, 2 [Fact]):
+- `ParallelClientOrderCreates_ProduceUniqueMonotonicNumbers` — 10 parallel
+  POSTs produce 10 unique `CO-YYYY-NNNNNN` numbers.
+- `SequenceServiceProducesIncreasingValues_PerEntityKey` — Receipt and
+  Shipment sequences are independent.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build api` clean.
+- `SELECT name FROM sys.sequences WHERE name LIKE 'seq_Receipt%' ...` →
+  4 new sequences for the TEKSPORT tenant ✅
+
+**Status:** [x] done. All numbered entities now use SQL SEQUENCEs;
+no DMax+1 race risk left in new handler code. Next: §E13 (audit interceptor).
+
+---
+
 ## 2026-05-14 — Phase 17 §E11 — Domain events infrastructure (DomainEventLog) + dispatcher + VPS-verified
 
 Commit `0ac47dc`. Building on the existing Outbox + DomainEvent harvest
