@@ -33,7 +33,9 @@ import {
   API_URL,
 } from './setup/api';
 
-const Z2779_REFERENCE = process.env.LON_E2E_REFERENCE || '2779';
+// LON.Migration stamps `O{OdobrenieRBr}-Z{ZaklucokBroj}` into
+// CustomerOrderReference. For our canonical fixture that's "O1-Z2779".
+const Z2779_REFERENCE = process.env.LON_E2E_REFERENCE || 'O1-Z2779';
 
 async function resolveTargetOrder(api: import('@playwright/test').APIRequestContext, token: string) {
   const fixture = await findClientOrderByReference(api, token, Z2779_REFERENCE);
