@@ -2,6 +2,128 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Z2783 migrated to VPS — real production-scale fixture (35 FGs × 2053 BOM × 5126 movements)
+
+Commit `9be735c`.
+
+**Trigger.** Z2779 is fully-razdolzeno with only 1 FG / 5 declaration
+lines / 5 BOM lines — an edge case that doesn't exercise the BOM rerun
+path or the multi-FG hub aggregates. User asked for Z2783 which has
+real production scale (multiple variants of jackets across one OdobrenieRBr).
+
+**Z2783 in legacy ELON:**
+- 1 FakturiU5Z header / 183 lines
+- 35 GotoviProizvodi
+- 2053 Normativi (BOM lines)
+- 5126 LagerMaterijali movements (2054 Receipt + 2054 Issue + 1018 Waste)
+- 5 distinct Izdatnici, 5 distinct Ispratnici
+- 1 producer
+
+**3 bugs uncovered + fixed during the migration run.**
+
+### Bug 1 — `ClientOrderMapper` duplicate-key on rerun / multi-zaklucok
+Local `sequenceCounter = 0` always started at 1, so single-zaklucok
+runs after Z2779 was already on VPS tried to insert
+`OrderNumber = CO-2025-000001` again and crashed against the
+`IX_ClientOrders_TenantId_OrderNumber` unique index.
+
+Fix:
+- Seed the counter from `MAX(seq) per (tenant, year)` in LON at start.
+- On any per-row pass, if the deterministic `Id` is already in
+  `ClientOrders`, reuse its existing `OrderNumber` (idempotent rerun);
+  otherwise bump the year-scoped seed.
+
+### Bug 2 — `BOMMapper` hardcoded `Version = 1` collision
+Z2783 has 35 FGs across multiple size/color variants whose master
+Items overlap. The unique index `(ItemId, Version)` on `BOMs`
+rejected the 2nd v=1 row for the same ItemId.
+
+Fix:
+- On per-FG pass, query `SELECT TOP 1 Version FROM BOMs WHERE Id = @id`
+  — reuse on rerun.
+- Else `SELECT ISNULL(MAX(Version), 0) FROM BOMs WHERE ItemId = @item
+  AND TenantId = @t` + 1 → next free version.
+
+### Bug 3 — `GetClientOrderByIdQuery` FG itemCode/itemName null for archived items
+Walking the Z2783 hub showed all 35 FGs in the header strip but
+`itemCode` + `itemName` came back as `null`. EF's auto-applied
+`HasQueryFilter(!IsDeleted)` on `Items` excludes archived ones from
+the projection subqueries. Same root cause as the Materials-tab fix
+from the previous session.
+
+Fix: `IgnoreQueryFilters()` on the Item + UoM lookups inside the FG DTO
+projection.
+
+### Migration timeline (Z2783 onto VPS, items already loaded from Z2779)
+
+| Stage | Result |
+|---|---|
+| orders | 1 written (CO-2025-000002) |
+| decls | 13 headers (1 real IM + 12 phantom) — 411 lines total |
+| fgs | 35 written |
+| boms | 35 BOMs / 2053 BOM lines |
+| inventory | 5126 movements / 70 InventoryBalances (positive qty) |
+| issues | 477 MaterialIssues / 5 DeliveryNotes |
+| wastes | 5 Waste declarations / 206 lines |
+| reconcile | **6/6 PASS** (R1 inventory by Proces, R2 guarantee, R3 decl totals, R4 CO count, R5 BOMLine count, R6 NaimU5 re-aggregate) |
+
+### Hub on VPS (`/orders/6923ba1c-…`) sample numbers
+
+- ClientOrder: CO-2025-000002 (O1-Z2783) Status=Closed OrderDate=2025-07-11
+- LONAuthorization: `MK19AUNIS9000000000000000BE4` / GuaranteeAmount 77M MKD
+- Real FG names now visible (after Bug 3 fix):
+  - 16120  Панталона Повер Протец АуС  1 PCS
+  - 12089  ЈАКНА Фире КС04 Стмк  41 PCS
+  - 12090  ЈАКНА Фире Брекер Актион Нова  10 PCS
+  - 12069  ЈАКНА Фире КС04 Сбг  50 PCS
+  - … 30 more
+- Declarations tab: 18 rows; main IM `2339/250711/1` CV=157,310.45 EUR / Duty=2,682,947.01 MKD
+- BOM tab: 35 BOMs with line counts 5–67 (e.g. `BOM-O1-Z2783-GP13 v1` with 67 lines)
+- MaterialIssues tab: 477 rows totalling 11,283.99 units (issues numbered
+  `8294/2025-…`, `8304/2025-…`, `8316/2025-…` × 5 Izdatnici)
+- Materials tab: 70 InventoryBalances with positive qty across 197 distinct items
+- Razdolzuvanje: totalImDuty = 2,718,498.13 MKD (variance vs EX = same;
+  no EX in legacy — Z2783 outbound flow is via Izdatnici → MaterialIssues
+  per the §9.1 mapping)
+
+**Playwright** widened the assertion regex to accept both Z2779's
+`8232/2025-…` and Z2783's `8294/…`/`8316/…` issue formats, plus fresh
+`MI-{year}-{seq}` for active workflow.
+
+```
+Running 4 tests using 1 worker
+[happy-path] target: CO-2025-000002 (migrated)
+  ok 1 Login → load Z2783 → hub renders all critical widgets (8.4s)
+  ok 2 recommendations endpoint shape correct (Closed → empty) (0.51s)
+  ok 3 razdolzuvanje endpoint returns IM vs EX totals (0.56s)
+  ok 4 FxRates endpoint EUR/MKD seeded (0.41s)
+4 passed (10.7s)
+```
+
+### Implications for Phase 21 cutover
+
+The three bugs would have blocked the production cutover. Specifically:
+- Bug 1 (ClientOrderMapper): every multi-zaklucok run after the first
+  one would crash. The fix is now idempotent across reruns.
+- Bug 2 (BOMMapper): same problem as soon as two FGs share an item.
+- Bug 3 (FG itemCode null): would silently leave the FG strip on every
+  migrated hub broken — user would think the FG data was lost.
+
+All three are now covered. Phase 21.1 dry-run can scale to all ~269
+Zaklucoci with the same migration binary.
+
+Two cosmetic followups noted but not blocking:
+- DN auto-gen ran only for the 1 Izdatnica (out of 5) that had a
+  Proizvoditel-stamp in legacy LagerMaterijali. The other 4 Izdatnici
+  have MaterialIssues but no DN. Migration could synthesise DNs for
+  them by aggregating per (Izdatnica, ToPartnerId=null) — deferred.
+- 93 razdolzuvanje lines on Z2783 are marked unflagged (status=Closed
+  on the parent CO came from the legacy `RazdolzenaDaNe` aggregate,
+  not from per-line flags). Acceptable for historical view; new
+  COs created on LON will use the per-line flag flow as designed.
+
+---
+
 ## 2026-05-14 — Phase 17 hub visibility gap closed: BOM + MaterialIssues + per-line calc + Materials tab fix
 
 Commits `a53f13a` + `65ac611` + `74ac813` + `88b0568` + `ee6f08a` + `e3e2a5d`.
