@@ -129,20 +129,21 @@ public class WMSController : BaseController
         if (assignedProducerId.HasValue)
             query = query.Where(i => i.AssignedProducerId == assignedProducerId.Value);
 
-        // Phase 17 §E6 — Podelba dialog scopes its picker to materials referenced
-        // by any ProductionOrderMaterial on a ProductionOrder linked to this
-        // ClientOrder. Single SQL IN-clause; falls open (returns 0 rows) when
-        // no POs/materials exist yet, so the UI can warn the user.
+        // Phase 17 §E6 + cutover-gap fix — show every inventory balance whose
+        // MRN matches any CustomsDeclaration linked to this ClientOrder. MRN
+        // is the natural traceability key shared between declarations,
+        // receipts, and inventory rows. This covers both the active flow
+        // (materials available for Podelba) AND the historical view of a
+        // Closed/migrated CO (where ProductionOrderMaterials may not exist
+        // yet because LON.Migration aggregates LagerMaterijali → InventoryMovement
+        // without the intermediate POMaterial rows).
         if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
         {
-            var poIds = _context.ProductionOrders
-                .Where(p => p.ClientOrderId == clientOrderId.Value)
-                .Select(p => p.Id);
-            var itemIds = _context.ProductionOrderMaterials
-                .Where(m => poIds.Contains(m.ProductionOrderId))
-                .Select(m => m.ItemId)
-                .Distinct();
-            query = query.Where(i => itemIds.Contains(i.ItemId));
+            var mrns = _context.CustomsDeclarations
+                .Where(d => d.ClientOrderId == clientOrderId.Value
+                            && d.MRN != null && d.MRN != "")
+                .Select(d => d.MRN);
+            query = query.Where(i => i.MRN != null && mrns.Contains(i.MRN));
         }
 
         var inventory = await query.ToListAsync();
