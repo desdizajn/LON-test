@@ -309,6 +309,7 @@
         },
         "shipmentsPlaceholder": "Испратниците стигнуваат тука во §E8.",
         "shipmentsEmpty": "Сè уште нема испратници. Користи „Креирај извозна декларација (EX)“ во акциите.",
+        "shipmentsMigrationNote": "За миграциски налози: легасните Izdatnici → MaterialIssues, Ispratnici → Waste declarations. Целата излезна следливост е во табовите „Издадени материјали“ и „Декларации (Waste)“.",
         "shipCols": {
           "number": "Број",
           "date": "Датум",
@@ -320,6 +321,7 @@
         "materialsEmpty": "Сè уште нема материјали на лагер за овој налог. Прво „Прими во магацин“ и „Распредели подизведувач“.",
         "receipts": "Приеми",
         "receiptsEmpty": "Сè уште нема приеми. Користи „Прими во магацин“ во акциите.",
+        "receiptsMigrationNote": "За миграциски налози: легасните LagerMaterijali директно стануваат InventoryMovement-и (без Receipt header). Видете го табот „Материјали на лагер“ за прегледот на инвентарот.",
         "recCols": {
           "number": "Број",
           "date": "Датум",

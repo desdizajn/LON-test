@@ -810,9 +810,14 @@ const ReceiptsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => 
   if (isLoading) return <LinearProgress />;
   if (rows.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-        {t('orders.hub.tabs.receiptsEmpty')}
-      </Typography>
+      <Box sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          {t('orders.hub.tabs.receiptsEmpty')}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, maxWidth: 520, mx: 'auto' }}>
+          {t('orders.hub.tabs.receiptsMigrationNote')}
+        </Typography>
+      </Box>
     );
   }
   return (
@@ -897,9 +902,14 @@ const ShipmentsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) =>
   if (isLoading) return <LinearProgress />;
   if (rows.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
-        {t('orders.hub.tabs.shipmentsEmpty')}
-      </Typography>
+      <Box sx={{ py: 4, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          {t('orders.hub.tabs.shipmentsEmpty')}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, maxWidth: 560, mx: 'auto' }}>
+          {t('orders.hub.tabs.shipmentsMigrationNote')}
+        </Typography>
+      </Box>
     );
   }
   return (
