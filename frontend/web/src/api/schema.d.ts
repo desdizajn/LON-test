@@ -1826,6 +1826,93 @@ export interface paths {
       };
     };
   };
+  "/api/Finance/fx-rates": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+          dateFrom?: string;
+          dateTo?: string;
+          page?: number;
+          pageSize?: number;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    post: {
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["CreateFxRateCommand"];
+          "text/json": components["schemas"]["CreateFxRateCommand"];
+          "application/*+json": components["schemas"]["CreateFxRateCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/fx-rates/{id}": {
+    put: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["UpdateFxRateCommand"];
+          "text/json": components["schemas"]["UpdateFxRateCommand"];
+          "application/*+json": components["schemas"]["UpdateFxRateCommand"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+    delete: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/Finance/fx-rates/effective": {
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+          asOf?: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/Guarantee/accounts": {
     get: {
       responses: {
@@ -5542,6 +5629,17 @@ export interface components {
       clientOrderId?: string | null;
       lines?: components["schemas"]["ExportLineDto"][] | null;
     };
+    CreateFxRateCommand: {
+      fromCurrency?: string | null;
+      toCurrency?: string | null;
+      /** Format: double */
+      rate?: number;
+      /** Format: date-time */
+      effectiveDate?: string;
+      /** Format: int32 */
+      source?: number;
+      notes?: string | null;
+    };
     CreateInvoiceBody: {
       /** Format: uuid */
       partnerId?: string;
@@ -6618,6 +6716,17 @@ export interface components {
       /** Format: uuid */
       positionId?: string | null;
       isActive?: boolean;
+    };
+    UpdateFxRateCommand: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: double */
+      rate?: number;
+      /** Format: date-time */
+      effectiveDate?: string;
+      /** Format: int32 */
+      source?: number;
+      notes?: string | null;
     };
     UpdatePayrollLineCommand: {
       /** Format: uuid */

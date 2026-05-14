@@ -148,6 +148,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     // Domain events — Phase 17 §E11
     public DbSet<LON.Domain.Entities.Events.DomainEventLog> DomainEventLogs => Set<LON.Domain.Entities.Events.DomainEventLog>();
 
+    // Finance FX — Phase 17 §E16
+    public DbSet<LON.Domain.Entities.Finance.FxRate> FxRates => Set<LON.Domain.Entities.Finance.FxRate>();
+
     // Outbox
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

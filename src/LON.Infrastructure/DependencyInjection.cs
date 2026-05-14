@@ -69,6 +69,10 @@ public static class DependencyInjection
         services.AddScoped<LON.Application.Management.Alerts.IAlertEvaluatorRunner,
             LON.Application.Management.Alerts.AlertEvaluatorRunner>();
 
+        // Phase 17 §E16 — FX rate lookup.
+        services.AddScoped<LON.Application.Finance.FxRates.IFxRateService,
+            LON.Application.Finance.FxRates.FxRateService>();
+
         // Регистрирај Rule Engine
         services.AddScoped<IDeclarationRuleEngine, DeclarationRuleEngine>();
         

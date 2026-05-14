@@ -135,6 +135,7 @@ import CashFlow from './pages/Finance/CashFlow';
 import CostAccounting from './pages/Finance/CostAccounting';
 import SupplierInvoices from './pages/Finance/SupplierInvoices';
 import PayrollAggregate from './pages/Finance/PayrollAggregate';
+import FxRates from './pages/Finance/FxRates';
 
 // P13.1 / P13.3 / P13.5 — Management KPIs
 import OnTimeDelivery from './pages/Management/OnTimeDelivery';
@@ -495,6 +496,7 @@ const App: React.FC = () => {
             <Route path="/finance/margin" element={<FinanceMargin />} />
             <Route path="/finance/ap" element={<SupplierInvoices />} />
             <Route path="/finance/payroll" element={<PayrollAggregate />} />
+            <Route path="/finance/fx-rates" element={<FxRates />} />
             <Route path="/finance/pnl" element={<PnLPreview />} />
             <Route path="/finance/cash-flow" element={<CashFlow />} />
             <Route path="/finance/reports" element={<FinanceReports />} />

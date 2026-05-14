@@ -144,6 +144,9 @@ public interface IApplicationDbContext
     // Domain events — Phase 17 §E11
     DbSet<LON.Domain.Entities.Events.DomainEventLog> DomainEventLogs { get; }
 
+    // Finance FX — Phase 17 §E16
+    DbSet<LON.Domain.Entities.Finance.FxRate> FxRates { get; }
+
     /// <summary>
     /// Tenant id lifted from the authenticated JWT's `tenant_id` claim. Null
     /// during seeders / background jobs / login flow. Exposed so handlers

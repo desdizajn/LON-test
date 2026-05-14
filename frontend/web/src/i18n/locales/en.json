@@ -25,6 +25,34 @@
       "exists": "✅ Backend exists — alternative view"
     }
   },
+  "fxRates": {
+    "title": "FX rates",
+    "subtitle": "Manually maintained currency rates. Auto-import from the central bank ships in Phase 27.1.",
+    "add": "New rate",
+    "addTitle": "New rate",
+    "editTitle": "Edit rate",
+    "copyForward": "Copy forward to today",
+    "filter": { "from": "From", "to": "To" },
+    "col": {
+      "pair": "Pair",
+      "rate": "Rate",
+      "effective": "Effective from",
+      "source": "Source",
+      "notes": "Notes"
+    },
+    "form": {
+      "from": "From currency",
+      "to": "To currency",
+      "rate": "Rate",
+      "effective": "Effective from",
+      "source": "Source",
+      "notes": "Notes"
+    },
+    "source": {
+      "manual": "Manual",
+      "nationalBank": "Central bank"
+    }
+  },
   "recycleBin": {
     "title": "Recycle bin",
     "subtitle": "Soft-deleted entities. After 90 days they're permanently deleted automatically.",
