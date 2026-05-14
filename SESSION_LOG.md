@@ -2,6 +2,104 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 cutover gap closed: Z2779 migrated to VPS + real-data E2E green
+
+Commits `bb41e9c` + `5040f3e` + `aa1d88c` + `5f3821b`.
+
+**Trigger.** User flagged that the prior §E10–§E15 close-out was synthetic
+on VPS — features built, but the hub on VPS had no real data. CLAUDE.md
+§11.3 + PLAN.md §5 Phase 17 Done explicitly require:
+> "ClientOrder hub renders on VPS at /orders/:id for at least 1 real
+> ClientOrder of Teksport's biggest customer (real data)."
+
+This entry closes that gap. **Caveat acknowledged:** during the prior
+session I asked the user about fixtures and they selected "Synthetic seed"
+without seeing what that implied. I should have pushed back on that
+choice given the explicit CLAUDE.md rule. Lesson logged.
+
+**What happened.**
+
+1. **SSH tunnel** from Windows → VPS SQL Server: `ssh -fN -L
+   14333:127.0.0.1:1433 -o ServerAliveInterval=15 root@173.212.254.216`.
+   First attempt dropped after ~12 min; keep-alive flags fixed it.
+2. **LON.Migration run locally → VPS LONDB** through the tunnel. First
+   pass got the items mapper to 9500/11114 before SSH drop; on resume
+   it completed all 11,114 items, then ran partners + odobrenija + orders
+   + decls + fgs + boms + inventory + issues + wastes + reconcile.
+3. **6/6 R-reconciliation PASS** against VPS LONDB:
+
+   | Check | Legacy ELON | VPS LON | Verdict |
+   |---|---|---|---|
+   | R1 — Inventory by Proces ↔ MovementType | recv 5×2481.78 / issue 5×2338.18 / waste 3×143.60 | exact match | ✅ |
+   | R2 — Guarantee per Auth (OdobrenieRBr=1) | 77,000,000.00 | 77,000,000.00 | ✅ |
+   | R3 — Declaration totals (F2334) | CV=28335.00 / Duty=674977.00 | CV=28335.00 / Duty=674977.00 | ✅ |
+   | R4 — ClientOrder count | 1 | 1 | ✅ |
+   | R5 — BOMLine count | 5 | 5 | ✅ |
+   | R6 — NaimU5 5-group aggregate | all 5 match | all 5 match | ✅ |
+
+4. **VPS Z2779 final state:** CO `CO-2025-000001` (CustomerOrderReference
+   `O1-Z2779`, Status=Closed), 4 CustomsDeclarations (1 IM real + 2 IM
+   phantom + 1 Waste), 8 declaration lines, 1 LONAuthorization with bond
+   `MK19AUNIS9000000000000000BE4` + GuaranteeAmount 77,000,000 MKD, 13
+   InventoryMovements (5+5+3), 1 BOM × 5 lines, 1 ProductionOrder, 5
+   MaterialIssues totalling 2338.18 qty, 1 auto-gen DeliveryNote
+   (ProducerDispatch). Razdolzuvanje endpoint returns
+   `totalImDuty=805,724.95 MKD`.
+
+**Two bugs found + fixed during the smoke walk.**
+
+- **`ClientOrderSummaryDto` missing `CustomerOrderReference`** (commit
+  `5040f3e`). The list endpoint didn't expose this column, so the
+  Playwright spec couldn't find Z2779 by legacy reference without
+  fetching each CO's detail. Added the column + handler now populates it.
+- **Razdolzuvanje query returned "(not found)" for Closed migrated
+  orders** (commit `5f3821b`). The combined global filter
+  (`!IsDeleted && (CurrentTenantId == null || TenantId == CurrentTenantId)`)
+  was rejecting the Z2779 CO. Fixed by switching the query to
+  `.IgnoreQueryFilters()` plus a manual tenant clause. Closed/Cancelled
+  orders still need their razdolzuvanje view for historical reference.
+  Razdolzuvanje endpoint now returns real Z2779 numbers on VPS:
+  `totalImDuty=805,724.95 MKD`, authorizationNumber
+  `MK19AUNIS9000000000000000BE4`.
+
+**Playwright happy-path update** (commits `bb41e9c` + `aa1d88c`):
+- `setup/api.ts` gains `findClientOrderByReference(api, token, ref)` that
+  pages through `/api/clientorders` looking for a matching CO.
+- `happy-path.spec.ts` now resolves the target via the canonical legacy
+  reference `O1-Z2779` (override via `LON_E2E_REFERENCE`). Falls back to
+  synthetic CO when fixture is missing.
+- Tests are status-aware: Closed/Cancelled orders correctly expect zero
+  AI recommendations (engines bail on terminal states); Draft orders
+  expect the `hub.draft.no-fgs` nudge.
+
+**Final Playwright run vs VPS** (`tests/playwright`, 4 specs):
+
+```
+Running 4 tests using 1 worker
+[happy-path] target: CO-2025-000001 (migrated)
+  ok 1 Login → load Z2779 (or fallback) → hub renders all critical widgets (5.4s)
+  ok 2 Z2779 (or fallback) — recommendations endpoint returns the right shape for the target status (0.48s)
+  ok 3 Z2779 (or fallback) — razdolzuvanje endpoint returns IM vs EX totals (0.55s)
+  ok 4 FxRates endpoint returns the seeded EUR/MKD rate (0.46s)
+4 passed (7.7s)
+```
+
+**Phase 17 acceptance criteria — TRULY closed:**
+- [x] ClientOrder hub renders on VPS at `/orders/:id` **for the migrated
+      Z2779 (real Teksport data)** — `CO-2025-000001 (O1-Z2779)`.
+- [x] 6/6 reconciliation queries PASS against VPS (R1–R6).
+- [x] AI helper drawer + audit tab + razdolzuvanje view all work on the
+      real fixture.
+- [x] Playwright happy-path green vs VPS using the migrated CO.
+
+**Follow-up flagged for Phase 21.1 cutover:**
+- LON.Migration run through SSH tunnel took ~25 min for items (~11k MERGE
+  roundtrips × tunnel latency). For Phase 21 production cutover this needs
+  either (a) batch-MERGE in ItemMapper or (b) run mapper directly on VPS
+  (mount ELON dump file inside the lon-api container).
+
+---
+
 ## 2026-05-14 — Phase 17 §E15 — Playwright E2E happy-path (3 specs green vs VPS) — PHASE 17 COMPLETE
 
 Commit `42cbbf5`. Pragmatic hybrid: API for setup (login + master-data +
