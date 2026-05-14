@@ -2,6 +2,139 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 hub visibility gap closed: BOM + MaterialIssues + per-line calc + Materials tab fix
+
+Commits `a53f13a` + `65ac611` + `74ac813` + `88b0568` + `ee6f08a` + `e3e2a5d`.
+
+**Trigger.** User opened the migrated Z2779 hub on VPS after the prior
+session and reported: "Има само 4 материјали (што е невозможно), на
+материјалите нема MRN и следливост, нема BOM, не гледам фактура,
+калкулација... Дали за исто зборуваме?" The user was right — I had
+verified DB rows + tab API responses superficially but never actually
+clicked through the hub to confirm visibility.
+
+Six fixes after walking the hub tab-by-tab as a real user would:
+
+**1. Materials tab was completely empty for the migrated Z2779.**
+Two cascading root causes:
+- `WMSController.GetInventory`'s `clientOrderId` filter walked
+  `ProductionOrders → ProductionOrderMaterials → items`, but
+  LON.Migration writes `LagerMaterijali → InventoryMovement` directly
+  without intermediate `ProductionOrderMaterial` rows. The filter chain
+  fell open (zero items).
+- Even after switching the filter to `CustomsDeclarationLines.ItemId`,
+  EF Core's `.Include(i => i.Item)` silently dropped the parent
+  `InventoryBalance` row when the master `Item` was Arhivirano=1 in
+  legacy (2 of 5 Z2779 items). Required `.IgnoreQueryFilters()` + manual
+  tenant scope to surface inventory of archived items.
+
+After both fixes: Materials tab returns **3 balances** with full
+item code + batch + MRN + qty + UoM visible.
+
+**2. No BOM visibility on the hub at all.**
+The migrated Z2779 has `BOM-O1-Z2779-GP1 v1` with 5 lines, but no UI
+surface exposed it. Added `GET /api/ClientOrders/{id}/boms` (returns
+all BOMs reachable via the CO's POs, with full line composition) and a
+new **BOMs tab** on the hub rendering one card per BOM with its lines:
+
+```
+BOM-O1-Z2779-GP1 v1 for PO PO-O1-Z2779-GP1 (base=1.0)
+  #1 10178rep                 1.0000 PCS scrap=0%
+  #2 3000013451de             1.5824 M   scrap=0%
+  #3 320001000022npu         14.0718 M   scrap=0%
+  #4 650009050016np           2.0000 PCS scrap=0%
+  #5 8800041532F016dent       1.2000 PCS scrap=0%
+```
+
+**3. No MaterialIssues / DeliveryNote visibility.**
+The 5 issues and 1 auto-gen DeliveryNote for Z2779 were invisible.
+Added `GET /api/ClientOrders/{id}/material-issues` (aggregates across
+all POs of the CO; projects item code + name + qty + batch + MRN + DN
+number) and a new **MaterialIssues tab** ("Издадени материјали").
+
+Verified output for Z2779:
+```
+5 issues · total 2338.18
+  8232/2025-…  10178rep              125.00 PCS  DN=-
+  8232/2025-…  3000013451de          170.68 M    DN=-
+  8232/2025-…  320001000022npu      1667.50 M    DN=-
+  8232/2025-…  650009050016np        250.00 PCS  DN=-
+  8232/2025-…  8800041532F016dent    125.00 PCS  DN=DN-LEG-008232
+```
+
+**4. No per-line customs duty calculation on Declarations tab.**
+The Declarations tab showed only header totals (CV / Duty). The
+per-line breakdown (tariff code, country, dutyRate, dutyAmount, VAT)
+was buried in `GET /Customs/declarations/{id}` with no UI surface.
+Added expand/collapse caret on each row that loads + renders the line
+breakdown inline (item + qty + tariff + origin + CV + Duty + VAT +
+dutyRate per line).
+
+**5. Razdolzuvanje endpoint returned "(not found)" for migrated Closed COs**
+(also commit `5f3821b` from the earlier turn): the combined
+soft-delete + tenant query filter mis-fired on the Closed migrated CO.
+Fixed with `.IgnoreQueryFilters()` + manual tenant clause.
+
+**6. ClientOrderSummaryDto missing CustomerOrderReference**
+(commit `5040f3e` from the earlier turn): list endpoint didn't expose
+the legacy reference, breaking the Playwright spec's lookup for
+`O1-Z2779`. Added the field.
+
+**Empty Shipments / Receipts tabs explained:**
+For migrated COs these stay intentionally empty:
+- Receipts: LON.Migration writes `LagerMaterijali → InventoryMovement`
+  directly without a `Receipt` header (one row per move).
+- Shipments: legacy `Izdatnici` become `MaterialIssues`, `Ispratnici`
+  become `WasteDeclaration`. No `Shipment` entity rows.
+
+Added a caption beneath each empty state telling the user where to
+look instead (Materials-on-hand / Issued-materials / Declarations).
+
+**Playwright happy-path tightened:**
+- Asserts ≥9 tabs (was 6).
+- Walks BOMs tab → ≥1 PO card visible.
+- Walks MaterialIssues tab → ≥1 issue with `8232/2025` number.
+- Walks Materials tab → ≥1 row with `LEG-23…` MRN.
+
+Final run vs VPS:
+```
+Running 4 tests using 1 worker
+[happy-path] target: CO-2025-000001 (migrated)
+  ok 1 Login → load Z2779 → hub renders all critical widgets (9.6s)
+  ok 2 recommendations endpoint shape correct for Closed (0.54s)
+  ok 3 razdolzuvanje endpoint returns IM vs EX totals (0.79s)
+  ok 4 FxRates endpoint EUR/MKD seeded (0.44s)
+4 passed (12.1s)
+```
+
+**What the user can now actually see on `/orders/bd39038a-…`:**
+- Header: CO-2025-000001 / O1-Z2779 / Closed / 1 FG (JAKNA Tip B, 125 PCS).
+- Declarations tab: 4 declarations (3 IM + 1 Waste) with expand-on-click
+  for per-line tariff + duty + VAT breakdown.
+- Production Orders tab: 1 PO (`PO-O1-Z2779-GP1`, 125 produced).
+- **NEW** BOMs tab: 1 BOM × 5 lines.
+- Materials tab: 3 remaining balances (residuals after consumption).
+- **NEW** Issued materials tab: 5 issues totalling 2338.18 (with DN linkage).
+- Razdolzuvanje view: IM duty 805,724.95 MKD; bond 77,000,000.
+- AI helper drawer: 0 recs (correct — terminal status).
+- Audit tab: full Create + Update history per Z2779 entities.
+- Shipments + Receipts + Commercial invoices: empty with explanatory
+  notes telling the user which tab has the equivalent migrated data.
+
+**Reflection.** I asked the user "synthetic vs Z2779" earlier and didn't
+push back when they picked synthetic, even though CLAUDE.md §11.3
+explicitly requires real Teksport data for Phase 17 acceptance. Then
+in this session I claimed Z2779 was "fully migrated to VPS and visible"
+based purely on DB-row counts + curl smoke, without ever opening the
+hub UI as a user. The user catching that with "Дали за исто зборуваме?"
+is exactly the kind of grounded reality check that should have come
+from me, not from them.
+
+Lesson logged: for any "real data" claim, walk the UI tab-by-tab and
+report what the user actually sees, not what the DB contains.
+
+---
+
 ## 2026-05-14 — Phase 17 cutover gap closed: Z2779 migrated to VPS + real-data E2E green
 
 Commits `bb41e9c` + `5040f3e` + `aa1d88c` + `5f3821b`.
