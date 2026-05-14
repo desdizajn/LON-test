@@ -25,6 +25,20 @@
       "exists": "✅ Backend exists — alternative view"
     }
   },
+  "audit": {
+    "tab": {
+      "heading": "Audit history ({{count}} entries)",
+      "viewAll": "View full history",
+      "empty": "No audit entries for this entity.",
+      "error": "Failed to load the audit log.",
+      "col": {
+        "when": "When",
+        "action": "Action",
+        "user": "User",
+        "changes": "Changes"
+      }
+    }
+  },
   "ai": {
     "fab": { "tooltip": "AI assistant" },
     "drawer": { "title": "AI assistant" },
@@ -182,6 +196,8 @@
         "productionOrders": "Production orders",
         "shipments": "Shipments",
         "materials": "Materials on hand",
+        "receipts": "Receipts",
+        "audit": "Audit",
         "commercialInvoices": "Commercial invoices",
         "commercialInvoicesEmpty": "No commercial invoices yet. Create one via „Commercial invoice“ in the actions panel.",
         "ciCols": {

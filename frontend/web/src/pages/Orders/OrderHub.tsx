@@ -46,6 +46,7 @@ import QcDialog from './QcDialog';
 import CommercialInvoiceDialog from './CommercialInvoiceDialog';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
 import { commercialInvoicesApi } from '../../services/api';
+import AuditHistoryTab from '../../components/common/AuditHistoryTab';
 
 const STATUS_COLOR: Record<ClientOrderStatus, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
   0: 'default',
@@ -395,6 +396,7 @@ const OrderHub: React.FC = () => {
               <Tab label={t('orders.hub.tabs.materials')} />
               <Tab label={t('orders.hub.tabs.receipts')} />
               <Tab label={t('orders.hub.tabs.commercialInvoices')} />
+              <Tab label={t('orders.hub.tabs.audit')} />
             </Tabs>
             <Divider sx={{ my: 2 }} />
             <Box minHeight={200}>
@@ -404,6 +406,7 @@ const OrderHub: React.FC = () => {
               {tab === 3 && <MaterialsTab clientOrderId={order.id} />}
               {tab === 4 && <ReceiptsTab clientOrderId={order.id} />}
               {tab === 5 && <CommercialInvoicesTab clientOrderId={order.id} />}
+              {tab === 6 && <AuditHistoryTab entityType="ClientOrder" entityId={order.id} />}
             </Box>
           </Paper>
         </Grid>
