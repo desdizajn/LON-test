@@ -130,20 +130,24 @@ public class WMSController : BaseController
             query = query.Where(i => i.AssignedProducerId == assignedProducerId.Value);
 
         // Phase 17 §E6 + cutover-gap fix — show every inventory balance whose
-        // MRN matches any CustomsDeclaration linked to this ClientOrder. MRN
-        // is the natural traceability key shared between declarations,
-        // receipts, and inventory rows. This covers both the active flow
-        // (materials available for Podelba) AND the historical view of a
-        // Closed/migrated CO (where ProductionOrderMaterials may not exist
-        // yet because LON.Migration aggregates LagerMaterijali → InventoryMovement
-        // without the intermediate POMaterial rows).
+        // Item appears on any CustomsDeclarationLine of this ClientOrder.
+        // Items are a more reliable join key than MRN: MRN formatting differs
+        // between LON.Migration's DeclarationMapper (full `25MKIM…` or
+        // `LEG-{Fkt}-{dt}-{rb}`) and InventoryMapper (short `LEG-{Fkt}`), so
+        // an MRN-based filter falls open for migrated COs.
+        // Active flow: same query returns the materials needed for Podelba /
+        // material issue. Closed/migrated flow: same query returns the audit
+        // trail of items that moved through the order (most balances will
+        // be ≈ 0 because the work is finished — the UI keeps zero rows so
+        // the user sees the historical lineage).
         if (clientOrderId.HasValue && clientOrderId.Value != Guid.Empty)
         {
-            var mrns = _context.CustomsDeclarations
-                .Where(d => d.ClientOrderId == clientOrderId.Value
-                            && d.MRN != null && d.MRN != "")
-                .Select(d => d.MRN);
-            query = query.Where(i => i.MRN != null && mrns.Contains(i.MRN));
+            var itemIds = _context.CustomsDeclarationLines
+                .Where(l => _context.CustomsDeclarations.Any(d =>
+                    d.Id == l.CustomsDeclarationId && d.ClientOrderId == clientOrderId.Value))
+                .Select(l => l.ItemId)
+                .Distinct();
+            query = query.Where(i => itemIds.Contains(i.ItemId));
         }
 
         var inventory = await query.ToListAsync();

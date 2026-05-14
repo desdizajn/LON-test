@@ -890,8 +890,13 @@ const MaterialsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) =>
 
   if (isLoading) return <LinearProgress />;
 
+  // Phase 17 cutover fix: keep zero-balance rows so historical / Closed
+  // orders (where everything has been issued/consumed) still show the
+  // material trail. Positive balances are highlighted; zero rows render
+  // as grey so the user can tell at a glance.
   const positive = rows.filter((r) => (r.quantity ?? 0) > 0);
-  if (positive.length === 0) {
+  const zero = rows.filter((r) => (r.quantity ?? 0) <= 0);
+  if (rows.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
         {t('orders.hub.tabs.materialsEmpty')}
@@ -1013,6 +1018,17 @@ const MaterialsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) =>
           {renderTable(group.rows)}
         </Box>
       ))}
+      {zero.length > 0 && (
+        <>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, mt: 3 }}>
+            <Typography variant="overline" color="text.secondary">
+              {t('orders.hub.tabs.matGroup.fullyIssued', 'Целосно издадено / razdolzeno')}
+            </Typography>
+            <Chip label={`${zero.length}`} size="small" variant="outlined" />
+          </Stack>
+          {renderTable(zero)}
+        </>
+      )}
     </Box>
   );
 };
