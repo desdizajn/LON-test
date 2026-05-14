@@ -95,7 +95,13 @@ public sealed class GetRazdolzuvanjeForClientOrderQueryHandler
     public async Task<RazdolzuvanjeForClientOrderDto> Handle(
         GetRazdolzuvanjeForClientOrderQuery request, CancellationToken ct)
     {
+        // §E9 — the parent CO may be Closed (terminal status, IsDeleted=false)
+        // OR Cancelled (IsDeleted=true). Both still need a razdolzuvanje view
+        // for historical reference, so we explicitly bypass the soft-delete
+        // filter here. Tenant scope still applies via the same query filter.
         var order = await _context.ClientOrders
+            .IgnoreQueryFilters()
+            .Where(o => _context.CurrentTenantId == null || o.TenantId == _context.CurrentTenantId)
             .Include(o => o.LONAuthorization)
             .FirstOrDefaultAsync(o => o.Id == request.ClientOrderId, ct);
         if (order is null)
