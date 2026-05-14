@@ -74,6 +74,7 @@ public class GetClientOrdersQueryHandler
             r.CustomerName,
             r.Order.LONAuthorizationId,
             r.LonAuthNo,
+            r.Order.CustomerOrderReference,
             r.Order.OrderDate,
             r.Order.RequestedShipDate,
             (int)r.Order.Status,

@@ -46,6 +46,7 @@ public record ClientOrderSummaryDto(
     string? CustomerPartnerName,
     Guid LONAuthorizationId,
     string? LONAuthorizationNumber,
+    string? CustomerOrderReference,
     DateTime OrderDate,
     DateTime? RequestedShipDate,
     int Status,
