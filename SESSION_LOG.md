@@ -2,6 +2,60 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E14 — Soft-delete + recycle bin (block-delete with children) + VPS-verified
+
+Commit `1b884a0`. ClientOrder is the canonical entity for the v1 recycle bin;
+the `ISoftDeletable` marker interface + surrounding policy land here so
+post-v1 expansion to Partner / Item / Employee etc. is mechanical.
+
+User policy (decided 2026-05-13): BLOCK-DELETE when non-deleted children
+exist. `CancelClientOrderCommand` now refuses the soft-delete if the order
+still has CustomsDeclarations / ProductionOrders / Shipments not yet
+soft-deleted, returning `ClientOrderHasChildren` + a message that names the
+blocker counts.
+
+**Domain:** new `ISoftDeletable` marker interface in `LON.Domain.Common`;
+ClientOrder implements it (no schema change — already had
+`IsDeleted` + `DeletedAt` + `DeletedBy` since §E1).
+
+**Application:**
+- `CancelClientOrderCommandHandler` — 3-table block-delete check before
+  flipping `IsDeleted`.
+- `RestoreClientOrderCommand` — un-soft-delete; clears stamps.
+- `GetRecycleBinQuery` — paginated list of soft-deleted ClientOrders.
+- `PermanentDeleteClientOrderCommand` — admin hard-delete.
+
+**API:** `RecycleBinController` (Administrator-only):
+- `GET /api/admin/recycle-bin`
+- `POST /api/admin/recycle-bin/client-orders/{id}/restore`
+- `DELETE /api/admin/recycle-bin/client-orders/{id}/permanent`
+
+**LON.Worker:** new `SoftDeleteRetentionJob` BackgroundService — once a day
+hard-deletes ClientOrders whose `DeletedAt > 90 days`. First pass +5 min
+after startup.
+
+**Frontend:**
+- `pages/Admin/RecycleBin.tsx` — MUI table with Restore + Permanent-delete,
+  confirmation dialog on permanent delete, pagination, error toast on
+  failure. Route `/admin/recycle-bin`.
+- i18n: `recycleBin.*` block in mk.json + en.json.
+
+**Tests** (`RecycleBinTests.cs`, 4 [Fact]):
+- `Cancel_ChildlessOrder_SoftDeletes` — happy path.
+- `Cancel_WithNonDeletedChildren_IsBlocked` — block-delete verified.
+- `Restore_FlipsIsDeletedAndClearsStamps`.
+- `GetRecycleBin_ReturnsSoftDeletedOrders`.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build api worker frontend` clean.
+- Create CO-2026-000005 → cancel with reason → bin list shows the entry
+  with `deletedBy=admin`, `additionalInfo='smoke cancel'` ✅
+- POST `/restore` → 200 with `data=<co id>` ✅
+
+**Status:** [x] done. Recycle bin operational on VPS. Next: §E16 (FxRate).
+
+---
+
 ## 2026-05-14 — Phase 17 §E13 — Audit history tab on ClientOrder hub + interceptor tests + VPS-verified
 
 Commit `ebd2fce`. The SaveChanges-time audit capture and the `/api/audit`
