@@ -499,6 +499,12 @@ export const clientOrdersApi = {
    */
   getAvailableFinishedGoods: (id: string) =>
     api.get(`/ClientOrders/${id}/available-fgs`),
+  // Phase 17 cutover — material-issues aggregate across all POs of the CO.
+  getMaterialIssues: (id: string) =>
+    api.get(`/ClientOrders/${id}/material-issues`),
+  // Phase 17 cutover — BOM(s) per ProductionOrder of the CO (with lines).
+  getBoms: (id: string) =>
+    api.get(`/ClientOrders/${id}/boms`),
   // Phase 17 §E9 — Razdolzuvanje aggregate, per-line flag, snapshot, exports.
   getRazdolzuvanje: (id: string) =>
     api.get(`/ClientOrders/${id}/razdolzuvanje`),

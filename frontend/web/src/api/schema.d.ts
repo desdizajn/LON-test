@@ -472,6 +472,36 @@ export interface paths {
       };
     };
   };
+  "/api/ClientOrders/{id}/material-issues": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
+  "/api/ClientOrders/{id}/boms": {
+    get: {
+      parameters: {
+        path: {
+          id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: never;
+        };
+      };
+    };
+  };
   "/api/ClientOrders/{id}/razdolzuvanje": {
     get: {
       parameters: {

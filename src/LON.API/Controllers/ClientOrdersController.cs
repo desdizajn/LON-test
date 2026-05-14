@@ -131,6 +131,111 @@ public class ClientOrdersController : BaseController
         return Ok(rows);
     }
 
+    // ───── Phase 17 cutover gap — hub aggregates across child POs/MIs ─────
+
+    /// <summary>
+    /// All MaterialIssues for any ProductionOrder linked to this ClientOrder.
+    /// Used by the hub Issues tab; surfaces the audit trail of which
+    /// materials moved out + when + by whom. For migrated COs (where
+    /// LON.Migration aggregates LagerMaterijali → MaterialIssue) this is the
+    /// canonical view of historical material flow.
+    /// </summary>
+    [HttpGet("{id:guid}/material-issues")]
+    public async Task<IActionResult> GetMaterialIssues(Guid id)
+    {
+        // Bypass the global soft-delete filter so MaterialIssues whose Item
+        // master is archived still render (same reason as InventoryBalance).
+        var rows = await _context.MaterialIssues
+            .IgnoreQueryFilters()
+            .Where(m => !m.IsDeleted)
+            .Where(m => _context.ProductionOrders.Any(po => po.Id == m.ProductionOrderId
+                                                            && po.ClientOrderId == id))
+            .Select(m => new
+            {
+                m.Id,
+                m.IssueNumber,
+                m.IssueDate,
+                m.ProductionOrderId,
+                ProductionOrderNumber = _context.ProductionOrders
+                    .Where(po => po.Id == m.ProductionOrderId)
+                    .Select(po => po.OrderNumber)
+                    .FirstOrDefault(),
+                m.ItemId,
+                ItemCode = _context.Items.IgnoreQueryFilters()
+                    .Where(i => i.Id == m.ItemId).Select(i => i.Code).FirstOrDefault(),
+                ItemName = _context.Items.IgnoreQueryFilters()
+                    .Where(i => i.Id == m.ItemId).Select(i => i.Name).FirstOrDefault(),
+                m.Quantity,
+                UoMCode = _context.UnitsOfMeasure
+                    .Where(u => u.Id == m.UoMId).Select(u => u.Code).FirstOrDefault(),
+                m.BatchNumber,
+                m.MRN,
+                DeliveryNoteNumber = _context.DeliveryNotes
+                    .Where(dn => dn.RelatedDocumentId == m.Id)
+                    .Select(dn => dn.Number)
+                    .FirstOrDefault(),
+            })
+            .OrderByDescending(m => m.IssueDate)
+            .ToListAsync();
+        return Ok(rows);
+    }
+
+    /// <summary>
+    /// BOM details for any ProductionOrder linked to this ClientOrder.
+    /// One element per PO that has a BOM; the element's `lines` is the
+    /// material composition. Surfaces an otherwise invisible part of the
+    /// migrated CO state on the hub.
+    /// </summary>
+    [HttpGet("{id:guid}/boms")]
+    public async Task<IActionResult> GetBoms(Guid id)
+    {
+        // Same archived-item resilience as the issues + inventory endpoints.
+        var pos = await _context.ProductionOrders
+            .IgnoreQueryFilters()
+            .Where(po => !po.IsDeleted && po.ClientOrderId == id && po.BOMId != null)
+            .Select(po => new { po.Id, po.OrderNumber, po.BOMId })
+            .ToListAsync();
+        var rows = new List<object>();
+        foreach (var po in pos)
+        {
+            var bomId = po.BOMId!.Value;
+            var bom = await _context.BOMs.IgnoreQueryFilters()
+                .Where(b => b.Id == bomId)
+                .Select(b => new { b.Id, BomCode = b.Code, b.Version, b.BaseQuantity })
+                .FirstOrDefaultAsync();
+            if (bom is null) continue;
+            var lines = await _context.BOMLines.IgnoreQueryFilters()
+                .Where(l => l.BOMId == bomId && !l.IsDeleted)
+                .Select(l => new
+                {
+                    l.Id,
+                    l.LineNumber,
+                    l.ItemId,
+                    ItemCode = _context.Items.IgnoreQueryFilters()
+                        .Where(i => i.Id == l.ItemId).Select(i => i.Code).FirstOrDefault(),
+                    ItemName = _context.Items.IgnoreQueryFilters()
+                        .Where(i => i.Id == l.ItemId).Select(i => i.Name).FirstOrDefault(),
+                    l.Quantity,
+                    UoMCode = _context.UnitsOfMeasure
+                        .Where(u => u.Id == l.UoMId).Select(u => u.Code).FirstOrDefault(),
+                    l.ScrapPercentage,
+                })
+                .OrderBy(l => l.LineNumber)
+                .ToListAsync();
+            rows.Add(new
+            {
+                productionOrderId = po.Id,
+                productionOrderNumber = po.OrderNumber,
+                bomId = bom.Id,
+                bomCode = bom.BomCode,
+                bomVersion = bom.Version,
+                bomBaseQuantity = bom.BaseQuantity,
+                lines,
+            });
+        }
+        return Ok(rows);
+    }
+
     // ───────── Phase 17 §E9 — Razdolzuvanje view per ClientOrder ─────────
 
     /// <summary>

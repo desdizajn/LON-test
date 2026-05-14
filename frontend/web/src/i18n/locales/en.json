@@ -238,8 +238,29 @@
       "tabs": {
         "declarations": "Declarations",
         "productionOrders": "Production orders",
+        "boms": "BOM",
+        "bomsEmpty": "No BOM linked to this order.",
+        "bomBase": "Base qty",
+        "bomCols": {
+          "line": "#",
+          "item": "Material",
+          "quantity": "Qty per unit",
+          "scrap": "Scrap %"
+        },
         "shipments": "Shipments",
         "materials": "Materials on hand",
+        "materialIssues": "Issued materials",
+        "materialIssuesEmpty": "No material issues recorded for this order.",
+        "matIssueCount": "{{count}} issues · total {{qty}}",
+        "miCols": {
+          "issueNumber": "Number",
+          "issueDate": "Date",
+          "item": "Material",
+          "batch": "Batch",
+          "mrn": "MRN",
+          "quantity": "Quantity",
+          "deliveryNote": "Delivery note"
+        },
         "receipts": "Receipts",
         "audit": "Audit",
         "commercialInvoices": "Commercial invoices",

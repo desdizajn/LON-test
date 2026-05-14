@@ -238,8 +238,29 @@
       "tabs": {
         "declarations": "Декларации",
         "productionOrders": "Производни налози",
+        "boms": "BOM (нормативи)",
+        "bomsEmpty": "Нема BOM поврзан со овој налог.",
+        "bomBase": "Базна количина",
+        "bomCols": {
+          "line": "#",
+          "item": "Материјал",
+          "quantity": "Количина / парче",
+          "scrap": "Шкарт %"
+        },
         "shipments": "Испратници",
         "materials": "Материјали на лагер",
+        "materialIssues": "Издадени материјали",
+        "materialIssuesEmpty": "Нема издавања на материјали за овој налог.",
+        "matIssueCount": "{{count}} издавања · вкупно {{qty}}",
+        "miCols": {
+          "issueNumber": "Број",
+          "issueDate": "Датум",
+          "item": "Материјал",
+          "batch": "Серија",
+          "mrn": "MRN",
+          "quantity": "Количина",
+          "deliveryNote": "Пропратница"
+        },
         "receipts": "Приеми",
         "audit": "Аудит",
         "commercialInvoices": "Извозни фактури",

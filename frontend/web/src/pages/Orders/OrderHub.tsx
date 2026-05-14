@@ -33,7 +33,7 @@ import {
   ClientOrderStatus,
   useClientOrder,
 } from '../../hooks/queries/useClientOrders';
-import { customsApi, productionApi, wmsApi } from '../../services/api';
+import { clientOrdersApi, customsApi, productionApi, wmsApi } from '../../services/api';
 import { formatDate } from '../../utils/format';
 import ImDeclarationDialog from './ImDeclarationDialog';
 import ReceiveDialog from './ReceiveDialog';
@@ -392,8 +392,10 @@ const OrderHub: React.FC = () => {
             <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable">
               <Tab label={t('orders.hub.tabs.declarations')} />
               <Tab label={t('orders.hub.tabs.productionOrders')} />
-              <Tab label={t('orders.hub.tabs.shipments')} />
+              <Tab label={t('orders.hub.tabs.boms')} />
               <Tab label={t('orders.hub.tabs.materials')} />
+              <Tab label={t('orders.hub.tabs.materialIssues')} />
+              <Tab label={t('orders.hub.tabs.shipments')} />
               <Tab label={t('orders.hub.tabs.receipts')} />
               <Tab label={t('orders.hub.tabs.commercialInvoices')} />
               <Tab label={t('orders.hub.tabs.audit')} />
@@ -402,11 +404,13 @@ const OrderHub: React.FC = () => {
             <Box minHeight={200}>
               {tab === 0 && <DeclarationsTab clientOrderId={order.id} />}
               {tab === 1 && <ProductionOrdersTab clientOrderId={order.id} />}
-              {tab === 2 && <ShipmentsTab clientOrderId={order.id} />}
+              {tab === 2 && <BomsTab clientOrderId={order.id} />}
               {tab === 3 && <MaterialsTab clientOrderId={order.id} />}
-              {tab === 4 && <ReceiptsTab clientOrderId={order.id} />}
-              {tab === 5 && <CommercialInvoicesTab clientOrderId={order.id} />}
-              {tab === 6 && <AuditHistoryTab entityType="ClientOrder" entityId={order.id} />}
+              {tab === 4 && <MaterialIssuesTab clientOrderId={order.id} />}
+              {tab === 5 && <ShipmentsTab clientOrderId={order.id} />}
+              {tab === 6 && <ReceiptsTab clientOrderId={order.id} />}
+              {tab === 7 && <CommercialInvoicesTab clientOrderId={order.id} />}
+              {tab === 8 && <AuditHistoryTab entityType="ClientOrder" entityId={order.id} />}
             </Box>
           </Paper>
         </Grid>
@@ -1135,6 +1139,198 @@ const CommercialInvoicesTab: React.FC<{ clientOrderId: string }> = ({ clientOrde
             {CI_STATUS_LABEL[r.status] ?? r.status}
           </Box>
         </React.Fragment>
+      ))}
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 cutover — MaterialIssues aggregated across every ProductionOrder
+ * of this ClientOrder. Each row carries the auto-gen DeliveryNote number
+ * when one exists. Critical for migrated COs whose entire material flow
+ * is summarised through MaterialIssue rows.
+ */
+interface MaterialIssueRow {
+  id: string;
+  issueNumber: string;
+  issueDate: string;
+  productionOrderNumber: string | null;
+  itemCode: string | null;
+  itemName: string | null;
+  quantity: number;
+  uoMCode: string | null;
+  batchNumber: string | null;
+  mrn: string | null;
+  deliveryNoteNumber: string | null;
+}
+
+const MaterialIssuesTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'materialIssues', clientOrderId],
+    queryFn: async () => {
+      const resp = await clientOrdersApi.getMaterialIssues(clientOrderId);
+      return (resp.data ?? []) as MaterialIssueRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.materialIssuesEmpty')}
+      </Typography>
+    );
+  }
+  const totalQty = rows.reduce((s, r) => s + (r.quantity ?? 0), 0);
+
+  return (
+    <Box>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="overline" color="text.secondary">
+          {t('orders.hub.tabs.matIssueCount', { count: rows.length, qty: totalQty.toFixed(2) })}
+        </Typography>
+      </Stack>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1.4fr 1fr 1fr 0.9fr 0.9fr',
+          gap: 0,
+          fontSize: 13,
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+          overflow: 'hidden',
+        }}
+      >
+        {[
+          t('orders.hub.tabs.miCols.issueNumber'),
+          t('orders.hub.tabs.miCols.issueDate'),
+          t('orders.hub.tabs.miCols.item'),
+          t('orders.hub.tabs.miCols.batch'),
+          t('orders.hub.tabs.miCols.mrn'),
+          t('orders.hub.tabs.miCols.quantity'),
+          t('orders.hub.tabs.miCols.deliveryNote'),
+        ].map((h, i) => (
+          <Box key={i} sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default', textAlign: i === 5 ? 'right' : 'left' }}>
+            {h}
+          </Box>
+        ))}
+        {rows.map((r) => (
+          <React.Fragment key={r.id}>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 12 }}>{r.issueNumber}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{formatDate(r.issueDate)}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+              {r.itemCode}{r.itemName ? ` — ${r.itemName}` : ''}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>{r.batchNumber ?? '—'}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>{r.mrn ?? '—'}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{r.quantity.toFixed(2)} {r.uoMCode ?? ''}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 12 }}>{r.deliveryNoteNumber ?? '—'}</Box>
+          </React.Fragment>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
+/**
+ * Phase 17 cutover — BOM(s) used by ProductionOrders of this ClientOrder.
+ * Renders each BOM with its lines (material composition). Surfaces the
+ * otherwise-hidden link between a CO's finished goods and the materials
+ * required to produce them.
+ */
+interface BomRow {
+  productionOrderId: string;
+  productionOrderNumber: string | null;
+  bomId: string;
+  bomCode: string;
+  bomVersion: number;
+  bomBaseQuantity: number;
+  lines: Array<{
+    id: string;
+    lineNumber: number;
+    itemCode: string | null;
+    itemName: string | null;
+    quantity: number;
+    uoMCode: string | null;
+    scrapPercentage: number;
+  }>;
+}
+
+const BomsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
+  const { t } = useTranslation();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['clientOrders', 'boms', clientOrderId],
+    queryFn: async () => {
+      const resp = await clientOrdersApi.getBoms(clientOrderId);
+      return (resp.data ?? []) as BomRow[];
+    },
+    enabled: !!clientOrderId,
+  });
+
+  if (isLoading) return <LinearProgress />;
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {t('orders.hub.tabs.bomsEmpty')}
+      </Typography>
+    );
+  }
+
+  return (
+    <Box>
+      {rows.map((bom) => (
+        <Paper key={bom.bomId} variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {bom.bomCode}
+            </Typography>
+            <Chip size="small" label={`v${bom.bomVersion}`} variant="outlined" />
+            <Chip size="small" label={`PO ${bom.productionOrderNumber}`} variant="outlined" color="primary" />
+            <Typography variant="caption" color="text.secondary">
+              {t('orders.hub.tabs.bomBase')}: {bom.bomBaseQuantity}
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '0.4fr 1.6fr 1fr 0.8fr',
+              gap: 0,
+              fontSize: 13,
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+            }}
+          >
+            {[
+              t('orders.hub.tabs.bomCols.line'),
+              t('orders.hub.tabs.bomCols.item'),
+              t('orders.hub.tabs.bomCols.quantity'),
+              t('orders.hub.tabs.bomCols.scrap'),
+            ].map((h, i) => (
+              <Box key={i} sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default', textAlign: i >= 2 ? 'right' : 'left' }}>
+                {h}
+              </Box>
+            ))}
+            {bom.lines.map((l) => (
+              <React.Fragment key={l.id}>
+                <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{l.lineNumber}</Box>
+                <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+                  {l.itemCode}{l.itemName ? ` — ${l.itemName}` : ''}
+                </Box>
+                <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+                  {l.quantity.toFixed(4)} {l.uoMCode ?? ''}
+                </Box>
+                <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+                  {(l.scrapPercentage ?? 0).toFixed(2)}%
+                </Box>
+              </React.Fragment>
+            ))}
+          </Box>
+        </Paper>
       ))}
     </Box>
   );

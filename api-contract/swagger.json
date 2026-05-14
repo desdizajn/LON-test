@@ -904,6 +904,52 @@
         }
       }
     },
+    "/api/ClientOrders/{id}/material-issues": {
+      "get": {
+        "tags": [
+          "ClientOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ClientOrders/{id}/boms": {
+      "get": {
+        "tags": [
+          "ClientOrders"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/ClientOrders/{id}/razdolzuvanje": {
       "get": {
         "tags": [
