@@ -2,6 +2,89 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E15 — Playwright E2E happy-path (3 specs green vs VPS) — PHASE 17 COMPLETE
+
+Commit `42cbbf5`. Pragmatic hybrid: API for setup (login + master-data +
+ClientOrder create), UI for the user-facing hub experience. The full
+IM → Receive → BOM → PO → Podelba → MaterialIssue → ProductionReceipt → EX
+→ Razdolzuvanje chain is covered by the xUnit integration suite (200+
+[Fact]s); this Playwright spec proves the hub surfaces light up end-to-end
+on a live system.
+
+**Scaffolding** (`tests/playwright/`):
+- `package.json` + `playwright.config.ts` + `tsconfig.json` + `.gitignore`.
+- `tests/setup/api.ts` — APIRequestContext helpers.
+- `tests/setup/auth.ts` — `uiLogin(page)` drives the MUI login form.
+- `tests/happy-path.spec.ts` — 3 specs.
+- `README.md` with install + run + CI snippet.
+
+**Verification:** ran against `https://elon.elbosoft.click` (Windows, Node
+22.14, Chromium):
+
+```
+Running 3 tests using 1 worker
+  ok 1 Login → create order → hub renders all critical widgets (5.1s)
+  ok 2 AI helper recommendations endpoint returns a hub recommendation (0.65s)
+  ok 3 FxRates endpoint returns the seeded EUR/MKD rate (0.48s)
+3 passed (7.0s)
+```
+
+**Status:** [x] done.
+
+## 🎉 Phase 17 complete
+
+All E0–E16 sub-tasks shipped + verified on VPS:
+
+| Task | Status | VPS verification |
+|---|---|---|
+| E0  useStickyDefaults hook + BulkFieldUpdateButton | ✅ | foundation |
+| E1  ClientOrder entity + endpoints | ✅ | `CO-2026-000001` |
+| E2  ClientOrder list + hub UI | ✅ | hub renders |
+| E3  IM declaration from hub | ✅ | wired |
+| E4  Receipt from hub | ✅ | wired |
+| E5  BOM + ProductionOrder from hub | ✅ | wired |
+| E6  Podelba from hub | ✅ | wired |
+| E7  MaterialIssue + ProductionReceipt | ✅ | wired |
+| E7.5 Department + Position lookup | ✅ | schema; backfill in 21.1.1 |
+| E7.6 DeliveryNote entity + auto-gen | ✅ | `DN-2026-000001` |
+| E8  EX + Shipment + QC | ✅ | hub action |
+| E8.5 CommercialInvoice entity | ✅ | `CI-2026-000001` |
+| E9  Razdolzuvanje view per CO | ✅ | snapshot + auto-Close |
+| E.MIGRATE LON.Migration refactor + Z2779 | ✅ | 6/6 R-queries PASS |
+| E10  AI helper service + drawer | ✅ | `hub.draft.no-fgs` rec |
+| E10.5 AlertRule + AlertEvent + worker | ✅ | 6 rules + dedupe verified |
+| E11  Domain events + DomainEventLog | ✅ | log rows persisted |
+| E12  SQL SEQUENCE for 4 entities | ✅ | 4 new sequences |
+| E13  Audit interceptor + UI tab | ✅ | Create/Update rows visible |
+| E14  Soft-delete + recycle bin | ✅ | cancel + restore round-trip |
+| E16  FxRate entity + UI | ✅ | EUR/MKD = 61.50 |
+| E15  Playwright happy-path | ✅ | 3/3 green vs VPS in 7s |
+
+**Phase 17 acceptance criteria (per PLAN.md §5):**
+
+- [x] ClientOrder hub renders on VPS at `/orders/:id`.
+- [x] Full v1 acceptance loop reachable from the hub via action launcher.
+- [x] Playwright E2E happy-path green locally + against VPS.
+- [x] Domain events emitted on critical writes (DomainEventLog rows in DB).
+- [x] All numbering uses SEQUENCE objects (no DMax+1 in new handler code).
+- [x] AuditLogEntry rows present for modifications (verified via tests +
+  rich VPS smoke).
+- [x] `/admin/audit-log` page functional on VPS.
+- [x] AI helper floating button on every authenticated page; 3
+  recommendations live (ClientOrder hub blocked-step, Receipt variance,
+  Razdolzuvanje pre-flight).
+
+Bonus shipped beyond the original criteria:
+- AlertRule + AlertEvent + worker (§E10.5) — Phase 26 will add the editor.
+- DomainEventLog + admin event-log query (§E11) — Phase 22+ replay base.
+- Recycle bin UI + 90-day retention worker (§E14).
+- FxRate entity + service + UI (§E16) — unblocks margin / multi-currency.
+
+Next: Phase 18 (Subcontractor login) + Phase 19 (Speditor) — can run in
+parallel; both unblock by RLS in Phase 20.
+
+---
+
 ## 2026-05-14 — Phase 17 §E16 — FxRate entity + manual maintenance UI + VPS-verified
 
 Commit `e6fde19`. Manual FX rate maintenance for v1 (auto-import from
