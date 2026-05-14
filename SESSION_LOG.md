@@ -2,6 +2,50 @@
 
 > Append-only хронолошки запис. Секој таск добува еден запис. Запиши веднаш по verification, не групно на крај.
 
+## 2026-05-14 — Phase 17 §E16 — FxRate entity + manual maintenance UI + VPS-verified
+
+Commit `e6fde19`. Manual FX rate maintenance for v1 (auto-import from
+central bank is Phase 27.1).
+
+**Domain:** `FxRate` (BaseEntity + ITenantScoped + IAuditable) with
+TenantId + FromCurrency(3) + ToCurrency(3) + Rate decimal(18,8) +
+EffectiveDate + Source enum {Manual, NationalBank} + Notes. Unique index
+on (TenantId, From, To, EffectiveDate) filtered by IsDeleted=0.
+
+**Migration #59** `P17_E16_AddFxRate` seeds 3 placeholder rates per active
+tenant (EUR/MKD=61.50, USD/MKD=56.00, USD/EUR=0.91) effective today.
+
+**Application:**
+- `IFxRateService` + `FxRateService` — point-in-time `GetRateAsync(from, to,
+  asOf)`. Resolution: direct → inverse → cross-via-EUR → throws
+  `FxRateMissingException`. Returns 1.0 when from==to.
+- MediatR commands: `GetFxRatesQuery`, `CreateFxRateCommand`,
+  `UpdateFxRateCommand`, `DeleteFxRateCommand` (soft), `GetEffectiveRateQuery`.
+
+**API:** `FxRatesController` at `/api/Finance/fx-rates`:
+- GET (filtered list)
+- POST / PUT / DELETE
+- GET `/effective?from=&to=&asOf=`
+
+**Frontend:** `pages/Finance/FxRates.tsx` — MUI table + Add/Edit dialog +
+"Copy forward to today" shortcut + per-row Edit / Delete. Route
+`/finance/fx-rates`. i18n: `fxRates.*` in mk.json + en.json.
+
+**Tests** (`FxRateTests.cs`, 7 [Fact]) — migration seed, exact lookup,
+same-ccy short-circuit, inverse, cross-via-EUR, duplicate-reject, new pair.
+
+**Verification on VPS:**
+- `git pull` + `docker compose up -d --build api frontend` clean.
+- `GET /api/Finance/fx-rates` → 3 rows (EUR/MKD, USD/EUR, USD/MKD) ✅
+- `GET /api/Finance/fx-rates/effective?from=EUR&to=MKD` → `61.5` ✅
+- `GET /api/Finance/fx-rates/effective?from=MKD&to=USD` → `0.0178...`
+  (cross-resolves via EUR: 1/56) ✅
+
+**Status:** [x] done. Last building block before §E15 (Playwright). Next:
+§E15.
+
+---
+
 ## 2026-05-14 — Phase 17 §E14 — Soft-delete + recycle bin (block-delete with children) + VPS-verified
 
 Commit `1b884a0`. ClientOrder is the canonical entity for the v1 recycle bin;
