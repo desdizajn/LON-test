@@ -569,8 +569,82 @@ interface DeclarationRow {
   currency: string;
 }
 
+interface DeclarationLineRow {
+  id: string;
+  lineNumber: number;
+  itemCode?: string | null;
+  itemName?: string | null;
+  quantity: number;
+  uoMCode?: string | null;
+  customsValue: number;
+  dutyRate?: number | null;
+  dutyAmount?: number | null;
+  vatRate?: number | null;
+  vatAmount?: number | null;
+  tariffCode?: string | null;
+  countryOfOrigin?: string | null;
+}
+
+const DeclarationLineRows: React.FC<{ declarationId: string; currency: string }> = ({ declarationId, currency }) => {
+  const { t } = useTranslation();
+  const { data } = useQuery({
+    queryKey: ['clientOrders', 'declarationDetail', declarationId],
+    queryFn: async () => {
+      const resp = await customsApi.getDeclaration(declarationId);
+      const d = (resp.data as any)?.data ?? resp.data;
+      return (d?.lines ?? []) as DeclarationLineRow[];
+    },
+  });
+  if (!data) return <LinearProgress />;
+  if (data.length === 0) {
+    return (
+      <Typography variant="caption" color="text.secondary" sx={{ p: 2 }}>
+        {t('orders.hub.tabs.declLines.empty')}
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ p: 1, bgcolor: 'action.hover' }}>
+      <Typography variant="overline" color="text.secondary">{t('orders.hub.tabs.declLines.heading')}</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '0.3fr 1.6fr 0.8fr 0.7fr 0.7fr 0.9fr 0.9fr 0.7fr 0.5fr', gap: 0, fontSize: 12, mt: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+        {[
+          '#',
+          t('orders.hub.tabs.declLines.item'),
+          t('orders.hub.tabs.declLines.qty'),
+          t('orders.hub.tabs.declLines.tariff'),
+          t('orders.hub.tabs.declLines.origin'),
+          t('orders.hub.tabs.declLines.customsValue'),
+          t('orders.hub.tabs.declLines.duty'),
+          t('orders.hub.tabs.declLines.vat'),
+          t('orders.hub.tabs.declLines.dutyRate'),
+        ].map((h, i) => (
+          <Box key={i} sx={{ fontWeight: 600, p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: i >= 2 && i !== 3 && i !== 4 ? 'right' : 'left' }}>{h}</Box>
+        ))}
+        {data.map((l) => (
+          <React.Fragment key={l.id}>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider' }}>{l.lineNumber}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+              {l.itemCode}{l.itemName ? ` — ${l.itemName}` : ''}
+            </Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+              {(l.quantity ?? 0).toFixed(4)} {l.uoMCode ?? ''}
+            </Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>{l.tariffCode ?? '—'}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider' }}>{l.countryOfOrigin ?? '—'}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{(l.customsValue ?? 0).toFixed(2)} {currency}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{(l.dutyAmount ?? 0).toFixed(2)} {currency}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{(l.vatAmount ?? 0).toFixed(2)} {currency}</Box>
+            <Box sx={{ p: 0.75, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{l.dutyRate ?? 0}%</Box>
+          </React.Fragment>
+        ))}
+      </Box>
+    </Box>
+  );
+};
+
 const DeclarationsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId }) => {
   const { t } = useTranslation();
+  const [expanded, setExpanded] = useState<string | null>(null);
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['clientOrders', 'declarations', clientOrderId],
     queryFn: async () => {
@@ -591,47 +665,47 @@ const DeclarationsTab: React.FC<{ clientOrderId: string }> = ({ clientOrderId })
     );
   }
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1.4fr 0.6fr 1fr 1fr', gap: 0, fontSize: 13 }}>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
-        {t('orders.hub.tabs.declCols.number')}
+    <Box>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '0.3fr 1.4fr 1fr 1.4fr 0.6fr 1fr 1fr', gap: 0, fontSize: 13 }}>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }} />
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>{t('orders.hub.tabs.declCols.number')}</Box>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>{t('orders.hub.tabs.declCols.date')}</Box>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>{t('orders.hub.tabs.declCols.mrn')}</Box>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>{t('orders.hub.tabs.declCols.type')}</Box>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{t('orders.hub.tabs.declCols.customsValue')}</Box>
+        <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>{t('orders.hub.tabs.declCols.duty')}</Box>
+        {rows.map((r) => (
+          <React.Fragment key={r.id}>
+            <Box
+              sx={{ p: 1, borderBottom: 1, borderColor: 'divider', cursor: 'pointer', userSelect: 'none', textAlign: 'center' }}
+              onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+              title={t('orders.hub.tabs.declLines.toggle') as string}
+            >
+              {expanded === r.id ? '▾' : '▸'}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>
+              {r.declarationNumber}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{formatDate(r.declarationDate)}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>{r.mrn}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{r.declarationType}</Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+              {r.totalCustomsValue?.toFixed?.(2) ?? '—'} {r.currency}
+            </Box>
+            <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
+              {r.totalDuty?.toFixed?.(2) ?? '—'} {r.currency}
+            </Box>
+          </React.Fragment>
+        ))}
       </Box>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
-        {t('orders.hub.tabs.declCols.date')}
-      </Box>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
-        {t('orders.hub.tabs.declCols.mrn')}
-      </Box>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider' }}>
-        {t('orders.hub.tabs.declCols.type')}
-      </Box>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
-        {t('orders.hub.tabs.declCols.customsValue')}
-      </Box>
-      <Box sx={{ fontWeight: 600, p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
-        {t('orders.hub.tabs.declCols.duty')}
-      </Box>
-      {rows.map((r) => (
-        <React.Fragment key={r.id}>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace' }}>
-            {r.declarationNumber}
-          </Box>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-            {formatDate(r.declarationDate)}
-          </Box>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', fontFamily: 'monospace', fontSize: 11 }}>
-            {r.mrn}
-          </Box>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
-            {r.declarationType}
-          </Box>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
-            {r.totalCustomsValue?.toFixed?.(2) ?? '—'} {r.currency}
-          </Box>
-          <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'right' }}>
-            {r.totalDuty?.toFixed?.(2) ?? '—'} {r.currency}
-          </Box>
-        </React.Fragment>
-      ))}
+      {expanded && (
+        <Box sx={{ mt: 1 }}>
+          <DeclarationLineRows
+            declarationId={expanded}
+            currency={rows.find((r) => r.id === expanded)?.currency ?? 'EUR'}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

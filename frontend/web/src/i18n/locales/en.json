@@ -237,6 +237,19 @@
       },
       "tabs": {
         "declarations": "Declarations",
+        "declLines": {
+          "toggle": "Expand / collapse lines",
+          "heading": "Lines (per-line calculation)",
+          "empty": "No lines on this declaration.",
+          "item": "Item",
+          "qty": "Quantity",
+          "tariff": "Tariff",
+          "origin": "Origin",
+          "customsValue": "Customs value",
+          "duty": "Duty",
+          "vat": "VAT",
+          "dutyRate": "Rate"
+        },
         "productionOrders": "Production orders",
         "boms": "BOM",
         "bomsEmpty": "No BOM linked to this order.",
